@@ -3,7 +3,7 @@
     "landingPage": "/wp-admin/admin.php?page=wfd-boards",
     "preferredVersions": {
         "php": "8.2",
-        "wp": "https://wordpress.org/wordpress-7.2-RC2.zip"
+        "wp": "beta"
     },
     "login": true,
     "steps": [

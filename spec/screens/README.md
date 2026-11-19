@@ -1,6 +1,6 @@
 # Screens
 
-Twenty-three screens. Each has an image in `images/` (except `LockDialog`, which has none) and a file here naming its state, the regions it uses and its own elements. Regions shared by many screens are defined once in this file.
+Twenty-four screens. Each has an image in `images/` (except `LockDialog` and `ShortcutsDialog`, which have none) and a file here naming its state, the regions it uses and its own elements. Regions shared by many screens are defined once in this file.
 
 Rules for reading the images (see also `CLAUDE.md`, rules 6 and 7):
 
@@ -26,6 +26,7 @@ Left to right:
 | H6 | Block toolbar | `be.BlockToolbar`, filled from the Live editor through a slot | Stock | Present only while an artboard is in edit and a block is selected. |
 | H7 | Document bar | Centred `Text` on a weak neutral surface; in edit, preceded by an `IconButton` with `arrowLeft` | Board name; in edit "{artboard name} · {Kind}", back button label "Back to the board" | Back button leaves edit. The bar itself is not clickable. `[N]` |
 | H8 | Zoom menu | `Menu` whose trigger shows the zoom as a percentage with `chevronDown` | Trigger label "Zoom"; items "Zoom in", "Zoom out", "Zoom to 50%", "Zoom to 100%", "Fit all", "Fit selection" | Items act on the viewport. "Fit selection" is disabled with nothing selected. An item that takes the zoom below 30% while an artboard is in edit leaves edit (D37). `[N]` for the item list |
+| H12 | Keyboard shortcuts | `IconButton`, `keyboard` | Label "Keyboard shortcuts" | Opens the keyboard shortcuts dialog (D42, `ShortcutsDialog.md`). Sits between H8 and H11. |
 | H11 | Right panel toggle | `IconButton`, `drawerRight`, pressed state while the right panel is shown | Labels "Hide right panel" / "Show right panel" | Hides or shows the right panel (D32). Sits between H8 and H9. |
 | H9 | Review button | `Button`, solid brand | "Review {n} changes", "Review 1 change"; with none, "Review changes", disabled | Opens the Review drawer. |
 
