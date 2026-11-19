@@ -128,9 +128,9 @@ Tab order and the Shift + arrow step are `[N]`.
 ## Undo
 
 - Content history is core-data's undo stack. It is active while an artboard is Live. `[B8]`
-- Layout history lives in `board-store`: moves, device changes, adds and removals from the board. It lasts for the session. Removing an artboard with the "also delete" box checked is not undoable and clears nothing else. `[B8]` `[U]` `[N]`
+- Layout history lives in `board-store`: moves, tidying up (D45), device changes, adds and removals from the board. It lasts for the session. Removing an artboard with the "also delete" box checked is not undoable and clears nothing else. `[B8]` `[U]` `[N]`
 - The header's Undo and Redo act on the active history. Their tooltips name the action and scope, in the form "Undo {action}, in {artboard name}" and "Undo {action}, on the board" (the same with "Redo"). `[U]` `[D:Main]` `[D:Overview]`
-- Action names. On the board: "move artboard", "change device", "add artboard", "remove artboard". In an artboard the action is always "edit" ("Undo edit, in Header"); WordPress keeps no name for a content change, so the "block spacing" in `images/Main.png` is not built. `[U]`
+- Action names. On the board: "move artboard", "tidy up", "change device", "add artboard", "remove artboard". In an artboard the action is always "edit" ("Undo edit, in Header"); WordPress keeps no name for a content change, so the "block spacing" in `images/Main.png` is not built. `[U]`
 
 ## Styles
 
