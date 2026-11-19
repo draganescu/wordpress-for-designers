@@ -148,8 +148,10 @@ Unless a criterion says otherwise, the fixture in `architecture.md` is loaded an
 - AC-BROWSER-02 Outside browsing, a click on a browser's page selects the browser and follows no link, and a drag moves it; Delete opens the remove dialog with no checkbox and Remove takes it off the board. `[U]`
 - AC-BROWSER-03 Double-click starts browsing: following a link in the page changes the address field and the document bar; typing an address of the site and pressing Enter goes there; Esc pressed inside the page ends browsing with the browser selected; after a reload of the board the browser shows the last address. `[U]`
 - AC-BROWSER-04 A change to a page made in an artboard is not shown in a browser on that page until it is saved from Review; after the save the browser shows it without Reload being pressed. `[U]`
-- AC-BROWSER-05 The server accepts a browser with exactly its fields and rejects one with an `entityId`, one without a `path`, one whose `path` does not start with "/", one without a `height` and one whose `height` is below 200. `[N]`
+- AC-BROWSER-05 The server accepts a browser with exactly its fields and rejects one with an `entityId`, one without a `path`, one whose `path` does not start with "/", one without a `height`, one whose `height` is below 200 and one whose `shows` is not "unsaved" or "saved". `[N]`
 - AC-BROWSER-06 Dragging a browser's bottom edge down by 200 board units makes its window 200 units taller, and the height is kept after a reload; Undo, whose tooltip reads "Undo resize browser, on the board", puts it back; dragging it up past 200 stops at 200 (D49). `[U]`
+- AC-BROWSER-08 A browser showing unsaved changes shows a change typed into a page's artboard, without a save and without Reload being pressed, and keeps showing it on a link followed to another page and back; a browser on the same page set to "Saved site" does not show it until Review saves it. The page requested without signing in shows the saved content even with `wfd_preview=1` (D50). `[U]`
+- AC-BROWSER-09 A browser showing unsaved changes shows an unsaved change to global styles and to a template part (D50). `[U]`
 - AC-BROWSER-07 A page scrolled while browsing stays scrolled where it was after Esc ends browsing (D49). `[U]`
 
 ## NOTE

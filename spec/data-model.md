@@ -64,10 +64,10 @@ A media object has `"kind": "media"`, a numeric `entityId` (the attachment), a `
 { "id": "…", "kind": "media", "entityId": 12, "x": 0, "y": 0, "width": 1200, "height": 800 }
 ```
 
-A browser (D48) has `"kind": "browser"`, a `path`, a `device`, a `height` (the window's height in board units, 200 or more, D49), and no `entityId` or `width`:
+A browser (D48) has `"kind": "browser"`, a `path`, a `device`, a `height` (the window's height in board units, 200 or more, D49), `shows` (`"unsaved"` or `"saved"`, D50), and no `entityId` or `width`:
 
 ```json
-{ "id": "…", "kind": "browser", "path": "/", "device": "desktop", "x": 0, "y": 0, "height": 900 }
+{ "id": "…", "kind": "browser", "path": "/", "device": "desktop", "x": 0, "y": 0, "height": 900, "shows": "unsaved" }
 ```
 
 `path` is the address relative to the site's home URL: it starts with `/`, may hold a query and a fragment, and is at most 2000 characters. A new browser has `/`, the homepage, and a window 900 board units tall. `[U]` for the window, `[N]` for the field list and the length
@@ -120,6 +120,10 @@ A note is removed at once, with no confirmation, and can be brought back with Un
 Pressing Delete with several artboards selected opens no confirmation: every selected artboard leaves the board and no entity is changed (D41). `[U]`
 
 When the entity is deleted, trashed or reset, every other artboard on any board that references it is handled on next load: a missing entity removes the artboard from that board. `[N]`
+
+## Previewing unsaved changes (D50)
+
+The board's unsaved changes are kept on the server for the browser's preview, per user, apart from the site's content: one record per user, replaced on every send and removed when nothing is unsaved. It is never published, never shown to anyone else and never reaches Review. A page requested with `wfd_preview=1` by a user with `edit_theme_options` is rendered with those changes in place of the saved content; for anyone else the argument does nothing. `[U]` for the behaviour, `[N]` for how the record is stored
 
 ## Saving
 
