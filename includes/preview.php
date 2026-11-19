@@ -59,18 +59,103 @@ function wfd_preview_records( $user_id ) {
 }
 
 /**
- * Registers the preview route.
+ * Whether the current user may open the plugin.
+ *
+ * @return bool
+ */
+function wfd_preview_permission() {
+    return current_user_can( WFD_CAPABILITY );
+}
+
+/**
+ * Registers the preview route. Its schema is the shape of the changes.
  */
 function wfd_register_preview_route() {
+    $text = array( 'type' => 'string' );
     register_rest_route(
         'wfd/v1',
         '/preview',
         array(
             'methods'             => 'POST',
             'callback'            => 'wfd_preview_keep',
-            'permission_callback' => function () {
-                return current_user_can( WFD_CAPABILITY );
-            },
+            'permission_callback' => 'wfd_preview_permission',
+            'args'                => array(
+                'preview'   => array(
+                    'type'     => 'string',
+                    'required' => true,
+                ),
+                // By post id: pages, synced patterns and navigation menus.
+                'posts'     => array(
+                    'type'                 => 'object',
+                    'default'              => array(),
+                    'patternProperties'    => array(
+                        '^[1-9][0-9]*$' => array(
+                            'type'                 => 'object',
+                            'properties'           => array(
+                                'title'    => $text,
+                                'content'  => $text,
+                                'template' => $text,
+                            ),
+                            'additionalProperties' => false,
+                        ),
+                    ),
+                    'additionalProperties' => false,
+                ),
+                // By template id, theme//slug: templates and parts.
+                'templates' => array(
+                    'type'                 => 'object',
+                    'default'              => array(),
+                    'additionalProperties' => array(
+                        'type'                 => 'object',
+                        'properties'           => array(
+                            'postType' => array(
+                                'type'     => 'string',
+                                'enum'     => array( 'wp_template', 'wp_template_part' ),
+                                'required' => true,
+                            ),
+                            'slug'     => array(
+                                'type'     => 'string',
+                                'required' => true,
+                            ),
+                            'title'    => array(
+                                'type'     => 'string',
+                                'required' => true,
+                            ),
+                            'content'  => array(
+                                'type'     => 'string',
+                                'required' => true,
+                            ),
+                            'area'     => $text,
+                        ),
+                        'additionalProperties' => false,
+                    ),
+                ),
+                'styles'    => array(
+                    'type'                 => array( 'object', 'null' ),
+                    'default'              => null,
+                    'properties'           => array(
+                        'styles'   => array(
+                            'type'     => 'object',
+                            'required' => true,
+                        ),
+                        'settings' => array(
+                            'type'     => 'object',
+                            'required' => true,
+                        ),
+                    ),
+                    'additionalProperties' => false,
+                ),
+                'site'      => array(
+                    'type'                 => array( 'object', 'null' ),
+                    'default'              => null,
+                    'properties'           => array(
+                        'title'       => $text,
+                        'description' => $text,
+                        'site_logo'   => array( 'type' => array( 'integer', 'null' ) ),
+                    ),
+                    'additionalProperties' => false,
+                ),
+            ),
         )
     );
 }
@@ -80,13 +165,10 @@ add_action( 'rest_api_init', 'wfd_register_preview_route' );
  * A string from the request, made safe for a user who may not post
  * unfiltered HTML.
  *
- * @param mixed $value The value.
- * @return string|null Null when the value is not a string.
+ * @param string $value The value.
+ * @return string
  */
 function wfd_preview_text( $value ) {
-    if ( ! is_string( $value ) ) {
-        return null;
-    }
     return current_user_can( 'unfiltered_html' ) ? $value : wp_kses_post( $value );
 }
 
@@ -94,7 +176,7 @@ function wfd_preview_text( $value ) {
  * Keeps a board page's unsaved changes for the current user, or removes them
  * when there are none.
  *
- * @param WP_REST_Request $request The request.
+ * @param WP_REST_Request $request The request, checked against the route's schema.
  * @return WP_REST_Response|WP_Error
  */
 function wfd_preview_keep( $request ) {
@@ -106,62 +188,38 @@ function wfd_preview_keep( $request ) {
     $changes = array(
         'posts'     => array(),
         'templates' => array(),
-        'styles'    => null,
+        'styles'    => $request['styles'],
         'site'      => array(),
     );
 
-    foreach ( (array) $request['posts'] as $id => $post ) {
-        if ( ! is_array( $post ) || ! absint( $id ) ) {
-            continue;
-        }
-        $kept = array();
-        foreach ( array( 'title', 'content', 'template' ) as $field ) {
-            if ( array_key_exists( $field, $post ) ) {
-                $value = 'template' === $field
-                    ? ( is_string( $post[ $field ] ) ? sanitize_file_name( $post[ $field ] ) : null )
-                    : wfd_preview_text( $post[ $field ] );
-                if ( null !== $value ) {
-                    $kept[ $field ] = $value;
-                }
+    foreach ( $request['posts'] as $id => $post ) {
+        foreach ( array( 'title', 'content' ) as $field ) {
+            if ( isset( $post[ $field ] ) ) {
+                $changes['posts'][ $id ][ $field ] = wfd_preview_text( $post[ $field ] );
             }
         }
-        if ( $kept ) {
-            $changes['posts'][ absint( $id ) ] = $kept;
+        if ( isset( $post['template'] ) ) {
+            $changes['posts'][ $id ]['template'] = sanitize_file_name( $post['template'] );
         }
     }
 
-    foreach ( (array) $request['templates'] as $id => $template ) {
-        if ( ! is_array( $template ) || ! is_string( $id ) || ! isset( $template['slug'], $template['postType'] ) ) {
-            continue;
-        }
-        if ( ! in_array( $template['postType'], array( 'wp_template', 'wp_template_part' ), true ) ) {
-            continue;
-        }
+    foreach ( $request['templates'] as $id => $template ) {
         $changes['templates'][ $id ] = array(
             'postType' => $template['postType'],
             'slug'     => sanitize_title( $template['slug'] ),
-            'title'    => (string) wfd_preview_text( $template['title'] ?? '' ),
-            'content'  => (string) wfd_preview_text( $template['content'] ?? '' ),
+            'title'    => wfd_preview_text( $template['title'] ),
+            'content'  => wfd_preview_text( $template['content'] ),
             'area'     => sanitize_key( $template['area'] ?? '' ),
         );
     }
 
-    if ( is_array( $request['styles'] ) ) {
-        $changes['styles'] = array(
-            'styles'   => is_array( $request['styles']['styles'] ?? null ) ? $request['styles']['styles'] : array(),
-            'settings' => is_array( $request['styles']['settings'] ?? null ) ? $request['styles']['settings'] : array(),
-        );
+    foreach ( array( 'title', 'description' ) as $field ) {
+        if ( isset( $request['site'][ $field ] ) ) {
+            $changes['site'][ $field ] = sanitize_text_field( $request['site'][ $field ] );
+        }
     }
-
-    if ( is_array( $request['site'] ) ) {
-        foreach ( array( 'title', 'description' ) as $field ) {
-            if ( isset( $request['site'][ $field ] ) && is_string( $request['site'][ $field ] ) ) {
-                $changes['site'][ $field ] = sanitize_text_field( $request['site'][ $field ] );
-            }
-        }
-        if ( isset( $request['site']['site_logo'] ) ) {
-            $changes['site']['site_logo'] = absint( $request['site']['site_logo'] );
-        }
+    if ( isset( $request['site']['site_logo'] ) ) {
+        $changes['site']['site_logo'] = absint( $request['site']['site_logo'] );
     }
 
     $is_empty = ! $changes['posts'] && ! $changes['templates'] && null === $changes['styles'] && ! $changes['site'];
