@@ -6,6 +6,8 @@ import {
     enterEdit,
     editorFrame,
     artboardOf,
+    viewportOf,
+    setViewport,
     type Fixture,
 } from './utils';
 
@@ -26,6 +28,20 @@ const editText = async (
     text: string,
     addition: string
 ) => {
+    // Bring the artboard's top-left corner into view: the board does not
+    // scroll, so a block outside the canvas area cannot be clicked.
+    const frame = ( await page
+        .locator( `[data-wfd-artboard="${ id }"] .wfd-artboard__frame` )
+        .boundingBox() )!;
+    const canvas = ( await page
+        .locator( '[data-wfd-region="canvas"]' )
+        .boundingBox() )!;
+    const viewport = await viewportOf( page );
+    await setViewport( page, {
+        zoom: viewport.zoom,
+        x: viewport.x - ( frame.x - canvas.x ) + 40,
+        y: viewport.y - ( frame.y - canvas.y ) + 40,
+    } );
     await enterEdit( page, id );
     const paragraph = editorFrame( page, id )
         .locator( 'p', { hasText: text } )

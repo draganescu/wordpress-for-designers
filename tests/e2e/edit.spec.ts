@@ -492,6 +492,23 @@ test.describe( 'EDIT', () => {
                 )
             ).toBe( 1440 );
 
+            // The iframe is as tall as its content: the last block is not
+            // cut off when the first block has a top margin.
+            await expect
+                .poll( () =>
+                    iframe.evaluate( ( element: HTMLIFrameElement ) => {
+                        const last =
+                            element.contentDocument!.querySelector(
+                                '.is-root-container'
+                            )!.lastElementChild!;
+                        return (
+                            element.contentWindow!.innerHeight -
+                            last.getBoundingClientRect().bottom
+                        );
+                    } )
+                )
+                .toBeGreaterThanOrEqual( 0 );
+
             // A click lands in the block under the pointer.
             await heading.click();
             await expect

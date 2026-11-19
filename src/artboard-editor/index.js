@@ -37,7 +37,12 @@ const CONTENT_BLOCKS = [
     'core/post-title',
     'core/post-featured-image',
 ];
-const CANVAS_STYLES = [ { css: 'body{height:auto;overflow:hidden;}' } ];
+// `display: flow-root` keeps the margins of the first and last blocks inside
+// the body's box. Without it they collapse through the body, and the height
+// measured by `useCanvasProbe` leaves them out, so the iframe is too short.
+const CANVAS_STYLES = [
+    { css: 'body{display:flow-root;height:auto;overflow:hidden;}' },
+];
 
 /**
  * Watches the canvas document from outside: measures the content and passes
