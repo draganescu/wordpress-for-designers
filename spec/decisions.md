@@ -1,0 +1,36 @@
+# Decisions
+
+The record of what was decided, what was rejected and why. A rejected alternative must not come back in another form.
+
+| ID | Decision | Rejected | Why | Source |
+|---|---|---|---|---|
+| D1 | Each artboard maps to one WordPress entity; the board stores references. | Storing block markup on the board, as the gutenberg-canvas concept does. | One source of truth; edits must reach the site. | `[B3]` `[U]` |
+| D2 | One document with a shared core-data registry and a sub-registry per editor. | An iframe page per editor, as WordPress for Writers does for its tabs. | Writers caps at six editors and unloads idle ones; a board needs dozens of artboards. | `[B4]` `[V]` |
+| D3 | Four tiers: Ghost, Snapshot, Preview, Live. One Live. | Running every artboard as an editor. | Performance. | `[B5]` |
+| D4 | Snapshot is a frozen copy of the last Preview render, behind one interface. | Bitmaps from day one. | Fastest to build, exact fidelity. Bitmaps can replace it later behind the same interface. | `[B8]` |
+| D5 | Chrome is one shared set for the artboard in edit. | Full chrome drawn on every artboard. | Only one editor is fully mounted. | `[B8]` `[U]` |
+| D6 | Click selects an artboard. Double-click or Enter edits it. Esc returns to the board. | Chrome attached on selection alone. | Keeps canvas gestures and editing apart. | `[B1]` `[U]` |
+| D7 | Block toolbar is docked in the header, as the editor's Top toolbar mode. | A custom toolbar floating over the canvas with an "Esc to leave" hint. | Must stay familiar, and chrome must stay usable at any zoom. | `[U]` |
+| D8 | Header has an inserter toggle and a list view toggle like the editors. | "Outline" and "Library" tabs in the left panel. | Familiar shell. | `[U]` |
+| D9 | Left panel shows the board's artboards by kind when nothing is in edit, the list view when editing, and the inserter when its toggle is on. | A fixed outline that never changes. | Product owner's comment on the first design. | `[U]` |
+| D10 | Right panel shows Styles when nothing is selected, artboard settings when an artboard is selected, and the settings tabs (entity, Block) when editing. | A separate Styles mode or button. | "Styles should be when nothing is selected." | `[B2]` `[U]` |
+| D11 | A new artboard is made from a menu: pick the kind (and for a template, its purpose), then click the board to place it. | A modal dialog with a form. An empty artboard that asks its kind in place. | The dialog was "not a fluid interaction". Kind must be clear before the artboard exists. | `[U]` |
+| D12 | Page, template part and pattern creation ask nothing more; each creates a new untitled item at once. | A second menu level for those kinds. | Product owner's choice. | `[U]` |
+| D13 | Existing pages and patterns join a board only by dragging from the inserter. Existing templates and parts can also be opened from the "Already on the site" group of the template menu or dragged from the Templates tab. | Pickers in the creation menu for pages and patterns. | Product owner's choice. | `[U]` `[D:AddArtboard]` |
+| D14 | A new artboard's content area shows only the stock empty-editor state. | A row of starter thumbnails inside the artboard. | "This is bad, it should work like any editor." | `[U]` |
+| D15 | Kind is fixed. Device is the only artboard property that changes after creation. | A kind menu on the artboard label; "changeable until first save". | C11. | `[U]` |
+| D16 | Devices are Desktop 1440, Tablet 780, Mobile 360 on default breakpoints, with the rule in `data-model.md` when the theme overrides them. | Pixel widths, custom widths, a global width toggle in the header. | C12. Gutenberg defines breakpoints (782, 480), not preview widths. | `[U]` `[V]` |
+| D17 | No drafts for templates and parts; pages and patterns are drafts until published. | A "Draft" label on new templates. | C13. | `[U]` `[B8]` |
+| D18 | Inserter has four tabs: Blocks, Patterns, Templates, Media. Lists only. | Thumbnails. Dropping some tabs. | C17; product owner chose all four. | `[U]` |
+| D19 | Clicking an inserter item inserts into the artboard in edit. Dragging a pattern, template or part to empty board opens it as an artboard. | A separate "Library" concept apart from the inserter. | Familiar shell. | `[U]` `[D:Library]` |
+| D20 | Styles has three tabs: Tokens, Blocks, History. | A Compare button; a style guide artboard. | Both cut. | `[U]` |
+| D21 | Picking a token highlights where it is used and shows use counts, from the usage index. | Reading the rendered artboards. | C16. | `[U]` |
+| D22 | The block inspector has a "Style applies to" switch: this block, or all blocks of its kind. | Sending the user to a separate screen to style all blocks of a kind. | Makes global styles less clumsy than the Site Editor. | `[B7]` `[D:Main]` |
+| D23 | Two undo histories that follow focus: content in the Live artboard, layout on the board. One pair of buttons. The document bar names the scope and the Undo tooltip names the action. | One merged history. A scope label next to the buttons. | Familiar shell. | `[B8]` `[U]` |
+| D24 | Review changes is a drawer listing every changed item with a readable summary, a checkbox each, Save, Keep editing and Discard all. | Saving from the artboard. | C13. | `[D:Review]` `[U]` |
+| D25 | Board layout autosaves 2 seconds after the last change and is never part of Review. | Saving layout with content. | Layout is not site content. | `[B6]` `[U]` |
+| D26 | Removing an artboard offers to also delete the underlying item. For an item that ships with the theme the offer is to reset it. | Remove from board only. | Product owner's choice. | `[U]` |
+| D27 | Wheel, pinch and shortcut events inside artboard iframes are forwarded to the shell and coalesced to one update per animation frame. | Letting iframes swallow them. | Pan and zoom must work with the pointer over any artboard. | `[B8]` |
+| D28 | Post lock is taken only while a page or pattern is Live. | Locking everything on the board. | Only the Live artboard is being edited. | `[B8]` `[U]` |
+| D29 | Boards are listed inside wp-admin under a "Designer" menu. Opening a board shows the full-screen app without wp-admin chrome. | Replacing the dashboard. | Locked default. | `[U]` `[D:Boards]` |
+| D30 | Double-clicking an artboard below 50% zoom first zooms to 50% centred on it, then enters edit. | Editing at small scale. | C18. | `[U]` |

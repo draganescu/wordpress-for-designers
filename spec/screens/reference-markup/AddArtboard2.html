@@ -1,0 +1,70 @@
+<!doctype html><html><head><meta charset="utf-8">
+<style>
+body{margin:0}
+button{font:inherit;color:inherit;cursor:pointer}
+a{color:#3858e9}a:hover{color:#0b0070}
+</style>
+</head><body>
+
+<div style="min-height: 900px; display: flex; flex-direction: column; background: #fcfcfc; color: #1e1e1e; font-family: -apple-system, system-ui, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif; font-size: 13px; line-height: 20px">
+
+<header style="position: relative; display: flex; flex-wrap: wrap; align-items: center; min-height: 60px; padding-right: 16px; background: #fff; border-bottom: 1px solid #dbdbdb">
+<a href="Boards.dc.html" aria-label="All boards" style="display: flex; align-items: center; justify-content: center; width: 60px; height: 60px; background: #1e1e1e; color: #fff; font-weight: 600; font-size: 20px; text-decoration: none">W</a>
+<a href="Library.dc.html" aria-label="Block inserter" style="width: 32px; height: 32px; margin: 0 4px 0 12px; border-radius: 2px; background: #3858e9; color: #fff; display: flex; align-items: center; justify-content: center"><svg aria-hidden="true" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 18V6M18 12H6"/></svg></a>
+<button aria-label="Undo" style="width: 36px; height: 36px; padding: 0; border: 0; background: none; display: flex; align-items: center; justify-content: center"><svg aria-hidden="true" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8.25 15L4.75 11L8.25 7M4.75 11H15.25C18.25 11 18.5 13.8 18.5 17"/></svg></button><button aria-label="Redo" style="width: 36px; height: 36px; padding: 0; border: 0; background: none; display: flex; align-items: center; justify-content: center; color: #8d8d8d"><svg aria-hidden="true" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M15 15L18.5 11L15 7M18.5 11H8C5 11 4.75 13.8 4.75 17"/></svg></button><button aria-label="List view" aria-pressed="true" style="width: 36px; height: 36px; padding: 0; border: 0; background: #1e1e1e; color: #f0f0f0; border-radius: 2px; display: flex; align-items: center; justify-content: center"><svg aria-hidden="true" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 17.5H21M6.5 12H17.5M3 6.5H14"/></svg></button>
+
+<div style="flex: 1 1 16px"></div>
+<div style="display: flex; align-items: center; gap: 8px; min-width: 300px; height: 36px; box-sizing: border-box; padding: 0 8px; border-radius: 4px; background: #f4f4f4"><a href="Overview.dc.html" aria-label="Back to the board" style="display: flex; color: #1e1e1e"><svg aria-hidden="true" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 12L5 12M10 7L5 12L10 17"/></svg></a><span style="flex: 1; text-align: center">Archive · Template</span><span style="font-size: 12px; color: #707070">⌘K</span></div>
+<div style="flex: 1 1 16px"></div>
+<div style="display: flex; align-items: center; gap: 8px">
+<button aria-label="Zoom" style="display: flex; align-items: center; height: 36px; padding: 0 2px 0 8px; border: 0; background: none">50%<svg aria-hidden="true" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M7 11L12 15L17 11"/></svg></button>
+<a href="Review.dc.html" style="display: flex; align-items: center; height: 36px; padding: 0 12px; border-radius: 2px; background: #3858e9; color: #eff0f2; font-weight: 600; text-decoration: none">Review 4 changes</a>
+</div>
+</header>
+
+<div style="flex: 1; display: flex; flex-wrap: wrap; min-height: 0">
+
+<nav aria-label="List view" style="flex: 0 0 280px; box-sizing: border-box; position: relative; z-index: 2; background: #fff; border-right: 1px solid #dbdbdb; padding: 8px 0">
+<div style="display: flex; align-items: center; padding: 4px 8px 4px 16px; border-bottom: 1px solid #dbdbdb"><span style="flex: 1; font-weight: 600">List view</span><a href="Overview.dc.html" aria-label="Close list view" style="display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; color: #1e1e1e"><svg aria-hidden="true" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M7.75 16.25L16.25 7.75M16.25 16.25L7.75 7.75"/></svg></a></div>
+<div style="padding-top: 8px">
+<button style="display: flex; align-items: center; gap: 4px; width: 100%; height: 36px; padding: 0 16px 0 8px; border: 0; background: none; text-align: left"><span style="width: 24px"></span><svg aria-hidden="true" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4.75 9.75V18C4.75 18.69 5.31 19.25 6 19.25H18C18.69 19.25 19.25 18.69 19.25 18V9.75"/><path d="M19.25 8.5V6C19.25 5.31 18.69 4.75 18 4.75H6C5.31 4.75 4.75 5.31 4.75 6V8.5C4.75 9.19 5.31 9.75 6 9.75H18C18.69 9.75 19.25 9.19 19.25 8.5Z" fill="currentColor"/></svg><span style="flex: 1; padding-left: 4px">Header</span></button>
+<button style="display: flex; align-items: center; gap: 4px; width: 100%; height: 36px; padding: 0 16px 0 8px; border: 0; background: #3858e9; color: #eff0f2; font-weight: 600; text-align: left"><span style="width: 24px"></span><svg aria-hidden="true" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10.75 20V4.75L14.75 4.75M14.75 20V4.75M14.75 4.75H18.5"/><path d="M5.75 9C5.75 11.35 7.65 13.25 10 13.25H10.75V4.75H10C7.65 4.75 5.75 6.65 5.75 9Z" fill="currentColor"/></svg><span style="flex: 1; padding-left: 4px">Paragraph</span></button>
+<button style="display: flex; align-items: center; gap: 4px; width: 100%; height: 36px; padding: 0 16px 0 8px; border: 0; background: none; text-align: left"><span style="width: 24px"></span><svg aria-hidden="true" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4.75 9.75V18C4.75 18.69 5.31 19.25 6 19.25H18C18.69 19.25 19.25 18.69 19.25 18V9.75"/><path d="M19.25 8.5V6C19.25 5.31 18.69 4.75 18 4.75H6C5.31 4.75 4.75 5.31 4.75 6V8.5C4.75 9.19 5.31 9.75 6 9.75H18C18.69 9.75 19.25 9.19 19.25 8.5Z" fill="currentColor"/></svg><span style="flex: 1; padding-left: 4px">Footer</span></button>
+</div>
+</nav>
+
+<main style="flex: 999 1 560px; min-width: 0; min-height: 560px; position: relative; overflow: hidden; background: #f4f4f4">
+<div style="position: absolute; left: 70px; top: 32px; display: flex; align-items: center; gap: 8px; height: 24px; font-size: 11px; line-height: 16px; white-space: nowrap"><span style="font-weight: 600; color: #2337c8">Archive · Template</span><button style="display: flex; align-items: center; height: 24px; padding: 0 2px 0 8px; border: 1px solid #aebbda; border-radius: 2px; background: #ecf0fa; color: #2337c8; font-size: 12px; font-weight: 600">Desktop<svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M7 11L12 15L17 11"/></svg></button></div>
+<div style="position: absolute; left: 70px; top: 64px; width: 720px; height: 560px; box-sizing: border-box; background: #f6f1e7; color: #24211c; outline: 2px solid #3858e9; display: flex; flex-direction: column">
+<div style="display: flex; align-items: center; justify-content: space-between; height: 76px; box-sizing: border-box; padding: 0 32px; border-bottom: 1px solid #24211c"><span style="font-size: 16px; font-weight: 600">The Slow Margin</span><div style="display: flex; gap: 24px; padding: 8px 10px; font-size: 13px"><span>Essays</span><span>About</span><span>Members</span></div></div>
+<div style="flex: 1; padding: 48px 32px"><div style="display: flex; align-items: center; height: 40px; font-size: 16px; color: #6b6557">Type / to choose a block<span style="flex: 1"></span><span style="display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; background: #1e1e1e; color: #fff; border-radius: 2px"><svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 18V6M18 12H6"/></svg></span></div></div>
+<div style="padding: 20px 32px; background: #24211c; color: #f6f1e7; font-size: 13px">The Slow Margin · Subscribe</div>
+</div>
+<div style="position: absolute; left: 830px; top: 32px; display: flex; align-items: center; gap: 8px; height: 24px; font-size: 11px; line-height: 16px; white-space: nowrap"><span style="color: #707070">Front page · Template</span><span style="font-size: 11px; color: #707070">· Desktop</span></div>
+<div style="position: absolute; left: 830px; top: 64px; width: 195px; height: 60px; box-sizing: border-box; background: #f6f1e7; color: #24211c; border: 1px solid #dbdbdb; display: flex; align-items: center; padding: 0 12px; font-size: 12px; font-weight: 600">The Slow Margin</div>
+<div role="group" aria-label="Zoom" style="position: absolute; left: 16px; bottom: 16px; display: flex; align-items: center; background: #fff; border: 1px solid #dbdbdb; border-radius: 4px">
+<button aria-label="Zoom out" style="width: 40px; height: 40px; border: 0; background: none; font-size: 15px">−</button>
+<span style="min-width: 44px; text-align: center">50%</span>
+<button aria-label="Zoom in" style="width: 40px; height: 40px; border: 0; background: none; font-size: 15px">+</button>
+<button style="height: 40px; padding: 0 12px; border: 0; border-left: 1px solid #dbdbdb; background: none">Fit all</button>
+</div>
+</main>
+
+<aside aria-label="Settings" style="flex: 0 0 300px; box-sizing: border-box; background: #fff; border-left: 1px solid #dbdbdb">
+<div role="tablist" style="display: flex; gap: 16px; padding: 0 16px; border-bottom: 1px solid #dbdbdb"><button role="tab" aria-selected="true" style="height: 48px; padding: 0; border: 0; border-bottom: 2px solid #3858e9; background: none; font-weight: 600">Template</button><button role="tab" aria-selected="false" style="height: 48px; padding: 0; border: 0; border-bottom: 2px solid transparent; background: none; color: #707070">Block</button></div>
+<div style="display: flex; align-items: flex-start; gap: 12px; padding: 16px; border-bottom: 1px solid #dbdbdb"><svg aria-hidden="true" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9.75 19.25H18C18.69 19.25 19.25 18.69 19.25 18V9.75M9.75 19.25H6C5.31 19.25 4.75 18.69 4.75 18V9.75M9.75 19.25V9.75M19.25 9.75V6C19.25 5.31 18.69 4.75 18 4.75H6C5.31 4.75 4.75 5.31 4.75 6V9.75M19.25 9.75H9.75M9.75 9.75H4.75"/></svg><div><div style="font-weight: 600">Archive</div><div style="color: #707070">Template. Shows lists of posts by category, tag or date.</div></div></div>
+<div style="padding: 16px; border-bottom: 1px solid #dbdbdb; display: flex; flex-direction: column; gap: 8px">
+<div style="font-size: 11px; line-height: 16px; font-weight: 600; text-transform: uppercase; color: #707070">Artboard device</div>
+<div role="radiogroup" aria-label="Artboard device" style="display: flex; padding: 2px; border: 1px solid #8d8d8d; border-radius: 2px">
+<button role="radio" aria-checked="true" style="flex: 1; height: 34px; border: 0; border-radius: 1px; background: #1e1e1e; color: #f0f0f0; font-weight: 600">Desktop</button>
+<button role="radio" aria-checked="false" style="flex: 1; height: 34px; border: 0; background: none">Tablet</button>
+<button role="radio" aria-checked="false" style="flex: 1; height: 34px; border: 0; background: none">Mobile</button>
+</div>
+<div style="font-size: 12px; line-height: 16px; color: #707070">The same three previews the editor has. Add the template again to see two devices side by side.</div>
+</div>
+<div style="margin: 16px; padding: 12px; border: 1px solid #d0c28b; border-radius: 8px; background: #fff9ca; color: #281d00">Templates have no draft. Saving this one puts it live on every archive of the site.</div>
+</aside>
+
+</div>
+</div>
+</body></html>

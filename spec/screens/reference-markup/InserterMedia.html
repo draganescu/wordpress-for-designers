@@ -1,0 +1,98 @@
+<!doctype html><html><head><meta charset="utf-8">
+<style>
+body{margin:0}
+button{font:inherit;color:inherit;cursor:pointer}
+a{color:#3858e9}a:hover{color:#0b0070}
+</style>
+</head><body>
+
+<div style="min-height: 900px; display: flex; flex-direction: column; background: #fcfcfc; color: #1e1e1e; font-family: -apple-system, system-ui, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif; font-size: 13px; line-height: 20px">
+
+<header style="position: relative; display: flex; flex-wrap: wrap; align-items: center; min-height: 60px; padding-right: 16px; background: #fff; border-bottom: 1px solid #dbdbdb">
+<a href="Boards.dc.html" aria-label="All boards" style="display: flex; align-items: center; justify-content: center; width: 60px; height: 60px; background: #1e1e1e; color: #fff; font-weight: 600; font-size: 20px; text-decoration: none">W</a>
+<a href="Overview.dc.html" aria-label="Close block inserter" style="width: 32px; height: 32px; margin: 0 4px 0 12px; border-radius: 2px; background: #1e1e1e; color: #fff; display: flex; align-items: center; justify-content: center"><svg aria-hidden="true" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M7.75 16.25L16.25 7.75M16.25 16.25L7.75 7.75"/></svg></a>
+<button aria-label="Undo" style="width: 36px; height: 36px; padding: 0; border: 0; background: none; display: flex; align-items: center; justify-content: center"><svg aria-hidden="true" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8.25 15L4.75 11L8.25 7M4.75 11H15.25C18.25 11 18.5 13.8 18.5 17"/></svg></button><button aria-label="Redo" style="width: 36px; height: 36px; padding: 0; border: 0; background: none; display: flex; align-items: center; justify-content: center; color: #8d8d8d"><svg aria-hidden="true" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M15 15L18.5 11L15 7M18.5 11H8C5 11 4.75 13.8 4.75 17"/></svg></button><button aria-label="List view" aria-pressed="false" style="width: 36px; height: 36px; padding: 0; border: 0; background: none; display: flex; align-items: center; justify-content: center"><svg aria-hidden="true" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 17.5H21M6.5 12H17.5M3 6.5H14"/></svg></button>
+<div role="toolbar" aria-label="Block tools" style="display: flex; align-items: center; margin-left: 8px; padding-left: 8px; border-left: 1px solid #dbdbdb"><button aria-label="Navigation block" style="width: 36px; height: 36px; padding: 0; border: 0; background: none; display: flex; align-items: center; justify-content: center"><svg aria-hidden="true" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 16L13.5 12.84L15 8L10.5 11.16L9 16Z" fill="currentColor" stroke="none"/><path d="M4.75 12C4.75 8 8 4.75 12 4.75C16 4.75 19.25 8 19.25 12C19.25 16 16 19.25 12 19.25C8 19.25 4.75 16 4.75 12Z"/></svg></button><div style="width: 1px; height: 24px; margin: 0 4px; background: #dbdbdb"></div><button aria-label="Align" style="width: 36px; height: 36px; padding: 0; border: 0; background: none; display: flex; align-items: center; justify-content: center"><svg aria-hidden="true" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 5H13M4 12H20M4 19H13"/></svg></button><button aria-label="Bold" style="width: 36px; height: 36px; padding: 0; border: 0; background: none; display: flex; align-items: center; justify-content: center"><svg aria-hidden="true" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M7.75 11.5V18H13.25C15.04 18 16.5 16.54 16.5 14.75C16.5 12.96 15.04 11.5 13.25 11.5H13M7.75 11.5V6H12.74C14.27 6 15.5 7.23 15.5 8.76C15.5 10.17 14.41 11.36 13 11.5M7.75 11.5H13"/></svg></button><button aria-label="Link" style="width: 36px; height: 36px; padding: 0; border: 0; background: none; display: flex; align-items: center; justify-content: center"><svg aria-hidden="true" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9.5 12H14.5M10 7.75H8.25C5.9 7.75 4 9.65 4 12C4 14.35 5.9 16.25 8.25 16.25H10M14 16.25H15.75C18.1 16.25 20 14.35 20 12C20 9.65 18.1 7.75 15.75 7.75H14"/></svg></button></div>
+<div style="flex: 1 1 16px"></div>
+<div style="display: flex; align-items: center; gap: 8px; min-width: 300px; height: 36px; box-sizing: border-box; padding: 0 8px; border-radius: 4px; background: #f4f4f4"><a href="Overview.dc.html" aria-label="Back to the board" style="display: flex; color: #1e1e1e"><svg aria-hidden="true" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 12L5 12M10 7L5 12L10 17"/></svg></a><span style="flex: 1; text-align: center">Header · Template part</span><span style="font-size: 12px; color: #707070">⌘K</span></div>
+<div style="flex: 1 1 16px"></div>
+<div style="display: flex; align-items: center; gap: 8px">
+<button aria-label="Zoom" style="display: flex; align-items: center; height: 36px; padding: 0 2px 0 8px; border: 0; background: none">50%<svg aria-hidden="true" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M7 11L12 15L17 11"/></svg></button>
+<a href="Review.dc.html" style="display: flex; align-items: center; height: 36px; padding: 0 12px; border-radius: 2px; background: #3858e9; color: #eff0f2; font-weight: 600; text-decoration: none">Review 3 changes</a>
+</div>
+</header>
+
+<div style="flex: 1; display: flex; flex-wrap: wrap; min-height: 0">
+
+<nav aria-label="Block inserter" style="flex: 0 0 280px; box-sizing: border-box; position: relative; z-index: 2; background: #fff; border-right: 1px solid #dbdbdb; padding: 8px 0; display: flex; flex-direction: column">
+<div style="padding: 8px 16px"><label style="display: flex; align-items: center; gap: 4px; height: 40px; padding: 0 8px; border: 1px solid #8d8d8d; border-radius: 2px"><svg aria-hidden="true" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 19L9.29 14.71M18.25 11C18.25 13.9 15.9 16.25 13 16.25C10.1 16.25 7.75 13.9 7.75 11C7.75 8.1 10.1 5.75 13 5.75C15.9 5.75 18.25 8.1 18.25 11Z"/></svg><span style="position: absolute; width: 1px; height: 1px; overflow: hidden">Search</span><input type="search" placeholder="Search" style="flex: 1; min-width: 0; height: 36px; border: 0; outline: 0; background: none; font: inherit"></label></div>
+<div role="tablist" style="display: flex; gap: 16px; padding: 0 16px; border-bottom: 1px solid #dbdbdb"><button role="tab" aria-selected="false" style="height: 40px; padding: 0; border: 0; border-bottom: 2px solid transparent; background: none; color: #707070">Blocks</button><button role="tab" aria-selected="false" style="height: 40px; padding: 0; border: 0; border-bottom: 2px solid transparent; background: none; color: #707070">Patterns</button><button role="tab" aria-selected="false" style="height: 40px; padding: 0; border: 0; border-bottom: 2px solid transparent; background: none; color: #707070">Templates</button><button role="tab" aria-selected="true" style="height: 40px; padding: 0; border: 0; border-bottom: 2px solid #3858e9; background: none; font-weight: 600">Media</button></div>
+<div style="padding: 16px 16px 4px; display: flex; justify-content: space-between; font-size: 11px; line-height: 16px; font-weight: 600; text-transform: uppercase; color: #707070"><span>Images</span><span>5</span></div>
+<button style="display: flex; align-items: center; gap: 8px; width: 100%; min-height: 44px; padding: 2px 16px; border: 0; background: none; text-align: left"><svg aria-hidden="true" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M19.25 14.25L16 11L12 15L8.6 12.7L4.75 15.5M19.25 14.25V6C19.25 5.31 18.69 4.75 18 4.75H6C5.31 4.75 4.75 5.31 4.75 6V18C4.75 18.69 5.31 19.25 6 19.25H18C18.69 19.25 19.25 18.69 19.25 18V14.25Z"/></svg><span style="flex: 1">long-walk-home.jpg<br><span style="font-size: 12px; line-height: 16px; color: #707070">2400 × 1600</span></span></button>
+<button style="display: flex; align-items: center; gap: 8px; width: 100%; min-height: 44px; padding: 2px 16px; border: 0; background: none; text-align: left"><svg aria-hidden="true" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M19.25 14.25L16 11L12 15L8.6 12.7L4.75 15.5M19.25 14.25V6C19.25 5.31 18.69 4.75 18 4.75H6C5.31 4.75 4.75 5.31 4.75 6V18C4.75 18.69 5.31 19.25 6 19.25H18C18.69 19.25 19.25 18.69 19.25 18V14.25Z"/></svg><span style="flex: 1">desk-morning.jpg<br><span style="font-size: 12px; line-height: 16px; color: #707070">2000 × 1333</span></span></button>
+<button style="display: flex; align-items: center; gap: 8px; width: 100%; min-height: 44px; padding: 2px 16px; border: 0; background: none; text-align: left"><svg aria-hidden="true" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M19.25 14.25L16 11L12 15L8.6 12.7L4.75 15.5M19.25 14.25V6C19.25 5.31 18.69 4.75 18 4.75H6C5.31 4.75 4.75 5.31 4.75 6V18C4.75 18.69 5.31 19.25 6 19.25H18C18.69 19.25 19.25 18.69 19.25 18V14.25Z"/></svg><span style="flex: 1">ana-portrait.jpg<br><span style="font-size: 12px; line-height: 16px; color: #707070">1200 × 1500</span></span></button>
+<button style="display: flex; align-items: center; gap: 8px; width: 100%; min-height: 44px; padding: 2px 16px; border: 0; background: none; text-align: left"><svg aria-hidden="true" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M19.25 14.25L16 11L12 15L8.6 12.7L4.75 15.5M19.25 14.25V6C19.25 5.31 18.69 4.75 18 4.75H6C5.31 4.75 4.75 5.31 4.75 6V18C4.75 18.69 5.31 19.25 6 19.25H18C18.69 19.25 19.25 18.69 19.25 18V14.25Z"/></svg><span style="flex: 1">sunday-letter.jpg<br><span style="font-size: 12px; line-height: 16px; color: #707070">2400 × 1600</span></span></button>
+<button style="display: flex; align-items: center; gap: 8px; width: 100%; min-height: 44px; padding: 2px 16px; border: 0; background: none; text-align: left"><svg aria-hidden="true" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M19.25 14.25L16 11L12 15L8.6 12.7L4.75 15.5M19.25 14.25V6C19.25 5.31 18.69 4.75 18 4.75H6C5.31 4.75 4.75 5.31 4.75 6V18C4.75 18.69 5.31 19.25 6 19.25H18C18.69 19.25 19.25 18.69 19.25 18V14.25Z"/></svg><span style="flex: 1">margin-notes.png<br><span style="font-size: 12px; line-height: 16px; color: #707070">1600 × 900</span></span></button>
+<div style="padding: 8px 16px"><button style="height: 36px; padding: 0 12px; border: 1px solid #3858e9; border-radius: 2px; background: none; color: #3858e9; font-weight: 600">Upload</button></div><div style="margin-top: auto; padding: 12px 16px; border-top: 1px solid #dbdbdb; background: #f4f4f4">Click to insert as an Image block in Header.</div>
+</nav>
+
+<main style="flex: 999 1 560px; min-width: 0; min-height: 560px; position: relative; overflow: hidden; background: #f4f4f4">
+<div style="position: absolute; left: 70px; top: 32px; display: flex; align-items: center; gap: 8px; height: 24px; font-size: 11px; line-height: 16px; white-space: nowrap"><span style="font-weight: 600; color: #2337c8">Header · Template part</span><button style="display: flex; align-items: center; height: 24px; padding: 0 2px 0 8px; border: 1px solid #aebbda; border-radius: 2px; background: #ecf0fa; color: #2337c8; font-size: 12px; font-weight: 600">Desktop<svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M7 11L12 15L17 11"/></svg></button></div>
+<div style="position: absolute; left: 70px; top: 64px; width: 720px; box-sizing: border-box; background: #f6f1e7; color: #24211c; outline: 2px solid #3858e9"><div style="display: flex; align-items: center; justify-content: space-between; height: 76px; box-sizing: border-box; padding: 0 32px; "><span style="font-size: 16px; font-weight: 600">The Slow Margin</span><div style="display: flex; gap: 24px; padding: 8px 10px; outline: 1.5px solid #3858e9; font-size: 13px"><span>Essays</span><span>About</span><span>Members</span></div></div></div>
+<div style="position: absolute; left: 70px; top: 176px; display: flex; align-items: center; gap: 8px; height: 24px; font-size: 11px; line-height: 16px; white-space: nowrap"><span style="color: #707070">Front page · Template</span><span style="font-size: 11px; color: #707070">· Desktop</span></div>
+<div style="position: absolute; left: 70px; top: 208px; width: 720px; height: 720px; box-sizing: border-box; background: #f6f1e7; color: #24211c; border: 1px solid #dbdbdb">
+<div style="display: flex; align-items: center; justify-content: space-between; height: 76px; box-sizing: border-box; padding: 0 32px; border-bottom: 1px solid #24211c"><span style="font-size: 16px; font-weight: 600">The Slow Margin</span><div style="display: flex; gap: 24px; padding: 8px 10px; font-size: 13px"><span>Essays</span><span>About</span><span>Members</span></div></div>
+<div style="padding: 48px 32px 24px; font-family: Georgia, serif; font-size: 44px; line-height: 48px">Notes on working slowly, sent on Sundays.</div>
+<div style="margin: 0 32px; height: 260px; background: #b4432b"></div>
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; padding: 32px"><div style="height: 120px; background: #e3dccd"></div><div style="height: 120px; background: #e3dccd"></div><div style="height: 120px; background: #e3dccd"></div></div>
+</div>
+<div style="position: absolute; left: 830px; top: 32px; display: flex; align-items: center; gap: 8px; height: 24px; font-size: 11px; line-height: 16px; white-space: nowrap"><span style="color: #707070">Header · Template part</span><span style="font-size: 11px; color: #707070">· Mobile</span></div>
+<div style="position: absolute; left: 830px; top: 64px; width: 195px; height: 60px; box-sizing: border-box; background: #f6f1e7; color: #24211c; border: 1px solid #dbdbdb; display: flex; align-items: center; padding: 0 12px; font-size: 12px; font-weight: 600">The Slow Margin</div>
+<div role="group" aria-label="Zoom" style="position: absolute; left: 16px; bottom: 16px; display: flex; align-items: center; background: #fff; border: 1px solid #dbdbdb; border-radius: 4px">
+<button aria-label="Zoom out" style="width: 40px; height: 40px; border: 0; background: none; font-size: 15px">−</button>
+<span style="min-width: 44px; text-align: center">50%</span>
+<button aria-label="Zoom in" style="width: 40px; height: 40px; border: 0; background: none; font-size: 15px">+</button>
+<button style="height: 40px; padding: 0 12px; border: 0; border-left: 1px solid #dbdbdb; background: none">Fit all</button>
+</div>
+</main>
+
+<aside aria-label="Block settings" style="flex: 0 0 300px; box-sizing: border-box; background: #fff; border-left: 1px solid #dbdbdb">
+<div role="tablist" style="display: flex; gap: 16px; padding: 0 16px; border-bottom: 1px solid #dbdbdb"><button role="tab" aria-selected="false" style="height: 48px; padding: 0; border: 0; border-bottom: 2px solid transparent; background: none; color: #707070">Template part</button><button role="tab" aria-selected="true" style="height: 48px; padding: 0; border: 0; border-bottom: 2px solid #3858e9; background: none; font-weight: 600">Block</button></div>
+
+<div style="display: flex; align-items: flex-start; gap: 12px; padding: 16px; border-bottom: 1px solid #dbdbdb">
+<svg aria-hidden="true" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 16L13.5 12.84L15 8L10.5 11.16L9 16Z" fill="currentColor" stroke="none"/><path d="M4.75 12C4.75 8 8 4.75 12 4.75C16 4.75 19.25 8 19.25 12C19.25 16 16 19.25 12 19.25C8 19.25 4.75 16 4.75 12Z"/></svg>
+<div><div style="font-weight: 600">Navigation</div><div style="color: #707070">Header › Row › Navigation</div></div>
+</div>
+<div style="padding: 16px; border-bottom: 1px solid #dbdbdb; display: flex; flex-direction: column; gap: 8px">
+<div style="font-size: 11px; line-height: 16px; font-weight: 600; text-transform: uppercase; color: #707070">Style applies to</div>
+<div role="radiogroup" aria-label="Style scope" style="display: flex; padding: 2px; border: 1px solid #8d8d8d; border-radius: 2px">
+<button role="radio" aria-checked="true" style="flex: 1; height: 34px; border: 0; border-radius: 1px; background: #1e1e1e; color: #f0f0f0; font-weight: 600">This block</button>
+<button role="radio" aria-checked="false" style="flex: 1; height: 34px; border: 0; border-radius: 1px; background: none">All Navigation</button>
+</div>
+<div style="font-size: 12px; line-height: 16px; color: #707070">Switch to change every Navigation block on the site.</div>
+</div>
+<div style="padding: 16px; border-bottom: 1px solid #dbdbdb; display: flex; flex-direction: column; gap: 8px">
+<div style="font-weight: 600">Color</div>
+<button style="display: flex; align-items: center; gap: 12px; height: 40px; padding: 0 12px; border: 1px solid #dbdbdb; border-radius: 2px; background: #fff; text-align: left"><span style="width: 20px; height: 20px; border-radius: 50%; background: #24211c"></span><span style="flex: 1">Text</span><span style="color: #707070">Ink</span></button>
+<button style="display: flex; align-items: center; gap: 12px; height: 40px; padding: 0 12px; border: 1px solid #dbdbdb; border-radius: 2px; background: #fff; text-align: left"><span style="width: 20px; height: 20px; border-radius: 50%; background: #b4432b"></span><span style="flex: 1">Link hover</span><span style="color: #707070">Brick</span></button>
+</div>
+<div style="padding: 16px; border-bottom: 1px solid #dbdbdb; display: flex; flex-direction: column; gap: 8px">
+<div style="font-weight: 600">Typography</div>
+<div style="font-size: 11px; line-height: 16px; font-weight: 600; text-transform: uppercase; color: #707070">Size</div>
+<div role="radiogroup" aria-label="Font size" style="display: flex; padding: 2px; border: 1px solid #8d8d8d; border-radius: 2px">
+<button role="radio" aria-checked="false" style="flex: 1; height: 34px; border: 0; background: none">S</button>
+<button role="radio" aria-checked="true" style="flex: 1; height: 34px; border: 0; border-radius: 1px; background: #1e1e1e; color: #f0f0f0; font-weight: 600">M</button>
+<button role="radio" aria-checked="false" style="flex: 1; height: 34px; border: 0; background: none">L</button>
+<button role="radio" aria-checked="false" style="flex: 1; height: 34px; border: 0; background: none">XL</button>
+</div>
+</div>
+<div style="padding: 16px; display: flex; flex-direction: column; gap: 8px">
+<div style="font-weight: 600">Dimensions</div>
+<div style="display: flex; justify-content: space-between"><span style="font-size: 11px; line-height: 16px; font-weight: 600; text-transform: uppercase; color: #707070">Block spacing</span><span style="color: #707070">20px</span></div>
+<div style="position: relative; height: 20px"><div style="position: absolute; left: 0; right: 0; top: 8px; height: 4px; border-radius: 2px; background: #dbdbdb"></div><div style="position: absolute; left: 0; width: 42%; top: 8px; height: 4px; border-radius: 2px; background: #3858e9"></div><div style="position: absolute; left: 42%; top: 2px; width: 16px; height: 16px; margin-left: -8px; border-radius: 50%; background: #3858e9"></div></div>
+</div>
+</aside>
+
+</div>
+</div>
+</body></html>

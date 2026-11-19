@@ -1,0 +1,71 @@
+<!doctype html><html><head><meta charset="utf-8">
+<style>
+body{margin:0}
+button{font:inherit;color:inherit;cursor:pointer}
+a{color:#3858e9}a:hover{color:#0b0070}
+</style>
+</head><body>
+
+<div style="min-height: 900px; display: flex; flex-direction: column; background: #fcfcfc; color: #1e1e1e; font-family: -apple-system, system-ui, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif; font-size: 13px; line-height: 20px">
+
+<header style="position: relative; display: flex; flex-wrap: wrap; align-items: center; min-height: 60px; padding-right: 16px; background: #fff; border-bottom: 1px solid #dbdbdb">
+<a href="Boards.dc.html" aria-label="All boards" style="display: flex; align-items: center; justify-content: center; width: 60px; height: 60px; background: #1e1e1e; color: #fff; font-weight: 600; font-size: 20px; text-decoration: none">W</a>
+<a href="Library.dc.html" aria-label="Block inserter" style="width: 32px; height: 32px; margin: 0 4px 0 12px; border-radius: 2px; background: #3858e9; color: #fff; display: flex; align-items: center; justify-content: center"><svg aria-hidden="true" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 18V6M18 12H6"/></svg></a>
+<button aria-label="Undo" style="width: 36px; height: 36px; padding: 0; border: 0; background: none; display: flex; align-items: center; justify-content: center"><svg aria-hidden="true" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8.25 15L4.75 11L8.25 7M4.75 11H15.25C18.25 11 18.5 13.8 18.5 17"/></svg></button><button aria-label="Redo" style="width: 36px; height: 36px; padding: 0; border: 0; background: none; display: flex; align-items: center; justify-content: center; color: #8d8d8d"><svg aria-hidden="true" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M15 15L18.5 11L15 7M18.5 11H8C5 11 4.75 13.8 4.75 17"/></svg></button><button aria-label="List view" aria-pressed="false" style="width: 36px; height: 36px; padding: 0; border: 0; background: none; display: flex; align-items: center; justify-content: center"><svg aria-hidden="true" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M10 17.5H21M6.5 12H17.5M3 6.5H14"/></svg></button>
+
+<div style="flex: 1 1 16px"></div>
+<div style="display: flex; align-items: center; gap: 8px; min-width: 300px; height: 36px; box-sizing: border-box; padding: 0 8px; border-radius: 4px; background: #f4f4f4"><span style="flex: 1; text-align: center">New board</span><span style="font-size: 12px; color: #707070">⌘K</span></div>
+<div style="flex: 1 1 16px"></div>
+<div style="display: flex; align-items: center; gap: 8px">
+<button aria-label="Zoom" style="display: flex; align-items: center; height: 36px; padding: 0 2px 0 8px; border: 0; background: none">17%<svg aria-hidden="true" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M7 11L12 15L17 11"/></svg></button>
+<a href="Review.dc.html" style="display: flex; align-items: center; height: 36px; padding: 0 12px; border-radius: 2px; background: #e6e6e6; color: #707070; font-weight: 600; text-decoration: none">Review changes</a>
+</div>
+</header>
+
+<div style="flex: 1; display: flex; flex-wrap: wrap; min-height: 0">
+
+<nav aria-label="Board outline" style="flex: 0 0 280px; box-sizing: border-box; position: relative; z-index: 2; background: #fff; border-right: 1px solid #dbdbdb; padding: 8px 0">
+<div style="display: flex; align-items: center; padding: 4px 8px 4px 16px"><span style="flex: 1; font-weight: 600">Artboards</span><a href="AddArtboard.dc.html" aria-label="Add artboard" style="display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; color: #1e1e1e"><svg aria-hidden="true" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 18V6M18 12H6"/></svg></a></div>
+<div style="padding: 8px 16px; color: #707070">No artboards yet.</div>
+</nav>
+
+<main style="flex: 999 1 560px; min-width: 0; min-height: 560px; position: relative; display: flex; align-items: center; justify-content: center; overflow: hidden; background: #f4f4f4">
+<div style="display: flex; flex-direction: column; align-items: center; gap: 8px; max-width: 360px; text-align: center"><div style="font-size: 15px; line-height: 20px; font-weight: 600">This board has no artboards</div><div style="color: #707070">Add a page, template, template part or pattern to start designing.</div><div style="margin-top: 8px"><a href="AddArtboard.dc.html" style="display: inline-flex; align-items: center; height: 40px; padding: 0 12px; border-radius: 2px; background: #3858e9; color: #eff0f2; font-weight: 600; text-decoration: none">Add artboard</a></div></div>
+</main>
+
+<aside aria-label="Styles" style="flex: 0 0 360px; box-sizing: border-box; background: #fff; border-left: 1px solid #dbdbdb">
+<div style="display: flex; align-items: center; gap: 8px; padding: 12px 16px">
+<div style="flex: 1; font-size: 15px; font-weight: 600">Styles</div>
+<button style="display: flex; align-items: center; gap: 4px; height: 32px; padding: 0 4px 0 12px; border: 1px solid #8d8d8d; border-radius: 2px; background: #fff">Variation: Paper<svg aria-hidden="true" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M7 11L12 15L17 11"/></svg></button>
+</div>
+<div role="tablist" style="display: flex; gap: 16px; padding: 0 16px; border-bottom: 1px solid #dbdbdb">
+<button role="tab" aria-selected="true" style="height: 40px; padding: 0; border: 0; border-bottom: 2px solid #3858e9; background: none; font-weight: 600">Tokens</button>
+<button role="tab" aria-selected="false" style="height: 40px; padding: 0; border: 0; border-bottom: 2px solid transparent; background: none; color: #707070">Blocks</button>
+<button role="tab" aria-selected="false" style="height: 40px; padding: 0; border: 0; border-bottom: 2px solid transparent; background: none; color: #707070">History</button>
+</div>
+
+<div style="padding: 16px 16px 4px; display: flex; justify-content: space-between; font-size: 11px; line-height: 16px; font-weight: 600; text-transform: uppercase; color: #707070"><span>Colors</span><span>Uses</span></div>
+<button style="display: flex; align-items: center; gap: 12px; width: 100%; height: 40px; padding: 0 16px; border: 0; background: none; text-align: left"><span style="width: 20px; height: 20px; border-radius: 50%; background: #f6f1e7; border: 1px solid #8d8d8d; box-sizing: border-box"></span><span style="flex: 1">Paper</span><span style="font-family: Menlo, Consolas, monospace; font-size: 12px; color: #707070">#f6f1e7</span><span style="width: 28px; text-align: right">11</span></button>
+<button style="display: flex; align-items: center; gap: 12px; width: 100%; height: 40px; padding: 0 16px; border: 0; background: none; text-align: left"><span style="width: 20px; height: 20px; border-radius: 50%; background: #24211c"></span><span style="flex: 1">Ink</span><span style="font-family: Menlo, Consolas, monospace; font-size: 12px; color: #707070">#24211c</span><span style="width: 28px; text-align: right">23</span></button>
+<button style="display: flex; align-items: center; gap: 12px; width: 100%; height: 40px; padding: 0 16px; border: 0; background: none; text-align: left"><span style="width: 20px; height: 20px; border-radius: 50%; background: #b4432b"></span><span style="flex: 1">Brick</span><span style="font-family: Menlo, Consolas, monospace; font-size: 12px; color: #707070">#b4432b</span><span style="width: 28px; text-align: right">3</span></button>
+<button style="display: flex; align-items: center; gap: 12px; width: 100%; height: 40px; padding: 0 16px; border: 0; background: none; text-align: left"><span style="width: 20px; height: 20px; border-radius: 50%; background: #e3dccd"></span><span style="flex: 1">Sand</span><span style="font-family: Menlo, Consolas, monospace; font-size: 12px; color: #707070">#e3dccd</span><span style="width: 28px; text-align: right">9</span></button>
+<div style="padding: 4px 16px 12px"><button style="height: 32px; padding: 0 8px; border: 0; background: none; color: #3858e9; font-weight: 600">Add color</button></div>
+
+<div style="padding: 12px 16px 4px; border-top: 1px solid #dbdbdb; display: flex; justify-content: space-between; font-size: 11px; line-height: 16px; font-weight: 600; text-transform: uppercase; color: #707070"><span>Typography</span><span>Uses</span></div>
+<button style="display: flex; align-items: center; gap: 12px; width: 100%; height: 48px; padding: 0 16px; border: 0; background: none; text-align: left"><span style="width: 44px; font-family: Georgia, serif; font-size: 24px">Aa</span><span style="flex: 1">Display<br><span style="font-size: 12px; color: #707070">Georgia · 48 / 52</span></span><span style="width: 28px; text-align: right">7</span></button>
+<button style="display: flex; align-items: center; gap: 12px; width: 100%; height: 48px; padding: 0 16px; border: 0; background: none; text-align: left"><span style="width: 44px; font-family: Georgia, serif; font-size: 18px">Aa</span><span style="flex: 1">Heading<br><span style="font-size: 12px; color: #707070">Georgia · 28 / 34</span></span><span style="width: 28px; text-align: right">12</span></button>
+<button style="display: flex; align-items: center; gap: 12px; width: 100%; height: 48px; padding: 0 16px; border: 0; background: none; text-align: left"><span style="width: 44px; font-size: 15px">Aa</span><span style="flex: 1">Body<br><span style="font-size: 12px; color: #707070">System · 18 / 28</span></span><span style="width: 28px; text-align: right">31</span></button>
+
+<div style="padding: 12px 16px 8px; border-top: 1px solid #dbdbdb; font-size: 11px; line-height: 16px; font-weight: 600; text-transform: uppercase; color: #707070">Spacing</div>
+<div style="display: flex; align-items: flex-end; gap: 12px; padding: 0 16px 16px">
+<div style="text-align: center; font-size: 12px; color: #707070"><div style="width: 8px; height: 8px; margin: 0 auto 4px; background: #1e1e1e"></div>8</div>
+<div style="text-align: center; font-size: 12px; color: #707070"><div style="width: 16px; height: 16px; margin: 0 auto 4px; background: #1e1e1e"></div>16</div>
+<div style="text-align: center; font-size: 12px; color: #707070"><div style="width: 24px; height: 24px; margin: 0 auto 4px; background: #1e1e1e"></div>24</div>
+<div style="text-align: center; font-size: 12px; color: #707070"><div style="width: 40px; height: 40px; margin: 0 auto 4px; background: #1e1e1e"></div>40</div>
+<div style="text-align: center; font-size: 12px; color: #707070"><div style="width: 64px; height: 64px; margin: 0 auto 4px; background: #1e1e1e"></div>64</div>
+</div>
+</aside>
+
+</div>
+</div>
+</body></html>

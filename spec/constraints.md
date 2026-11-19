@@ -1,0 +1,31 @@
+# Constraints
+
+Constraints override every other file. Each has a reason, so the rule is not relaxed when it becomes inconvenient, and a check.
+
+| ID | Constraint | Reason | Check | Source |
+|---|---|---|---|---|
+| C1 | Use WordPress public APIs. Import only what `api-allowlist.md` names. | The plugin must survive WordPress updates and prove the public surface is enough. | ESLint `no-restricted-imports` generated from the allowlist. | `[U]` |
+| C2 | No private API (`privateApis`, `unlock`, lock/unlock packages) anywhere except `src/adapter/private.js`. That file starts empty; adding to it requires an entry in `open-questions.md` first. | One place to change when an API moves or becomes public. | ESLint rule forbidding `unlock(` and `privateApis` outside that file. | `[B8]` `[U]` |
+| C3 | `__experimental*` and `__unstable*` exports are used only through `src/adapter/experimental.js`, and only the ones `api-allowlist.md` marks experimental. | Same reason as C2; these can change without notice. | ESLint rule forbidding identifiers with those prefixes outside that file. | `[N]` |
+| C4 | Build the UI from the WordPress Design System: `@wordpress/ui` first, `@wordpress/components` where `@wordpress/ui` has no equivalent, `@wordpress/icons` for every icon, `--wpds-*` tokens for every colour, space, radius, size and type value. No hand-built controls. | "We do not invent UI. We use the WordPress design system and public components." | Stylelint: no raw colour, px spacing or radius values in plugin CSS; component maps in `screens/`. | `[U]` |
+| C5 | The artboard editor is a custom composition named `artboard-editor`. Do not mount, wrap or restyle the post editor or the site editor. | Stated requirement. WordPress for Writers does the same from public parts. | Allowlist excludes `@wordpress/edit-post`, `@wordpress/edit-site` and the `Editor` component of `@wordpress/lazy-editor`. | `[U]` `[V]` |
+| C6 | Inside an artboard's frame, behaviour is the stock block editor's and nothing else. No plugin UI, prompts, starters or overlays inside the editing canvas. | "This should work like any editor, not a custom thing." | Review against `screens/`; AC-EDIT group. | `[U]` |
+| C7 | The shell keeps the editor's familiar arrangement: header with inserter toggle, undo, redo, list view toggle, block toolbar docked as in the editor's "Top toolbar" mode, a document bar, and the primary action at the right; a left panel; a right settings panel. | "The in-editor experience and the shell need to remain familiar, not reinvented." | Component maps; AC-SHELL group. | `[U]` |
+| C8 | Exactly one artboard is Live (in edit) at a time. Chrome (toolbar, inspector, inserter, list view) is one shared set that belongs to the Live artboard. | Performance; many editors must not run at once. | AC-TIER-01, AC-TIER-02. | `[B5]` `[B8]` `[U]` |
+| C9 | All artboards live in one document and share one core-data registry. Each mounted editor has its own block-editor sub-registry. No iframe page per editor. | The editor code loads once; an entity edited once updates everywhere it appears. | AC-DATA-01. | `[B4]` `[V]` |
+| C10 | An artboard is a reference to a WordPress entity, a position and a device. Block content is never stored on the board. | One source of truth. | AC-DATA-02; schema in `data-model.md`. | `[B3]` |
+| C11 | An artboard's kind (page, template, template part, pattern) is chosen before the artboard exists and never changes. | "I can't create a post and then change it into a pattern." | No UI path changes kind; AC-NEW-05. | `[U]` |
+| C12 | Artboards have one of three devices: Desktop, Tablet, Mobile. No other widths and no free resizing. | "We design for surfaces, so only widths sanctioned by Gutenberg." | AC-DEV group. | `[U]` |
+| C13 | Templates and template parts have no draft state. Saving one changes the live site. Review changes is the only path to saving. | WordPress has no draft copy for them; Review is the safeguard. | AC-SAVE group. | `[U]` `[B8]` |
+| C14 | Global styles compile once per change and the result is shared by every mounted artboard. No artboard has its own style override. | Performance. Comparing variations was cut for this reason. | AC-STYLE-03. | `[B7]` `[U]` |
+| C15 | The Styles panel is shown in the right panel when nothing is selected, and nowhere else. | "Styles should be when nothing is selected. That is a good UX." | AC-STYLE-01. | `[U]` |
+| C16 | Token use counts and usage highlights come from the usage index (parsed block markup and global styles), never from querying rendered artboards. | Ghost and Snapshot artboards are not mounted. | AC-INDEX group. | `[U]` |
+| C17 | Inserter lists show names and usage lines only. No rendered previews. | Previews would compete with the Preview tier budget. | AC-INS-06. | `[U]` |
+| C18 | Editing happens at 50% zoom or more. Preview tier from 20% to 50%. Snapshot below 20%. | Decided thresholds. | AC-TIER group. | `[U]` |
+| C19 | Only users with `edit_theme_options` can open the plugin. Every board is visible to all of them. | One rule, no partial states. | AC-PERM group. | `[U]` |
+| C20 | Requires WordPress 7.2 or later. Works without the Gutenberg plugin. | Locked default. | Activation test on clean WordPress. | `[U]` |
+| C21 | Pointer, trackpad and keyboard only. | Touch was cut. | n/a | `[U]` |
+| C22 | Pan and zoom gestures cause no React render. They change one CSS transform. React state updates when the gesture settles. | Performance. | AC-PERF-01. | `[B5]` `[B6]` |
+| C23 | Every user-facing string goes through `@wordpress/i18n` with the text domain `wordpress-for-designers`. | WordPress convention. | ESLint `@wordpress/i18n-text-domain`. | `[N]` |
+| C24 | Controls are real buttons, links and inputs with accessible names. Every icon-only control has a label. The board is fully operable by keyboard using the map in `architecture.md`. | Design system rule and decided keyboard set. | AC-A11Y group. | `[U]` `[D:Main]` |
+| C25 | No runtime dependency outside the allowlist. No state library, canvas library or screenshot library. | "Invent nothing"; the concept app's stack (Zustand, Vite) is not carried over. | `package.json` review; C1 lint. | `[U]` `[N]` |
