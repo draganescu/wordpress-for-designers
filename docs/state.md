@@ -12,6 +12,7 @@ The plugin is built through Milestone 12 of `spec/build-order.md`, plus the deci
 | End-to-end tests, one per criterion | 125. On 2026-11-19 the whole suite was run three times: all pass after two fixes to the tests. AC-CANVAS-03 used an empty-board point that D42's Keyboard shortcuts control now covers; AC-STYLE-07 (and three like it in `ins.spec.ts` and `style.spec.ts`) counted menu rows once instead of waiting for them, and failed one run in three. AC-PERF-03 still fails on a port-8890 environment from a worktree (see working-notes.md) |
 | `npm run lint` | Exits 0, no disabled lines |
 | CI | `.github/workflows/tests.yml` runs lint, build and the suite (Chromium, wp-env) on every pull request; CI retries a failed test twice and reports a pass on retry as flaky |
+| Performance | `.github/workflows/perf.yml` measures every pull request against its base and fails on a broken budget; see [performance.md](performance.md) |
 | Open questions waiting for the product owner | 26 (`spec/open-questions.md`) |
 | Browsers the suite runs in | Chromium only |
 | WordPress it was built and tested on | 7.2-RC2, Twenty Twenty-Five, PHP 8.2, no Gutenberg plugin |
@@ -55,6 +56,7 @@ uninstall.php                 Deletes all boards
 includes/                     PHP, six files
 src/                          JavaScript and SCSS, built by wp-scripts into build/
 tests/e2e/                    Playwright tests, test helper plugin, test theme
+tests/perf/                   The performance suite and its budgets
 tools/                        Allowlist data and small scripts
 spikes/                       Throwaway spike code and evidence
 ```
@@ -98,6 +100,8 @@ Two entries: `boards` (the Boards list, `src/boards/`) and `board` (the app, `sr
 ### Tests (`tests/e2e/`, about 7,000 lines)
 
 Twenty-one spec files, one per acceptance group: `a11y`, `board`, `canvas`, `data`, `del`, `dev`, `edit`, `index`, `ins`, `key`, `media`, `new`, `note`, `perf`, `perm`, `save`, `shell`, `state`, `style`, `tier`, `undo`. `utils.ts` has the shared helpers. `plugin/` is the test helper plugin. `themes/wfd-viewport` is a theme with non-default breakpoints for AC-DEV-02.
+
+`tests/perf/` is a separate suite that measures and records instead of asserting: counts, memory, timings and gestures, with budgets in `tests/perf/budgets.json`. It is described in [performance.md](performance.md).
 
 The app marks elements for the tests with `data-wfd-*` attributes: `region`, `control` (the H and L ids of `spec/screens/README.md`), `artboard`, `tier`, `kind`, `device`, `row`, `group`, `panel`, `placement`, `placer`, `banner`, `stale`, `live-notice`, `lock-dialog`, `template-control`.
 
