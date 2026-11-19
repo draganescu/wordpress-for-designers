@@ -104,11 +104,13 @@ export function siteScreens( merged ) {
 /**
  * The elements WordPress styles for the whole site (decision D53), in the
  * groups and order of the stock "Blocks & Elements" list and with the titles
- * of their stock screens.
+ * of their stock screens, so a row and the screen it opens read the same.
  *
  * Mirrors `ELEMENT_GROUPS` in `src/screen-block-list.tsx` and `ELEMENTS` in
- * `src/screen-element.tsx` of `@wordpress/global-styles-ui` 2.2.0, and the
- * icons of `ELEMENT_ICONS` in the same list.
+ * `src/screen-element.tsx` of `@wordpress/global-styles-ui` 2.0.0, the
+ * release `package.json` pins: change the two together. The icons are those
+ * of `ELEMENT_ICONS` in release 2.2.0's list; the pinned release's list
+ * shows none.
  *
  * @return {Array} Groups as { title, elements: [ { name, path, title, icon } ] }.
  */
@@ -169,17 +171,17 @@ export function elementGroups() {
             elements: [
                 item(
                     'textInput',
-                    __( 'Form input', 'wordpress-for-designers' ),
+                    __( 'Input', 'wordpress-for-designers' ),
                     formInput
                 ),
                 item(
                     'select',
-                    __( 'Form select', 'wordpress-for-designers' ),
+                    __( 'Select', 'wordpress-for-designers' ),
                     formSelect
                 ),
                 item(
                     'button',
-                    __( 'Form button', 'wordpress-for-designers' ),
+                    __( 'Button (element)', 'wordpress-for-designers' ),
                     button
                 ),
             ],

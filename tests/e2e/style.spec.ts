@@ -695,9 +695,9 @@ test.describe( 'STYLE', () => {
             'Heading 4',
             'Heading 5',
             'Heading 6',
-            'Form input',
-            'Form select',
-            'Form button',
+            'Input',
+            'Select',
+            'Button (element)',
             'Paragraph',
         ] );
 
@@ -707,13 +707,28 @@ test.describe( 'STYLE', () => {
         await expect( names ).toHaveText( [ 'Heading 1' ] );
         await search.fill( 'form controls' );
         await expect( names ).toHaveText( [
-            'Form input',
-            'Form select',
-            'Form button',
+            'Input',
+            'Select',
+            'Button (element)',
         ] );
         await expect( list.getByRole( 'heading' ) ).toHaveText( [
             'Form controls',
         ] );
+
+        // A row reads as the stock screen it opens does.
+        const stock = panel.locator( '.wfd-styles__block-styles' );
+        await names.filter( { hasText: /^Button \(element\)$/ } ).click();
+        await expect(
+            stock
+                .getByRole( 'heading', {
+                    name: 'Button (element)',
+                    exact: true,
+                } )
+                .first()
+        ).toBeVisible();
+        await stock
+            .getByRole( 'button', { name: 'Back', exact: true } )
+            .click();
         await search.fill( '' );
 
         // An element opens its stock screen; a change there repaints the
@@ -746,7 +761,6 @@ test.describe( 'STYLE', () => {
         } );
         await expect( row ).not.toContainText( 'change' );
         await row.click();
-        const stock = panel.locator( '.wfd-styles__block-styles' );
         await expect(
             stock.getByRole( 'heading', { name: 'All headings' } ).first()
         ).toBeVisible();
