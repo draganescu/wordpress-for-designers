@@ -17,6 +17,20 @@ import {
     GlobalStylesUI,
     useGlobalStylesRevisions,
 } from '@wordpress/global-styles-ui';
+import {
+    button,
+    caption,
+    formInput,
+    formSelect,
+    heading,
+    headingLevel1,
+    headingLevel2,
+    headingLevel3,
+    headingLevel4,
+    headingLevel5,
+    headingLevel6,
+    link,
+} from '@wordpress/icons';
 import { getCurrentThemeGlobalStylesVariations } from '../adapter/experimental';
 
 const STYLE_SUPPORTS = [
@@ -28,6 +42,84 @@ const STYLE_SUPPORTS = [
     'border',
 ];
 const NONE = [];
+// An element's row in the Blocks tab is named with this before its name.
+const ELEMENT = 'elements/';
+
+/**
+ * The elements WordPress styles for the whole site, in the groups, order,
+ * titles and icons of its own "Blocks & Elements" list (decision D51).
+ *
+ * @return {Array} Groups as { title, elements: [ { name, title, icon } ] }.
+ */
+function elementGroups() {
+    const item = ( name, title, icon ) => ( { name, title, icon } );
+    return [
+        {
+            title: __( 'Elements', 'wordpress-for-designers' ),
+            elements: [
+                item( 'link', __( 'Link', 'wordpress-for-designers' ), link ),
+                item(
+                    'caption',
+                    __( 'Caption', 'wordpress-for-designers' ),
+                    caption
+                ),
+                item(
+                    'cite',
+                    __( 'Citation', 'wordpress-for-designers' ),
+                    caption
+                ),
+            ],
+        },
+        {
+            title: __( 'Headings', 'wordpress-for-designers' ),
+            elements: [
+                item(
+                    'heading',
+                    __( 'All headings', 'wordpress-for-designers' ),
+                    heading
+                ),
+                ...[
+                    headingLevel1,
+                    headingLevel2,
+                    headingLevel3,
+                    headingLevel4,
+                    headingLevel5,
+                    headingLevel6,
+                ].map( ( icon, index ) =>
+                    item(
+                        'h' + ( index + 1 ),
+                        sprintf(
+                            /* translators: %d: heading level, 1 to 6. */
+                            __( 'Heading %d', 'wordpress-for-designers' ),
+                            index + 1
+                        ),
+                        icon
+                    )
+                ),
+            ],
+        },
+        {
+            title: __( 'Form controls', 'wordpress-for-designers' ),
+            elements: [
+                item(
+                    'textInput',
+                    __( 'Form input', 'wordpress-for-designers' ),
+                    formInput
+                ),
+                item(
+                    'select',
+                    __( 'Form select', 'wordpress-for-designers' ),
+                    formSelect
+                ),
+                item(
+                    'button',
+                    __( 'Form button', 'wordpress-for-designers' ),
+                    button
+                ),
+            ],
+        },
+    ];
+}
 
 function list( value ) {
     return Array.isArray( value ) ? value : NONE;
@@ -187,7 +279,28 @@ export function useStylesPanel( { styles, serverSettings, usesOf } ) {
 
     const blocks = useMemo( () => {
         const needle = blockQuery.trim().toLowerCase();
-        return getBlockTypes()
+        // The elements first, found by title, name or group title.
+        const elements = elementGroups().flatMap( ( group ) =>
+            group.elements
+                .filter(
+                    ( element ) =>
+                        ! needle ||
+                        [ element.title, element.name, group.title ]
+                            .join( ' ' )
+                            .toLowerCase()
+                            .includes( needle )
+                )
+                .map( ( element ) => ( {
+                    name: ELEMENT + element.name,
+                    title: element.title,
+                    icon: element.icon,
+                    group: group.title,
+                    changes: countLeaves(
+                        user.styles?.elements?.[ element.name ]
+                    ),
+                } ) )
+        );
+        const types = getBlockTypes()
             .filter(
                 ( type ) =>
                     type.supports &&
@@ -205,8 +318,10 @@ export function useStylesPanel( { styles, serverSettings, usesOf } ) {
                 name: type.name,
                 title: type.title,
                 icon: type.icon,
+                group: __( 'Blocks', 'wordpress-for-designers' ),
                 changes: countLeaves( user.styles?.blocks?.[ type.name ] ),
             } ) );
+        return [ ...elements, ...types ];
     }, [ blockQuery, user ] );
 
     const historyRows = useMemo( () => {
@@ -264,6 +379,22 @@ export function useStylesPanel( { styles, serverSettings, usesOf } ) {
         />
     );
 
+    // An element's stock screen (D51). Leaving it returns to the list.
+    const elementStylesFor = ( element ) => (
+        <GlobalStylesUI
+            value={ user }
+            baseValue={ base }
+            onChange={ update }
+            path={ '/blocks/' + ELEMENT + element }
+            onPathChange={ ( next ) => {
+                if ( ! next.startsWith( '/blocks/' + ELEMENT ) ) {
+                    setOpenBlock( null );
+                }
+            } }
+            serverCSS={ serverSettings.styles }
+            serverSettings={ serverSettings }
+        />
+    );
     // The stock screen has its own Back control; leaving the screen and the
     // ones under it returns to the tokens.
     const screenFor = ( path ) => (
@@ -357,7 +488,10 @@ export function useStylesPanel( { styles, serverSettings, usesOf } ) {
             blocks,
             openBlock,
             onOpenBlock: setOpenBlock,
-            renderBlockStyles: blockStylesFor,
+            renderBlockStyles: ( name ) =>
+                name.startsWith( ELEMENT )
+                    ? elementStylesFor( name.slice( ELEMENT.length ) )
+                    : blockStylesFor( name ),
             historyRows,
             selectedHistoryId: preview?.id ?? null,
             onSelectHistory: ( id ) => {

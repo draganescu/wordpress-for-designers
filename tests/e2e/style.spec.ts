@@ -598,6 +598,15 @@ test.describe( 'STYLE', () => {
 
         // A screen under the stock screen goes back to it, not to the tokens.
         await edit( 'Typography' ).click();
+        // The base text's screen opens (it needs a stock styles package
+        // that matches the WordPress in use).
+        await panel
+            .getByRole( 'button', { name: 'Text', exact: true } )
+            .click();
+        await expect( panel ).toContainText(
+            'Manage the fonts used on the site.'
+        );
+        await back.click();
         await panel
             .getByRole( 'button', { name: 'Font size presets' } )
             .click();
@@ -645,6 +654,111 @@ test.describe( 'STYLE', () => {
         await expect( page.locator( '[data-wfd-control="H9"]' ) ).toHaveText(
             'Review 1 change'
         );
+        await page.locator( '[data-wfd-control="H9"]' ).click();
+        await expect(
+            page.getByRole( 'dialog', { name: 'Review changes' } )
+        ).toContainText( 'Styles' );
+    } );
+
+    test( 'AC-STYLE-09 The Blocks tab lists the elements in groups before the blocks, and an element row opens the stock styles screen for it', async ( {
+        page,
+    } ) => {
+        await setViewport( page, { x: 40, y: 40, zoom: 0.25 } );
+        const panel = right( page );
+        await panel.getByRole( 'tab', { name: 'Blocks' } ).click();
+        const list = panel.getByRole( 'tabpanel' );
+        await expect( list.getByRole( 'heading' ) ).toHaveText( [
+            'Elements',
+            'Headings',
+            'Form controls',
+            'Blocks',
+        ] );
+        const names = list.locator( '.wfd-row__name' );
+        await expect( names.nth( 13 ) ).toBeVisible();
+        expect( ( await names.allInnerTexts() ).slice( 0, 14 ) ).toEqual( [
+            'Link',
+            'Caption',
+            'Citation',
+            'All headings',
+            'Heading 1',
+            'Heading 2',
+            'Heading 3',
+            'Heading 4',
+            'Heading 5',
+            'Heading 6',
+            'Form input',
+            'Form select',
+            'Form button',
+            'Paragraph',
+        ] );
+
+        // The search finds an element by name and by its group's title.
+        const search = panel.getByRole( 'searchbox' );
+        await search.fill( 'h1' );
+        await expect( names ).toHaveText( [ 'Heading 1' ] );
+        await search.fill( 'form controls' );
+        await expect( names ).toHaveText( [
+            'Form input',
+            'Form select',
+            'Form button',
+        ] );
+        await expect( list.getByRole( 'heading' ) ).toHaveText( [
+            'Form controls',
+        ] );
+        await search.fill( '' );
+
+        // An element opens its stock screen; a change there repaints the
+        // board, is counted on its row and is a Styles change in Review.
+        const index = artboardOf( fixture, 'template' );
+        const ratio = () =>
+            page
+                .locator( `[data-wfd-artboard="${ index.id }"] iframe` )
+                .first()
+                .evaluate( ( frame: HTMLIFrameElement ) => {
+                    const heading = frame.contentDocument?.querySelector(
+                        'h1, h2, h3, h4, h5, h6'
+                    );
+                    if ( ! heading ) {
+                        return null;
+                    }
+                    const style =
+                        frame.contentWindow!.getComputedStyle( heading );
+                    return Math.round(
+                        parseFloat( style.lineHeight ) /
+                            parseFloat( style.fontSize )
+                    );
+                } )
+                .catch( () => null );
+        await expect.poll( ratio ).toBe( 1 );
+        const row = list.locator( '.wfd-row', {
+            has: page.locator( '.wfd-row__name', {
+                hasText: /^All headings$/,
+            } ),
+        } );
+        await expect( row ).not.toContainText( 'change' );
+        await row.click();
+        const stock = panel.locator(
+            '.global-styles-ui-sidebar__navigator-provider'
+        );
+        await expect(
+            stock.getByRole( 'heading', { name: 'All headings' } ).first()
+        ).toBeVisible();
+        await expect( stock ).toContainText(
+            'Manage the appearance of all headings.'
+        );
+        const lineHeight = stock.getByRole( 'spinbutton', {
+            name: 'Line height',
+        } );
+        await lineHeight.fill( '3' );
+        await lineHeight.press( 'Enter' );
+        await expect.poll( ratio ).toBe( 3 );
+        await expect( page.locator( '[data-wfd-control="H9"]' ) ).toHaveText(
+            'Review 1 change'
+        );
+        await stock
+            .getByRole( 'button', { name: 'Back', exact: true } )
+            .click();
+        await expect( row ).toContainText( '1 change' );
         await page.locator( '[data-wfd-control="H9"]' ).click();
         await expect(
             page.getByRole( 'dialog', { name: 'Review changes' } )

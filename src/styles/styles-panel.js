@@ -433,7 +433,7 @@ function TokensTab( {
  * @param {Object}      props
  * @param {string}      props.blockQuery         The search text.
  * @param {Function}    props.onBlockQueryChange Called with the search text.
- * @param {Array}       props.blocks             { name, title, icon, changes }.
+ * @param {Array}       props.blocks             { name, title, icon, changes, group }, elements first.
  * @param {string|null} props.openBlock          Name of the open block.
  * @param {Function}    props.onOpenBlock        Called with a name or null.
  * @param {Function}    props.renderBlockStyles  Renders the open block's styles.
@@ -469,6 +469,18 @@ function BlocksTab( {
         );
     }
 
+    // Rows under one heading per group: the elements' groups, then Blocks
+    // (D51).
+    const groups = [];
+    blocks.forEach( ( block ) => {
+        const last = groups[ groups.length - 1 ];
+        if ( last && last.title === block.group ) {
+            last.rows.push( block );
+        } else {
+            groups.push( { title: block.group, rows: [ block ] } );
+        }
+    } );
+
     return (
         <>
             <div className="wfd-styles__search">
@@ -482,39 +494,50 @@ function BlocksTab( {
                     onChange={ onBlockQueryChange }
                 />
             </div>
-            <RowGroup>
-                { blocks.map( ( { name, title, icon, changes } ) => (
-                    <Row
-                        key={ name }
-                        icon={ <BlockIcon icon={ icon } /> }
-                        name={ title }
-                        suffix={
-                            <span className="wfd-styles__suffix">
-                                { changes > 0 && (
-                                    <span className="wfd-styles__changes">
-                                        { sprintf(
-                                            /* translators: %d: number of changed style properties. */
-                                            _n(
-                                                '%d change',
-                                                '%d changes',
-                                                changes,
-                                                'wordpress-for-designers'
-                                            ),
-                                            changes
-                                        ) }
-                                    </span>
-                                ) }
-                                <Icon
-                                    icon={
-                                        isRTL() ? chevronLeft : chevronRight
+            { groups.map( ( group ) => (
+                <section key={ group.title ?? '' }>
+                    { group.title && (
+                        <GroupHeading>{ group.title }</GroupHeading>
+                    ) }
+                    <RowGroup>
+                        { group.rows.map(
+                            ( { name, title, icon, changes } ) => (
+                                <Row
+                                    key={ name }
+                                    icon={ <BlockIcon icon={ icon } /> }
+                                    name={ title }
+                                    suffix={
+                                        <span className="wfd-styles__suffix">
+                                            { changes > 0 && (
+                                                <span className="wfd-styles__changes">
+                                                    { sprintf(
+                                                        /* translators: %d: number of changed style properties. */
+                                                        _n(
+                                                            '%d change',
+                                                            '%d changes',
+                                                            changes,
+                                                            'wordpress-for-designers'
+                                                        ),
+                                                        changes
+                                                    ) }
+                                                </span>
+                                            ) }
+                                            <Icon
+                                                icon={
+                                                    isRTL()
+                                                        ? chevronLeft
+                                                        : chevronRight
+                                                }
+                                            />
+                                        </span>
                                     }
+                                    onClick={ () => onOpenBlock?.( name ) }
                                 />
-                            </span>
-                        }
-                        onClick={ () => onOpenBlock?.( name ) }
-                    />
-                ) ) }
-            </RowGroup>
+                            )
+                        ) }
+                    </RowGroup>
+                </section>
+            ) ) }
             <WeakText className="wfd-styles__help" render={ <p /> }>
                 { __(
                     'Each block opens the same styles panel the Site Editor uses.',
