@@ -29,6 +29,7 @@ import { usePageTemplateId } from '../artboard-preview/use-page-template';
 import { FrameElementContext } from '../artboard-frame';
 import { KINDS } from '../shell/constants';
 import { coalesceTyping } from './coalesce';
+import { DragAnywhere, DRAG_ANYWHERE_STYLES } from './drag-anywhere';
 import { GuardedRegistry } from '../shell/guarded-registry';
 
 const NO_CONTEXT = {};
@@ -285,6 +286,7 @@ function Editor( {
                             onAllowedBlocks={ onAllowedBlocks }
                         />
                         <BlockEditorKeyboardShortcuts.Register />
+                        <DragAnywhere />
                         <BlockToolbarFill>
                             <BlockToolbar hideDragHandle />
                         </BlockToolbarFill>
@@ -307,6 +309,7 @@ function Editor( {
                     styles={ [
                         ...( settings.styles ?? [] ),
                         ...CANVAS_STYLES,
+                        ...DRAG_ANYWHERE_STYLES,
                     ] }
                 >
                     <BlockList />
