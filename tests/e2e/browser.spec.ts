@@ -257,6 +257,30 @@ test.describe( 'BROWSER', () => {
         await page.keyboard.press( 'ControlOrMeta+z' );
         await expect( address( page ) ).toHaveValue( aboutPath );
 
+        // Reload asks for the page again.
+        const isMarked = ( mark: boolean ) =>
+            page.evaluate(
+                ( [ selector, set ] ) => {
+                    const view = (
+                        document.querySelector(
+                            selector as string
+                        ) as HTMLIFrameElement
+                     ).contentWindow as Window & { wfdTestMark?: boolean };
+                    if ( set ) {
+                        view.wfdTestMark = true;
+                    }
+                    return !! view.wfdTestMark;
+                },
+                [
+                    `[data-wfd-artboard="${ BROWSER_ID }"] iframe.wfd-browser`,
+                    mark,
+                ]
+            );
+        expect( await isMarked( true ) ).toBe( true );
+        await browser( page ).getByRole( 'button', { name: 'Reload' } ).click();
+        await expect.poll( () => isMarked( false ) ).toBe( false );
+        await expect( address( page ) ).toHaveValue( aboutPath );
+
         // Esc inside the page.
         await page$( page ).locator( 'body' ).click();
         await page.keyboard.press( 'Escape' );

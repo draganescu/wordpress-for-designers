@@ -37,6 +37,8 @@ const DEFAULT_STATE = {
     removingId: null,
     // Goes up each time Review has saved something; browsers reload (D55).
     siteVersion: 0,
+    // How many times Reload was pressed for each browser, by id.
+    browserReloads: {},
     // Goes up each time the unsaved changes have been sent for browsers to
     // preview (D57); 0 until the first send.
     previewVersion: 0,
@@ -444,6 +446,24 @@ const actions = {
             } );
         },
     /**
+     * Reloads one browser's page.
+     *
+     * @param {string} id The browser.
+     */
+    reloadBrowser:
+        ( id ) =>
+        ( { select, dispatch } ) => {
+            dispatch( {
+                type: 'PATCH',
+                patch: {
+                    browserReloads: {
+                        ...select.getAllBrowserReloads(),
+                        [ id ]: select.getBrowserReloads( id ) + 1,
+                    },
+                },
+            } );
+        },
+    /**
      * Tells browsers that the site has changed.
      */
     bumpSiteVersion:
@@ -613,6 +633,8 @@ const selectors = {
     getViewport: ( state ) => state.viewport,
     getRemovingId: ( state ) => state.removingId,
     getSiteVersion: ( state ) => state.siteVersion,
+    getAllBrowserReloads: ( state ) => state.browserReloads,
+    getBrowserReloads: ( state, id ) => state.browserReloads[ id ] ?? 0,
     getPreviewVersion: ( state ) => state.previewVersion,
     getPreviewValue: ( state ) => state.previewValue,
     getUndoName: ( state ) => state.past[ state.past.length - 1 ]?.name ?? null,

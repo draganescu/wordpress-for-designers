@@ -20,7 +20,7 @@ import { artboardLabel, liveLabel, usesText } from '../shell/labels';
 import { countRender } from '../shell/test-hooks';
 import { normalizeAddress } from './browser';
 
-export { ArtboardBrowser } from './browser';
+export { BrowserArtboard, browserTier } from './browser-artboard';
 
 /**
  * The frame element of the artboard a component is rendered in.

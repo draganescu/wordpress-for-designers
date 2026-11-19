@@ -21,14 +21,15 @@ import { usePreviewPush } from './use-preview-push';
 import { createViewport } from '../viewport';
 import { ArtboardEditor } from '../artboard-editor';
 import {
-    ArtboardBrowser,
     ArtboardError,
     ArtboardFrame,
     ArtboardMedia,
+    BrowserArtboard,
+    browserTier,
 } from '../artboard-frame';
 import { ArtboardPreview, ArtboardPreviewOnce } from '../artboard-preview';
 import { ArtboardSnapshot, createSnapshotStore } from '../artboard-snapshot';
-import { isNearView, useTiers } from '../tier-scheduler';
+import { useTiers } from '../tier-scheduler';
 import { InserterPanel } from '../inserter/inserter-panel';
 import { useInserterActions } from '../inserter/use-inserter-actions';
 import { useInserterData } from '../inserter/use-inserter-data';
@@ -70,8 +71,7 @@ import { useEntityInfo } from './use-entity-info';
 import { NEW_ARTBOARD_HEIGHT, usePlacement } from './use-placement';
 import { removalInfo, useRemoval } from './use-removal';
 
-const { boardId, boardsUrl, userId, theme, homeUrl, preview } =
-    window.wfdConfig;
+const { boardId, boardsUrl, userId, theme, homeUrl } = window.wfdConfig;
 bootEditor();
 
 const VIEWPORT_KEY = `wfd/viewport/${ userId }/${ boardId }`;
@@ -217,15 +217,9 @@ export function App() {
         selectedNoteId,
         editingNoteId,
         isNoteToolArmed,
-        siteVersion,
-        previewVersion,
-        previewValue,
     } = useSelect( ( select ) => {
         const board = select( boardStore );
         return {
-            siteVersion: board.getSiteVersion(),
-            previewVersion: board.getPreviewVersion(),
-            previewValue: board.getPreviewValue() ?? preview,
             notes: board.getNotes(),
             selectedNoteId: board.getSelectedNoteId(),
             editingNoteId: board.getEditingNoteId(),
@@ -264,15 +258,8 @@ export function App() {
         setNoteHeight,
         startNoteEdit,
         endNoteEdit,
+        reloadBrowser,
     } = useDispatch( boardStore );
-    // Reloads asked for each browser (D55), by id.
-    const [ reloads, setReloads ] = useState( {} );
-    const reload = ( id ) =>
-        setReloads( ( current ) => ( {
-            ...current,
-            [ id ]: ( current[ id ] ?? 0 ) + 1,
-        } ) );
-
     // Hidden panels (D32): kept for the session only.
     const [ isLeftHidden, setLeftHidden ] = useState( false );
     const [ isRightHidden, setRightHidden ] = useState( false );
@@ -733,7 +720,7 @@ export function App() {
                 onEdit={ () => onEdit( selected.id ) }
                 onRemove={ () => setRemovingId( selected.id ) }
                 isBrowsing={ selected.id === browsingId }
-                onReload={ () => reload( selected.id ) }
+                onReload={ () => reloadBrowser( selected.id ) }
                 onShowsChange={ ( shows ) =>
                     updateArtboard( selected.id, { shows } )
                 }
@@ -967,21 +954,12 @@ export function App() {
                                     ? 'media'
                                     : tiers.get( artboard.id ) || 'ghost';
                                 if ( isBrowser ) {
-                                    // Loaded whenever it is near the view
-                                    // (D55).
-                                    if ( artboard.id === browsingId ) {
-                                        tier = 'live';
-                                    } else if (
-                                        isNearView(
-                                            rectOf( artboard, widthOf ),
-                                            settledViewport,
-                                            size
-                                        )
-                                    ) {
-                                        tier = 'browser';
-                                    } else {
-                                        tier = 'ghost';
-                                    }
+                                    tier = browserTier( artboard, {
+                                        browsingId,
+                                        rect: rectOf( artboard, widthOf ),
+                                        viewport: settledViewport,
+                                        size,
+                                    } );
                                 }
                                 const width = hasDevice( artboard )
                                     ? widthOf( artboard.device )
@@ -996,41 +974,15 @@ export function App() {
                                         />
                                     );
                                 } else if ( isBrowser && tier !== 'ghost' ) {
-                                    // Unsaved changes are shown once they have
-                                    // been sent (D57); until then, a Skeleton.
-                                    const isPreview =
-                                        artboard.shows === 'unsaved';
-                                    content =
-                                        isPreview && ! previewVersion ? (
-                                            <Skeleton className="wfd-artboard__skeleton" />
-                                        ) : (
-                                            <ArtboardBrowser
-                                                key={ artboard.shows }
-                                                path={ artboard.path }
-                                                homeUrl={ homeUrl }
-                                                isBrowsing={ tier === 'live' }
-                                                preview={
-                                                    isPreview
-                                                        ? previewValue
-                                                        : null
-                                                }
-                                                reloadToken={
-                                                    ( isPreview
-                                                        ? previewVersion
-                                                        : siteVersion ) +
-                                                    ( reloads[ artboard.id ] ??
-                                                        0 )
-                                                }
-                                                onNavigate={ ( path ) =>
-                                                    updateArtboard(
-                                                        artboard.id,
-                                                        { path }
-                                                    )
-                                                }
-                                                onEscape={ editing.leaveEdit }
-                                                onWheel={ canvas.forwardWheel }
-                                            />
-                                        );
+                                    content = (
+                                        <BrowserArtboard
+                                            artboard={ artboard }
+                                            isBrowsing={ tier === 'live' }
+                                            homeUrl={ homeUrl }
+                                            onEscape={ editing.leaveEdit }
+                                            onWheel={ canvas.forwardWheel }
+                                        />
+                                    );
                                 } else if (
                                     tier === 'live' ||
                                     tier === 'warm'
@@ -1183,7 +1135,9 @@ export function App() {
                                                 path,
                                             } )
                                         }
-                                        onReload={ () => reload( artboard.id ) }
+                                        onReload={ () =>
+                                            reloadBrowser( artboard.id )
+                                        }
                                     >
                                         { content }
                                     </ArtboardFrame>
