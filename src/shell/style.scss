@@ -1,3 +1,5 @@
+@use "sass:math";
+@use "@wordpress/base-styles/breakpoints" as wp-breakpoints;
 @use "@wordpress/base-styles/variables" as wp-variables;
 @import "primitives";
 @import "space-gate";
@@ -7,7 +9,13 @@
 
 // Below this width the header and the panels make room (D50). The images in
 // spec/screens were drawn at this width.
-$wfd-roomy: 1440px;
+$wfd-roomy: wp-breakpoints.$break-huge;
+
+// A panel's width: full from the roomy width up, narrower in step with the
+// window below it, and never less than its floor (D50).
+@function wfd-panel-width($floor, $full) {
+    @return clamp(#{$floor}, #{math.div($full, $wfd-roomy) * 100vw}, #{$full});
+}
 
 html.wp-toolbar:has(.wfd-board-page) {
     padding: 0;
@@ -24,10 +32,8 @@ html.wp-toolbar:has(.wfd-board-page) {
     display: grid;
     grid-template: "header header header" auto "left main right" minmax(0, 1fr) / var(--wfd-left-width) minmax(0, 1fr) var(--wfd-right-width);
 
-    // Full width from 1440 px up, narrower down to the smallest supported
-    // window (D50).
-    --wfd-left-width: clamp(240px, 19.5vw, 280px);
-    --wfd-right-width: clamp(300px, 25vw, 360px);
+    --wfd-left-width: #{wfd-panel-width(240px, 280px)};
+    --wfd-right-width: #{wfd-panel-width(300px, 360px)};
     position: fixed;
     inset: 0;
     color: var(--wpds-color-foreground-content-neutral);
