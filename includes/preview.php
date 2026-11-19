@@ -256,29 +256,31 @@ function wfd_preview_hooks( $wp ) {
     add_action( 'send_headers', 'nocache_headers' );
 
     // Posts found by queries: the page itself, and template and part posts.
+    // A post is changed as a copy, so that the query does not put the
+    // changed one in the object cache, which may outlive this request.
     add_filter(
         'posts_results',
         function ( $results ) use ( $posts, $templates ) {
-            foreach ( $results as $post ) {
-                if ( ! $post instanceof WP_Post && ! is_object( $post ) ) {
+            foreach ( $results as $index => $post ) {
+                if ( ! is_object( $post ) ) {
                     continue;
                 }
-                if ( isset( $posts[ $post->ID ] ) ) {
-                    $kept = $posts[ $post->ID ];
-                    if ( isset( $kept['title'] ) ) {
-                        $post->post_title = $kept['title'];
-                    }
-                    if ( isset( $kept['content'] ) ) {
-                        $post->post_content = $kept['content'];
-                    }
+                $kept = $posts[ $post->ID ] ?? array();
+                $id   = get_stylesheet() . '//' . $post->post_name;
+                if ( in_array( $post->post_type, array( 'wp_template', 'wp_template_part' ), true ) && isset( $templates[ $id ] ) && $templates[ $id ]['postType'] === $post->post_type ) {
+                    $kept = $templates[ $id ];
                 }
-                if ( in_array( $post->post_type, array( 'wp_template', 'wp_template_part' ), true ) ) {
-                    $id = get_stylesheet() . '//' . $post->post_name;
-                    if ( isset( $templates[ $id ] ) && $templates[ $id ]['postType'] === $post->post_type ) {
-                        $post->post_content = $templates[ $id ]['content'];
-                        $post->post_title   = $templates[ $id ]['title'];
-                    }
+                if ( ! isset( $kept['title'] ) && ! isset( $kept['content'] ) ) {
+                    continue;
                 }
+                $post = clone $post;
+                if ( isset( $kept['title'] ) ) {
+                    $post->post_title = $kept['title'];
+                }
+                if ( isset( $kept['content'] ) ) {
+                    $post->post_content = $kept['content'];
+                }
+                $results[ $index ] = $post;
             }
             return $results;
         }
