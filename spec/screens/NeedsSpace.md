@@ -4,7 +4,7 @@ No image.
 
 **State.** The window is narrower than 1180 px (D49). A board may be open behind the message, in any state, or not started yet.
 
-**Source.** [U]
+**Source.** [U]; the text under the title and the `dialog` surface are [N]
 
 ## Regions used (defined in README.md)
 
