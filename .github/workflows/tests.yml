@@ -1,0 +1,76 @@
+name: Tests
+
+# Lint, build and the end-to-end suite on every pull request. The suite runs
+# against wp-env (WordPress and PHP as pinned in .wp-env.json) in Chromium.
+
+on:
+    pull_request:
+    workflow_dispatch:
+
+permissions:
+    contents: read
+
+concurrency:
+    group: tests-${{ github.event.pull_request.number || github.ref }}
+    cancel-in-progress: true
+
+jobs:
+    lint:
+        name: Lint and build
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: 24
+                  cache: npm
+
+            - run: npm ci
+
+            - run: npm run lint
+
+            - run: npm run build
+
+    e2e:
+        name: End-to-end
+        runs-on: ubuntu-latest
+        timeout-minutes: 45
+        steps:
+            # AC-PERF-03 expects the plugin folder to be named
+            # wordpress-for-designers; wp-env names it after the checkout
+            # folder, which is the repository name here.
+            - uses: actions/checkout@v4
+
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: 24
+                  cache: npm
+
+            - run: npm ci
+
+            - run: npm run build
+
+            - name: Install Chromium
+              run: npx playwright install --with-deps chromium
+
+            - name: Start WordPress
+              run: npx wp-env start
+
+            # Retries are on in CI (wp-scripts sets two). A test that passes on
+            # a retry is reported as flaky in the summary, not as a failure.
+            - name: Run the suite
+              run: npm run test:e2e
+
+            - name: Upload failure artifacts
+              if: failure()
+              uses: actions/upload-artifact@v4
+              with:
+                  name: e2e-artifacts
+                  path: artifacts/test-results
+                  retention-days: 7
+                  if-no-files-found: ignore
+
+            - name: WordPress debug log
+              if: failure()
+              run: npx wp-env run wordpress cat wp-content/debug.log || true
