@@ -118,6 +118,8 @@ While an artboard is in edit, a click on empty board leaves edit and clears the 
 
 Inside an artboard in edit, the block editor's own shortcuts apply unchanged. Esc, pressed when the editor itself has nothing left to dismiss, leaves edit and keeps the artboard selected. Cmd/Ctrl + Z undoes content. `[U]` `[B1]`
 
+Delete and Backspace do the same with focus on a row of the left panel's artboard list. `[U]`
+
 Tab order and the Shift + arrow step are `[N]`.
 
 ## Undo

@@ -116,6 +116,7 @@ Unless a criterion says otherwise, the fixture in `architecture.md` is loaded an
 - AC-DEL-03 For a theme template with changes, the box offers reset; checking it restores the theme's version. `[U]`
 - AC-DEL-04 Removing with the box unchecked is undoable as a layout change. `[U]`
 - AC-DEL-05 Delete with several artboards selected opens no dialog, takes them all off the board, leaves their entities, and one undo brings them all back. `[U]`
+- AC-DEL-06 Delete with focus on a row of the artboard list acts on the selection as on the board: with one artboard selected it opens the dialog, with several it takes them all off the board with no dialog. `[U]`
 
 ## INS
 
