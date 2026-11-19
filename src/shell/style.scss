@@ -4,7 +4,7 @@
 @import "../inserter/style";
 @import "../review/style";
 
-// Below this width the header and the panels make room (D49). The images in
+// Below this width the header and the panels make room (D50). The images in
 // spec/screens were drawn at this width.
 $wfd-roomy: 1440px;
 
@@ -24,7 +24,7 @@ html.wp-toolbar:has(.wfd-board-page) {
     grid-template: "header header header" auto "left main right" minmax(0, 1fr) / var(--wfd-left-width) minmax(0, 1fr) var(--wfd-right-width);
 
     // Full width from 1440 px up, narrower down to the smallest supported
-    // window (D49).
+    // window (D50).
     --wfd-left-width: clamp(240px, 19.5vw, 280px);
     --wfd-right-width: clamp(300px, 25vw, 360px);
     position: fixed;
@@ -54,7 +54,7 @@ html.wp-toolbar:has(.wfd-board-page) {
     border-bottom: var(--wpds-border-width-xs) solid var(--wpds-color-stroke-surface-neutral);
 
     // In edit the block toolbar needs the room: the document bar gets
-    // narrower and moves next to the controls at the end (D49).
+    // narrower and moves next to the controls at the end (D50).
     @media (max-width: #{$wfd-roomy - 1px}) {
 
         &.is-editing {
@@ -595,7 +595,7 @@ html.wp-toolbar:has(.wfd-board-page) {
     margin-top: var(--wpds-dimension-gap-lg);
 }
 
-// "Designing needs more space" (D48): the whole window, above everything.
+// "Designing needs more space" (D49): the whole window, above everything.
 .wfd-needs-space[open] {
     display: flex;
     align-items: center;

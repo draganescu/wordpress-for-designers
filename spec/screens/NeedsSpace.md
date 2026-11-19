@@ -2,7 +2,7 @@
 
 No image.
 
-**State.** The window is narrower than 1180 px (D48). A board may be open behind the message, in any state, or not started yet.
+**State.** The window is narrower than 1180 px (D49). A board may be open behind the message, in any state, or not started yet.
 
 **Source.** [U]
 

@@ -1,5 +1,5 @@
 /**
- * The board needs room (D48). Below the smallest supported width the board
+ * The board needs room (D49). Below the smallest supported width the board
  * is replaced by a message and nothing of it can be used; with room again it
  * comes back as it was.
  */
