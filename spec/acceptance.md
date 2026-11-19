@@ -142,6 +142,14 @@ Unless a criterion says otherwise, the fixture in `architecture.md` is loaded an
 - AC-MEDIA-02 A media object is selected by a click, moved by dragging and removed with Delete through a dialog with no checkbox; double-click and Enter do not enter edit; its settings show the image's pixel size and only "Remove from board". `[U]`
 - AC-MEDIA-03 The server accepts a media object with exactly its fields and rejects one with a device or without a width; a media object whose image no longer exists is removed from the board on load. `[N]`
 
+## BROWSER
+
+- AC-BROWSER-01 "Browser" in the Add artboard menu arms placement; a click on the board places a Desktop browser there showing the homepage, labelled "/ · Browser · Desktop", selected and not browsing, with a window 900 board units tall, listed under "Browsers" in the left panel; after a reload it is still there. `[U]`
+- AC-BROWSER-02 Outside browsing, a click on a browser's page selects the browser and follows no link, and a drag moves it; Delete opens the remove dialog with no checkbox and Remove takes it off the board. `[U]`
+- AC-BROWSER-03 Double-click starts browsing: following a link in the page changes the address field and the document bar; typing an address of the site and pressing Enter goes there; Esc pressed inside the page ends browsing with the browser selected; after a reload of the board the browser shows the last address. `[U]`
+- AC-BROWSER-04 A change to a page made in an artboard is not shown in a browser on that page until it is saved from Review; after the save the browser shows it without Reload being pressed. `[U]`
+- AC-BROWSER-05 The server accepts a browser with exactly its fields and rejects one with an `entityId`, one without a `path`, and one whose `path` does not start with "/". `[N]`
+
 ## NOTE
 
 - AC-NOTE-01 With no artboard in edit, pressing "Add note" and then clicking over an artboard places a Yellow note there, drawn above the artboard, selected, with its text field focused; "Add note" is no longer pressed. Esc after arming places nothing. `[U]`

@@ -42,6 +42,16 @@ Media objects (D34): `[U]`
 - If the image cannot be loaded the error state reads "Couldn't load this image."
 - Dragging a row of the Media tab over empty board shows the drop target at the object's size with the label "{file name} · Media"; dropping places it there. Clicking the row places it in the middle of the board in view, moved right past anything it would cover. Both apply only with no artboard in edit; in edit the image goes into the artboard as an Image block (D39).
 
+Browsers (D48): `[U]`
+
+- Kind name "Browser", `globe` icon. A browser's name is its address, for example "/" or "/about/". In the left panel browsers are the group "Browsers", after Media; a row has the `globe` icon, the address and the device word.
+- On the board a browser is a frame like an artboard's at its device width, with a window 900 board units tall showing the page at its address, scrolled to the top, and the label A1 "{address} · Browser · {Device}". Until the page has loaded the window shows a `Skeleton`. A browser far from view (the Ghost rule) is a sized box; otherwise its page is loaded. Browsers do not count toward the 12 Previews and have no Snapshot.
+- Outside browsing the page takes no pointer input: a click selects the browser, a drag moves it, double-click starts browsing.
+- While browsing, the label is A2 with the address in place of "{Name} · {Kind}": an `InputControl` labelled "Address" holding the address, which goes to the typed address on Enter (a missing leading "/" is added); an `IconButton` `rotateRight` labelled "Reload", which reloads the page; then the device menu. The document bar reads "{address} · Browser" with the back button. Undo and Redo act on the layout history. The list view toggle stays disabled, the Blocks tab is not shown and the inserter acts as with no artboard in edit; anything it places ends browsing.
+- Selected alone or browsing, the right panel shows the entity card (the address; description "The site as visitors see it."), the device control E6, then `Button` solid "Browse", which starts browsing and is not shown while browsing, `Button` outline "Reload" and `Button` outline "Remove from board", and the hint "Enter or double-click browses. Delete removes it from the board."
+- The remove dialog has its title and buttons only, as for a media object.
+- A link or a typed address that leads off the site does nothing: the window stays on the page it was on.
+
 Notes (D46): `[U]`
 
 - While the note tool is armed the pointer is a crosshair over the whole canvas area, artboards included. A click places the note there; nothing else on the board reacts to that click. Esc or H13 switches the tool off.
@@ -57,7 +67,7 @@ Notes (D46): `[U]`
 |---|---|---|---|---|
 | L1 | Panel heading | `Text` heading-md | "Artboards" | |
 | L2 | Add artboard | `IconButton`, `plus`, opens a `Menu` | Label "Add artboard" | See the "New artboard 1" screen. |
-| L3 | Group heading | `Text` heading-sm with a count at the right | "Pages", "Templates", "Template parts", "Patterns", "Media", "Notes" | A group with no artboards is not shown. `[N]` |
+| L3 | Group heading | `Text` heading-sm with a count at the right | "Pages", "Templates", "Template parts", "Patterns", "Media", "Browsers", "Notes" | A group with no artboards is not shown. `[N]` |
 | L4 | Artboard row | `wpc.ItemGroup` / `Item` row: kind icon (`page`, `layout`, `header`, `symbol`), name, device at the right | Device words "Desktop", "Tablet", "Mobile" | Click selects the artboard and scrolls it into view. Cmd/Ctrl + click adds the row to the selection or takes it out; Shift + click selects every row from the one clicked last to this one (D41). Double-click or Enter edits it. Delete or Backspace on a focused row removes the selected artboards, as on the board. Every selected row uses the brand surface. |
 
 Rows are ordered by name within a group, then Desktop, Tablet, Mobile. `[N]`
@@ -83,7 +93,7 @@ Rows are ordered by name within a group, then Desktop, Tablet, Mobile. `[N]`
 
 | ID | Element | Component | Text | Behaviour |
 |---|---|---|---|---|
-| A1 | Artboard label | `Text` body-sm above the artboard's top-left corner | "{Name} · {Kind} · {Device}"; for a media object "{Name} · Media" | Not interactive, except on the Live artboard (A2). |
+| A1 | Artboard label | `Text` body-sm above the artboard's top-left corner | "{Name} · {Kind} · {Device}"; for a media object "{Name} · Media"; for a browser "{address} · Browser · {Device}" (D48) | Not interactive, except on the Live artboard (A2). |
 | A2 | Live artboard label | `Text` in brand colour, "{Name} · {Kind}", followed by a `Menu` trigger showing the device | Menu items "Desktop", "Tablet", "Mobile"; trigger label "Artboard device" | Choosing a device changes this artboard's device. |
 | A3 | Artboard | The tier content at the device width, scaled by the zoom | | Click selects; Cmd/Ctrl + click adds it to the selection or takes it out when no artboard is in edit (D41); drag moves it, and with several selected moves them all; double-click edits. |
 | A4 | Selection outline | 2 px brand stroke around each selected artboard and the Live artboard | | |

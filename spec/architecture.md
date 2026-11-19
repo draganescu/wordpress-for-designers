@@ -46,6 +46,7 @@ Part names in this file are fixed. Use them for the top-level folders under `src
 Rules:
 
 - At most 12 Previews are mounted; the nearest to the viewport centre win. `[U]`
+- A browser (D48) is not tiered: far from view (the Ghost rule) it is a sized box; otherwise its page is loaded, at every zoom. It is not counted among the 12 and has no Snapshot. `[U]`
 - Up to 2 editors that were Live most recently stay mounted but inactive, so returning to them is immediate. They do not fill chrome slots and hold no lock. `[B5]` `[U]`
 - Mounting goes through the queue: nearest to the viewport centre first, one mount per idle slice. `[B5]`
 - Thresholds use hysteresis so tiers do not flicker: an artboard changes tier at the stated zoom going down, and at the stated zoom plus 2 percentage points going up. `[B5]` for hysteresis, `[N]` for the 2 points
@@ -63,6 +64,7 @@ Rules:
 | Nothing selected | Artboards by kind | Styles | Document bar shows the board name | `[U]` `[D:Overview]` |
 | An artboard selected | Artboards by kind, its row highlighted | Artboard settings | Same | `[U]` `[D:Selected]` |
 | An artboard in edit | List view of its blocks when the list view toggle is on (on by default when entering edit); otherwise closed | Tabs: the entity (for example "Template part") and "Block" | Block toolbar shown; document bar shows the artboard's name and kind with a back arrow | `[U]` `[D:Main]` |
+| A browser browsing (D48) | Artboards by kind, its row highlighted | Its settings, without "Browse" | Document bar shows "{address} · Browser" with a back arrow | `[U]` |
 | Inserter toggle on (any state) | Inserter, replacing whatever was there | Unchanged | Toggle shows a close icon | `[U]` `[D:Library]` |
 
 The list view toggle is disabled when no artboard is in edit. `[N]`
@@ -124,6 +126,8 @@ Inside an artboard in edit, the block editor's own shortcuts apply unchanged. Es
 Delete and Backspace do the same with focus on a row of the left panel's artboard list. `[U]`
 
 A selected note counts as a selected artboard for Shift + 2, the arrow keys and Delete; Delete takes a note off the board with no confirmation. Enter on one selected note edits its text, and Esc while its text is edited ends that and keeps the note selected. Tab and Shift + Tab step through artboards only. While the note tool is armed, Esc switches it off (D46). `[U]`
+
+A browser (D48) counts as an artboard for every key above; Enter starts browsing. While browsing, keys typed in the page go to the page, except Esc, which ends browsing and keeps the browser selected. Cmd/Ctrl + Z acts on the layout history while the focus is on the board. `[U]`
 
 Tab order and the Shift + arrow step are `[N]`.
 

@@ -64,6 +64,14 @@ A media object has `"kind": "media"`, a numeric `entityId` (the attachment), a `
 { "id": "…", "kind": "media", "entityId": 12, "x": 0, "y": 0, "width": 1200, "height": 800 }
 ```
 
+A browser (D48) has `"kind": "browser"`, a `path`, a `device`, and no `entityId`, `width` or `height`:
+
+```json
+{ "id": "…", "kind": "browser", "path": "/", "device": "desktop", "x": 0, "y": 0 }
+```
+
+`path` is the address relative to the site's home URL: it starts with `/`, may hold a query and a fragment, and is at most 2000 characters. A new browser has `/`, the homepage. Its window is always 900 board units tall. `[U]` for the window, `[N]` for the field list and the length
+
 The layout may also have a `notes` list (D46). A layout without it has no notes; a board with no notes is saved without it. Each note has exactly these fields: `[U]`
 
 ```json
@@ -84,6 +92,7 @@ The server validates the JSON against this shape on save and rejects anything el
 |---|---|---|---|
 | Page | A `page` with status `draft`, title "Untitled page", empty content, and as its template the theme's `blank` template if it has one, else its `page-no-title` template if it has one, else none (D36) | At placement | `[U]` |
 | Media | Nothing. The object refers to an image already in the media library | | `[U]` |
+| Browser | Nothing. It shows the site's front end (D48) | | `[U]` |
 | Pattern | A `wp_block` with status `draft`, title "Untitled pattern", empty content, synced | At placement | `[U]` |
 | Template | A `wp_template` for the chosen purpose, with content: the theme's Header part, one empty paragraph, the theme's Footer part | At first save from Review, never before | `[U]` `[D:AddArtboard2]` |
 | Template part | A `wp_template_part` titled "Untitled part", area `uncategorized` (labelled General), empty content | At first save from Review, never before | `[U]` `[V]` |
@@ -104,7 +113,7 @@ Pressing Delete on a selected artboard, or "Remove from board", opens a confirma
 | Template or part created by a user (`has_theme_file` false) | Delete | `[U]` `[V]` |
 | Template or part that ships with the theme (`has_theme_file` true) | Reset to the theme's version (REST update with `source: "theme"`) | `[U]` `[V]` |
 
-A media object has no checkbox: removing it only takes it off the board. `[U]`
+A media object or a browser (D48) has no checkbox: removing it only takes it off the board. `[U]`
 
 A note is removed at once, with no confirmation, and can be brought back with Undo (D46). `[U]`
 
