@@ -6,13 +6,7 @@
  * and, only while a History revision is previewed, that revision in place of
  * the user record.
  */
-import {
-    useCallback,
-    useEffect,
-    useMemo,
-    useRef,
-    useState,
-} from '@wordpress/element';
+import { useCallback, useEffect, useMemo, useState } from '@wordpress/element';
 import { useDispatch, useSelect } from '@wordpress/data';
 import { store as coreStore } from '@wordpress/core-data';
 import { getBlockTypes } from '@wordpress/blocks';
@@ -77,7 +71,10 @@ export function useGlobalStyles( serverSettings ) {
     );
 
     // One generation per change, at most one per animation frame while a
-    // control is dragged.
+    // control is dragged. Each stylesheet handed out has a number; the
+    // server's is 1. The number goes up only when the generated CSS differs
+    // from the last: a save, or an edit that writes equal values, gives new
+    // objects and the same CSS, and repaints nothing.
     const [ output, setOutput ] = useState( null );
     useEffect( () => {
         if ( ! merged ) {
@@ -88,16 +85,17 @@ export function useGlobalStyles( serverSettings ) {
             const hasBlockGapSupport =
                 blockGap !== null && blockGap !== undefined;
             counters.styleGenerations++;
-            const [ styles, settings ] = generateGlobalStyles(
-                merged,
-                getBlockTypes(),
-                {
-                    hasBlockGapSupport,
-                    hasFallbackGapSupport: ! hasBlockGapSupport,
-                    disableLayoutStyles: !! serverSettings.disableLayoutStyles,
-                }
+            const [ styles ] = generateGlobalStyles( merged, getBlockTypes(), {
+                hasBlockGapSupport,
+                hasFallbackGapSupport: ! hasBlockGapSupport,
+                disableLayoutStyles: !! serverSettings.disableLayoutStyles,
+            } );
+            const css = JSON.stringify( styles );
+            setOutput( ( last ) =>
+                last?.css === css
+                    ? last
+                    : { styles, css, version: ( last?.version ?? 1 ) + 1 }
             );
-            setOutput( { styles, settings } );
         } );
         return () => window.cancelAnimationFrame( frame );
     }, [ merged, serverSettings ] );
@@ -118,16 +116,9 @@ export function useGlobalStyles( serverSettings ) {
         };
     }, [ serverSettings, output ] );
 
-    // Each stylesheet handed out has a number, and `settledVersion` is the
-    // number of the one that has stayed unchanged for a moment.
-    const versionRef = useRef( { settings: null, value: 0 } );
-    if ( versionRef.current.settings !== editorSettings ) {
-        versionRef.current = {
-            settings: editorSettings,
-            value: versionRef.current.value + 1,
-        };
-    }
-    const version = versionRef.current.value;
+    // `settledVersion` is the number of the stylesheet that has stayed
+    // unchanged for a moment.
+    const version = output?.version ?? 1;
     const [ settledVersion, setSettledVersion ] = useState( version );
     useEffect( () => {
         const timer = setTimeout( () => setSettledVersion( version ), SETTLE );
