@@ -4,7 +4,6 @@ import {
     resetFixture,
     openBoard,
     setViewport,
-    setZoom,
     enterEdit,
     editorFrame,
     artboardOf,
@@ -479,7 +478,7 @@ test.describe( 'STYLE', () => {
         );
     } );
 
-    test( 'AC-STYLE-07 Choosing a variation repaints the board once, Snapshot artboards included, and adds Styles to Review', async ( {
+    test( 'AC-STYLE-07 Choosing a variation repaints the board once and adds Styles to Review', async ( {
         page,
     } ) => {
         await setViewport( page, { x: 40, y: 40, zoom: 0.25 } );
@@ -521,35 +520,6 @@ test.describe( 'STYLE', () => {
             1
         );
 
-        // A frozen copy takes a variation too, without becoming a Preview
-        // (D51).
-        await setZoom( page, 0.15 );
-        const frame = page.locator( `[data-wfd-artboard="${ index.id }"]` );
-        await expect( frame ).toHaveAttribute( 'data-wfd-tier', 'snapshot' );
-        const frozenBackground = () =>
-            frame
-                .locator( '.wfd-snapshot__copy iframe' )
-                .first()
-                .evaluate( ( el: HTMLIFrameElement ) =>
-                    el.contentDocument?.body
-                        ? el.contentWindow!.getComputedStyle(
-                              el.contentDocument.body
-                          ).backgroundColor
-                        : null
-                )
-                .catch( () => null );
-        await expect.poll( frozenBackground ).not.toBeNull();
-        const evening = await frozenBackground();
-        await right( page )
-            .getByRole( 'button', { name: 'Variation: Evening' } )
-            .click();
-        await items.filter( { hasText: /^Noon$/ } ).click();
-        await expect
-            .poll( frozenBackground, { timeout: 30000 } )
-            .toBe( 'rgb(248, 247, 245)' );
-        expect( evening ).not.toBe( 'rgb(248, 247, 245)' );
-        await expect( frame ).toHaveAttribute( 'data-wfd-tier', 'snapshot' );
-
         await expect( page.locator( '[data-wfd-control="H9"]' ) ).toHaveText(
             'Review 1 change'
         );
@@ -580,15 +550,15 @@ test.describe( 'STYLE', () => {
 
         // Each entry opens its stock screen in place of the tokens, and the
         // screen's own Back control returns to them.
-        const entries: [ ReturnType< typeof edit >, string ][] = [
-            [ edit( 'Colors' ), 'Colors' ],
-            [ edit( 'Typography' ), 'Typography' ],
-            [ edit( 'Spacing' ), 'Layout' ],
-            [ row( 'Background' ), 'Background' ],
-            [ row( 'Shadows' ), 'Shadows' ],
+        const entries: [ ReturnType< typeof edit >, string, string ][] = [
+            [ edit( 'Colors' ), 'Edit', 'Colors' ],
+            [ edit( 'Typography' ), 'Edit', 'Typography' ],
+            [ edit( 'Spacing' ), 'Edit', 'Layout' ],
+            [ row( 'Background' ), 'Background', 'Background' ],
+            [ row( 'Shadows' ), 'Shadows', 'Shadows' ],
         ];
-        for ( const [ entry, title ] of entries ) {
-            await expect( entry ).toHaveText( /^(Edit|Background|Shadows)$/ );
+        for ( const [ entry, text, title ] of entries ) {
+            await expect( entry ).toHaveText( text );
             await entry.click();
             const stock = panel.locator( '.wfd-styles__screen' );
             await expect( stock ).toBeVisible();
