@@ -115,6 +115,8 @@ Outside an artboard in edit: `[U]`
 | Cmd/Ctrl + Z, Cmd/Ctrl + Shift + Z | Undo, redo layout |
 | Esc | Clear selection |
 
+While the window is narrower than 1180 px and the message of D49 shows, no key reaches the board, the ones marked "always" included. `[U]`
+
 While an artboard is in edit, a click on empty board leaves edit and clears the selection, and a click on another artboard leaves edit and selects it (D38). `[U]`
 
 A drag from empty board selects the artboards its rectangle touches; with Cmd/Ctrl it adds them to the selection. While an artboard is in edit the drag first leaves edit. Esc during the drag cancels it and puts the selection back as it was (D43). Like an artboard drag, the rectangle is drawn by changing the DOM directly; the store hears only when the set of selected artboards changes. `[U]`
