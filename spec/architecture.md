@@ -65,6 +65,15 @@ Rules:
 
 The list view toggle is disabled when no artboard is in edit. `[N]`
 
+Hiding the panels (D32): `[U]`
+
+- A hidden panel takes no room; the canvas area grows into it. The state rules above still decide what a panel holds; hiding only decides whether it is drawn.
+- The left panel counts as shown only when it is not hidden and has something to show. In edit with the list view and the inserter both off it is not shown, and the left toggle reads "Show left panel"; pressing it then turns the list view on.
+- Turning the inserter toggle or the list view toggle on shows the left panel if it was hidden.
+- A hidden right panel stays hidden when the selection changes or an artboard enters or leaves edit.
+- Cmd/Ctrl + \ hides both panels when either is shown, and shows both when neither is.
+- Nothing about this is stored. Both panels are shown each time a board opens.
+
 ## Data streams
 
 | Stream | Source | Through | Lands in | Rate control | Source tag |
@@ -93,6 +102,7 @@ Outside an artboard in edit: `[U]`
 | Space + drag, or middle-button drag | Pan |
 | Cmd/Ctrl + wheel, Cmd/Ctrl + `+` / `-` | Zoom (always) |
 | Shift + 1 | Fit all artboards (always) |
+| Cmd/Ctrl + \ | Hide or show both side panels (always) |
 | Shift + 2 | Fit the selected artboard |
 | Tab / Shift + Tab | Move selection to the next or previous artboard in left-panel order |
 | Enter | Edit the selected artboard |

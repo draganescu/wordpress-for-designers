@@ -22,9 +22,12 @@ Unless a criterion says otherwise, the fixture in `architecture.md` is loaded an
 ## SHELL
 
 - AC-SHELL-01 With nothing selected, the left panel lists artboards by kind with counts and the right panel shows Styles on the Tokens tab. `[U]`
-- AC-SHELL-02 Header controls appear in the order H1 to H9; H5 is disabled and H6 absent when nothing is in edit. `[U]`
+- AC-SHELL-02 Header controls appear in the order H1 to H5, H10, H6, H7, H8, H11, H9; H5 is disabled and H6 absent when nothing is in edit. `[U]`
 - AC-SHELL-03 Selecting an artboard highlights its row and shows artboard settings in the right panel; Styles is not shown. `[U]`
 - AC-SHELL-04 Turning the inserter toggle on replaces the left panel with the inserter in every state, and off restores what was there. `[U]`
+- AC-SHELL-05 The left and right panel toggles each hide and show their panel, their labels and pressed state follow, and the canvas area takes the freed room. `[U]`
+- AC-SHELL-06 Cmd/Ctrl + \ hides both panels when either is shown and shows both when neither is, on the board and while an artboard is in edit. `[U]`
+- AC-SHELL-07 Turning the inserter or list view toggle on shows a hidden left panel; a hidden right panel stays hidden through selection and edit; after a reload both panels are shown. `[U]`
 
 ## CANVAS
 
