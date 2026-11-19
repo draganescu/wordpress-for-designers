@@ -12,7 +12,7 @@ import { store as boardStore } from '../board-store';
 import { orderedArtboards } from './artboards-panel';
 import { isShortcutsDialogEvent } from './shortcuts-dialog';
 import { noteRect } from './notes';
-import { MIN_BROWSER_HEIGHT } from './constants';
+import { MIN_BROWSER_HEIGHT, hasDevice } from './constants';
 
 const DRAG_THRESHOLD = 3;
 const ZOOM_STEP = 1.25;
@@ -38,10 +38,9 @@ export function rectOf( artboard, widthOf ) {
     return {
         x: artboard.x,
         y: artboard.y,
-        width:
-            artboard.kind === 'media'
-                ? artboard.width
-                : widthOf( artboard.device ),
+        width: hasDevice( artboard )
+            ? widthOf( artboard.device )
+            : artboard.width,
         height: artboard.height,
     };
 }

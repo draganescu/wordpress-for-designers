@@ -2,7 +2,7 @@
  * Label strings shared by the canvas, the header and the panels.
  */
 import { __, _n, sprintf } from '@wordpress/i18n';
-import { DEVICES, KINDS } from './constants';
+import { DEVICES, KINDS, hasDevice } from './constants';
 
 /**
  * "{Name} · {Kind} · {Device}" (A1).
@@ -11,7 +11,7 @@ import { DEVICES, KINDS } from './constants';
  * @return {string} The label.
  */
 export function artboardLabel( artboard ) {
-    if ( artboard.kind === 'media' ) {
+    if ( ! hasDevice( artboard ) ) {
         // A media object has no device.
         return liveLabel( artboard );
     }

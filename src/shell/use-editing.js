@@ -7,6 +7,7 @@ import { useDispatch, useRegistry, useSelect } from '@wordpress/data';
 import { store as coreStore } from '@wordpress/core-data';
 import { store as boardStore } from '../board-store';
 import { holdLock, isLockable, takeLock } from '../lock';
+import { KINDS } from './constants';
 import { expose } from './test-hooks';
 
 /**
@@ -74,7 +75,7 @@ export function useEditing( { viewport, areaRef, getArtboards, widthOf } ) {
             if (
                 ! artboard ||
                 // A media object is not editable.
-                artboard.kind === 'media' ||
+                ! KINDS[ artboard.kind ].edit ||
                 registry.select( boardStore ).getEditId() === id
             ) {
                 return;
@@ -133,7 +134,8 @@ export function useEditing( { viewport, areaRef, getArtboards, widthOf } ) {
                 );
             }
             setSelectedBlock( null );
-            if ( artboard.kind === 'browser' ) {
+            const isBrowsed = KINDS[ artboard.kind ].edit === 'browse';
+            if ( isBrowsed ) {
                 // Browsing is the browser's way of being in edit (D55).
                 setBrowsingId( id );
             } else {
@@ -147,13 +149,13 @@ export function useEditing( { viewport, areaRef, getArtboards, widthOf } ) {
                     return;
                 }
                 const iframe = areaRef.current?.querySelector(
-                    artboard.kind === 'browser'
+                    isBrowsed
                         ? `[data-wfd-artboard="${ id }"] iframe:not([inert])`
                         : `[data-wfd-artboard="${ id }"] iframe[name="editor-canvas"]`
                 );
                 if (
                     // A browser's page takes the keys while browsing (D55).
-                    ( artboard.kind === 'browser' && iframe ) ||
+                    ( isBrowsed && iframe ) ||
                     iframe?.contentDocument?.querySelector(
                         '.is-root-container'
                     )

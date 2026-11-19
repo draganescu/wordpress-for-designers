@@ -15,7 +15,7 @@ import {
     Text,
     VisuallyHidden,
 } from '@wordpress/ui';
-import { DEVICES, DEVICE_ORDER } from '../shell/constants';
+import { DEVICES, DEVICE_ORDER, KINDS } from '../shell/constants';
 import { artboardLabel, liveLabel, usesText } from '../shell/labels';
 import { countRender } from '../shell/test-hooks';
 import { normalizeAddress } from './browser';
@@ -140,7 +140,7 @@ function Label( {
     if ( isLive ) {
         return (
             <div className="wfd-artboard__label is-live">
-                { artboard.kind === 'browser' ? (
+                { KINDS[ artboard.kind ].edit === 'browse' ? (
                     <AddressControls
                         path={ artboard.path }
                         onAddress={ onAddress }
@@ -305,7 +305,7 @@ export function ArtboardFrame( {
                     { children }
                 </FrameElementContext.Provider>
             </div>
-            { artboard.kind === 'browser' && ! isLive && (
+            { KINDS[ artboard.kind ].isResized && ! isLive && (
                 // The window's bottom edge resizes it (D56).
                 <div className="wfd-artboard__resize" data-wfd-resize />
             ) }

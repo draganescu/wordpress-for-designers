@@ -3,6 +3,7 @@
  * panel toggles and layout history.
  */
 import { createReduxStore, register } from '@wordpress/data';
+import { KINDS } from '../shell/constants';
 
 export const STORE_NAME = 'wfd/board';
 
@@ -53,8 +54,9 @@ const DEFAULT_STATE = {
 function restore( snapshot, current ) {
     const heights = new Map( current.map( ( a ) => [ a.id, a.height ] ) );
     return snapshot.map( ( artboard ) =>
-        // A browser's height is set by hand, not measured (D56).
-        artboard.kind !== 'browser' && heights.has( artboard.id )
+        // A height set by hand is part of the history (D56); a measured
+        // one stays as it is now.
+        ! KINDS[ artboard.kind ].isResized && heights.has( artboard.id )
             ? { ...artboard, height: heights.get( artboard.id ) }
             : artboard
     );
@@ -639,26 +641,13 @@ export function toLayout( artboards, notes = [] ) {
         version: 1,
         artboards: artboards
             .filter( ( artboard ) => ! artboard.draft )
-            .map(
-                ( {
-                    id,
-                    kind,
-                    entityId,
-                    path,
-                    shows,
-                    device,
-                    x,
-                    y,
-                    width,
-                    height,
-                } ) => {
-                    if ( kind === 'browser' ) {
-                        return { id, kind, path, device, x, y, height, shows };
-                    }
-                    return kind === 'media'
-                        ? { id, kind, entityId, x, y, width, height }
-                        : { id, kind, entityId, device, x, y, height };
-                }
+            .map( ( artboard ) =>
+                Object.fromEntries(
+                    KINDS[ artboard.kind ].layout.map( ( field ) => [
+                        field,
+                        artboard[ field ],
+                    ] )
+                )
             ),
         // A board with no notes keeps the layout it always had.
         ...( notes.length && {

@@ -31,8 +31,8 @@ export function useArtboards() {
         return select( boardStore )
             .getArtboards()
             .map( ( artboard ) => {
-                if ( artboard.kind === 'browser' ) {
-                    // A browser has no entity: its name is its address.
+                if ( ! KINDS[ artboard.kind ].postType ) {
+                    // With no entity, a browser: its name is its address.
                     return {
                         ...artboard,
                         record: null,

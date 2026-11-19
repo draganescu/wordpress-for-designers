@@ -174,9 +174,7 @@ export function usePreviewPush() {
                 seenArtboards = artboards;
                 const wasWanted = isWanted;
                 isWanted = artboards.some(
-                    ( artboard ) =>
-                        artboard.kind === 'browser' &&
-                        artboard.shows === 'unsaved'
+                    ( artboard ) => artboard.shows === 'unsaved'
                 );
                 // New templates and parts are found through their artboards.
                 const drafts = artboards

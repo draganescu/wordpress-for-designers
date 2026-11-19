@@ -51,7 +51,7 @@ import {
     PreviewBanner,
     UsageBanner,
 } from './canvas';
-import { KINDS } from './constants';
+import { KINDS, hasDevice } from './constants';
 import { LockDialog, RemoveDialog } from './dialogs';
 import { ShortcutsButton, ShortcutsDialog } from './shortcuts-dialog';
 import { Note, NoteSettings } from './notes';
@@ -452,10 +452,7 @@ export function App() {
             layout
                 // Media objects are images and browsers are pages of the
                 // site, both outside the tiers.
-                .filter(
-                    ( artboard ) =>
-                        artboard.kind !== 'media' && artboard.kind !== 'browser'
-                )
+                .filter( ( artboard ) => KINDS[ artboard.kind ].isTiered )
                 .map( ( artboard ) => ( {
                     id: artboard.id,
                     ...rectOf( artboard, widthOf ),
@@ -986,9 +983,9 @@ export function App() {
                                         tier = 'ghost';
                                     }
                                 }
-                                const width = isMedia
-                                    ? artboard.width
-                                    : widthOf( artboard.device );
+                                const width = hasDevice( artboard )
+                                    ? widthOf( artboard.device )
+                                    : artboard.width;
                                 let content = null;
                                 const onHeight = ( height ) =>
                                     updateArtboard( artboard.id, { height } );
