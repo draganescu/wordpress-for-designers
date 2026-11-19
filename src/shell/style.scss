@@ -323,6 +323,7 @@ html.wp-toolbar:has(.wfd-board-page) {
     justify-content: center;
     width: 100%;
     height: 100%;
+    background: var(--wpds-color-background-surface-brand);
     outline: calc(var(--wpds-border-width-sm) / var(--wfd-zoom)) dashed var(--wpds-color-stroke-interactive-brand);
 }
 
@@ -331,7 +332,6 @@ html.wp-toolbar:has(.wfd-board-page) {
 .wfd-marquee {
     position: absolute;
     pointer-events: none;
-    background: var(--wpds-color-background-surface-brand);
     outline: calc(var(--wpds-border-width-xs) / var(--wfd-zoom)) solid var(--wpds-color-stroke-interactive-brand);
 }
 
