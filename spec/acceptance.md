@@ -53,7 +53,7 @@ Unless a criterion says otherwise, the fixture in `architecture.md` is loaded an
 - AC-DEV-02 With a theme whose `settings.viewport.tablet` is 900px and `mobile` is 320px, Tablet renders at 898 and Mobile at 320. `[U]`
 - AC-DEV-03 Changing device from the Live label menu or the right panel re-renders the artboard at the new width and is undoable as a layout change. `[U]`
 - AC-DEV-04 No control offers any width other than the three devices. `[U]`
-- AC-DEV-05 A length in viewport-height units resolves against a viewport 900 px high: a block with `min-height:100vh` in its inline style is 900 px tall, and one given `min-height:50vh` by a style sheet loaded into the canvas is 450 px tall, as a Preview and in edit, and the artboard's height settles (OQ-28). `[U]`
+- AC-DEV-05 A length in viewport-height units resolves against a viewport 900 px high: a block with `min-height:100vh` in its inline style is 900 px tall, and one given `min-height:50vh` by a style sheet loaded into the canvas is 450 px tall, as a Preview and in edit, and the artboard's height settles (OQ-29). `[U]`
 
 ## TIER
 

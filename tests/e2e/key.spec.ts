@@ -264,4 +264,92 @@ test.describe( 'KEY', () => {
             page.locator( `[data-wfd-row="${ header.id }"]` )
         ).toHaveAttribute( 'aria-current', 'true' );
     } );
+
+    test( 'AC-KEY-04 The "Keyboard shortcuts" control at the bottom left of the canvas area opens a dialog with one row for each shortcut; Esc closes it and focus returns to the control', async ( {
+        page,
+        requestUtils,
+    } ) => {
+        const fixture = await resetFixture( requestUtils );
+        await openBoard( page, fixture.boardId );
+        const control = page.locator( '[data-wfd-control="A5"]' );
+        await expect( control ).toHaveAccessibleName( 'Keyboard shortcuts' );
+
+        // It floats at the bottom left of the canvas area.
+        const area = ( await page
+            .locator( '[data-wfd-region="canvas"]' )
+            .boundingBox() )!;
+        const box = ( await control.boundingBox() )!;
+        expect( box.x - area.x ).toBeLessThan( 40 );
+        expect( area.y + area.height - ( box.y + box.height ) ).toBeLessThan(
+            40
+        );
+
+        await control.click();
+        const dialog = page.getByRole( 'dialog', {
+            name: 'Keyboard shortcuts',
+        } );
+        await expect( dialog ).toBeVisible();
+        await expect(
+            dialog.getByRole( 'heading', { name: 'On the board' } )
+        ).toBeVisible();
+        await expect(
+            dialog.getByRole( 'heading', {
+                name: 'While editing an artboard',
+            } )
+        ).toBeVisible();
+        const rows = dialog.locator( '[data-wfd-shortcut-row]' );
+        await expect( rows ).toHaveCount( 18 );
+        await expect( rows.first() ).toContainText( 'Pan' );
+        await expect(
+            rows.filter( { hasText: 'Hide or show both side panels' } )
+        ).toContainText( '\\' );
+        await expect( rows.last() ).toContainText( 'Back to the board' );
+        await expect( dialog ).toContainText(
+            "The block editor's shortcuts work as usual."
+        );
+
+        await page.keyboard.press( 'Escape' );
+        await expect( dialog ).toHaveCount( 0 );
+        await expect( control ).toBeFocused();
+    } );
+
+    test( 'AC-KEY-05 Ctrl + Option + H on a Mac, Shift + Alt + H elsewhere, opens the keyboard shortcuts dialog and pressed again closes it, on the board and while an artboard is in edit', async ( {
+        page,
+        requestUtils,
+    } ) => {
+        const fixture = await resetFixture( requestUtils );
+        await openBoard( page, fixture.boardId );
+        const isApple = await page.evaluate( () =>
+            /Mac|iPod|iPhone|iPad/.test( window.navigator.platform )
+        );
+        const shortcut = () =>
+            page.keyboard.press(
+                isApple ? 'Control+Alt+KeyH' : 'Shift+Alt+KeyH'
+            );
+        const dialog = page.getByRole( 'dialog', {
+            name: 'Keyboard shortcuts',
+        } );
+
+        // On the board.
+        await page.locator( '[data-wfd-region="canvas"]' ).focus();
+        await shortcut();
+        await expect( dialog ).toBeVisible();
+        await shortcut();
+        await expect( dialog ).toHaveCount( 0 );
+
+        // While an artboard is in edit, with the caret in a block.
+        const header = artboardOf( fixture, 'template-part' );
+        const artboard = page.locator( `[data-wfd-artboard="${ header.id }"]` );
+        await enterEdit( page, header.id );
+        const paragraph = editorFrame( page, header.id ).locator( 'p', {
+            hasText: 'Fixture header text',
+        } );
+        await paragraph.click();
+        await shortcut();
+        await expect( dialog ).toBeVisible();
+        await shortcut();
+        await expect( dialog ).toHaveCount( 0 );
+        await expect( artboard ).toHaveAttribute( 'data-wfd-tier', 'live' );
+        await expect( paragraph ).toHaveText( 'Fixture header text' );
+    } );
 } );

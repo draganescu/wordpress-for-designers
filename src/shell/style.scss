@@ -1,3 +1,4 @@
+@use "@wordpress/base-styles/variables" as wp-variables;
 @import "primitives";
 @import "../styles/style";
 @import "../inserter/style";
@@ -148,6 +149,51 @@ html.wp-toolbar:has(.wfd-board-page) {
 .wfd-artboards-panel__empty {
     display: block;
     padding: 0 var(--wpds-dimension-padding-lg);
+}
+
+// The keyboard shortcuts control (A5) floats over the board.
+.wfd-shortcuts-button {
+    position: absolute;
+    bottom: var(--wpds-dimension-padding-lg);
+    inset-inline-start: var(--wpds-dimension-padding-lg);
+    z-index: 2;
+    display: flex;
+    border-radius: var(--wpds-border-radius-md);
+    background: var(--wpds-color-background-surface-neutral);
+    // The design system has no elevation token; this is the shadow its own
+    // components use (OQ-28).
+    box-shadow: wp-variables.$elevation-x-small;
+}
+
+.wfd-shortcuts__group + .wfd-shortcuts__group {
+    margin-top: var(--wpds-dimension-gap-xl);
+}
+
+.wfd-shortcuts__list {
+    margin: var(--wpds-dimension-gap-sm) 0 0;
+    padding: 0;
+    list-style: none;
+}
+
+.wfd-shortcuts__row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    column-gap: var(--wpds-dimension-gap-lg);
+    margin: 0;
+    padding: var(--wpds-dimension-padding-xs) 0;
+}
+
+.wfd-shortcuts__keys,
+.wfd-shortcuts__key {
+    display: flex;
+    align-items: center;
+    column-gap: var(--wpds-dimension-gap-xs);
+}
+
+.wfd-shortcuts__note {
+    margin: var(--wpds-dimension-gap-sm) 0 0;
+    color: var(--wpds-color-foreground-content-neutral-weak);
 }
 
 .wfd-canvas {
