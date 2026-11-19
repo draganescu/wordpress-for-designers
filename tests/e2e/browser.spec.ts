@@ -249,6 +249,14 @@ test.describe( 'BROWSER', () => {
             page$( page ).locator( 'h2', { hasText: 'About' } )
         ).toBeVisible();
 
+        // Undo in the address field undoes its typing, not the layout.
+        await address( page ).focus();
+        await page.keyboard.press( 'End' );
+        await page.keyboard.type( 'x' );
+        await expect( address( page ) ).toHaveValue( `${ aboutPath }x` );
+        await page.keyboard.press( 'ControlOrMeta+z' );
+        await expect( address( page ) ).toHaveValue( aboutPath );
+
         // Esc inside the page.
         await page$( page ).locator( 'body' ).click();
         await page.keyboard.press( 'Escape' );

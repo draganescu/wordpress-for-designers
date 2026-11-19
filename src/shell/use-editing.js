@@ -200,12 +200,21 @@ export function useEditing( { viewport, areaRef, getArtboards, widthOf } ) {
         function onKeyDown( event ) {
             const mod = event.metaKey || event.ctrlKey;
             if ( mod && ! event.altKey && event.key.toLowerCase() === 'z' ) {
-                event.preventDefault();
                 const board = registry.select( boardStore );
                 if (
                     board.getArtboard( board.getLiveId() )?.kind === 'browser'
                 ) {
-                    // A browser has no content history (D55).
+                    // A browser has no content history (D55): the layout's
+                    // is used, unless a text field has the key, such as the
+                    // address field, which undoes its own typing.
+                    if (
+                        event.target?.matches?.(
+                            'input, textarea, [contenteditable]'
+                        )
+                    ) {
+                        return;
+                    }
+                    event.preventDefault();
                     if ( event.shiftKey ) {
                         registry.dispatch( boardStore ).redoLayout();
                     } else {
@@ -213,6 +222,7 @@ export function useEditing( { viewport, areaRef, getArtboards, widthOf } ) {
                     }
                     return;
                 }
+                event.preventDefault();
                 if ( event.shiftKey ) {
                     registry.dispatch( coreStore ).redo();
                 } else {
