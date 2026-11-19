@@ -1,5 +1,5 @@
 /**
- * Notes on the board (D43): the note itself, its settings in the right panel
+ * Notes on the board (D46): the note itself, its settings in the right panel
  * and the helpers the canvas uses for it.
  */
 import { __ } from '@wordpress/i18n';

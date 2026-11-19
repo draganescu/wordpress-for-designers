@@ -29,6 +29,7 @@ In the keys, "Cmd/Ctrl" below is shown as "⌘" on a Mac and "Ctrl" elsewhere, a
 | Action | Keys |
 |---|---|
 | Pan | Space + drag |
+| Select artboards | Drag on empty board |
 | Zoom | Cmd/Ctrl + scroll |
 | Zoom in | Cmd/Ctrl + `+` |
 | Zoom out | Cmd/Ctrl + `-` |

@@ -298,7 +298,10 @@ test.describe( 'KEY', () => {
             } )
         ).toBeVisible();
         const rows = dialog.locator( '[data-wfd-shortcut-row]' );
-        await expect( rows ).toHaveCount( 18 );
+        await expect( rows ).toHaveCount( 19 );
+        await expect(
+            rows.filter( { hasText: 'Select artboards' } )
+        ).toContainText( 'Drag on empty board' );
         await expect( rows.first() ).toContainText( 'Pan' );
         await expect(
             rows.filter( { hasText: 'Hide or show both side panels' } )

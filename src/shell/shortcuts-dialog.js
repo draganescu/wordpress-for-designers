@@ -43,6 +43,10 @@ function groups() {
                     ],
                 ],
                 [
+                    __( 'Select artboards', 'wordpress-for-designers' ),
+                    [ __( 'Drag on empty board', 'wordpress-for-designers' ) ],
+                ],
+                [
                     __( 'Zoom', 'wordpress-for-designers' ),
                     [ mod, __( 'scroll', 'wordpress-for-designers' ) ],
                 ],

@@ -220,6 +220,95 @@ test.describe( 'CANVAS', () => {
         await expect( mobile ).toHaveClass( /is-selected/ );
     } );
 
+    test( 'AC-CANVAS-07 Tidy up puts the board in one row per kind, in left-panel order, as one undoable step', async ( {
+        page,
+    } ) => {
+        const ids = fixture.layout.artboards.map( ( a ) => a.id );
+        const kindOf = new Map(
+            fixture.layout.artboards.map( ( a ) => [ a.id, a.kind ] )
+        );
+        const boxes = () =>
+            page.evaluate( ( list ) => {
+                const out: Record<
+                    string,
+                    { left: number; top: number; width: number; height: number }
+                > = {};
+                list.forEach( ( id ) => {
+                    const el = document.querySelector(
+                        `[data-wfd-artboard="${ id }"]`
+                    ) as HTMLElement;
+                    out[ id ] = {
+                        left: parseFloat( el.style.left ),
+                        top: parseFloat( el.style.top ),
+                        width: el.offsetWidth,
+                        height: el.offsetHeight,
+                    };
+                } );
+                return out;
+            }, ids );
+        // Names load asynchronously; left-panel order needs them.
+        await expect(
+            page.locator( '[data-wfd-row] .wfd-row__name', {
+                hasText: 'Index',
+            } )
+        ).toBeVisible();
+        const order = await page
+            .locator( '[data-wfd-row]' )
+            .evaluateAll( ( rows ) =>
+                rows.map( ( row ) => row.getAttribute( 'data-wfd-row' )! )
+            );
+        const before = await boxes();
+        const beforeText = JSON.stringify( before );
+
+        const tidy = page.locator( '[data-wfd-control="H12"]' );
+        await expect( tidy ).toHaveAccessibleName( 'Tidy up' );
+        await tidy.click();
+        await expect
+            .poll( async () => JSON.stringify( await boxes() ) )
+            .not.toBe( beforeText );
+        const after = await boxes();
+
+        const kinds = [ 'page', 'template', 'template-part', 'pattern' ];
+        let rowBottom = -Infinity;
+        for ( const kind of kinds ) {
+            const row = order.filter( ( id ) => kindOf.get( id ) === kind );
+            expect( row.length ).toBeGreaterThan( 0 );
+            // One row, top-aligned, below the row before it.
+            const top = after[ row[ 0 ] ].top;
+            expect( top ).toBeGreaterThan( rowBottom );
+            row.forEach( ( id ) => expect( after[ id ].top ).toBe( top ) );
+            // Side by side in left-panel order, not overlapping.
+            for ( let i = 1; i < row.length; i++ ) {
+                const prev = after[ row[ i - 1 ] ];
+                expect( after[ row[ i ] ].left ).toBeGreaterThanOrEqual(
+                    prev.left + prev.width
+                );
+            }
+            rowBottom = Math.max(
+                ...row.map( ( id ) => after[ id ].top + after[ id ].height )
+            );
+        }
+
+        // One step: Undo names it and puts everything back.
+        const undo = page.locator( '[data-wfd-control="H3"]' );
+        await expect( undo ).toHaveAccessibleName(
+            'Undo tidy up, on the board'
+        );
+        await undo.click();
+        await expect
+            .poll( async () => {
+                const now = await boxes();
+                return ids.map( ( id ) => [ now[ id ].left, now[ id ].top ] );
+            } )
+            .toEqual(
+                ids.map( ( id ) => [ before[ id ].left, before[ id ].top ] )
+            );
+
+        // Disabled while an artboard is in edit.
+        await enterEdit( page, artboardOf( fixture, 'page' ).id );
+        await expect( tidy ).toBeDisabled();
+    } );
+
     const zoomAtPointerAndPan = async ( page: Page, x: number, y: number ) => {
         const canvas = page.locator( '[data-wfd-region="canvas"]' );
         const box = ( await canvas.boundingBox() )!;
@@ -256,6 +345,154 @@ test.describe( 'CANVAS', () => {
         expect( panned.zoom ).toBeCloseTo( zoomed.zoom, 5 );
     };
 
+    test( 'AC-CANVAS-06 Dragging from empty board selects every artboard the rectangle touches; Cmd/Ctrl + drag adds; Esc cancels; in edit the drag leaves edit', async ( {
+        page,
+    } ) => {
+        const ids = fixture.layout.artboards.map( ( { id } ) => id );
+        const heroId = fixture.layout.artboards[ 3 ].id;
+        const marquee = page.locator( '[data-wfd-marquee]' );
+        const canvas = page.locator( '[data-wfd-region="canvas"]' );
+        type Point = { x: number; y: number };
+        const frameOf = ( id: string ) =>
+            page.locator( `[data-wfd-artboard="${ id }"]` );
+        // A point of the canvas area with nothing over it.
+        const emptyPoint = (): Promise< Point > =>
+            canvas.evaluate( ( area ) => {
+                const box = area.getBoundingClientRect();
+                for ( let y = box.bottom - 16; y > box.top; y -= 24 ) {
+                    for ( let x = box.left + 16; x < box.right; x += 24 ) {
+                        if ( document.elementFromPoint( x, y ) === area ) {
+                            return { x, y };
+                        }
+                    }
+                }
+                throw new Error( 'No empty board in view' );
+            } );
+        // A point inside an artboard's frame that is in view.
+        const pointIn = async ( id: string ): Promise< Point > => {
+            const c = ( await canvas.boundingBox() )!;
+            const f = ( await frameBox( frameOf( id ) ) )!;
+            const left = Math.max( c.x, f.x );
+            const top = Math.max( c.y, f.y );
+            const right = Math.min( c.x + c.width, f.x + f.width );
+            const bottom = Math.min( c.y + c.height, f.y + f.height );
+            expect( right - left ).toBeGreaterThan( 10 );
+            expect( bottom - top ).toBeGreaterThan( 10 );
+            return { x: left + 5, y: top + 5 };
+        };
+        // The artboards whose frame a rectangle between two points touches.
+        const touchedBy = async ( a: Point, b: Point ) => {
+            const touched: string[] = [];
+            for ( const id of ids ) {
+                const f = ( await frameBox( frameOf( id ) ) )!;
+                if (
+                    f.x < Math.max( a.x, b.x ) &&
+                    f.x + f.width > Math.min( a.x, b.x ) &&
+                    f.y < Math.max( a.y, b.y ) &&
+                    f.y + f.height > Math.min( a.y, b.y )
+                ) {
+                    touched.push( id );
+                }
+            }
+            return touched.sort();
+        };
+        const selectedIds = async () =>
+            (
+                await page
+                    .locator( '.wfd-artboard.is-selected' )
+                    .evaluateAll( ( nodes ) =>
+                        nodes.map(
+                            ( node ) =>
+                                ( node as HTMLElement ).dataset.wfdArtboard
+                        )
+                    )
+            ).sort();
+
+        // A plain drag selects what the rectangle touches, as it is dragged.
+        const start = await emptyPoint();
+        const end = await pointIn( heroId );
+        const touched = await touchedBy( start, end );
+        expect( touched ).toContain( heroId );
+        await expect( marquee ).toBeHidden();
+        await page.mouse.move( start.x, start.y );
+        await page.mouse.down();
+        await page.mouse.move( end.x, end.y, { steps: 6 } );
+        await expect( marquee ).toBeVisible();
+        await expect.poll( selectedIds ).toEqual( touched );
+        const drawn = ( await marquee.boundingBox() )!;
+        expect( drawn.x ).toBeCloseTo( Math.min( start.x, end.x ), 0 );
+        expect( drawn.y ).toBeCloseTo( Math.min( start.y, end.y ), 0 );
+        expect( drawn.width ).toBeCloseTo( Math.abs( end.x - start.x ), 0 );
+        expect( drawn.height ).toBeCloseTo( Math.abs( end.y - start.y ), 0 );
+
+        // An artboard the rectangle no longer touches is deselected.
+        const near = { x: start.x + 6, y: start.y - 6 };
+        expect( await touchedBy( start, near ) ).toEqual( [] );
+        await page.mouse.move( near.x, near.y, { steps: 6 } );
+        await expect.poll( selectedIds ).toEqual( [] );
+        await page.mouse.move( end.x, end.y, { steps: 6 } );
+        await page.mouse.up();
+        await expect( marquee ).toBeHidden();
+        await expect.poll( selectedIds ).toEqual( touched );
+
+        // Cmd/Ctrl + drag keeps what was selected and adds to it.
+        const otherId = ids.find( ( id ) => ! touched.includes( id ) )!;
+        expect( otherId ).toBeTruthy();
+        await page.evaluate(
+            ( id ) =>
+                ( window as any ).wp.data
+                    .dispatch( 'wfd/board' )
+                    .selectArtboard( id ),
+            otherId
+        );
+        await expect.poll( selectedIds ).toEqual( [ otherId ] );
+        await page.keyboard.down( 'ControlOrMeta' );
+        await page.mouse.move( start.x, start.y );
+        await page.mouse.down();
+        await page.mouse.move( end.x, end.y, { steps: 6 } );
+        await page.mouse.up();
+        await page.keyboard.up( 'ControlOrMeta' );
+        await expect
+            .poll( selectedIds )
+            .toEqual( [ otherId, ...touched ].sort() );
+
+        // Esc cancels the drag: the selection is as it was before it.
+        const kept = [ otherId, ...touched ].sort();
+        await page.mouse.move( start.x, start.y );
+        await page.mouse.down();
+        await page.mouse.move( near.x, near.y, { steps: 6 } );
+        await expect( marquee ).toBeVisible();
+        await expect.poll( selectedIds ).toEqual( [] );
+        await page.keyboard.press( 'Escape' );
+        await expect( marquee ).toBeHidden();
+        await expect.poll( selectedIds ).toEqual( kept );
+        await page.mouse.move( end.x, end.y, { steps: 6 } );
+        await expect( marquee ).toBeHidden();
+        await page.mouse.up();
+        await expect.poll( selectedIds ).toEqual( kept );
+
+        // A plain drag replaces the selection.
+        await page.mouse.move( start.x, start.y );
+        await page.mouse.down();
+        await page.mouse.move( end.x, end.y, { steps: 6 } );
+        await page.mouse.up();
+        await expect.poll( selectedIds ).toEqual( touched );
+
+        // While an artboard is in edit, the drag leaves edit and selects.
+        await enterEdit( page, heroId );
+        const from = await emptyPoint();
+        const to = await pointIn( heroId );
+        const expected = await touchedBy( from, to );
+        expect( expected ).toContain( heroId );
+        await page.mouse.move( from.x, from.y );
+        await page.mouse.down();
+        await page.mouse.move( to.x, to.y, { steps: 6 } );
+        await expect( page.locator( '[data-wfd-tier="live"]' ) ).toHaveCount(
+            0
+        );
+        await page.mouse.up();
+        await expect.poll( selectedIds ).toEqual( expected );
+    } );
     test( 'AC-CANVAS-03 Cmd/Ctrl + wheel zooms around the pointer and Space + drag pans, also over an artboard', async ( {
         page,
     } ) => {

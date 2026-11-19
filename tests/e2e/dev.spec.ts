@@ -168,4 +168,67 @@ test.describe( 'DEV', () => {
             expect( [ 1440, 780, 360 ] ).toContain( width );
         }
     } );
+
+    test( 'AC-DEV-05 A length in viewport-height units resolves against a viewport 900 px high, inline or from a style sheet, as a Preview and in edit, and the artboard height settles', async ( {
+        page,
+        requestUtils,
+    } ) => {
+        const fixture = await resetFixture( requestUtils );
+        await requestUtils.rest( {
+            method: 'POST',
+            path: `/wp/v2/blocks/${ fixture.patterns.hero }`,
+            data: {
+                content:
+                    '<!-- wp:group {"style":{"dimensions":{"minHeight":"100vh"}},"layout":{"type":"constrained"}} -->' +
+                    '<div class="wp-block-group" style="min-height:100vh"><!-- wp:paragraph --><p>Inline full height.</p><!-- /wp:paragraph --></div>' +
+                    '<!-- /wp:group -->' +
+                    '<!-- wp:group {"className":"test-vh-sheet","layout":{"type":"constrained"}} -->' +
+                    '<div class="wp-block-group test-vh-sheet"><!-- wp:paragraph --><p>Sheet half height.</p><!-- /wp:paragraph --></div>' +
+                    '<!-- /wp:group -->',
+            },
+        } );
+        await openBoard( page, fixture.boardId );
+        const hero = fixture.layout.artboards.find(
+            ( a ) => a.entityId === fixture.patterns.hero
+        )!;
+        const artboard = page.locator( `[data-wfd-artboard="${ hero.id }"]` );
+        await setViewport( page, {
+            x: 40 - hero.x * 0.5,
+            y: 100 - hero.y * 0.5,
+            zoom: 0.5,
+        } );
+        const groups = () =>
+            artboard
+                .locator( 'iframe' )
+                .evaluate( ( element: HTMLIFrameElement ) =>
+                    Array.from(
+                        element.contentDocument!.querySelectorAll(
+                            '.wp-block-group'
+                        )
+                    ).map( ( group ) => group.getBoundingClientRect().height )
+                );
+        const frameHeight = () =>
+            artboard
+                .locator( '.wfd-artboard__frame' )
+                .evaluate( ( element: HTMLElement ) =>
+                    parseFloat( element.style.height )
+                );
+        // Without the fixed viewport the content fills whatever height the
+        // iframe has: 2000 px as a Preview, and without end in edit.
+        const settles = async () => {
+            await expect.poll( groups ).toEqual( [ 900, 450 ] );
+            await expect.poll( frameHeight ).toBeGreaterThanOrEqual( 1350 );
+            const height = await frameHeight();
+            expect( height ).toBeLessThan( 1700 );
+            await page.waitForTimeout( 1500 );
+            expect( await frameHeight() ).toBe( height );
+            expect( await groups() ).toEqual( [ 900, 450 ] );
+        };
+        await settles();
+        await enterEdit( page, hero.id );
+        await expect(
+            artboard.locator( 'iframe[name="editor-canvas"]' )
+        ).toBeVisible();
+        await settles();
+    } );
 } );

@@ -135,7 +135,7 @@ function wfd_layout_error( $layout ) {
     if ( ! is_array( $layout ) ) {
         return __( 'The layout must be an object.', 'wordpress-for-designers' );
     }
-    // The notes list is optional (D43).
+    // The notes list is optional (D46).
     $keys = array_keys( $layout );
     if ( array_diff( array( 'version', 'artboards' ), $keys ) || array_diff( $keys, array( 'version', 'artboards', 'notes' ) ) ) {
         return __( 'The layout must have exactly the fields version and artboards, and may have notes.', 'wordpress-for-designers' );
@@ -187,7 +187,7 @@ function wfd_layout_error( $layout ) {
 }
 
 /**
- * Checks the notes of a layout (spec/data-model.md, D43).
+ * Checks the notes of a layout (spec/data-model.md, D46).
  *
  * @param mixed $notes The decoded notes.
  * @param array $ids   Ids already used by artboards.

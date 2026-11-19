@@ -19,7 +19,7 @@ Part names in this file are fixed. Use them for the top-level folders under `src
 | Part | Responsibility | Source |
 |---|---|---|
 | `shell` | Header, left panel, canvas area, right panel. Owns which panel content shows (see State rules). | `[B2]` `[U]` |
-| `board-store` | A `@wordpress/data` store named `wfd/board`: artboard list, notes (D43), selection, which artboard is Live, layout undo history. Autosaves layout 2 s after the last change. | `[B4]` `[U]` |
+| `board-store` | A `@wordpress/data` store named `wfd/board`: artboard list, notes (D46), selection, which artboard is Live, layout undo history. Autosaves layout 2 s after the last change. | `[B4]` `[U]` |
 | `viewport` | Pan and zoom state kept outside React. Writes one CSS transform on the canvas surface per animation frame and notifies React only when a gesture settles. | `[B4]` `[B6]` |
 | `tier-scheduler` | Decides each artboard's tier from visibility and zoom, and mounts through a `@wordpress/priority-queue` queue. | `[B4]` `[B5]` `[V]` |
 | `artboard-frame` | One per artboard: position, label, selection outline, tier content. | `[B4]` |
@@ -89,7 +89,7 @@ Hiding the panels (D32): `[U]`
 | Inserter | Block types, patterns, templates, media | core-data and blocks selectors | Inserter lists | Loaded once, filtered locally | `[B6]` `[U]` |
 | Usage index | Entity records and global styles | Parse block markup, no render | Use counts and highlights in Styles | Rebuilt only for the entity that changed | `[B6]` `[U]` |
 | Save | Dirty entity records | `review` | REST, one request per entity | Explicit | `[B6]` |
-| Layout | Moves, adds, removals, device changes, notes (D43) | `board-store` | `wfd-boards` REST | 2 s debounce | `[B6]` `[U]` |
+| Layout | Moves, adds, removals, device changes, notes (D46) | `board-store` | `wfd-boards` REST | 2 s debounce | `[B6]` `[U]` |
 | Boot | Server preload | Editor settings, assets, base styles | Shared by every editor | Once per session | `[B6]` |
 
 ## Events inside artboard iframes
@@ -117,20 +117,22 @@ Outside an artboard in edit: `[U]`
 
 While an artboard is in edit, a click on empty board leaves edit and clears the selection, and a click on another artboard leaves edit and selects it (D38). `[U]`
 
+A drag from empty board selects the artboards its rectangle touches; with Cmd/Ctrl it adds them to the selection. While an artboard is in edit the drag first leaves edit. Esc during the drag cancels it and puts the selection back as it was (D43). Like an artboard drag, the rectangle is drawn by changing the DOM directly; the store hears only when the set of selected artboards changes. `[U]`
+
 Inside an artboard in edit, the block editor's own shortcuts apply unchanged. Esc, pressed when the editor itself has nothing left to dismiss, leaves edit and keeps the artboard selected. Cmd/Ctrl + Z undoes content. `[U]` `[B1]`
 
 Delete and Backspace do the same with focus on a row of the left panel's artboard list. `[U]`
 
-A selected note counts as a selected artboard for Shift + 2, the arrow keys and Delete; Delete takes a note off the board with no confirmation. Enter on one selected note edits its text, and Esc while its text is edited ends that and keeps the note selected. Tab and Shift + Tab step through artboards only. While the note tool is armed, Esc switches it off (D43). `[U]`
+A selected note counts as a selected artboard for Shift + 2, the arrow keys and Delete; Delete takes a note off the board with no confirmation. Enter on one selected note edits its text, and Esc while its text is edited ends that and keeps the note selected. Tab and Shift + Tab step through artboards only. While the note tool is armed, Esc switches it off (D46). `[U]`
 
 Tab order and the Shift + arrow step are `[N]`.
 
 ## Undo
 
 - Content history is core-data's undo stack. It is active while an artboard is Live. `[B8]`
-- Layout history lives in `board-store`: moves, device changes, adds and removals from the board, and every change to a note (D43). It lasts for the session. Removing an artboard with the "also delete" box checked is not undoable and clears nothing else. `[B8]` `[U]` `[N]`
+- Layout history lives in `board-store`: moves, tidying up (D45), device changes, adds and removals from the board, and every change to a note (D46). It lasts for the session. Removing an artboard with the "also delete" box checked is not undoable and clears nothing else. `[B8]` `[U]` `[N]`
 - The header's Undo and Redo act on the active history. Their tooltips name the action and scope, in the form "Undo {action}, in {artboard name}" and "Undo {action}, on the board" (the same with "Redo"). `[U]` `[D:Main]` `[D:Overview]`
-- Action names. On the board: "move artboard", "change device", "add artboard", "remove artboard"; for notes "add note", "move note", "edit note", "change note color", "remove note". Moving or removing artboards and notes together is named for artboards. Editing a note's text, from the moment it enters edit until it leaves, is one step. In an artboard the action is always "edit" ("Undo edit, in Header"); WordPress keeps no name for a content change, so the "block spacing" in `images/Main.png` is not built. `[U]`
+- Action names. On the board: "move artboard", "tidy up", "change device", "add artboard", "remove artboard"; for notes "add note", "move note", "edit note", "change note color", "remove note". Moving or removing artboards and notes together is named for artboards. Editing a note's text, from the moment it enters edit until it leaves, is one step. In an artboard the action is always "edit" ("Undo edit, in Header"); WordPress keeps no name for a content change, so the "block spacing" in `images/Main.png` is not built. `[U]`
 
 ## Styles
 

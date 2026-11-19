@@ -58,6 +58,7 @@ import { bootEditor, serverSettings } from './editor-settings';
 import { counters, countRender, expose } from './test-hooks';
 import { useArtboards } from './use-artboards';
 import { rectOf, useCanvasInteractions } from './use-canvas-interactions';
+import { tidyMoves } from './tidy';
 import { useEditing } from './use-editing';
 import { useEntityInfo } from './use-entity-info';
 import { NEW_ARTBOARD_HEIGHT, usePlacement } from './use-placement';
@@ -78,6 +79,7 @@ const PLACEMENT_GAP = 80;
 
 const LAYOUT_ACTIONS = {
     move: __( 'move artboard', 'wordpress-for-designers' ),
+    tidy: __( 'tidy up', 'wordpress-for-designers' ),
     device: __( 'change device', 'wordpress-for-designers' ),
     add: __( 'add artboard', 'wordpress-for-designers' ),
     remove: __( 'remove artboard', 'wordpress-for-designers' ),
@@ -235,6 +237,7 @@ export function App() {
         setRemovingId,
         setArtboardDevice,
         updateArtboard,
+        moveArtboards,
         undoLayout,
         redoLayout,
         setNoteToolArmed,
@@ -389,7 +392,7 @@ export function App() {
         leaving
             .filter( ( a ) => a.draft )
             .forEach( ( a ) => remove( a, false ) );
-        // Notes leave with the artboards (D43).
+        // Notes leave with the artboards (D46).
         removeArtboards(
             ids.filter(
                 ( id ) => ! leaving.some( ( a ) => a.id === id && a.draft )
@@ -791,6 +794,14 @@ export function App() {
                             onToggleNoteTool={ () =>
                                 setNoteToolArmed( ! isNoteToolArmed )
                             }
+                            canTidy={ ! live && artboards.length > 1 }
+                            onTidy={ () => {
+                                moveArtboards(
+                                    tidyMoves( artboards, widthOf ),
+                                    'tidy'
+                                );
+                                canvas.zoom( 'fit-all' );
+                            } }
                             reviewCount={ review.count }
                             onReview={ review.open }
                         />

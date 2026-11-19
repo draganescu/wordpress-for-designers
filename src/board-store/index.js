@@ -11,7 +11,7 @@ const DEFAULT_STATE = {
     title: '',
     isLoaded: false,
     artboards: [],
-    // Notes on the board (D43), with their measured `height` (not saved).
+    // Notes on the board (D46), with their measured `height` (not saved).
     notes: [],
     // The note whose text is being edited.
     editingNoteId: null,
@@ -278,10 +278,11 @@ const actions = {
     /**
      * Moves several artboards and notes as one step of the history.
      *
-     * @param {Array} moves The moves, as { id, x, y }.
+     * @param {Array}  moves  The moves, as { id, x, y }.
+     * @param {string} [name] The name of the step in the history.
      */
     moveArtboards:
-        ( moves ) =>
+        ( moves, name = 'move' ) =>
         ( { select, dispatch } ) => {
             const byId = new Map( moves.map( ( move ) => [ move.id, move ] ) );
             const artboards = applyMoves( select.getArtboards(), byId );
@@ -294,9 +295,11 @@ const actions = {
             }
             dispatch( {
                 type: 'LAYOUT',
-                // Named for notes only when no artboard moved.
+                // A plain move is named for notes when no artboard moved.
                 name:
-                    artboards === select.getArtboards() ? 'move-note' : 'move',
+                    name === 'move' && artboards === select.getArtboards()
+                        ? 'move-note'
+                        : name,
                 artboards,
                 notes,
             } );

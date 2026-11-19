@@ -22,7 +22,7 @@ Unless a criterion says otherwise, the fixture in `architecture.md` is loaded an
 ## SHELL
 
 - AC-SHELL-01 With nothing selected, the left panel lists artboards by kind with counts and the right panel shows Styles on the Tokens tab. `[U]`
-- AC-SHELL-02 Header controls appear in the order H1 to H5, H10, H13, H6, H7, H8, H11, H9; H5 is disabled and H6 absent when nothing is in edit. `[U]`
+- AC-SHELL-02 Header controls appear in the order H1 to H5, H10, H13, H6, H7, H12, H8, H11, H9; H5 is disabled and H6 absent when nothing is in edit. `[U]`
 - AC-SHELL-03 Selecting an artboard highlights its row and shows artboard settings in the right panel; Styles is not shown. `[U]`
 - AC-SHELL-04 Turning the inserter toggle on replaces the left panel with the inserter in every state, and off restores what was there. `[U]`
 - AC-SHELL-05 The left and right panel toggles each hide and show their panel, their labels and pressed state follow, and the canvas area takes the freed room. `[U]`
@@ -38,6 +38,8 @@ Unless a criterion says otherwise, the fixture in `architecture.md` is loaded an
 - AC-CANVAS-03 Cmd/Ctrl + wheel zooms around the pointer; Space + drag pans; both work with the pointer over an artboard, including the Live one. `[B8]` `[U]`
 - AC-CANVAS-04 The H8 menu items change zoom as named; "Fit all" shows every artboard. `[N]`
 - AC-CANVAS-05 Cmd/Ctrl + click on an artboard adds it to the selection and a second one takes it out; with several selected the right panel shows Styles, and dragging one of them or pressing an arrow key moves them all as one undoable step; while an artboard is in edit, Cmd/Ctrl + click on another artboard leaves edit and selects only that one. `[U]`
+- AC-CANVAS-06 Dragging from empty board draws a rectangle and selects every artboard it touches while it is dragged, and one it no longer touches is deselected; Cmd/Ctrl + drag adds to the selection; Esc during the drag removes the rectangle and puts the selection back as it was; while an artboard is in edit the drag leaves edit and selects. `[U]`
+- AC-CANVAS-07 "Tidy up" (H12) puts the seeded board in one row per kind, Pages above Templates above Template parts above Patterns, each row top-aligned and in left-panel order with no two items overlapping; Undo, whose tooltip reads "Undo tidy up, on the board", puts every item back where it was. The control is disabled while an artboard is in edit. `[U]`
 
 ## KEY
 
@@ -53,6 +55,7 @@ Unless a criterion says otherwise, the fixture in `architecture.md` is loaded an
 - AC-DEV-02 With a theme whose `settings.viewport.tablet` is 900px and `mobile` is 320px, Tablet renders at 898 and Mobile at 320. `[U]`
 - AC-DEV-03 Changing device from the Live label menu or the right panel re-renders the artboard at the new width and is undoable as a layout change. `[U]`
 - AC-DEV-04 No control offers any width other than the three devices. `[U]`
+- AC-DEV-05 A length in viewport-height units resolves against a viewport 900 px high: a block with `min-height:100vh` in its inline style is 900 px tall, and one given `min-height:50vh` by a style sheet loaded into the canvas is 450 px tall, as a Preview and in edit, and the artboard's height settles (OQ-30). `[U]`
 
 ## TIER
 
@@ -68,6 +71,7 @@ Unless a criterion says otherwise, the fixture in `architecture.md` is loaded an
 - AC-TIER-10 A `snapshot` artboard's frame contains no React root and triggers no store subscription callbacks when an entity changes. `[B5]`
 - AC-TIER-11 After a global style change, an artboard that was `snapshot` shows the new style when it next becomes `preview`. `[B5]`
 - AC-TIER-12 Below 20% zoom an artboard that was never rendered gets its frozen copy without becoming `preview`; no `Skeleton` is left once every such artboard has one. `[U]`
+- AC-TIER-13 An artboard whose content is taller than 2000 px shows all of it as a Preview and as a Snapshot, at the height it has in edit. `[U]`
 
 ## PERF
 

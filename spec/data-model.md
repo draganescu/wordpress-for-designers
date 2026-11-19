@@ -64,7 +64,7 @@ A media object has `"kind": "media"`, a numeric `entityId` (the attachment), a `
 { "id": "…", "kind": "media", "entityId": 12, "x": 0, "y": 0, "width": 1200, "height": 800 }
 ```
 
-The layout may also have a `notes` list (D43). A layout without it has no notes; a board with no notes is saved without it. Each note has exactly these fields: `[U]`
+The layout may also have a `notes` list (D46). A layout without it has no notes; a board with no notes is saved without it. Each note has exactly these fields: `[U]`
 
 ```json
 { "id": "a UUID made by the client", "x": 0, "y": 0, "text": "string, plain text, may be empty", "color": "yellow | green | blue | pink" }
@@ -106,7 +106,7 @@ Pressing Delete on a selected artboard, or "Remove from board", opens a confirma
 
 A media object has no checkbox: removing it only takes it off the board. `[U]`
 
-A note is removed at once, with no confirmation, and can be brought back with Undo (D43). `[U]`
+A note is removed at once, with no confirmation, and can be brought back with Undo (D46). `[U]`
 
 Pressing Delete with several artboards selected opens no confirmation: every selected artboard leaves the board and no entity is changed (D41). `[U]`
 

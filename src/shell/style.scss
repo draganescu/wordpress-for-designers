@@ -327,6 +327,14 @@ html.wp-toolbar:has(.wfd-board-page) {
     outline: calc(var(--wpds-border-width-sm) / var(--wfd-zoom)) dashed var(--wpds-color-stroke-interactive-brand);
 }
 
+// The selection rectangle drawn while dragging from empty board (D43).
+.wfd-marquee {
+    position: absolute;
+    pointer-events: none;
+    background: var(--wpds-color-background-surface-brand);
+    outline: calc(var(--wpds-border-width-xs) / var(--wfd-zoom)) solid var(--wpds-color-stroke-interactive-brand);
+}
+
 .wfd-placement__hint {
     flex: none;
     width: calc(100% * var(--wfd-zoom));
@@ -386,6 +394,14 @@ html.wp-toolbar:has(.wfd-board-page) {
 .wfd-preview {
     position: relative;
     pointer-events: none;
+}
+
+// BlockPreview cuts its content at 2000 px with inline max-heights on its
+// wrapper and its iframe. An artboard shows all of its content, as it does in edit.
+// The frozen copy of a Preview keeps the class, so it is covered too.
+.wfd-preview .block-editor-block-preview__content,
+.wfd-preview .block-editor-block-preview__content iframe {
+    max-height: none !important;
 }
 
 .wfd-canvas.is-pan-ready iframe,
@@ -476,7 +492,7 @@ html.wp-toolbar:has(.wfd-board-page) {
     pointer-events: none;
 }
 
-// Notes (D43): above every artboard, the Live one included.
+// Notes (D46): above every artboard, the Live one included.
 .wfd-note {
     position: absolute;
     z-index: 3;

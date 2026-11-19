@@ -165,6 +165,7 @@ export const Canvas = forwardRef( function CanvasRegion(
             <div className="wfd-canvas__surface" ref={ surfaceRef }>
                 { children }
                 { overlay }
+                <div className="wfd-marquee" data-wfd-marquee hidden />
             </div>
             { banner && <div className="wfd-canvas__banner">{ banner }</div> }
             { placer }

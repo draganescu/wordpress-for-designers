@@ -11,6 +11,7 @@ import {
     listView as listViewIcon,
     drawerLeft,
     drawerRight,
+    grid,
     plus,
     redo as redoIcon,
     undo as undoIcon,
@@ -67,6 +68,8 @@ export function Header( {
     zoomPercent,
     onZoom,
     canFitSelection,
+    canTidy,
+    onTidy,
     reviewCount,
     onReview,
     isLeftShown,
@@ -202,6 +205,16 @@ export function Header( {
                 </Text>
             </div>
             <div className="wfd-header__end">
+                <IconButton
+                    icon={ grid }
+                    label={ __( 'Tidy up', 'wordpress-for-designers' ) }
+                    variant="minimal"
+                    tone="neutral"
+                    size="compact"
+                    disabled={ ! canTidy }
+                    onClick={ onTidy }
+                    data-wfd-control="H12"
+                />
                 <Menu.Root>
                     <Menu.Trigger
                         render={

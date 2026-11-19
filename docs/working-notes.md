@@ -120,7 +120,8 @@ What to do differently:
 - **Dragging into the artboard in edit rides on WordPress's HTML drop.** While an artboard is in edit, an inserter drag carries the item's blocks as `text/html` (serialised block markup). The editor's own drop zone takes it like HTML dragged from anywhere, parses the block comments and inserts at its insertion line; the plugin handles no drop inside the iframe. WordPress's inserter uses a `wp-blocks` payload and a private `startDragging` instead, which the allowlist rules out. AC-INS-05 and AC-INS-08 are the alarm (`src/inserter/use-inserter-actions.js`).
 - **The board scrolled.** The editor calls `scrollIntoView` on its selection. A box with `overflow: hidden` can still be scrolled by script, and the canvas area was. It is now `overflow: clip`.
 - **Typing undid one keystroke at a time.** `block-editor` decides whether a change continues the last one from a `lastAction` value shared by every block-editor store on the page. With several editors mounted it is overwritten between keystrokes. `src/artboard-editor/coalesce.js` makes that decision for the Live editor. Page content is still affected in one case (OQ-13).
-- **`BlockPreview` caps its height at 2000 px** (OQ-11).
+- **`BlockPreview` caps its height at 2000 px** with inline max-heights. A rule in `src/shell/style.scss` lifts the cap inside `.wfd-preview` (D44); AC-TIER-13 is the alarm.
+- **Viewport-height units have no fixed meaning in an artboard.** The iframe is as tall as its content, so `100vh` content grows each time the iframe is fitted to it, without end. `src/artboard-frame/viewport-units.js` rewrites those lengths to pixels of a 900 px viewport in the styles passed to the canvas, and overrides the ones in inline styles and in the canvas's other style sheets with generated rules (OQ-30, AC-DEV-05). 900 is not a limit on content: it is only what `100vh` means.
 - **`PostLockedModal` cannot be used without `EditorProvider`.** It reads everything from the `core/editor` store. The plugin has its own lock route and dialog (D31).
 - **`/wp/v2/templates/lookup` ignores `is_custom`.** Asked for a custom template it returns the hierarchy's template. A page's named template is found by slug among the `wp_template` records (`src/artboard-preview/use-page-template.js`).
 - **A failed entity request stores a `Response`, not a parsed body.** `getResolutionError` returns an object with `status`, and nothing under `data`. Read both (`src/shell/use-artboards.js`).
@@ -154,6 +155,8 @@ What to do differently:
 
 ### Tests
 
+- **Running the suite from a git worktree.** Port 8888 belongs to the main checkout's site, which the suite would wipe. Start a second site from the worktree on a free port and point the tests at it: `WP_ENV_PORT=8895 npx wp-env start`, then `WP_BASE_URL=http://localhost:8895 npx wp-scripts test-playwright --config tests/e2e/playwright.config.ts`. AC-PERF-03 fails there and only there: it looks for the plugin under the folder name `wordpress-for-designers`, and wp-env names the folder after the worktree.
+- An element id or class starting with `wfd` inside a canvas fails AC-EDIT-04, a style handle of the test helper included (WordPress gives the link tag the id `{handle}-css`).
 - The viewport is 1440 × 900. With both panels open the canvas area is 800 px wide.
 - Layout autosave waits 2 seconds. Tests that check the saved layout poll or wait about 3 seconds.
 - Since D37, entering edit at 30% zoom or more does not move the board. A test that wants a known position must call `setViewport` before `enterEdit`. The `enterEdit` helper presses Shift + 1 when the artboard is off screen, which takes the zoom below 30% and so triggers the fit.

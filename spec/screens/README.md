@@ -23,9 +23,10 @@ Left to right:
 | H4 | Redo | `IconButton`, `redo` | Same form with "Redo" | Disabled when nothing to redo. |
 | H5 | List view toggle | `IconButton`, `listView`, pressed state | Label "List view" | Shows or hides the list view. Disabled when no artboard is in edit. |
 | H10 | Left panel toggle | `IconButton`, `drawerLeft`, pressed state while the left panel is shown | Labels "Hide left panel" / "Show left panel" | Hides or shows the left panel (D32). Sits after H5. |
-| H13 | Note tool | `IconButton`, `comment`, pressed state while the tool is armed | Label "Add note" | Arms the note tool; pressed again, switches it off (D43). Sits after H10. Disabled while an artboard is in edit. |
+| H13 | Note tool | `IconButton`, `comment`, pressed state while the tool is armed | Label "Add note" | Arms the note tool; pressed again, switches it off (D46). Sits after H10. Disabled while an artboard is in edit. |
 | H6 | Block toolbar | `be.BlockToolbar`, filled from the Live editor through a slot | Stock | Present only while an artboard is in edit and a block is selected. |
 | H7 | Document bar | Centred `Text` on a weak neutral surface; in edit, preceded by an `IconButton` with `arrowLeft` | Board name; in edit "{artboard name} · {Kind}", back button label "Back to the board" | Back button leaves edit. The bar itself is not clickable. `[N]` |
+| H12 | Tidy up | `IconButton`, `grid`, minimal neutral | Label "Tidy up" | Arranges everything on the board in one row per kind, in left-panel order (D45), and fits all. Disabled while an artboard is in edit and with fewer than two items on the board. Sits just before H8. |
 | H8 | Zoom menu | `Menu` whose trigger shows the zoom as a percentage with `chevronDown` | Trigger label "Zoom"; items "Zoom in", "Zoom out", "Zoom to 50%", "Zoom to 100%", "Fit all", "Fit selection" | Items act on the viewport. "Fit selection" is disabled with nothing selected. An item that takes the zoom below 30% while an artboard is in edit leaves edit (D37). `[N]` for the item list |
 | H11 | Right panel toggle | `IconButton`, `drawerRight`, pressed state while the right panel is shown | Labels "Hide right panel" / "Show right panel" | Hides or shows the right panel (D32). Sits between H8 and H9. |
 | H9 | Review button | `Button`, solid brand | "Review {n} changes", "Review 1 change"; with none, "Review changes", disabled | Opens the Review drawer. |
@@ -41,7 +42,7 @@ Media objects (D34): `[U]`
 - If the image cannot be loaded the error state reads "Couldn't load this image."
 - Dragging a row of the Media tab over empty board shows the drop target at the object's size with the label "{file name} · Media"; dropping places it there. Clicking the row places it in the middle of the board in view, moved right past anything it would cover. Both apply only with no artboard in edit; in edit the image goes into the artboard as an Image block (D39).
 
-Notes (D43): `[U]`
+Notes (D46): `[U]`
 
 - While the note tool is armed the pointer is a crosshair over the whole canvas area, artboards included. A click places the note there; nothing else on the board reacts to that click. Esc or H13 switches the tool off.
 - On the board a note is a box 240 board units wide on a colour surface, with no label, drawn above every artboard. Its text is `Text` body-md, line breaks kept; an empty note keeps the height of one line. Selected, it has the selection outline (A4).
@@ -87,8 +88,9 @@ Rows are ordered by name within a group, then Desktop, Tablet, Mobile. `[N]`
 | A3 | Artboard | The tier content at the device width, scaled by the zoom | | Click selects; Cmd/Ctrl + click adds it to the selection or takes it out when no artboard is in edit (D41); drag moves it, and with several selected moves them all; double-click edits. |
 | A4 | Selection outline | 2 px brand stroke around each selected artboard and the Live artboard | | |
 | A5 | Keyboard shortcuts | `IconButton`, `keyboard`, on a neutral surface with a subtle shadow, floating over the board at the bottom left of the canvas area | Label "Keyboard shortcuts" | Opens the keyboard shortcuts dialog (D42, `ShortcutsDialog.md`). It stays in its corner while the board pans and zooms, and is there in every state of the board, an artboard in edit included. |
+| A6 | Selection rectangle | A rectangle from where the drag started to the pointer, with a 1 px brand stroke and the brand surface as its fill | | Shown only while dragging from empty board (D43). Every artboard and media object it touches is selected, as it is dragged. Cmd/Ctrl + drag adds to the selection. Esc cancels the drag and puts the selection back as it was. |
 
-The canvas background is the weak neutral surface. Dragging an artboard moves it freely; there is no snapping or grid. `[N]`
+The canvas background is the weak neutral surface. Dragging an artboard moves it freely; there is no snapping or grid. `[N]` Dragging from empty board selects with a rectangle (A6, D43). `[U]`
 
 ## Region: Right panel, Styles `[D:Overview]` `[D:Styles]` `[U]`
 
