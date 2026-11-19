@@ -138,6 +138,14 @@ Unless a criterion says otherwise, the fixture in `architecture.md` is loaded an
 - AC-MEDIA-02 A media object is selected by a click, moved by dragging and removed with Delete through a dialog with no checkbox; double-click and Enter do not enter edit; its settings show the image's pixel size and only "Remove from board". `[U]`
 - AC-MEDIA-03 The server accepts a media object with exactly its fields and rejects one with a device or without a width; a media object whose image no longer exists is removed from the board on load. `[N]`
 
+## NOTE
+
+- AC-NOTE-01 With no artboard in edit, pressing "Add note" and then clicking over an artboard places a Yellow note there, drawn above the artboard, selected, with its text field focused; "Add note" is no longer pressed. Esc after arming places nothing. `[U]`
+- AC-NOTE-02 Text typed in a note, line breaks included, is on the board after a reload without any save, and is listed under "Notes" in the left panel by its first line. `[U]`
+- AC-NOTE-03 A note is selected by a click, moved by dragging, moved together with a selected artboard after Cmd/Ctrl + click, and taken off the board by Delete with no dialog; Undo brings it back. `[U]`
+- AC-NOTE-04 Choosing Green in the right panel recolours the selected note, and the colour is kept after a reload. `[U]`
+- AC-NOTE-05 The server accepts a layout without `notes` and one whose notes have exactly their fields, and rejects a note with an unknown colour, a missing field or an extra one. `[N]`
+
 ## STYLE
 
 - AC-STYLE-01 Styles is shown only in the right panel and only when no artboard, or more than one, is selected (D41). `[U]`

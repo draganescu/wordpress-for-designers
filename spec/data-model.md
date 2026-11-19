@@ -64,7 +64,15 @@ A media object has `"kind": "media"`, a numeric `entityId` (the attachment), a `
 { "id": "…", "kind": "media", "entityId": 12, "x": 0, "y": 0, "width": 1200, "height": 800 }
 ```
 
-One board unit is one CSS pixel at 100% zoom. Artboard order in the array is the order of creation. `[N]`
+The layout may also have a `notes` list (D43). A layout without it has no notes. Each note has exactly these fields: `[U]`
+
+```json
+{ "id": "a UUID made by the client", "x": 0, "y": 0, "text": "string, plain text, may be empty", "color": "yellow | green | blue | pink" }
+```
+
+A note's height is not stored: it is the height of its text. Its width is always 240 board units. `[U]` for the width, `[N]` for the field list
+
+One board unit is one CSS pixel at 100% zoom. Artboard order in the array is the order of creation, and so is note order. `[N]`
 
 The viewport (pan and zoom) is not stored on the board, because boards are shared. It is kept per user and per board in `localStorage` and restored on open; with nothing stored, the board opens fitted to all artboards. `[N]`
 
@@ -97,6 +105,8 @@ Pressing Delete on a selected artboard, or "Remove from board", opens a confirma
 | Template or part that ships with the theme (`has_theme_file` true) | Reset to the theme's version (REST update with `source: "theme"`) | `[U]` `[V]` |
 
 A media object has no checkbox: removing it only takes it off the board. `[U]`
+
+A note is removed at once, with no confirmation, and can be brought back with Undo (D43). `[U]`
 
 Pressing Delete with several artboards selected opens no confirmation: every selected artboard leaves the board and no entity is changed (D41). `[U]`
 
