@@ -443,9 +443,19 @@ export function App() {
         []
     );
     const styles = useGlobalStyles( serverSettings );
-    // Artboards whose one render for a frozen copy is over, with or without
-    // a copy to show for it, and the stylesheet that render was made with.
+    // The number of the stylesheet each artboard's frozen copy was made
+    // with. An artboard rendered once for a copy that gave nothing to freeze
+    // has the number of that render.
     const [ rendered, setRendered ] = useState( () => new Map() );
+    const noteRendered = useCallback(
+        ( id, number ) =>
+            setRendered( ( current ) =>
+                current.get( id ) === number
+                    ? current
+                    : new Map( current ).set( id, number )
+            ),
+        []
+    );
     const failedKey = artboards
         .filter( ( artboard ) => artboard.status === 'failed' )
         .map( ( artboard ) => artboard.id )
@@ -456,11 +466,8 @@ export function App() {
     const hasCopy = useCallback(
         ( id ) =>
             failedKey.split( ' ' ).includes( id ) ||
-            Math.max(
-                snapshots.stylesOf( id ) ?? 0,
-                rendered.get( id ) ?? 0
-            ) >= settledStyles,
-        [ snapshots, rendered, failedKey, settledStyles ]
+            rendered.get( id ) >= settledStyles,
+        [ rendered, failedKey, settledStyles ]
     );
     const { tiers, mounted, source } = useTiers( {
         rects,
@@ -955,14 +962,11 @@ export function App() {
                                                 snapshots.capture(
                                                     artboard.id,
                                                     element,
-                                                    renderVersion,
-                                                    settledStyles
+                                                    renderVersion
                                                 );
-                                                setRendered( ( current ) =>
-                                                    new Map( current ).set(
-                                                        artboard.id,
-                                                        settledStyles
-                                                    )
+                                                noteRendered(
+                                                    artboard.id,
+                                                    settledStyles
                                                 );
                                             } }
                                         />
@@ -1006,14 +1010,20 @@ export function App() {
                                             width={ width }
                                             settings={ previewSettings }
                                             onHeight={ onHeight }
-                                            onFreeze={ ( element ) =>
-                                                snapshots.capture(
-                                                    artboard.id,
-                                                    element,
-                                                    renderVersion,
-                                                    styles.version
-                                                )
-                                            }
+                                            onFreeze={ ( element ) => {
+                                                if (
+                                                    snapshots.capture(
+                                                        artboard.id,
+                                                        element,
+                                                        renderVersion
+                                                    )
+                                                ) {
+                                                    noteRendered(
+                                                        artboard.id,
+                                                        styles.version
+                                                    );
+                                                }
+                                            } }
                                         />
                                     );
                                 } else if (
@@ -1026,12 +1036,7 @@ export function App() {
                                     content = [
                                         once,
                                         <ArtboardSnapshot
-                                            key={
-                                                'copy-' +
-                                                snapshots.stylesOf(
-                                                    artboard.id
-                                                )
-                                            }
+                                            key="copy"
                                             id={ artboard.id }
                                             store={ snapshots }
                                             isOver={ !! once }

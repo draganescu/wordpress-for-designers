@@ -61,30 +61,24 @@ export function createSnapshotStore() {
     const snapshots = new Map();
     return {
         /**
-         * Freezes an artboard's Preview.
+         * Freezes an artboard's Preview. A copy of the artboard that is on
+         * screen is replaced where it is (decision D51).
          *
          * @param {string}  id      The artboard.
          * @param {Element} preview The Preview's root element.
          * @param {*}       version What the Preview was rendered from.
-         * @param {number}  styles  Number of the stylesheet it was rendered with.
+         * @return {boolean} Whether there was a Preview to freeze.
          */
-        capture( id, preview, version, styles ) {
-            if ( preview?.querySelector( 'iframe' )?.contentDocument?.body ) {
-                snapshots.set( id, {
-                    node: freeze( preview ),
-                    version,
-                    styles,
-                } );
+        capture( id, preview, version ) {
+            if ( ! preview?.querySelector( 'iframe' )?.contentDocument?.body ) {
+                return false;
             }
+            const node = freeze( preview );
+            snapshots.get( id )?.node.replaceWith( node );
+            snapshots.set( id, { node, version } );
+            return true;
         },
         has: ( id ) => snapshots.has( id ),
-        /**
-         * The number of the stylesheet an artboard's copy was made with.
-         *
-         * @param {string} id The artboard.
-         * @return {number|undefined} The number, or undefined without a copy.
-         */
-        stylesOf: ( id ) => snapshots.get( id )?.styles,
         /**
          * Whether shared things changed since the snapshot was taken.
          *
@@ -103,11 +97,10 @@ export function createSnapshotStore() {
          */
         mount( id, host ) {
             const snapshot = snapshots.get( id );
-            if ( ! snapshot ) {
-                return () => {};
+            if ( snapshot ) {
+                host.appendChild( snapshot.node );
             }
-            host.appendChild( snapshot.node );
-            return () => snapshot.node.remove();
+            return () => snapshots.get( id )?.node.remove();
         },
         forget: ( id ) => snapshots.delete( id ),
     };
