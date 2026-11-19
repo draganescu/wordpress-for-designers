@@ -9,7 +9,7 @@ The plugin is built through Milestone 12 of `spec/build-order.md`, plus the deci
 | Check | Result |
 |---|---|
 | Acceptance criteria in `spec/acceptance.md` | 126 |
-| End-to-end tests, one per criterion | 126. AC-SAVE-08 (D48) was added after the last whole-suite run and was run with `save`, `state` and `a11y` only. On 2026-11-19 the whole suite of 125 was run three times: all pass after two fixes to the tests. AC-CANVAS-03 used an empty-board point that D42's Keyboard shortcuts control now covers; AC-STYLE-07 (and three like it in `ins.spec.ts` and `style.spec.ts`) counted menu rows once instead of waiting for them, and failed one run in three. AC-PERF-03 still fails on a port-8890 environment from a worktree (see working-notes.md) |
+| End-to-end tests, one per criterion | 126. On 2026-11-20 the whole suite, AC-SAVE-08 (D48) included, was run once from a worktree: 125 pass and AC-PERF-03 fails, as it does from any worktree. On 2026-11-19 the suite of 125 was run three times: all pass after two fixes to the tests. AC-CANVAS-03 used an empty-board point that D42's Keyboard shortcuts control now covers; AC-STYLE-07 (and three like it in `ins.spec.ts` and `style.spec.ts`) counted menu rows once instead of waiting for them, and failed one run in three. AC-PERF-03 still fails on a port-8890 environment from a worktree (see working-notes.md) |
 | `npm run lint` | Exits 0, no disabled lines |
 | CI | `.github/workflows/tests.yml` runs lint, build and the suite (Chromium, wp-env) on every pull request; CI retries a failed test twice and reports a pass on retry as flaky |
 | Open questions waiting for the product owner | 27 (`spec/open-questions.md`) |
@@ -40,7 +40,7 @@ A "Designer" menu in wp-admin lists boards. A board opens full screen: a header,
 - **Creating.** The Add artboard menu places a new page, pattern, template or template part. Pages and patterns are created as drafts at once; templates and parts exist only in the session until saved.
 - **Inserter.** Blocks, Patterns, Templates and Media tabs. A row does the same thing clicked or dragged (D39). With an artboard in edit, a pattern, template part or image goes into its content: at the insertion point on a click, where it is dropped on a drag. With none in edit, a pattern, template, part or image goes onto the board: at the drop point on a drag, in the middle of the view and clear of other artboards on a click. The Blocks tab is shown only while an artboard is in edit.
 - **Styles.** With nothing selected the right panel edits global styles: tokens with use counts, per-block styles, revisions, variations. A change repaints every artboard from one style compile.
-- **Review.** Nothing reaches the site until "Review changes" is used. It lists each changed item and saves the checked ones. "Discard all" reverts everything; each item's own "Discard" reverts that item alone, after a confirmation that names it (D48, OQ-32). Artboard positions save on their own, two seconds after a change.
+- **Review.** Nothing reaches the site until "Review changes" is used. It lists each changed item and saves the checked ones. "Discard all" reverts everything and is not undoable. Each item's own "Discard" reverts that item alone, after a confirmation that names it, as one step that Undo and Redo act on in an artboard; for a new template or part it takes the artboard off the board and is not undoable (D48, OQ-32). Artboard positions save on their own, two seconds after a change.
 - **Locks.** Editing a page or pattern takes WordPress's post lock through the plugin's own route and dialog.
 - **Panels.** Both side panels can be hidden from the header or with Cmd/Ctrl + \. Resting the pointer on the left or right edge of the canvas area brings a hidden panel back.
 
@@ -90,7 +90,7 @@ Two entries: `boards` (the Boards list, `src/boards/`) and `board` (the app, `sr
 | `inserter/` | The inserter panel, its data and actions |
 | `styles/` | The Styles panel and global styles handling |
 | `usage-index/` | Where tokens and blocks are used |
-| `review/` | The Review drawer, change lines, saving |
+| `review/` | The Review drawer, change lines, saving, discarding |
 | `lock/` | Client side of the post lock |
 | `adapter/` | `private.js` is empty. `experimental.js` is the only place experimental WordPress exports are imported |
 | `static/` | Every screen with fixed data and no behaviour, shown with `&wfd-screen=Name` in a test build |
