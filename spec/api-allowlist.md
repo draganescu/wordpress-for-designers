@@ -35,6 +35,8 @@ Import only what is listed here. "WP script" means use the script handle WordPre
 | `@wordpress/global-styles-engine` | Bundled | `getSetting`, `setSetting`, `getStyle`, `setStyle`, `getPalettes`, `mergeGlobalStyles`, `generateGlobalStyles`, `areGlobalStylesEqual`, `getGlobalStylesChanges` | |
 | `@wordpress/global-styles-ui` | Bundled | `GlobalStylesUI`, `useGlobalStylesRevisions` | |
 
+One global is read besides these exports: `window.__experimentalBlockDragFromAnywhere`, the flag WordPress sets when its own "Drag blocks from anywhere" experiment is on. It is read only in `src/adapter/experimental.js`, to make the plugin's layer stand down (D40). `[U]`
+
 Prefer `@wordpress/ui` when both it and `@wordpress/components` have a component (C4). Call `useEnableWpCompatOverlaySlot()` once at the app root, because the two libraries are mixed and `@wordpress/ui` is bundled. `[V]`
 
 ## Not allowed

@@ -714,4 +714,136 @@ test.describe( 'EDIT', () => {
         await page.locator( '[data-wfd-control="H7"]' ).click();
         await expect( artboard ).toHaveAttribute( 'data-wfd-tier', 'live' );
     } );
+
+    test( 'AC-EDIT-11 A block that is not being edited moves when pressed on its text and dragged; a press without a drag puts the caret there, after which dragging selects text and a double-click selects a word; a template block around a page does not move', async ( {
+        page,
+    } ) => {
+        const about = artboardOf( fixture, 'page' );
+        await enterEdit( page, about.id );
+        const frame = editorFrame( page, about.id );
+        const heading = frame.locator( '.wp-block-post-content h2' );
+        const paragraph = frame.locator( '.wp-block-post-content p' );
+        const order = () =>
+            frame
+                .locator( '.wp-block-post-content > [data-block]' )
+                .evaluateAll( ( nodes ) =>
+                    nodes.map( ( node ) => node.textContent )
+                );
+        const selectedText = () =>
+            frame
+                .locator( 'body' )
+                .evaluate( ( body ) =>
+                    body.ownerDocument.defaultView!.getSelection()!.toString()
+                );
+        const drag = async (
+            from: { x: number; y: number },
+            to: { x: number; y: number }
+        ) => {
+            await page.mouse.move( from.x, from.y );
+            await page.mouse.down();
+            for ( let step = 1; step <= 12; step++ ) {
+                await page.mouse.move(
+                    from.x + ( ( to.x - from.x ) * step ) / 12,
+                    from.y + ( ( to.y - from.y ) * step ) / 12
+                );
+                await page.waitForTimeout( 40 );
+            }
+            // The editor works out the drop position at most every 200 ms.
+            await page.waitForTimeout( 300 );
+            await page.mouse.move( to.x + 2, to.y );
+            await page.waitForTimeout( 300 );
+        };
+        expect( await order() ).toEqual( [ 'About', 'About paragraph.' ] );
+
+        // Hovering the text of a block that is not being edited shows its
+        // outline and the grab cursor.
+        const from = ( await heading.boundingBox() )!;
+        const start = { x: from.x + 30, y: from.y + from.height / 2 };
+        await page.mouse.move( start.x, start.y );
+        await expect( heading ).toHaveClass( /is-hovered-drag-anywhere/ );
+        await expect( heading ).toHaveCSS( 'cursor', 'grab' );
+        expect(
+            await heading.evaluate(
+                ( node ) =>
+                    node.ownerDocument.defaultView!.getComputedStyle(
+                        node,
+                        '::after'
+                    ).outlineStyle
+            )
+        ).toBe( 'solid' );
+
+        // Pressing on the text and dragging moves the block, with the stock
+        // drop indicator.
+        const target = ( await paragraph.boundingBox() )!;
+        await drag( start, {
+            x: target.x + 60,
+            y: target.y + target.height * 0.75,
+        } );
+        await expect(
+            page.locator(
+                '.block-editor-block-list__insertion-point-indicator'
+            )
+        ).toBeVisible();
+        await page.mouse.up();
+        await expect.poll( order ).toEqual( [ 'About paragraph.', 'About' ] );
+        await expect( heading ).toHaveAttribute( 'contenteditable', 'true' );
+        await expect( heading ).not.toHaveAttribute( 'draggable' );
+
+        // A press without a drag puts the caret where the press was.
+        const box = ( await paragraph.boundingBox() )!;
+        const middle = box.y + box.height / 2;
+        await page.mouse.click( box.x + 80, middle );
+        await expect( paragraph ).toHaveClass( /is-selected/ );
+        await expect( paragraph ).not.toHaveClass( /is-hovered-drag-anywhere/ );
+        const caret = await frame.locator( 'body' ).evaluate( ( body ) => {
+            const selection = body.ownerDocument.defaultView!.getSelection()!;
+            return {
+                collapsed: selection.isCollapsed,
+                offset: selection.anchorOffset,
+                text: selection.anchorNode?.textContent,
+            };
+        } );
+        expect( caret.collapsed ).toBe( true );
+        expect( caret.text ).toBe( 'About paragraph.' );
+        expect( caret.offset ).toBeGreaterThan( 0 );
+        await page.keyboard.type( 'X' );
+        await expect( paragraph ).toHaveText( /^A.+X.+\.$/ );
+        await page.keyboard.press( 'Backspace' );
+
+        // From then on dragging over its text selects text and the block
+        // stays where it is.
+        await drag(
+            { x: box.x + 20, y: middle },
+            { x: box.x + 120, y: middle }
+        );
+        await page.mouse.up();
+        expect( ( await selectedText() ).length ).toBeGreaterThan( 2 );
+        expect( await order() ).toEqual( [ 'About paragraph.', 'About' ] );
+
+        // A double-click on a block that is not being edited selects a word.
+        const other = ( await heading.boundingBox() )!;
+        await page.mouse.dblclick( other.x + 20, other.y + other.height / 2 );
+        expect( await selectedText() ).toBe( 'About' );
+
+        // A block of the template around the page does not move.
+        const templateText = frame.locator( 'header.wp-block-template-part p', {
+            hasText: 'Fixture header text',
+        } );
+        const locked = ( await templateText.boundingBox() )!;
+        await page.mouse.move( locked.x + 20, locked.y + locked.height / 2 );
+        await page.waitForTimeout( 200 );
+        await expect( templateText ).not.toHaveClass(
+            /is-hovered-drag-anywhere/
+        );
+        await drag(
+            { x: locked.x + 20, y: locked.y + locked.height / 2 },
+            { x: box.x + 60, y: box.y + box.height * 0.75 }
+        );
+        await expect( frame.locator( '[data-block].is-dragging' ) ).toHaveCount(
+            0
+        );
+        await page.mouse.up();
+        await expect( templateText ).toBeVisible();
+        expect( await order() ).toEqual( [ 'About paragraph.', 'About' ] );
+    } );
 } );

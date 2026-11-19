@@ -86,6 +86,7 @@ Unless a criterion says otherwise, the fixture in `architecture.md` is loaded an
 - AC-EDIT-07 The back button, and Esc as in AC-KEY-03, leave edit. `[U]`
 - AC-EDIT-09 At 30%, 50% and 75% zoom the editor works as at 100%: a click puts the caret in the block under the pointer, the block toolbar is in the header at full size, and the add-block button, slash inserter and link popover sit at the block they belong to. `[U]` `[V]`
 - AC-EDIT-10 Deselecting ends edit: a click on empty board leaves edit and clears the selection; a click on another artboard leaves edit and selects that one. `[U]`
+- AC-EDIT-11 A block that is not being edited moves when it is pressed on its text and dragged: hovering its text shows the block's outline and the grab cursor, the stock drop indicator shows while dragging, and the block lands there. A press without a drag puts the caret where the press was; after that, dragging over the block's text selects text and does not move the block. A double-click on a block that is not being edited selects a word. A template block around a page does not move. `[U]`
 - AC-EDIT-08 A page's "Template" select, in the artboard settings and in the Page tab, lists "Default template" and the site's custom templates; choosing one redraws the artboard with that template, lists the page in Review with "Template: changed", and saving stores it on the page. `[U]`
 
 ## UNDO

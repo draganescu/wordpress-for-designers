@@ -8,8 +8,8 @@ The plugin is built through Milestone 12 of `spec/build-order.md`, plus the deci
 
 | Check | Result |
 |---|---|
-| Acceptance criteria in `spec/acceptance.md` | 107 |
-| End-to-end tests, one per criterion | 107, all passing in the last full run |
+| Acceptance criteria in `spec/acceptance.md` | 108 |
+| End-to-end tests, one per criterion | 108, all passing in the last full run |
 | `npm run lint` | Exits 0, no disabled lines |
 | Open questions waiting for the product owner | 21 (`spec/open-questions.md`) |
 | Browsers the suite runs in | Chromium only |
@@ -30,6 +30,7 @@ A "Designer" menu in wp-admin lists boards. A board opens full screen: a header,
 - **Canvas.** Pan and zoom from 2% to 400%. Each artboard shows one page, template, template part or pattern at a device width (Desktop 1440, Tablet 780, Mobile 360 with default breakpoints). Images from the media library can also sit on the board as media objects.
 - **Tiers.** An artboard far from view is an outline (Ghost). In view it is a read-only render (Preview), at most 12 at once. Below 20% zoom, or beyond the 12, it is a frozen copy (Snapshot). One artboard at a time is the real block editor (Live); the two edited before it stay mounted (Warm).
 - **Editing.** Double-click or Enter edits an artboard at the board's zoom, from 30% up. Below 30% the zoom first fits the artboard's width. The block toolbar sits in the header, the list view in the left panel, the inspector in the right panel. Esc, the back button, a click on empty board, a click on another artboard, or zooming out below 30% ends edit.
+- **Dragging blocks.** A block that is not being edited moves when pressed anywhere, its text included, and dragged; a click puts the caret in it and dragging then selects text (D40). This is the behaviour of Gutenberg pull request 86911, added as a layer in `src/artboard-editor/drag-anywhere.js`; the top of that file says how to remove it once WordPress has the behaviour.
 - **Pages** are shown inside their template, which is locked. A page's template can be changed from the right panel.
 - **Creating.** The Add artboard menu places a new page, pattern, template or template part. Pages and patterns are created as drafts at once; templates and parts exist only in the session until saved.
 - **Inserter.** Blocks, Patterns, Templates and Media tabs. A row does the same thing clicked or dragged (D39). With an artboard in edit, a pattern, template part or image goes into its content: at the insertion point on a click, where it is dropped on a drag. With none in edit, a pattern, template, part or image goes onto the board: at the drop point on a drag, in the middle of the view and clear of other artboards on a click. The Blocks tab is shown only while an artboard is in edit.
@@ -78,7 +79,7 @@ Two entries: `boards` (the Boards list, `src/boards/`) and `board` (the app, `sr
 | `tier-scheduler/` | Tier of each artboard; Previews mounted nearest first through a priority queue |
 | `artboard-frame/` | One artboard: position, label, outline, error state, media image |
 | `artboard-preview/` | The Preview tier; finding a page's template |
-| `artboard-editor/` | The Live editor; `coalesce.js` groups typing into undo steps |
+| `artboard-editor/` | The Live editor; `coalesce.js` groups typing into undo steps; `drag-anywhere.js` is the removable drag-from-anywhere layer (D40) |
 | `artboard-snapshot/` | The frozen copy of a Preview |
 | `chrome-slots/` | Slots for the block toolbar, inspector and list view |
 | `inserter/` | The inserter panel, its data and actions |
@@ -147,6 +148,7 @@ Each of these is recorded in the spec; this is the short list to read first.
 - **Editing zoom.** The spec as received wanted editing from 50% zoom. It became "exactly 100%" after the first spike (D30) and "30% and up" after manual testing (D37). It works by styling WordPress's internal markup (`spec/spike-report.md`, "Editing below 100%"; OQ-21 lists what is imperfect there).
 - **Post lock.** The plugin's own route and dialog replace `PostLockedModal` (D31).
 - **Snapshots during gestures.** The spec asks for Snapshots during any pan or zoom; Previews stay mounted instead, because swapping them would break the no-render rule (OQ-19).
+- **Drag from anywhere.** C6 has one stated addition, D40; OQ-26 lists how the layer differs from the pull request.
 - **Accessibility scan.** It covers the plugin's document, not the artboard iframes (OQ-17).
 - **Added after Milestone 12:** hiding the side panels (D32), the Blocks tab hidden outside edit (D33), media objects (D34), the page template select (D35), the new-page template (D36), leaving edit on deselect (D38).
 

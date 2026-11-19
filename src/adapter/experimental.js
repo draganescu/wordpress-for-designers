@@ -32,3 +32,11 @@ export const getCurrentThemeBaseGlobalStyles = ( select ) =>
 
 export const getCurrentThemeGlobalStylesVariations = ( select ) =>
     select( coreStore ).__experimentalGetCurrentThemeGlobalStylesVariations();
+
+/*
+ * Whether WordPress itself has "Drag blocks from anywhere" switched on (the
+ * Gutenberg experiment of pull request 86911). The plugin's own layer stands
+ * down when it is (decision D40).
+ */
+export const hasCoreDragFromAnywhere = () =>
+    !! window.__experimentalBlockDragFromAnywhere;
