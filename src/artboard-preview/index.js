@@ -4,6 +4,7 @@
  */
 import {
     useCallback,
+    useContext,
     useEffect,
     useLayoutEffect,
     useMemo,
@@ -16,6 +17,11 @@ import {
     BlockPreview,
 } from '@wordpress/block-editor';
 import { useResizeObserver } from '@wordpress/compose';
+import { FrameElementContext } from '../artboard-frame';
+import {
+    pinStyles,
+    useViewportOverrides,
+} from '../artboard-frame/viewport-units';
 import { KINDS } from '../shell/constants';
 import { GuardedRegistry } from '../shell/guarded-registry';
 import { usePageTemplateId } from './use-page-template';
@@ -31,7 +37,7 @@ function Measured( { onHeight, onFreeze, children } ) {
     freeze.current = onFreeze;
     useEffect( () => {
         if ( height ) {
-            report.current( Math.round( height ) );
+            report.current( Math.ceil( height ) );
         }
     }, [ height ] );
     // Layout effects are cleaned up before React removes the elements, so
@@ -56,11 +62,27 @@ function Preview( {
     onHeight,
     onFreeze,
 } ) {
+    // Viewport-height lengths are pinned, or content sized with them would
+    // fill whatever height the iframe is given
+    // (artboard-frame/viewport-units.js).
+    const pinnedSettings = useMemo(
+        () => ( { ...settings, styles: pinStyles( settings.styles ) } ),
+        [ settings ]
+    );
+    const overrides = useViewportOverrides( useContext( FrameElementContext ) );
+    const additionalStyles = useMemo(
+        () => [ { css: overrides } ],
+        [ overrides ]
+    );
     return (
-        <BlockEditorProvider value={ blocks } settings={ settings }>
+        <BlockEditorProvider value={ blocks } settings={ pinnedSettings }>
             <BlockContextProvider value={ context }>
                 <Measured onHeight={ onHeight } onFreeze={ onFreeze }>
-                    <BlockPreview blocks={ blocks } viewportWidth={ width } />
+                    <BlockPreview
+                        blocks={ blocks }
+                        viewportWidth={ width }
+                        additionalStyles={ additionalStyles }
+                    />
                 </Measured>
             </BlockContextProvider>
         </BlockEditorProvider>

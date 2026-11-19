@@ -27,6 +27,10 @@ import { ListView } from '../adapter/experimental';
 import { BlockToolbarFill, InspectorFill, ListViewFill } from '../chrome-slots';
 import { usePageTemplateId } from '../artboard-preview/use-page-template';
 import { FrameElementContext } from '../artboard-frame';
+import {
+    pinStyles,
+    useViewportOverrides,
+} from '../artboard-frame/viewport-units';
 import { KINDS } from '../shell/constants';
 import { coalesceTyping } from './coalesce';
 import { DragAnywhere, DRAG_ANYWHERE_STYLES } from './drag-anywhere';
@@ -274,6 +278,18 @@ function Editor( {
         () => ( { ...settings, hasFixedToolbar: true } ),
         [ settings ]
     );
+    // Viewport-height lengths are pinned, or content sized with them would
+    // grow with every measurement (artboard-frame/viewport-units.js).
+    const overrides = useViewportOverrides( useContext( FrameElementContext ) );
+    const canvasStyles = useMemo(
+        () => [
+            ...( pinStyles( settings.styles ) ?? [] ),
+            ...CANVAS_STYLES,
+            ...DRAG_ANYWHERE_STYLES,
+            { css: overrides },
+        ],
+        [ settings.styles, overrides ]
+    );
     return (
         <BlockEditorProvider
             value={ blocks }
@@ -311,11 +327,7 @@ function Editor( {
                  */ }
                 <BlockCanvas
                     height={ height ? `${ height }px` : '100%' }
-                    styles={ [
-                        ...( settings.styles ?? [] ),
-                        ...CANVAS_STYLES,
-                        ...DRAG_ANYWHERE_STYLES,
-                    ] }
+                    styles={ canvasStyles }
                 >
                     <BlockList />
                 </BlockCanvas>

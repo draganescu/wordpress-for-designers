@@ -4,12 +4,12 @@ As of 2026-11-19. This describes what exists; `spec/` says what should exist. Fo
 
 ## Summary
 
-The plugin is built through Milestone 12 of `spec/build-order.md`, plus the decisions taken afterwards (D32 to D40).
+The plugin is built through Milestone 12 of `spec/build-order.md`, plus the decisions taken afterwards (D32 to D41).
 
 | Check | Result |
 |---|---|
-| Acceptance criteria in `spec/acceptance.md` | 109 |
-| End-to-end tests, one per criterion | 109, all passing in the last full run |
+| Acceptance criteria in `spec/acceptance.md` | 111 |
+| End-to-end tests, one per criterion | 111, all passing in the last full run except AC-PERF-03, which fails only when run from a git worktree (see working-notes.md) |
 | `npm run lint` | Exits 0, no disabled lines |
 | Open questions waiting for the product owner | 22 (`spec/open-questions.md`) |
 | Browsers the suite runs in | Chromium only |
@@ -138,6 +138,7 @@ npm run lint
 | Zoom step (menu and keys) | × 1.25 | `src/shell/use-canvas-interactions.js` |
 | Layout autosave delay | 2 s | `src/board-store/use-layout-autosave.js` |
 | Height of a new artboard before it is measured | 900 px | `src/shell/use-placement.js` |
+| Viewport height that `vh` units resolve against in an artboard | 900 px | `src/artboard-frame/viewport-units.js` |
 | Widest media object | 1440 px | `src/shell/constants.js` |
 | Images listed in the Media tab | 50 most recent | `src/inserter/use-inserter-data.js` |
 
@@ -150,20 +151,20 @@ Each of these is recorded in the spec; this is the short list to read first.
 - **Snapshots during gestures.** The spec asks for Snapshots during any pan or zoom; Previews stay mounted instead, because swapping them would break the no-render rule (OQ-19).
 - **Drag from anywhere.** C6 has one stated addition, D40; OQ-26 lists how the layer differs from the pull request.
 - **Accessibility scan.** It covers the plugin's document, not the artboard iframes (OQ-17).
-- **Added after Milestone 12:** hiding the side panels (D32), the Blocks tab hidden outside edit (D33), media objects (D34), the page template select (D35), the new-page template (D36), leaving edit on deselect (D38), inserter rows that act the same clicked or dragged (D39), dragging blocks from anywhere (D40).
+- **Added after Milestone 12:** showing all of an artboard's content outside edit (D41), hiding the side panels (D32), the Blocks tab hidden outside edit (D33), media objects (D34), the page template select (D35), the new-page template (D36), leaving edit on deselect (D38), inserter rows that act the same clicked or dragged (D39), dragging blocks from anywhere (D40).
 
 ## Open questions
 
-Twenty entries are open, OQ-4 and OQ-6 to OQ-24. The missing numbers were decided by the product owner and removed from the file. None leaves something unbuilt; each records a choice made where the spec was silent or could not be met as written. Grouped:
+Twenty-two entries are open, OQ-4, OQ-6 to OQ-10 and OQ-12 to OQ-27. The missing numbers were decided by the product owner and removed from the file. None leaves something unbuilt; each records a choice made where the spec was silent or could not be met as written. Grouped:
 
 | About | Entries |
 |---|---|
 | Wording the spec does not give | OQ-7, OQ-8, OQ-15, OQ-16, OQ-22 |
 | A component that cannot do what the screen file asks | OQ-4, OQ-9 |
 | The allowlist | OQ-14, OQ-17, OQ-20 |
-| Limits inside WordPress | OQ-11, OQ-13, OQ-21 |
+| Limits inside WordPress | OQ-13, OQ-21 |
 | Two spec statements that conflict | OQ-12, OQ-18, OQ-19 |
-| Builder's choices to confirm | OQ-6, OQ-23, OQ-24 |
+| Builder's choices to confirm | OQ-6, OQ-23, OQ-24, OQ-25, OQ-26, OQ-27 |
 | Build order | OQ-10 |
 
 ## Sensible next steps

@@ -679,4 +679,78 @@ test.describe( 'TIER', () => {
                 .locator( 'p', { hasText: 'Fixture header text' } )
         ).toBeAttached();
     } );
+
+    test( 'AC-TIER-13 An artboard whose content is taller than 2000 px shows all of it as a Preview and as a Snapshot, at the height it has in edit', async ( {
+        page,
+        requestUtils,
+    } ) => {
+        const fixture = await resetFixture( requestUtils );
+        await requestUtils.rest( {
+            method: 'POST',
+            path: `/wp/v2/blocks/${ fixture.patterns.hero }`,
+            data: {
+                content:
+                    '<!-- wp:group {"style":{"dimensions":{"minHeight":"3000px"}},"layout":{"type":"constrained"}} -->' +
+                    '<div class="wp-block-group" style="min-height:3000px"><!-- wp:paragraph --><p>Tall.</p><!-- /wp:paragraph --></div>' +
+                    '<!-- /wp:group -->' +
+                    '<!-- wp:paragraph --><p>Bottom line.</p><!-- /wp:paragraph -->',
+            },
+        } );
+        await openBoard( page, fixture.boardId );
+        const hero = fixture.layout.artboards.find(
+            ( a ) => a.entityId === fixture.patterns.hero
+        )!;
+        const artboard = page.locator( `[data-wfd-artboard="${ hero.id }"]` );
+        const show = ( zoom: number ) =>
+            setViewport( page, {
+                x: 40 - hero.x * zoom,
+                y: 100 - hero.y * zoom,
+                zoom,
+            } );
+        const frameHeight = () =>
+            artboard
+                .locator( '.wfd-artboard__frame' )
+                .evaluate( ( element: HTMLElement ) =>
+                    parseFloat( element.style.height )
+                );
+        // How far the last block's bottom edge is from the bottom of the
+        // iframe that shows it, in content pixels.
+        const cutOff = ( selector: string ) =>
+            artboard
+                .locator( selector )
+                .evaluate( ( element: HTMLIFrameElement ) => {
+                    const lines = Array.from(
+                        element.contentDocument!.querySelectorAll( 'p' )
+                    ).filter( ( p ) => p.textContent === 'Bottom line.' );
+                    return lines.length
+                        ? lines[ 0 ].getBoundingClientRect().bottom -
+                              element.clientHeight
+                        : Infinity;
+                } );
+
+        await show( 0.5 );
+        await expect( artboard ).toHaveAttribute( 'data-wfd-tier', 'preview' );
+        await expect.poll( frameHeight ).toBeGreaterThan( 3000 );
+        const height = await frameHeight();
+        expect( await cutOff( '.wfd-preview iframe' ) ).toBeLessThanOrEqual(
+            0
+        );
+
+        await show( 0.15 );
+        await expect( artboard ).toHaveAttribute( 'data-wfd-tier', 'snapshot' );
+        await expect
+            .poll( () => cutOff( '.wfd-snapshot__copy iframe' ) )
+            .toBeLessThanOrEqual( 0 );
+        expect( await frameHeight() ).toBe( height );
+
+        await show( 0.5 );
+        await enterEdit( page, hero.id );
+        await expect(
+            artboard.locator( 'iframe[name="editor-canvas"]' )
+        ).toBeVisible();
+        await page.waitForTimeout( 1000 );
+        expect( Math.abs( ( await frameHeight() ) - height ) ).toBeLessThan(
+            2
+        );
+    } );
 } );

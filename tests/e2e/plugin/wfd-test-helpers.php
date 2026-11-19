@@ -187,6 +187,14 @@ function wfd_test_seed( $extra = 0 ) {
     );
 }
 
+// A style sheet WordPress loads into the canvas itself (AC-DEV-05).
+add_action(
+    'enqueue_block_assets',
+    function () {
+        wp_enqueue_style( 'test-vh-sheet', plugins_url( 'test-vh-sheet.css', __FILE__ ), array(), '1' );
+    }
+);
+
 add_action(
     'rest_api_init',
     function () {
