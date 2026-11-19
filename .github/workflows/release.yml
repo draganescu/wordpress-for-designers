@@ -1,0 +1,50 @@
+name: Release
+
+# Builds the plugin and attaches wordpress-for-designers.zip to a GitHub
+# release when a version tag (v1.2.3) is pushed. A tag with a hyphen
+# (v1.2.3-beta.1) makes a pre-release.
+
+on:
+    push:
+        tags: ['v*']
+
+permissions:
+    contents: write
+
+jobs:
+    release:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: 24
+                  cache: npm
+
+            # The tag, package.json, the plugin header and WFD_VERSION must
+            # all carry the same version.
+            - name: Check the tag matches the plugin version
+              run: node tools/sync-version.mjs --check "$GITHUB_REF_NAME"
+
+            - run: npm ci
+
+            - run: npm run lint
+
+            - run: npm run build
+
+            - run: npm run package
+
+            - name: Publish the release
+              env:
+                  GH_TOKEN: ${{ github.token }}
+              run: |
+                  case "$GITHUB_REF_NAME" in
+                      *-*) PRERELEASE=--prerelease ;;
+                      *) PRERELEASE= ;;
+                  esac
+                  gh release create "$GITHUB_REF_NAME" dist/wordpress-for-designers.zip \
+                      --title "$GITHUB_REF_NAME" \
+                      --generate-notes \
+                      --verify-tag \
+                      $PRERELEASE
