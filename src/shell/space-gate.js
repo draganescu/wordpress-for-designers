@@ -32,11 +32,13 @@ function useHasRoom() {
 }
 
 /**
- * A window squeezing three artboards, then given room. Decoration only.
+ * A window squeezing three artboards, then given room. Decoration only. It
+ * is laid out left to right in every language, so that the chevrons point
+ * and push outwards.
  */
 function Squeeze() {
     return (
-        <div className="wfd-squeeze" aria-hidden="true">
+        <div className="wfd-squeeze" aria-hidden="true" dir="ltr">
             <Icon
                 icon={ chevronLeft }
                 size={ 32 }
