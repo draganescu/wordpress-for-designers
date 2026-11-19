@@ -4,6 +4,10 @@
 @import "../inserter/style";
 @import "../review/style";
 
+// Below this width the header and the panels make room (D49). The images in
+// spec/screens were drawn at this width.
+$wfd-roomy: 1440px;
+
 html.wp-toolbar:has(.wfd-board-page) {
     padding: 0;
 }
@@ -17,18 +21,23 @@ html.wp-toolbar:has(.wfd-board-page) {
 
 .wfd-shell {
     display: grid;
-    grid-template: "header header header" auto "left main right" minmax(0, 1fr) / 280px minmax(0, 1fr) 360px;
+    grid-template: "header header header" auto "left main right" minmax(0, 1fr) / var(--wfd-left-width) minmax(0, 1fr) var(--wfd-right-width);
+
+    // Full width from 1440 px up, narrower down to the smallest supported
+    // window (D49).
+    --wfd-left-width: clamp(240px, 19.5vw, 280px);
+    --wfd-right-width: clamp(300px, 25vw, 360px);
     position: fixed;
     inset: 0;
     color: var(--wpds-color-foreground-content-neutral);
     background: var(--wpds-color-background-surface-neutral);
 
     &.has-no-left {
-        grid-template-columns: 0 minmax(0, 1fr) 360px;
+        grid-template-columns: 0 minmax(0, 1fr) var(--wfd-right-width);
     }
 
     &.has-no-right {
-        grid-template-columns: 280px minmax(0, 1fr) 0;
+        grid-template-columns: var(--wfd-left-width) minmax(0, 1fr) 0;
     }
 
     &.has-no-left.has-no-right {
@@ -43,10 +52,24 @@ html.wp-toolbar:has(.wfd-board-page) {
     align-items: center;
     column-gap: var(--wpds-dimension-gap-lg);
     border-bottom: var(--wpds-border-width-xs) solid var(--wpds-color-stroke-surface-neutral);
+
+    // In edit the block toolbar needs the room: the document bar gets
+    // narrower and moves next to the controls at the end (D49).
+    @media (max-width: #{$wfd-roomy - 1px}) {
+
+        &.is-editing {
+            grid-template-columns: minmax(0, 1fr) auto auto;
+
+            .wfd-header__document {
+                width: 180px;
+            }
+        }
+    }
 }
 
 .wfd-header a.wfd-header__boards {
     display: flex;
+    flex: none;
     align-items: center;
     justify-content: center;
     width: 60px;
@@ -68,14 +91,22 @@ html.wp-toolbar:has(.wfd-board-page) {
 
 .wfd-header__tools {
     display: flex;
+    flex: 1;
     align-items: center;
     column-gap: var(--wpds-dimension-gap-sm);
     min-width: 0;
+
+    // The controls keep their size; only the block toolbar gives way.
+    > :not(.wfd-header__toolbar) {
+        flex: none;
+    }
 }
 
+// A block toolbar wider than its room scrolls sideways.
 .wfd-header__toolbar {
     min-width: 0;
-    overflow: hidden;
+    overflow: auto hidden;
+    scrollbar-width: none;
 }
 
 .wfd-header__document {
@@ -100,6 +131,7 @@ html.wp-toolbar:has(.wfd-board-page) {
 
 .wfd-header__end {
     display: flex;
+    flex: none;
     align-items: center;
     justify-content: flex-end;
     column-gap: var(--wpds-dimension-gap-md);
@@ -561,4 +593,124 @@ html.wp-toolbar:has(.wfd-board-page) {
 
 .wfd-note-colors {
     margin-top: var(--wpds-dimension-gap-lg);
+}
+
+// "Designing needs more space" (D48): the whole window, above everything.
+.wfd-needs-space[open] {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    width: 100%;
+    max-width: none;
+    height: 100%;
+    max-height: none;
+    padding: var(--wpds-dimension-padding-2xl);
+    margin: 0;
+    overflow: auto;
+    color: var(--wpds-color-foreground-content-neutral);
+    background: var(--wpds-color-background-surface-neutral-weak);
+    border: 0;
+    outline: none;
+}
+
+.wfd-squeeze {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    column-gap: var(--wpds-dimension-gap-xs);
+    // As wide as the window gets, so the text under it stays still.
+    min-width: calc(var(--wfd-squeeze-wide) + 2 * var(--wpds-dimension-size-md) + 2 * var(--wpds-dimension-gap-xs));
+    color: var(--wpds-color-foreground-interactive-brand);
+
+    --wfd-squeeze-tight: calc(var(--wpds-dimension-size-lg) * 1.5);
+    --wfd-squeeze-wide: calc(var(--wpds-dimension-size-lg) * 6);
+    --wfd-squeeze-loop: calc(var(--wpds-motion-duration-xl) * 9);
+}
+
+.wfd-squeeze__arrow {
+    flex: none;
+    fill: currentcolor;
+}
+
+.wfd-squeeze__window {
+    display: flex;
+    align-items: flex-start;
+    column-gap: var(--wpds-dimension-gap-sm);
+    box-sizing: border-box;
+    width: var(--wfd-squeeze-tight);
+    height: calc(var(--wpds-dimension-size-lg) * 3);
+    padding: var(--wpds-dimension-padding-md);
+    overflow: hidden;
+    background: var(--wpds-color-background-surface-neutral);
+    border: var(--wpds-border-width-sm) solid var(--wpds-color-stroke-interactive-brand);
+    border-radius: var(--wpds-border-radius-md);
+}
+
+.wfd-squeeze__artboard {
+    flex: 1;
+    min-width: 0;
+    height: 100%;
+    background: var(--wpds-color-background-surface-brand);
+    outline: var(--wpds-border-width-xs) solid var(--wpds-color-stroke-interactive-brand);
+
+    &:nth-child(2) {
+        height: 40%;
+    }
+
+    &:nth-child(3) {
+        height: 70%;
+    }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+
+    .wfd-squeeze__window {
+        animation: wfd-squeeze var(--wfd-squeeze-loop) var(--wpds-motion-easing-expressive) infinite;
+    }
+
+    .wfd-squeeze__arrow {
+        animation: wfd-squeeze-nudge var(--wfd-squeeze-loop) var(--wpds-motion-easing-expressive) infinite;
+    }
+
+    .wfd-squeeze__arrow:last-child {
+        --wfd-squeeze-nudge: var(--wpds-dimension-size-5xs);
+    }
+
+    .wfd-squeeze__arrow:first-child {
+        --wfd-squeeze-nudge: calc(var(--wpds-dimension-size-5xs) * -1);
+    }
+}
+
+// Tight, a push at the edges, room, a breath, and tight again.
+@keyframes wfd-squeeze {
+
+    0%,
+    18%,
+    100% {
+        width: var(--wfd-squeeze-tight);
+    }
+
+    45%,
+    78% {
+        width: var(--wfd-squeeze-wide);
+    }
+}
+
+@keyframes wfd-squeeze-nudge {
+
+    0%,
+    18%,
+    100% {
+        transform: translateX(0);
+    }
+
+    6%,
+    14% {
+        transform: translateX(var(--wfd-squeeze-nudge));
+    }
+
+    10% {
+        transform: translateX(0);
+    }
 }

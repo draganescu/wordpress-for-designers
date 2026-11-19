@@ -4,6 +4,9 @@
 import { __ } from '@wordpress/i18n';
 import { page, layout, header, symbol, image } from '@wordpress/icons';
 
+// The narrowest window a board is shown in: an iPad Air in landscape (D48).
+export const MIN_BOARD_WIDTH = 1180;
+
 export const KIND_ORDER = [
     'page',
     'template',

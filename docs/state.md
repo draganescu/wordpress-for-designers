@@ -4,15 +4,15 @@ As of 2026-11-19. This describes what exists; `spec/` says what should exist. Fo
 
 ## Summary
 
-The plugin is built through Milestone 12 of `spec/build-order.md`, plus the decisions taken afterwards (D32 to D46).
+The plugin is built through Milestone 12 of `spec/build-order.md`, plus the decisions taken afterwards (D32 to D49).
 
 | Check | Result |
 |---|---|
-| Acceptance criteria in `spec/acceptance.md` | 125 |
-| End-to-end tests, one per criterion | 125. On 2026-11-19 the whole suite was run three times: all pass after two fixes to the tests. AC-CANVAS-03 used an empty-board point that D42's Keyboard shortcuts control now covers; AC-STYLE-07 (and three like it in `ins.spec.ts` and `style.spec.ts`) counted menu rows once instead of waiting for them, and failed one run in three. AC-PERF-03 still fails on a port-8890 environment from a worktree (see working-notes.md) |
+| Acceptance criteria in `spec/acceptance.md` | 128 |
+| End-to-end tests, one per criterion | 128; AC-SHELL-10 to 12 (D48, D49) were added after the runs described next. On 2026-11-19 the whole suite was run three times: all pass after two fixes to the tests. AC-CANVAS-03 used an empty-board point that D42's Keyboard shortcuts control now covers; AC-STYLE-07 (and three like it in `ins.spec.ts` and `style.spec.ts`) counted menu rows once instead of waiting for them, and failed one run in three. AC-PERF-03 still fails on a port-8890 environment from a worktree (see working-notes.md) |
 | `npm run lint` | Exits 0, no disabled lines |
 | CI | `.github/workflows/tests.yml` runs lint, build and the suite (Chromium, wp-env) on every pull request; CI retries a failed test twice and reports a pass on retry as flaky |
-| Open questions waiting for the product owner | 26 (`spec/open-questions.md`) |
+| Open questions waiting for the product owner | 27 (`spec/open-questions.md`) |
 | Browsers the suite runs in | Chromium only |
 | WordPress it was built and tested on | 7.2-RC2, Twenty Twenty-Five, PHP 8.2, no Gutenberg plugin |
 
@@ -43,6 +43,7 @@ A "Designer" menu in wp-admin lists boards. A board opens full screen: a header,
 - **Review.** Nothing reaches the site until "Review changes" is used. It lists each changed item and saves the checked ones. Artboard positions save on their own, two seconds after a change.
 - **Locks.** Editing a page or pattern takes WordPress's post lock through the plugin's own route and dialog.
 - **Panels.** Both side panels can be hidden from the header or with Cmd/Ctrl + \. Resting the pointer on the left or right edge of the canvas area brings a hidden panel back.
+- **Window size.** Below 1180 px wide (an iPad Air in landscape) the whole window shows "Designing needs more space" and nothing of the board can be used; a board already open stays mounted behind it and comes back as it was (D48, `src/shell/space-gate.js`). From 1180 to 1439 px the panels are narrower and, in edit, the document bar is 180 px wide next to the end controls so the block toolbar has the room; a toolbar wider than its room scrolls sideways (D49, `src/shell/style.scss`). Touch gestures on the board are not handled (OQ-32).
 
 ## Layout of the repository
 
@@ -165,6 +166,7 @@ git push --follow-tags
 | Viewport height that `vh` units resolve against in an artboard | 900 px | `src/artboard-frame/viewport-units.js` |
 | Widest media object | 1440 px | `src/shell/constants.js` |
 | Note width | 240 board units | `src/shell/notes.js` |
+| Narrowest window a board is shown in | 1180 px | `src/shell/constants.js`, and `src/shell/style.scss` for the 1440 px width below which the shell makes room |
 | Images listed in the Media tab | 50 most recent | `src/inserter/use-inserter-data.js` |
 
 ## Where the build differs from, or goes beyond, the spec as received
@@ -180,7 +182,7 @@ Each of these is recorded in the spec; this is the short list to read first.
 
 ## Open questions
 
-Twenty-five entries are open, OQ-4, OQ-6 to OQ-10 and OQ-12 to OQ-30. The missing numbers were decided by the product owner and removed from the file. None leaves something unbuilt; each records a choice made where the spec was silent or could not be met as written. Grouped:
+Twenty-seven entries are open, OQ-4, OQ-6 to OQ-10 and OQ-12 to OQ-32. The missing numbers were decided by the product owner and removed from the file. None leaves something unbuilt; each records a choice made where the spec was silent or could not be met as written. Grouped:
 
 | About | Entries |
 |---|---|
@@ -189,7 +191,7 @@ Twenty-five entries are open, OQ-4, OQ-6 to OQ-10 and OQ-12 to OQ-30. The missin
 | The allowlist | OQ-14, OQ-17, OQ-20 |
 | Limits inside WordPress | OQ-13, OQ-21 |
 | Two spec statements that conflict | OQ-12, OQ-18, OQ-19 |
-| Builder's choices to confirm | OQ-6, OQ-23, OQ-24, OQ-25, OQ-26, OQ-27, OQ-28, OQ-29, OQ-30, OQ-31 |
+| Builder's choices to confirm | OQ-6, OQ-23, OQ-24, OQ-25, OQ-26, OQ-27, OQ-28, OQ-29, OQ-30, OQ-31, OQ-32 |
 | Build order | OQ-10 |
 
 ## Sensible next steps

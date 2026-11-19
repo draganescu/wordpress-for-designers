@@ -30,6 +30,9 @@ Unless a criterion says otherwise, the fixture in `architecture.md` is loaded an
 - AC-SHELL-07 Turning the inserter or list view toggle on shows a hidden left panel; a hidden right panel stays hidden through selection and edit; after a reload both panels are shown. `[U]`
 - AC-SHELL-08 With both panels hidden, resting the pointer on the left edge of the canvas area shows the left panel and on the right edge shows the right panel. `[U]`
 - AC-SHELL-09 In the artboard list, Cmd/Ctrl + click adds a row to the selection and a second one takes it out; Shift + click selects every row from the one clicked last to the one clicked, in list order; a plain click selects one row again. Each selected row has its artboard outlined on the board. `[U]`
+- AC-SHELL-10 A board opened in a window narrower than 1180 px shows "Designing needs more space" with its text over the whole window, and no header or artboard exists; at 1180 px wide the message goes and the board opens. `[U]`
+- AC-SHELL-11 Narrowing the window below 1180 px while an artboard is in edit shows the message over the whole window; Esc and Cmd/Ctrl + \ do nothing, focus cannot reach the board, and after widening the same artboard is still in edit with both panels shown. `[U]`
+- AC-SHELL-12 At 1180 × 820, with a block selected in an artboard in edit, the header controls are in order H1 to H5, H10, H13, H6, H7, H12, H8, H11, H9 inside the window with none overlapping the next; H1 and the tool buttons have the widths they have at 1440 px; the block toolbar can be scrolled to its end; the left panel is narrower than 280 px, the right panel narrower than 360 px and the canvas area at least 600 px wide. `[U]`
 
 ## CANVAS
 

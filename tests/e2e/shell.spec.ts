@@ -3,6 +3,7 @@ import {
     resetFixture,
     boardUrl,
     enterEdit,
+    editorFrame,
     artboardOf,
     type Fixture,
 } from './utils';
@@ -521,5 +522,172 @@ test.describe( 'SHELL', () => {
         await rows.nth( 7 ).click();
         expect( await selectedIds() ).toEqual( [ await idOf( 7 ) ] );
         await expect( outlined ).toHaveCount( 1 );
+    } );
+
+    test( 'AC-SHELL-10 A board opened in a window narrower than 1180 px shows "Designing needs more space" and no board; at 1180 px the message goes and the board opens', async ( {
+        page,
+    } ) => {
+        await page.setViewportSize( { width: 1179, height: 820 } );
+        await page.goto( boardUrl( fixture.boardId ) );
+        const message = page.locator( '[data-wfd-region="needs-space"]' );
+        await expect(
+            message.getByRole( 'heading', {
+                name: 'Designing needs more space',
+            } )
+        ).toBeVisible();
+        await expect( message ).toContainText(
+            'A board needs a wide window to lay out your designs. Make this one wider, turn your tablet sideways or move to a bigger screen, and your board will be right here.'
+        );
+        // The message fills the window and the board was not started.
+        const box = ( await message.boundingBox() )!;
+        expect( box.width ).toBe( 1179 );
+        expect( box.height ).toBe( 820 );
+        await expect(
+            page.locator( '[data-wfd-region="header"]' )
+        ).toHaveCount( 0 );
+        await expect( page.locator( '[data-wfd-artboard]' ) ).toHaveCount( 0 );
+
+        // An iPad Air in landscape.
+        await page.setViewportSize( { width: 1180, height: 820 } );
+        await expect( message ).toHaveCount( 0 );
+        await expect( page.locator( '[data-wfd-artboard]' ) ).toHaveCount( 9 );
+        await expect(
+            page.locator( '[data-wfd-region="header"]' )
+        ).toBeVisible();
+    } );
+
+    test( 'AC-SHELL-11 Narrowing the window below 1180 px covers a board in use with the message; nothing behind it takes the pointer or keys, Esc does not close it, and widening brings the board back as it was', async ( {
+        page,
+    } ) => {
+        const hero = artboardOf( fixture, 'pattern' );
+        await enterEdit( page, hero.id );
+        const live = page.locator( '[data-wfd-tier="live"]' );
+        await expect( live ).toHaveCount( 1 );
+
+        await page.setViewportSize( { width: 1000, height: 800 } );
+        const message = page.locator( '[data-wfd-region="needs-space"]' );
+        await expect(
+            message.getByRole( 'heading', {
+                name: 'Designing needs more space',
+            } )
+        ).toBeVisible();
+
+        // Esc would leave edit and Cmd/Ctrl + \ would hide both panels.
+        await page.keyboard.press( 'Escape' );
+        await page.keyboard.press( 'Escape' );
+        await page.keyboard.press( 'ControlOrMeta+Backslash' );
+        await expect( message ).toBeVisible();
+        // Every point of the window belongs to the message.
+        const hit = await page.evaluate( () =>
+            [
+                [ 30, 30 ],
+                [ 500, 400 ],
+                [ 970, 30 ],
+                [ 120, 700 ],
+            ].every( ( [ x, y ] ) =>
+                document
+                    .elementFromPoint( x, y )
+                    ?.closest( '[data-wfd-region="needs-space"]' )
+            )
+        );
+        expect( hit ).toBe( true );
+        // Focus cannot leave the message.
+        await page.keyboard.press( 'Tab' );
+        await expect( page.locator( '.wfd-shell :focus' ) ).toHaveCount( 0 );
+
+        await page.setViewportSize( { width: 1440, height: 900 } );
+        await expect( message ).toHaveCount( 0 );
+        await expect( live ).toHaveCount( 1 );
+        await expect( live ).toHaveAttribute( 'data-wfd-artboard', hero.id );
+        await expect(
+            page.locator( '[data-wfd-region="left"]' )
+        ).toBeVisible();
+        await expect(
+            page.locator( '[data-wfd-region="right"]' )
+        ).toBeVisible();
+    } );
+
+    test( 'AC-SHELL-12 At 1180 × 820 with a block selected in an artboard in edit, the header controls keep their order without overlapping, none is squeezed, the block toolbar scrolls when it is wider than its room, and the panels are narrower', async ( {
+        page,
+    } ) => {
+        await page.setViewportSize( { width: 1180, height: 820 } );
+        const hero = artboardOf( fixture, 'pattern' );
+        await enterEdit( page, hero.id );
+        await editorFrame( page, hero.id )
+            .locator(
+                '[data-type="core/heading"], [data-type="core/paragraph"]'
+            )
+            .first()
+            .click();
+        const toolbar = page.locator( '[data-wfd-control="H6"]' );
+        await expect(
+            toolbar.locator( '.block-editor-block-toolbar' )
+        ).toBeVisible();
+
+        const boxes = await page
+            .locator( '[data-wfd-region="header"] [data-wfd-control]' )
+            .evaluateAll( ( elements ) =>
+                elements
+                    .map( ( element ) => {
+                        const box = element.getBoundingClientRect();
+                        return {
+                            id: element.getAttribute( 'data-wfd-control' ),
+                            left: box.left,
+                            right: box.right,
+                            width: box.width,
+                        };
+                    } )
+                    .sort( ( a, b ) => a.left - b.left )
+            );
+        expect( boxes.map( ( box ) => box.id ) ).toEqual( [
+            'H1',
+            'H2',
+            'H3',
+            'H4',
+            'H5',
+            'H10',
+            'H13',
+            'H6',
+            'H7',
+            'H12',
+            'H8',
+            'H11',
+            'H9',
+        ] );
+        for ( const [ index, box ] of boxes.entries() ) {
+            expect( box.left ).toBeGreaterThanOrEqual( 0 );
+            expect( box.right ).toBeLessThanOrEqual( 1180 );
+            if ( index ) {
+                expect( box.left ).toBeGreaterThanOrEqual(
+                    boxes[ index - 1 ].right
+                );
+            }
+        }
+        // The controls keep the size they have in a wide window.
+        const widthOf = ( id: string ) =>
+            boxes.find( ( box ) => box.id === id )!.width;
+        expect( widthOf( 'H1' ) ).toBe( 60 );
+        for ( const id of [ 'H2', 'H3', 'H4', 'H5', 'H10', 'H13' ] ) {
+            expect( widthOf( id ) ).toBe( widthOf( 'H12' ) );
+        }
+        // The whole block toolbar can be reached.
+        const reach = await toolbar.evaluate( ( element ) => {
+            element.scrollLeft = element.scrollWidth;
+            return {
+                hidden: element.scrollWidth - element.clientWidth,
+                scrolled: element.scrollLeft,
+            };
+        } );
+        expect( reach.scrolled ).toBeGreaterThanOrEqual( reach.hidden - 1 );
+
+        const left = ( await page
+            .locator( '[data-wfd-region="left"]' )
+            .boundingBox() )!;
+        const right = ( await page
+            .locator( '[data-wfd-region="right"]' )
+            .boundingBox() )!;
+        expect( left.width ).toBeLessThan( 280 );
+        expect( right.width ).toBeLessThan( 360 );
+        expect( 1180 - left.width - right.width ).toBeGreaterThanOrEqual( 600 );
     } );
 } );
