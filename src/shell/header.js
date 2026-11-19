@@ -82,10 +82,7 @@ export function Header( {
 } ) {
     countRender();
     return (
-        <header
-            className={ 'wfd-header' + ( liveName ? ' is-editing' : '' ) }
-            data-wfd-region="header"
-        >
+        <header className="wfd-header" data-wfd-region="header">
             <div className="wfd-header__start">
                 <ButtonLink
                     className="wfd-header__boards"

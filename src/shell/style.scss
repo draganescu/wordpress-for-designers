@@ -64,7 +64,7 @@ html.wp-toolbar:has(.wfd-board-page) {
     // narrower and moves next to the controls at the end (D50).
     @media (max-width: #{$wfd-roomy - 1px}) {
 
-        &.is-editing {
+        &:has(.wfd-header__toolbar) {
             grid-template-columns: minmax(0, 1fr) auto auto;
 
             .wfd-header__document {
