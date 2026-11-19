@@ -166,7 +166,7 @@ git push --follow-tags
 | Viewport height that `vh` units resolve against in an artboard | 900 px | `src/artboard-frame/viewport-units.js` |
 | Widest media object | 1440 px | `src/shell/constants.js` |
 | Note width | 240 board units | `src/shell/notes.js` |
-| Narrowest window a board is shown in | 1180 px | `src/shell/constants.js`, and `src/shell/style.scss` for the 1440 px width below which the shell makes room |
+| Narrowest window a board is shown in | 1180 px | `src/shell/space-gate.js`, and `src/shell/style.scss` for the 1440 px width below which the shell makes room |
 | Images listed in the Media tab | 50 most recent | `src/inserter/use-inserter-data.js` |
 
 ## Where the build differs from, or goes beyond, the spec as received

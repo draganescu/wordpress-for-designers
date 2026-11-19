@@ -3,33 +3,16 @@
  * is replaced by a message and nothing of it can be used; with room again it
  * comes back as it was.
  */
-import {
-    useEffect,
-    useLayoutEffect,
-    useRef,
-    useState,
-} from '@wordpress/element';
+import { useEffect, useLayoutEffect, useRef } from '@wordpress/element';
+import { useMediaQuery } from '@wordpress/compose';
 import { __ } from '@wordpress/i18n';
 import { chevronLeft, chevronRight } from '@wordpress/icons';
 import { EmptyState, Icon } from '@wordpress/ui';
-import { MIN_BOARD_WIDTH } from './constants';
 
+// The narrowest window a board is shown in: an iPad Air in landscape.
+const MIN_BOARD_WIDTH = 1180;
 const QUERY = `(min-width: ${ MIN_BOARD_WIDTH }px)`;
 const KEY_EVENTS = [ 'keydown', 'keypress', 'keyup' ];
-
-function useHasRoom() {
-    const [ hasRoom, setHasRoom ] = useState(
-        () => window.matchMedia( QUERY ).matches
-    );
-    useEffect( () => {
-        const list = window.matchMedia( QUERY );
-        const update = () => setHasRoom( list.matches );
-        update();
-        list.addEventListener( 'change', update );
-        return () => list.removeEventListener( 'change', update );
-    }, [] );
-    return hasRoom;
-}
 
 /**
  * A window squeezing three artboards, then given room. Decoration only. It
@@ -63,7 +46,7 @@ function Squeeze() {
  * itself makes everything else on the page inert, the overlays that the
  * components portal into the body included.
  */
-export function NeedsSpace() {
+function NeedsSpace() {
     const ref = useRef();
     useLayoutEffect( () => {
         const dialog = ref.current;
@@ -141,14 +124,14 @@ export function NeedsSpace() {
  * @param {Element} props.children The board.
  */
 export function SpaceGate( { children } ) {
-    const hasRoom = useHasRoom();
-    const [ hasStarted, setHasStarted ] = useState( hasRoom );
-    if ( hasRoom && ! hasStarted ) {
-        setHasStarted( true );
+    const hasRoom = useMediaQuery( QUERY );
+    const hasStarted = useRef( false );
+    if ( hasRoom ) {
+        hasStarted.current = true;
     }
     return (
         <>
-            { hasStarted && children }
+            { hasStarted.current && children }
             { ! hasRoom && <NeedsSpace /> }
         </>
     );
