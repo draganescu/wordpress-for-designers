@@ -356,6 +356,10 @@ html.wp-toolbar:has(.wfd-board-page) {
     iframe[name="editor-canvas"] {
         transform: scale(var(--wfd-zoom));
         transform-origin: 0 0;
+        // WordPress animates every property of this iframe over 400ms. The
+        // scale must follow the board's zoom in the same frame as the
+        // wrapper's inverse scale, or the content visibly lags behind.
+        transition: none;
     }
 }
 
