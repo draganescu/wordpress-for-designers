@@ -161,6 +161,7 @@ Unless a criterion says otherwise, the fixture in `architecture.md` is loaded an
 - AC-STYLE-07 Choosing a variation from the menu repaints the board once, Snapshot artboards included (D49), and adds Styles to Review. `[U]`
 - AC-STYLE-08 In the Tokens tab, "Edit" on Colors, Typography and Spacing and the "Background" and "Shadows" rows each open the stock styles screen for it; a change made there repaints the board and adds Styles to Review; the screen's Back control returns to the tokens (D50). `[U]`
 - AC-STYLE-09 The Blocks tab lists the elements in the groups "Elements", "Headings" and "Form controls" before the blocks; an element row opens the stock styles screen for that element; a change made there repaints the board, shows as the row's change count and adds Styles to Review (D51). `[U]`
+- AC-STYLE-10 The variation menu reads "Variation: Default" for the theme's own styles, "Variation: {name}" when the styles are exactly a variation and "Variation: Custom" after any further change; its first item, "Default", returns the styles to the theme's (D52). `[U]`
 
 ## INDEX
 
