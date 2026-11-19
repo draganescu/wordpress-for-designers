@@ -21,7 +21,7 @@ Constraints override every other file. Each has a reason, so the rule is not rel
 | C15 | The Styles panel is shown in the right panel when nothing is selected, and nowhere else. | "Styles should be when nothing is selected. That is a good UX." | AC-STYLE-01. | `[U]` |
 | C16 | Token use counts and usage highlights come from the usage index (parsed block markup and global styles), never from querying rendered artboards. | Ghost and Snapshot artboards are not mounted. | AC-INDEX group. | `[U]` |
 | C17 | Inserter lists show names and usage lines only. No rendered previews. | Previews would compete with the Preview tier budget. | AC-INS-06. | `[U]` |
-| C18 | Editing happens at 50% zoom or more. Preview tier from 20% to 50%. Snapshot below 20%. | Decided thresholds. | AC-TIER group. | `[U]` |
+| C18 | Editing happens at exactly 100% zoom. Preview tier at 20% zoom or more. Snapshot below 20%. | Decided thresholds. The stock block tools are placed correctly only at 100% (`spike-report.md`, spike a). | AC-TIER group. | `[U]` |
 | C19 | Only users with `edit_theme_options` can open the plugin. Every board is visible to all of them. | One rule, no partial states. | AC-PERM group. | `[U]` |
 | C20 | Requires WordPress 7.2 or later. Works without the Gutenberg plugin. | Locked default. | Activation test on clean WordPress. | `[U]` |
 | C21 | Pointer, trackpad and keyboard only. | Touch was cut. | n/a | `[U]` |

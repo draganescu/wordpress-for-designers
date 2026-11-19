@@ -1,6 +1,6 @@
 # Screens
 
-Twenty-two screens. Each has an image in `images/` and a file here naming its state, the regions it uses and its own elements. Regions shared by many screens are defined once in this file.
+Twenty-three screens. Each has an image in `images/` (except `LockDialog`, which has none) and a file here naming its state, the regions it uses and its own elements. Regions shared by many screens are defined once in this file.
 
 Rules for reading the images (see also `CLAUDE.md`, rules 6 and 7):
 
@@ -24,7 +24,7 @@ Left to right:
 | H5 | List view toggle | `IconButton`, `listView`, pressed state | Label "List view" | Shows or hides the list view. Disabled when no artboard is in edit. |
 | H6 | Block toolbar | `be.BlockToolbar`, filled from the Live editor through a slot | Stock | Present only while an artboard is in edit and a block is selected. |
 | H7 | Document bar | Centred `Text` on a weak neutral surface; in edit, preceded by an `IconButton` with `arrowLeft` | Board name; in edit "{artboard name} · {Kind}", back button label "Back to the board" | Back button leaves edit. The bar itself is not clickable. `[N]` |
-| H8 | Zoom menu | `Menu` whose trigger shows the zoom as a percentage with `chevronDown` | Trigger label "Zoom"; items "Zoom in", "Zoom out", "Zoom to 50%", "Zoom to 100%", "Fit all", "Fit selection" | Items act on the viewport. "Fit selection" is disabled with nothing selected. `[N]` for the item list |
+| H8 | Zoom menu | `Menu` whose trigger shows the zoom as a percentage with `chevronDown` | Trigger label "Zoom"; items "Zoom in", "Zoom out", "Zoom to 50%", "Zoom to 100%", "Fit all", "Fit selection" | Items act on the viewport. "Fit selection" is disabled with nothing selected. Any item that changes the zoom while an artboard is in edit leaves edit (D30). `[N]` for the item list |
 | H9 | Review button | `Button`, solid brand | "Review {n} changes", "Review 1 change"; with none, "Review changes", disabled | Opens the Review drawer. |
 
 Kind names used in labels: "Page", "Template", "Template part", "Pattern". `[D:Overview]`

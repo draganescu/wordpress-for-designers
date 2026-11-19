@@ -11,6 +11,7 @@ Part names in this file are fixed. Use them for the top-level folders under `src
 | Board app page | A hidden admin page that prints the full-screen app with no wp-admin menu or toolbar, the way WordPress for Writers prints its editor page. | `[U]` `[V]` |
 | Board post type | `wfd_board`, as in `data-model.md`, with server-side validation of the layout JSON. | `[U]` |
 | Editor bootstrap | Passes block editor settings, block definitions and block assets to the app using the same public PHP functions wp-admin's editor uses (`get_block_editor_settings`, `WP_Block_Editor_Context`, REST preloading). Loaded once and shared by every editor. | `[B6]` `[V]` |
+| Lock route | REST route `wfd/v1/lock` for pages and patterns: check, take, refresh and release the WordPress post lock with `wp_check_post_lock` and `wp_set_post_lock`. Requires `edit_theme_options` and permission to edit the post. | `[U]` |
 | Uninstall | Deletes all `wfd_board` posts. Site content is untouched. | `[N]` |
 
 ## Client parts
@@ -30,6 +31,7 @@ Part names in this file are fixed. Use them for the top-level folders under `src
 | `styles` | Tokens, Blocks and History tabs; one style compile per change; pushes one stylesheet to every mounted artboard. | `[B7]` |
 | `usage-index` | Counts and locates uses of tokens and blocks per artboard from entity content. | `[U]` |
 | `review` | The Review changes drawer. | `[D:Review]` |
+| `lock` | Takes the post lock when a page or pattern is about to become Live, refreshes it while Live, releases it on leaving edit and on page unload, and shows the lock dialog (see `data-model.md`, Locks). | `[U]` |
 | `adapter` | `private.js` and `experimental.js` (C2, C3). | `[B8]` |
 
 ## Tiers
@@ -39,7 +41,7 @@ Part names in this file are fixed. Use them for the top-level folders under `src
 | Ghost | The artboard is more than one viewport width or height outside the visible area | A sized box using the cached height | None | `[B5]` `[U]` |
 | Snapshot | Zoom below 20%; or during any pan or zoom gesture; or the artboard would be a Preview but 12 Previews are already mounted | Frozen copy of the last Preview render | Select, move | `[B5]` `[U]` |
 | Preview | Within one viewport of the visible area, zoom 20% or more, not Live | `artboard-preview` | Select, move, double-click to edit | `[B5]` `[U]` |
-| Live | The one artboard in edit, zoom 50% or more | `artboard-editor` | Everything | `[B5]` `[U]` |
+| Live | The one artboard in edit, zoom exactly 100% | `artboard-editor` | Everything | `[B5]` `[U]` |
 
 Rules:
 
@@ -49,7 +51,8 @@ Rules:
 - Thresholds use hysteresis so tiers do not flicker: an artboard changes tier at the stated zoom going down, and at the stated zoom plus 2 percentage points going up. `[B5]` for hysteresis, `[N]` for the 2 points
 - An artboard that has never been rendered goes straight to the Preview queue when eligible; until rendered it shows a `Skeleton`. `[N]`
 - When a shared thing changes (global styles, a part used by a template, a synced pattern), Live and Preview artboards update; Snapshots are marked stale and re-rendered the next time they become Previews. `[B5]`
-- If zoom drops below 50% while an artboard is Live, it leaves edit and becomes a Preview. `[B8]`
+- If zoom changes while an artboard is Live, it leaves edit and becomes a Preview. Panning does not leave edit. `[B8]` `[U]`
+- The hysteresis rule applies to the 20% threshold only. Live has no threshold: entering edit sets zoom to 100% (D30). `[U]`
 
 ## State rules
 

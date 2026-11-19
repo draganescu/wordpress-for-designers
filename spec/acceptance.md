@@ -54,8 +54,8 @@ Unless a criterion says otherwise, the fixture in `architecture.md` is loaded an
 - AC-TIER-04 An artboard more than one viewport outside the visible area has tier `ghost` and contains no iframe. `[U]`
 - AC-TIER-05 Previews mount nearest-to-centre first. `[B5]`
 - AC-TIER-06 Below 20% zoom every non-Ghost artboard is `snapshot`; zooming back to 22% or more returns eligible ones to `preview`. `[U]`
-- AC-TIER-07 Double-clicking an artboard at 30% zoom ends with zoom at 50% and that artboard Live. `[U]`
-- AC-TIER-08 Zooming below 50% while an artboard is Live leaves edit. `[B8]`
+- AC-TIER-07 Double-clicking an artboard at 30% zoom ends with zoom at 100%, that artboard Live and its top-left corner at the top-left of the canvas area. `[U]`
+- AC-TIER-08 Changing zoom while an artboard is Live leaves edit; panning does not. `[B8]` `[U]`
 - AC-TIER-09 After editing artboards A, B, C, D in turn, D is `live`, C and B are `warm`, A is not. `[U]`
 - AC-TIER-10 A `snapshot` artboard's frame contains no React root and triggers no store subscription callbacks when an entity changes. `[B5]`
 - AC-TIER-11 After a global style change, an artboard that was `snapshot` shows the new style when it next becomes `preview`. `[B5]`
@@ -78,7 +78,7 @@ Unless a criterion says otherwise, the fixture in `architecture.md` is loaded an
 - AC-EDIT-03 The Block tab shows the stock inspector for the selected block. `[U]`
 - AC-EDIT-04 A new empty artboard shows only the stock empty paragraph with its placeholder and add-block button; no plugin element is inside the artboard. `[U]`
 - AC-EDIT-05 A page artboard shows its template around the content; template blocks cannot be edited from the page artboard. `[U]`
-- AC-EDIT-06 Entering edit on a page takes the post lock; leaving releases it. If another user holds the lock, the stock lock dialog appears and blocks cannot be edited until takeover. `[U]`
+- AC-EDIT-06 Entering edit on a page takes the post lock; leaving releases it. If another user holds the lock, the lock dialog appears and the artboard stays a Preview; Cancel leaves it a Preview; Take over takes the lock and enters edit. `[U]`
 - AC-EDIT-07 The back button, and Esc as in AC-KEY-03, leave edit. `[U]`
 
 ## UNDO

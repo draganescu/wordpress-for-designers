@@ -98,7 +98,14 @@ When the entity is deleted, trashed or reset, every other artboard on any board 
 
 ## Locks
 
-When a page or pattern becomes Live, the plugin takes the WordPress post lock, as wp-admin's editor does, and releases it when the artboard leaves edit. If another user holds the lock, the stock lock dialog (`PostLockedModal`) is shown and the artboard stays read-only unless the user takes over. Templates and parts have no lock. `[B8]` `[U]` `[V]`
+When a page or pattern is about to become Live, the plugin checks the WordPress post lock through its lock route (`architecture.md`, Server). `[B8]` `[U]`
+
+- If the lock is free, the plugin takes it, refreshes it while the artboard is Live, and releases it when the artboard leaves edit or the page unloads. `[U]`
+- If another user holds it, the artboard does not become Live. It stays a Preview and the lock dialog (`screens/LockDialog.md`, first state) offers Cancel or Take over. Take over takes the lock and enters edit. `[U]`
+- After Cancel the lock is checked again only on the next attempt to enter edit on that artboard. Nothing polls. `[U]`
+- If a refresh finds that another user has taken the lock, the artboard leaves edit and the dialog's second state is shown. `[U]`
+- Unsaved edits to an item whose lock was lost stay in Review and save normally. The lock is advisory, as in WordPress. `[U]`
+- Templates and parts have no lock. `[B8]` `[V]`
 
 ## Permissions
 
