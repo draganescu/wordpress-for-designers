@@ -96,6 +96,8 @@ Hiding the panels (D32): `[U]`
 
 Each artboard iframe forwards wheel, pinch (ctrl+wheel) and the board shortcuts to the shell. The shell coalesces them to one viewport update per animation frame. While an artboard is Live, plain wheel scrolling over it scrolls the board as elsewhere; keyboard input goes to the editor except the shortcuts marked "always" below. `[B8]`
 
+Touches inside the Live artboard's document are forwarded as well, and the shell counts those fingers with the ones on the canvas area (D50). The editor still receives them. `[U]`
+
 ## Keyboard map
 
 Outside an artboard in edit: `[U]`
@@ -126,6 +128,21 @@ Delete and Backspace do the same with focus on a row of the left panel's artboar
 A selected note counts as a selected artboard for Shift + 2, the arrow keys and Delete; Delete takes a note off the board with no confirmation. Enter on one selected note edits its text, and Esc while its text is edited ends that and keeps the note selected. Tab and Shift + Tab step through artboards only. While the note tool is armed, Esc switches it off (D46). `[U]`
 
 Tab order and the Shift + arrow step are `[N]`.
+
+## Touch
+
+On the canvas area (D50): `[U]`
+
+| Fingers | Action |
+|---|---|
+| Two, dragged | Pan |
+| Two, pinched | Zoom about the point midway between them |
+| One | The pointer: a tap is a click, a drag is a drag, a double tap is a double-click |
+
+- Two-finger gestures go through the viewport like the wheel: one transform per animation frame, and React is told when they settle (C22).
+- The canvas area has `touch-action: none`, so the browser neither scrolls nor zooms the page with fingers that are on it, in an artboard's document included.
+- What one finger pressed is acted on when it moves or lifts, not when it lands, so the first finger of two selects nothing and leaves edit on nothing.
+- A second finger landing during a one-finger drag undoes that drag in the DOM; the store never hears of it, except that a selection changed by the rectangle is put back.
 
 ## Undo
 
