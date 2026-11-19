@@ -50,6 +50,7 @@ Rules:
 - Mounting goes through the queue: nearest to the viewport centre first, one mount per idle slice. `[B5]`
 - Thresholds use hysteresis so tiers do not flicker: an artboard changes tier at the stated zoom going down, and at the stated zoom plus 2 percentage points going up. `[B5]` for hysteresis, `[N]` for the 2 points
 - An artboard that has never been rendered goes straight to the Preview queue when eligible; until rendered it shows a `Skeleton`. `[N]`
+- A Snapshot artboard that has never been rendered has no frozen copy to show. Such artboards are rendered once each through the same queue, one at a time, nearest to the viewport centre first; the render is frozen as soon as its height stops changing and the artboard stays in the Snapshot tier throughout. Until then it shows a `Skeleton`. `[U]`
 - When a shared thing changes (global styles, a part used by a template, a synced pattern), Live and Preview artboards update; Snapshots are marked stale and re-rendered the next time they become Previews. `[B5]`
 - If zoom changes while an artboard is Live, it leaves edit and becomes a Preview. Panning does not leave edit. `[B8]` `[U]`
 - The hysteresis rule applies to the 20% threshold only. Edit ends when the zoom settles below 30% and is not started again by zooming back in (D37). `[U]`

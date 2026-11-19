@@ -3,6 +3,7 @@
  * device width.
  */
 import {
+    useCallback,
     useEffect,
     useLayoutEffect,
     useMemo,
@@ -102,6 +103,54 @@ function PagePreview( { artboard, ...props } ) {
             context={ context }
             { ...props }
         />
+    );
+}
+
+const QUIET = 500;
+const GIVE_UP = 8000;
+
+/**
+ * A Preview rendered once, out of the Preview tier, for an artboard that
+ * needs a frozen copy and was never rendered. It reports once, when its
+ * height has stopped changing or when nothing was rendered at all, and never
+ * while the board is busy.
+ *
+ * @param {Object}   props
+ * @param {Function} props.isBusy    Whether reporting has to wait.
+ * @param {Function} props.onSettled Receives the rendered Preview and its height, or null when there is none.
+ */
+export function ArtboardPreviewOnce( { isBusy, onSettled, ...props } ) {
+    const element = useRef();
+    const timer = useRef();
+    const latest = useRef( { isBusy, onSettled } );
+    latest.current = { isBusy, onSettled };
+    const wait = useCallback( ( delay, height ) => {
+        clearTimeout( timer.current );
+        timer.current = setTimeout( () => {
+            if ( latest.current.isBusy?.() ) {
+                wait( QUIET, height );
+                return;
+            }
+            latest.current.onSettled(
+                ( height &&
+                    element.current?.querySelector( '.wfd-preview' ) ) ||
+                    null,
+                height
+            );
+        }, delay );
+    }, [] );
+    useEffect( () => {
+        wait( GIVE_UP, 0 );
+        return () => clearTimeout( timer.current );
+    }, [ wait ] );
+    const handleHeight = useCallback(
+        ( height ) => wait( QUIET, height ),
+        [ wait ]
+    );
+    return (
+        <div ref={ element }>
+            <ArtboardPreview { ...props } onHeight={ handleHeight } />
+        </div>
     );
 }
 

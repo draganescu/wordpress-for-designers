@@ -21,6 +21,9 @@ export function useLayoutAutosave() {
     }, [] );
     const saved = useRef( null );
     const pending = useRef( null );
+    // When the pending save is due, and what it was started for.
+    const due = useRef( 0 );
+    const placed = useRef( '' );
 
     useEffect( () => {
         if ( ! isLoaded ) {
@@ -28,13 +31,27 @@ export function useLayoutAutosave() {
         }
         const layout = toLayout( artboards );
         const json = JSON.stringify( layout );
+        // The layout without the measured heights.
+        const placement = JSON.stringify(
+            layout.artboards.map( ( { height, ...rest } ) => rest )
+        );
+        const wasPlaced = placed.current;
+        placed.current = placement;
         if ( saved.current === null ) {
             saved.current = json;
             return;
         }
         if ( json === saved.current ) {
+            pending.current = null;
             return;
         }
+        // A height measured while a save is waiting does not put it off.
+        const now = Date.now();
+        const delay =
+            pending.current && placement === wasPlaced && due.current > now
+                ? due.current - now
+                : DELAY;
+        due.current = now + delay;
         const save = () => {
             pending.current = null;
             saved.current = json;
@@ -49,7 +66,7 @@ export function useLayoutAutosave() {
             } );
         };
         pending.current = save;
-        const timer = setTimeout( save, DELAY );
+        const timer = setTimeout( save, delay );
         return () => clearTimeout( timer );
     }, [ artboards, boardId, isLoaded ] );
 
