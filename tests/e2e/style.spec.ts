@@ -4,6 +4,7 @@ import {
     resetFixture,
     openBoard,
     setViewport,
+    setZoom,
     enterEdit,
     editorFrame,
     artboardOf,
@@ -478,7 +479,7 @@ test.describe( 'STYLE', () => {
         );
     } );
 
-    test( 'AC-STYLE-07 Choosing a variation repaints the board once and adds Styles to Review', async ( {
+    test( 'AC-STYLE-07 Choosing a variation repaints the board once, Snapshot artboards included, and adds Styles to Review', async ( {
         page,
     } ) => {
         await setViewport( page, { x: 40, y: 40, zoom: 0.25 } );
@@ -494,6 +495,7 @@ test.describe( 'STYLE', () => {
         } );
         await menu.click();
         const items = page.getByRole( 'menuitemradio' );
+        await expect( items.first() ).toBeVisible();
         expect( await items.count() ).toBeGreaterThan( 2 );
         await expect( items.filter( { hasText: 'Evening' } ) ).toHaveCount( 1 );
         await items.filter( { hasText: 'Evening' } ).click();
@@ -507,6 +509,139 @@ test.describe( 'STYLE', () => {
         expect( ( await counters( page ) ).styleGenerations - before ).toBe(
             1
         );
+
+        // A frozen copy takes a variation too, without becoming a Preview
+        // (D49).
+        await setZoom( page, 0.15 );
+        const frame = page.locator( `[data-wfd-artboard="${ index.id }"]` );
+        await expect( frame ).toHaveAttribute( 'data-wfd-tier', 'snapshot' );
+        const frozenBackground = () =>
+            frame
+                .locator( '.wfd-snapshot__copy iframe' )
+                .first()
+                .evaluate( ( el: HTMLIFrameElement ) =>
+                    el.contentDocument?.body
+                        ? el.contentWindow!.getComputedStyle(
+                              el.contentDocument.body
+                          ).backgroundColor
+                        : null
+                )
+                .catch( () => null );
+        await expect.poll( frozenBackground ).not.toBeNull();
+        const evening = await frozenBackground();
+        await right( page )
+            .getByRole( 'button', { name: 'Variation: Evening' } )
+            .click();
+        await items.filter( { hasText: /^Noon$/ } ).click();
+        await expect
+            .poll( frozenBackground, { timeout: 30000 } )
+            .toBe( 'rgb(248, 247, 245)' );
+        expect( evening ).not.toBe( 'rgb(248, 247, 245)' );
+        await expect( frame ).toHaveAttribute( 'data-wfd-tier', 'snapshot' );
+
+        await expect( page.locator( '[data-wfd-control="H9"]' ) ).toHaveText(
+            'Review 1 change'
+        );
+        await page.locator( '[data-wfd-control="H9"]' ).click();
+        await expect(
+            page.getByRole( 'dialog', { name: 'Review changes' } )
+        ).toContainText( 'Styles' );
+    } );
+
+    test( 'AC-STYLE-08 In the Tokens tab, Edit on a group and the Background and Shadows rows open the stock styles screens', async ( {
+        page,
+    } ) => {
+        await setViewport( page, { x: 40, y: 40, zoom: 0.25 } );
+        const panel = right( page );
+        const tokens = panel.getByRole( 'tabpanel' );
+        const back = panel.getByRole( 'button', { name: 'Back', exact: true } );
+        const edit = ( group: string ) =>
+            panel.getByRole( 'button', {
+                name: `Edit ${ group }`,
+                exact: true,
+            } );
+        const row = ( name: string ) =>
+            tokens.locator( '.wfd-row', {
+                has: page.locator( '.wfd-row__name', {
+                    hasText: new RegExp( `^${ name }$` ),
+                } ),
+            } );
+
+        // Each entry opens its stock screen in place of the tokens, and the
+        // screen's own Back control returns to them.
+        const entries: [ ReturnType< typeof edit >, string ][] = [
+            [ edit( 'Colors' ), 'Colors' ],
+            [ edit( 'Typography' ), 'Typography' ],
+            [ edit( 'Spacing' ), 'Layout' ],
+            [ row( 'Background' ), 'Background' ],
+            [ row( 'Shadows' ), 'Shadows' ],
+        ];
+        for ( const [ entry, title ] of entries ) {
+            await expect( entry ).toHaveText( /^(Edit|Background|Shadows)$/ );
+            await entry.click();
+            const stock = panel.locator(
+                '.global-styles-ui-sidebar__navigator-provider'
+            );
+            await expect( stock ).toBeVisible();
+            await expect(
+                stock
+                    .getByRole( 'heading', { name: title, exact: true } )
+                    .first()
+            ).toBeVisible();
+            await expect( back ).toHaveCount( 1 );
+            await expect( edit( 'Colors' ) ).toHaveCount( 0 );
+            await expect( tokens.locator( '.wfd-row' ) ).toHaveCount( 0 );
+            await back.click();
+            await expect( stock ).toHaveCount( 0 );
+            await expect( edit( 'Colors' ) ).toBeVisible();
+        }
+
+        // A screen under the stock screen goes back to it, not to the tokens.
+        await edit( 'Typography' ).click();
+        await panel
+            .getByRole( 'button', { name: 'Font size presets' } )
+            .click();
+        await expect(
+            panel.getByRole( 'heading', { name: 'Font size presets' } )
+        ).toBeVisible();
+        await back.click();
+        await expect(
+            panel.getByRole( 'heading', { name: 'Typography', exact: true } )
+        ).toBeVisible();
+        await back.click();
+        await expect( edit( 'Typography' ) ).toBeVisible();
+
+        // A change made in a stock screen repaints the board and is a
+        // Styles change in Review.
+        const index = artboardOf( fixture, 'template' );
+        const contentSize = () =>
+            page
+                .locator( `[data-wfd-artboard="${ index.id }"] iframe` )
+                .first()
+                .evaluate( ( frame: HTMLIFrameElement ) =>
+                    frame.contentDocument?.body
+                        ? frame
+                              .contentWindow!.getComputedStyle(
+                                  frame.contentDocument.body
+                              )
+                              .getPropertyValue(
+                                  '--wp--style--global--content-size'
+                              )
+                              .trim()
+                        : null
+                )
+                .catch( () => null );
+        await expect.poll( contentSize ).toBe( '645px' );
+        await expect( page.locator( '[data-wfd-control="H9"]' ) ).toHaveText(
+            'Review changes'
+        );
+        await edit( 'Spacing' ).click();
+        const width = panel.getByRole( 'spinbutton', {
+            name: 'Content width',
+        } );
+        await width.fill( '500' );
+        await width.press( 'Enter' );
+        await expect.poll( contentSize ).toBe( '500px' );
         await expect( page.locator( '[data-wfd-control="H9"]' ) ).toHaveText(
             'Review 1 change'
         );

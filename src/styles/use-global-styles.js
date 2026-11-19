@@ -6,7 +6,13 @@
  * and, only while a History revision is previewed, that revision in place of
  * the user record.
  */
-import { useCallback, useEffect, useMemo, useState } from '@wordpress/element';
+import {
+    useCallback,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+} from '@wordpress/element';
 import { useDispatch, useSelect } from '@wordpress/data';
 import { store as coreStore } from '@wordpress/core-data';
 import { getBlockTypes } from '@wordpress/blocks';
@@ -22,6 +28,10 @@ import {
 import { counters } from '../shell/test-hooks';
 
 const EMPTY = { settings: {}, styles: {} };
+// How long the styles have to stay unchanged before frozen copies are
+// renewed from them (decision D49): a dragged control changes them on every
+// animation frame.
+const SETTLE = 300;
 
 /**
  * @param {Object} serverSettings Block editor settings from the server.
@@ -108,6 +118,22 @@ export function useGlobalStyles( serverSettings ) {
         };
     }, [ serverSettings, output ] );
 
+    // Each stylesheet handed out has a number, and `settledVersion` is the
+    // number of the one that has stayed unchanged for a moment.
+    const versionRef = useRef( { settings: null, value: 0 } );
+    if ( versionRef.current.settings !== editorSettings ) {
+        versionRef.current = {
+            settings: editorSettings,
+            value: versionRef.current.value + 1,
+        };
+    }
+    const version = versionRef.current.value;
+    const [ settledVersion, setSettledVersion ] = useState( version );
+    useEffect( () => {
+        const timer = setTimeout( () => setSettledVersion( version ), SETTLE );
+        return () => clearTimeout( timer );
+    }, [ version ] );
+
     const update = useCallback(
         ( next ) => {
             if ( ! id ) {
@@ -129,6 +155,8 @@ export function useGlobalStyles( serverSettings ) {
         merged: merged ?? EMPTY,
         hasEdits,
         editorSettings,
+        version,
+        settledVersion,
         update,
         preview,
         setPreview,

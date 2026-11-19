@@ -3,7 +3,7 @@
  * S1 to S6, and the Blocks and History tabs). Presentational: props in,
  * callbacks out.
  */
-import { useState } from '@wordpress/element';
+import { useId, useState } from '@wordpress/element';
 import { __, _n, sprintf, isRTL } from '@wordpress/i18n';
 import {
     ColorIndicator,
@@ -11,7 +11,13 @@ import {
     SearchControl,
 } from '@wordpress/components';
 import { BlockIcon } from '@wordpress/block-editor';
-import { chevronDown, chevronLeft, chevronRight } from '@wordpress/icons';
+import {
+    background,
+    chevronDown,
+    chevronLeft,
+    chevronRight,
+    shadow,
+} from '@wordpress/icons';
 import {
     Button,
     Icon,
@@ -154,37 +160,93 @@ function ColorPicker( { token, anchor, onClose, onChangeColor } ) {
 }
 
 /**
- * The Tokens tab: S4, S5, S6.
+ * "Edit" in a Tokens group heading (S4 to S6): opens the stock styles screen
+ * of the group. It is named by its own text and the heading's.
+ *
+ * @param {Object}   props
+ * @param {string}   props.headingId Id of the group's heading.
+ * @param {Function} props.onClick   Called when it is used.
+ */
+function EditGroup( { headingId, onClick } ) {
+    const id = useId();
+    return (
+        <Button
+            id={ id }
+            aria-labelledby={ id + ' ' + headingId }
+            variant="minimal"
+            size="small"
+            onClick={ onClick }
+        >
+            { __( 'Edit', 'wordpress-for-designers' ) }
+            <Button.Icon icon={ isRTL() ? chevronLeft : chevronRight } />
+        </Button>
+    );
+}
+
+/**
+ * The Tokens tab: S4 to S8.
  *
  * @param {Object}      props
  * @param {Array}       props.colors        Colour tokens.
  * @param {Array}       props.typography    Typography tokens.
  * @param {Array}       props.spacing       Spacing presets.
+ * @param {boolean}     props.hasBackground Whether the theme allows a site background.
  * @param {Object|null} props.selectedToken { type, slug } or null.
  * @param {Function}    props.onSelectToken Called with a token or null.
  * @param {Function}    props.onChangeColor Called with ( slug, color ).
  * @param {Function}    props.onAddColor    Called by "Add color".
+ * @param {string|null} props.openScreen    Path of the open stock screen.
+ * @param {Function}    props.onOpenScreen  Called with a stock screen's path.
+ * @param {Function}    props.renderScreen  Renders the open stock screen.
  */
 function TokensTab( {
     colors,
     typography,
     spacing,
+    hasBackground,
     selectedToken,
     onSelectToken,
     onChangeColor,
     onAddColor,
+    openScreen,
+    onOpenScreen,
+    renderScreen,
 } ) {
     const [ pickerSlug, setPickerSlug ] = useState( null );
     const [ pickerAnchor, setPickerAnchor ] = useState( null );
+    const headingId = useId();
     const pickerToken = colors.find( ( token ) => token.slug === pickerSlug );
     const usesLabel = __( 'Uses', 'wordpress-for-designers' );
     const isSelected = ( type, slug ) =>
         selectedToken?.type === type && selectedToken?.slug === slug;
+    const open = ( path ) => {
+        setPickerSlug( null );
+        onOpenScreen?.( path );
+    };
+    const chevron = <Icon icon={ isRTL() ? chevronLeft : chevronRight } />;
+
+    if ( openScreen ) {
+        // S8: the stock screen, with its own Back control.
+        return (
+            <div className="wfd-styles__screen">
+                { renderScreen?.( openScreen ) }
+            </div>
+        );
+    }
 
     return (
         <>
             <section className="wfd-styles__section">
-                <GroupHeading suffix={ usesLabel }>
+                <GroupHeading
+                    id={ headingId + 'colors' }
+                    suffix={ usesLabel }
+                    action={
+                        <EditGroup
+                            headingId={ headingId + 'colors' }
+                            onClick={ () => open( '/colors' ) }
+                        />
+                    }
+                >
                     { __( 'Colors', 'wordpress-for-designers' ) }
                 </GroupHeading>
                 <RowGroup>
@@ -243,7 +305,16 @@ function TokensTab( {
                 </div>
             </section>
             <section className="wfd-styles__section">
-                <GroupHeading suffix={ usesLabel }>
+                <GroupHeading
+                    id={ headingId + 'typography' }
+                    suffix={ usesLabel }
+                    action={
+                        <EditGroup
+                            headingId={ headingId + 'typography' }
+                            onClick={ () => open( '/typography' ) }
+                        />
+                    }
+                >
                     { __( 'Typography', 'wordpress-for-designers' ) }
                 </GroupHeading>
                 <RowGroup>
@@ -295,7 +366,15 @@ function TokensTab( {
                 </RowGroup>
             </section>
             <section className="wfd-styles__section">
-                <GroupHeading>
+                <GroupHeading
+                    id={ headingId + 'spacing' }
+                    action={
+                        <EditGroup
+                            headingId={ headingId + 'spacing' }
+                            onClick={ () => open( '/layout' ) }
+                        />
+                    }
+                >
                     { __( 'Spacing', 'wordpress-for-designers' ) }
                 </GroupHeading>
                 <Stack
@@ -321,6 +400,27 @@ function TokensTab( {
                         </Stack>
                     ) ) }
                 </Stack>
+            </section>
+            <section className="wfd-styles__section">
+                <RowGroup>
+                    { hasBackground && (
+                        <Row
+                            icon={ background }
+                            name={ __(
+                                'Background',
+                                'wordpress-for-designers'
+                            ) }
+                            suffix={ chevron }
+                            onClick={ () => open( '/background' ) }
+                        />
+                    ) }
+                    <Row
+                        icon={ shadow }
+                        name={ __( 'Shadows', 'wordpress-for-designers' ) }
+                        suffix={ chevron }
+                        onClick={ () => open( '/shadows' ) }
+                    />
+                </RowGroup>
             </section>
         </>
     );
@@ -540,6 +640,10 @@ function HistoryTab( {
  * @param {Array}       props.colors             [{ slug, name, color, uses }].
  * @param {Array}       props.typography         [{ slug, name, family, size, lineHeight, uses, fontFamilyCss }].
  * @param {Array}       props.spacing            [{ slug, px }].
+ * @param {boolean}     props.hasBackground      Whether the theme allows a site background.
+ * @param {string|null} props.openScreen         Path of the stock screen open in Tokens.
+ * @param {Function}    props.onOpenScreen       Called with a stock screen's path.
+ * @param {Function}    props.renderScreen       Renders the open stock screen.
  * @param {Object|null} props.selectedToken      { type, slug } or null.
  * @param {Function}    props.onSelectToken      Called with a token or null.
  * @param {Function}    props.onChangeColor      Called with ( slug, color ).
@@ -565,6 +669,10 @@ export function StylesPanel( {
     colors = [],
     typography = [],
     spacing = [],
+    hasBackground = true,
+    openScreen = null,
+    onOpenScreen,
+    renderScreen,
     selectedToken = null,
     onSelectToken,
     onChangeColor,
@@ -615,6 +723,10 @@ export function StylesPanel( {
                         colors={ colors }
                         typography={ typography }
                         spacing={ spacing }
+                        hasBackground={ hasBackground }
+                        openScreen={ openScreen }
+                        onOpenScreen={ onOpenScreen }
+                        renderScreen={ renderScreen }
                         selectedToken={ selectedToken }
                         onSelectToken={ onSelectToken }
                         onChangeColor={ onChangeColor }

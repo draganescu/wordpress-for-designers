@@ -66,13 +66,25 @@ export function createSnapshotStore() {
          * @param {string}  id      The artboard.
          * @param {Element} preview The Preview's root element.
          * @param {*}       version What the Preview was rendered from.
+         * @param {number}  styles  Number of the stylesheet it was rendered with.
          */
-        capture( id, preview, version ) {
+        capture( id, preview, version, styles ) {
             if ( preview?.querySelector( 'iframe' )?.contentDocument?.body ) {
-                snapshots.set( id, { node: freeze( preview ), version } );
+                snapshots.set( id, {
+                    node: freeze( preview ),
+                    version,
+                    styles,
+                } );
             }
         },
         has: ( id ) => snapshots.has( id ),
+        /**
+         * The number of the stylesheet an artboard's copy was made with.
+         *
+         * @param {string} id The artboard.
+         * @return {number|undefined} The number, or undefined without a copy.
+         */
+        stylesOf: ( id ) => snapshots.get( id )?.styles,
         /**
          * Whether shared things changed since the snapshot was taken.
          *
@@ -104,12 +116,18 @@ export function createSnapshotStore() {
 /**
  * Shows an artboard's frozen copy. React renders the empty host only.
  *
- * @param {Object} props
- * @param {string} props.id    The artboard.
- * @param {Object} props.store The snapshot store.
+ * @param {Object}  props
+ * @param {string}  props.id     The artboard.
+ * @param {Object}  props.store  The snapshot store.
+ * @param {boolean} props.isOver Whether it lies over the render that will replace it.
  */
-export function ArtboardSnapshot( { id, store } ) {
+export function ArtboardSnapshot( { id, store, isOver = false } ) {
     const host = useRef();
     useLayoutEffect( () => store.mount( id, host.current ), [ id, store ] );
-    return <div className="wfd-snapshot" ref={ host } />;
+    return (
+        <div
+            className={ 'wfd-snapshot' + ( isOver ? ' is-over' : '' ) }
+            ref={ host }
+        />
+    );
 }

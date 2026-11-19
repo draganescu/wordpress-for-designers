@@ -8,8 +8,8 @@ The plugin is built through Milestone 12 of `spec/build-order.md`, plus the deci
 
 | Check | Result |
 |---|---|
-| Acceptance criteria in `spec/acceptance.md` | 125 |
-| End-to-end tests, one per criterion | 125. AC-NOTE-01 to AC-NOTE-05 (D46) pass; see the merge commit for what was run after merging. Not run as a whole since D44 and D45 landed. AC-CANVAS-07 (D45) passed before its rebase onto D43 and D44. AC-CANVAS-03 fails since D42: its empty-board point is under the Keyboard shortcuts control. AC-PERF-03 failed on the port-8890 environment before D45 as well. AC-KEY-04 and AC-KEY-05 (D42) are written and have not been run |
+| Acceptance criteria in `spec/acceptance.md` | 126 |
+| End-to-end tests, one per criterion | 126. Run as a whole after D49 and D50, from their worktree on its own site: 123 passed; AC-CANVAS-03 and AC-PERF-03 failed as described here (AC-PERF-03 only in a worktree); AC-STYLE-07 failed on the test reading the variation menu before it had opened, was changed to wait for it, and has passed in every run since. AC-NOTE-01 to AC-NOTE-05 (D46) pass; see the merge commit for what was run after merging. Not run as a whole since D44 and D45 landed. AC-CANVAS-07 (D45) passed before its rebase onto D43 and D44. AC-CANVAS-03 fails since D42: its empty-board point is under the Keyboard shortcuts control. AC-PERF-03 failed on the port-8890 environment before D45 as well. AC-KEY-04 and AC-KEY-05 (D42) are written and have not been run |
 | `npm run lint` | Exits 0, no disabled lines |
 | Open questions waiting for the product owner | 26 (`spec/open-questions.md`) |
 | Browsers the suite runs in | Chromium only |
@@ -38,7 +38,7 @@ A "Designer" menu in wp-admin lists boards. A board opens full screen: a header,
 - **Pages** are shown inside their template, which is locked. A page's template can be changed from the right panel.
 - **Creating.** The Add artboard menu places a new page, pattern, template or template part. Pages and patterns are created as drafts at once; templates and parts exist only in the session until saved.
 - **Inserter.** Blocks, Patterns, Templates and Media tabs. A row does the same thing clicked or dragged (D39). With an artboard in edit, a pattern, template part or image goes into its content: at the insertion point on a click, where it is dropped on a drag. With none in edit, a pattern, template, part or image goes onto the board: at the drop point on a drag, in the middle of the view and clear of other artboards on a click. The Blocks tab is shown only while an artboard is in edit.
-- **Styles.** With nothing selected the right panel edits global styles: tokens with use counts, per-block styles, revisions, variations. A change repaints every artboard from one style compile.
+- **Styles.** With nothing selected the right panel edits global styles: tokens with use counts, per-block styles, revisions, variations. A change repaints every artboard from one style compile. Frozen copies are included: once the styles have stayed unchanged for 300 ms, each Snapshot artboard is rendered again, one at a time and nearest the centre first, with its old copy shown until the new one is ready (D49; `settledVersion` in `src/styles/use-global-styles.js`, `hasCopy` in `src/shell/app.js`). Site-wide styles are edited from the Tokens tab in WordPress's stock screens: "Edit" on Colors, Typography and Spacing, and the "Background" and "Shadows" rows (D50). Element styles (links, headings, buttons) are not reachable yet (OQ-33, item 8).
 - **Review.** Nothing reaches the site until "Review changes" is used. It lists each changed item and saves the checked ones. Artboard positions save on their own, two seconds after a change.
 - **Locks.** Editing a page or pattern takes WordPress's post lock through the plugin's own route and dialog.
 - **Panels.** Both side panels can be hidden from the header or with Cmd/Ctrl + \. Resting the pointer on the left or right edge of the canvas area brings a hidden panel back.
@@ -169,7 +169,7 @@ Twenty-five entries are open, OQ-4, OQ-6 to OQ-10 and OQ-12 to OQ-30. The missin
 | The allowlist | OQ-14, OQ-17, OQ-20 |
 | Limits inside WordPress | OQ-13, OQ-21 |
 | Two spec statements that conflict | OQ-12, OQ-18, OQ-19 |
-| Builder's choices to confirm | OQ-6, OQ-23, OQ-24, OQ-25, OQ-26, OQ-27, OQ-28, OQ-29, OQ-30, OQ-31 |
+| Builder's choices to confirm | OQ-6, OQ-23, OQ-24, OQ-25, OQ-26, OQ-27, OQ-28, OQ-29, OQ-30, OQ-31, OQ-33 |
 | Build order | OQ-10 |
 
 ## Sensible next steps

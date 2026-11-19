@@ -107,6 +107,8 @@ export function useStylesPanel( { styles, serverSettings, usesOf } ) {
     const [ tab, setTab ] = useState( 'tokens' );
     const [ blockQuery, setBlockQuery ] = useState( '' );
     const [ openBlock, setOpenBlock ] = useState( null );
+    // The stock styles screen open in the Tokens tab, as its path (D50).
+    const [ openScreen, setOpenScreen ] = useState( null );
     const allVariations = useSelect(
         ( select ) => getCurrentThemeGlobalStylesVariations( select ) ?? NONE,
         []
@@ -262,6 +264,29 @@ export function useStylesPanel( { styles, serverSettings, usesOf } ) {
         />
     );
 
+    // The stock screen has its own Back control; leaving the screen and the
+    // ones under it returns to the tokens.
+    const screenFor = ( path ) => (
+        <GlobalStylesUI
+            value={ user }
+            baseValue={ base }
+            onChange={ update }
+            path={ path }
+            onPathChange={ ( next ) => {
+                if ( ! next.startsWith( path ) ) {
+                    setOpenScreen( null );
+                }
+            } }
+            serverCSS={ serverSettings.styles }
+            serverSettings={ serverSettings }
+        />
+    );
+    // The stock styles menu lists Background only when the theme allows a
+    // background image.
+    const hasBackground =
+        !! getSetting( merged, 'background.backgroundImage' ) ||
+        !! getSetting( merged, 'background.backgroundSize' );
+
     return {
         blockStylesFor,
         panelProps: {
@@ -283,6 +308,10 @@ export function useStylesPanel( { styles, serverSettings, usesOf } ) {
             colors,
             typography,
             spacing,
+            hasBackground,
+            openScreen,
+            onOpenScreen: setOpenScreen,
+            renderScreen: screenFor,
             onChangeColor: ( slug, value ) => {
                 const token = colors.find( ( color ) => color.slug === slug );
                 if ( ! token ) {
