@@ -30,7 +30,8 @@ function intersects( a, b ) {
  * @param {boolean} input.wasBelow    Whether zoom was below the Snapshot threshold.
  * @param {number}  input.maxPreviews The Preview cap.
  * @return {Object} `tiers` (Map of id to tier), `order` (Preview ids nearest
- *                  first) and `isBelow`.
+ *                  first), `snapshotOrder` (Snapshot ids nearest first) and
+ *                  `isBelow`.
  */
 export function computeTiers( {
     rects,
@@ -59,6 +60,7 @@ export function computeTiers( {
         viewport.zoom < SNAPSHOT_BELOW + ( wasBelow ? HYSTERESIS : 0 );
 
     const candidates = [];
+    const frozen = [];
     for ( const rect of rects ) {
         if ( rect.id === liveId ) {
             tiers.set( rect.id, 'live' );
@@ -66,8 +68,6 @@ export function computeTiers( {
             tiers.set( rect.id, 'warm' );
         } else if ( ! size.width || ! intersects( rect, near ) ) {
             tiers.set( rect.id, 'ghost' );
-        } else if ( isBelow ) {
-            tiers.set( rect.id, 'snapshot' );
         } else {
             const dx = Math.max(
                 rect.x - centre.x,
@@ -79,7 +79,10 @@ export function computeTiers( {
                 0,
                 centre.y - ( rect.y + rect.height )
             );
-            candidates.push( { id: rect.id, distance: Math.hypot( dx, dy ) } );
+            ( isBelow ? frozen : candidates ).push( {
+                id: rect.id,
+                distance: Math.hypot( dx, dy ),
+            } );
         }
     }
     candidates.sort( ( a, b ) => a.distance - b.distance );
@@ -89,10 +92,15 @@ export function computeTiers( {
             tiers.set( candidate.id, 'preview' );
             order.push( candidate.id );
         } else {
-            tiers.set( candidate.id, 'snapshot' );
+            frozen.push( candidate );
         }
     } );
-    return { tiers, order, isBelow };
+    frozen.sort( ( a, b ) => a.distance - b.distance );
+    const snapshotOrder = frozen.map( ( item ) => {
+        tiers.set( item.id, 'snapshot' );
+        return item.id;
+    } );
+    return { tiers, order, snapshotOrder, isBelow };
 }
 
 /**
@@ -103,7 +111,10 @@ export function computeTiers( {
  * @param {string}   options.liveId   The Live artboard.
  * @param {Array}    options.warmIds  The warm editors.
  * @param {Function} options.onMount  Called with an id when its Preview mounts.
- * @return {Object} `tiers` (Map) and `mounted` (Set of Preview ids mounted).
+ * @param {Function} options.hasCopy  Whether a Snapshot artboard has its frozen copy, or cannot get one. A new function whenever an answer changes.
+ * @return {Object} `tiers` (Map), `mounted` (Set of Preview ids mounted) and
+ *                  `source` (the Snapshot artboard being rendered once to
+ *                  make its frozen copy, if any).
  */
 export function useTiers( {
     rects,
@@ -112,9 +123,10 @@ export function useTiers( {
     liveId,
     warmIds,
     onMount,
+    hasCopy,
 } ) {
     const wasBelow = useRef( false );
-    const { tiers, order } = useMemo( () => {
+    const { tiers, order, snapshotOrder } = useMemo( () => {
         const result = computeTiers( {
             rects,
             viewport,
@@ -165,10 +177,31 @@ export function useTiers( {
         }
     }, [ order ] );
 
+    // A Snapshot artboard that was never rendered has no frozen copy. They
+    // are rendered once each, one at a time, nearest first, through the
+    // same queue.
+    const wanted = useMemo(
+        () =>
+            ( hasCopy && snapshotOrder.find( ( id ) => ! hasCopy( id ) ) ) ??
+            null,
+        [ snapshotOrder, hasCopy ]
+    );
+    const [ source, setSource ] = useState( null );
+    useEffect( () => {
+        if ( wanted === null ) {
+            setSource( null );
+            return undefined;
+        }
+        const current = queue.current;
+        const key = { id: wanted };
+        current.add( key, () => setSource( wanted ) );
+        return () => current.cancel( key );
+    }, [ wanted ] );
+
     useEffect( () => {
         const current = queue.current;
         return () => current.reset();
     }, [] );
 
-    return { tiers, mounted };
+    return { tiers, mounted, source };
 }

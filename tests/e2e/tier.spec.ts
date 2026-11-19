@@ -56,10 +56,13 @@ test.describe( 'TIER', () => {
             }
         }
         expect( inView ).toBeGreaterThan( 12 );
-        // Only previews hold a rendered document.
-        await expect(
-            page.locator( '[data-wfd-tier="snapshot"] iframe' )
-        ).toHaveCount( 0 );
+        // Only previews hold a running document, apart from the one
+        // snapshot at a time that is rendered to make its frozen copy.
+        expect(
+            await page
+                .locator( '[data-wfd-tier="snapshot"] iframe:not([sandbox])' )
+                .count()
+        ).toBeLessThanOrEqual( 1 );
         await expect
             .poll( () =>
                 page.locator( '[data-wfd-tier="preview"] iframe' ).count()
@@ -635,5 +638,45 @@ test.describe( 'TIER', () => {
             .poll( () => background( 'iframe' ) )
             .toBe( 'rgb(10, 11, 12)' );
         await expect( frame ).not.toHaveAttribute( 'data-wfd-stale', 'true' );
+    } );
+
+    test( 'AC-TIER-12 Below 20% zoom an artboard that was never rendered gets its frozen copy without becoming a preview', async ( {
+        page,
+        requestUtils,
+    } ) => {
+        const fixture = await resetFixture( requestUtils, { extra: 21 } );
+        await openBoard( page, fixture.boardId, 30 );
+        // Before most artboards were ever a Preview.
+        await setViewport( page, { x: 20, y: 20, zoom: 0.1 } );
+        const tiers = await tiersOf( page );
+        const frozen = Object.keys( tiers ).filter(
+            ( id ) => tiers[ id ] === 'snapshot'
+        );
+        expect( frozen.length ).toBeGreaterThan( 12 );
+        expect( Object.values( tiers ) ).not.toContain( 'preview' );
+        await expect
+            .poll(
+                () =>
+                    page
+                        .locator(
+                            '[data-wfd-tier="snapshot"] .wfd-snapshot__copy iframe'
+                        )
+                        .count(),
+                { timeout: 60000 }
+            )
+            .toBe( frozen.length );
+        await expect( page.locator( '.wfd-artboard__skeleton' ) ).toHaveCount(
+            0
+        );
+        expect( Object.values( await tiersOf( page ) ) ).not.toContain(
+            'preview'
+        );
+        const header = artboardOf( fixture, 'template-part' );
+        await expect(
+            page
+                .locator( `[data-wfd-artboard="${ header.id }"]` )
+                .frameLocator( '.wfd-snapshot__copy iframe' )
+                .locator( 'p', { hasText: 'Fixture header text' } )
+        ).toBeAttached();
     } );
 } );

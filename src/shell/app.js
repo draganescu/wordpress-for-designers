@@ -20,7 +20,7 @@ import { useLayoutAutosave } from '../board-store/use-layout-autosave';
 import { createViewport } from '../viewport';
 import { ArtboardEditor } from '../artboard-editor';
 import { ArtboardError, ArtboardFrame, ArtboardMedia } from '../artboard-frame';
-import { ArtboardPreview } from '../artboard-preview';
+import { ArtboardPreview, ArtboardPreviewOnce } from '../artboard-preview';
 import { ArtboardSnapshot, createSnapshotStore } from '../artboard-snapshot';
 import { useTiers } from '../tier-scheduler';
 import { InserterPanel } from '../inserter/inserter-panel';
@@ -346,13 +346,28 @@ export function App() {
         ( select ) => select( boardStore ).getWarmIds(),
         []
     );
-    const { tiers, mounted } = useTiers( {
+    // Artboards whose one render for a frozen copy is over, with or without
+    // a copy to show for it.
+    const [ rendered, setRendered ] = useState( () => new Set() );
+    const failedKey = artboards
+        .filter( ( artboard ) => artboard.status === 'failed' )
+        .map( ( artboard ) => artboard.id )
+        .join( ' ' );
+    const hasCopy = useCallback(
+        ( id ) =>
+            snapshots.has( id ) ||
+            rendered.has( id ) ||
+            failedKey.split( ' ' ).includes( id ),
+        [ snapshots, rendered, failedKey ]
+    );
+    const { tiers, mounted, source } = useTiers( {
         rects,
         viewport: settledViewport,
         size,
         liveId,
         warmIds,
         onMount: ( id ) => counters.mountOrder.push( id ),
+        hasCopy,
     } );
     const styles = useGlobalStyles( serverSettings );
     const usage = useUsageIndex( artboards, styles.merged );
@@ -794,7 +809,47 @@ export function App() {
                                             store={ snapshots }
                                         />
                                     );
-                                } else if ( tier !== 'ghost' && ! isMedia ) {
+                                } else if (
+                                    tier === 'snapshot' &&
+                                    source === artboard.id &&
+                                    ! rendered.has( artboard.id )
+                                ) {
+                                    // Never rendered: rendered once here to
+                                    // make its frozen copy.
+                                    content = (
+                                        <>
+                                            <ArtboardPreviewOnce
+                                                artboard={ artboard }
+                                                width={ width }
+                                                settings={ previewSettings }
+                                                isBusy={ viewport.isGesturing }
+                                                onSettled={ (
+                                                    element,
+                                                    height
+                                                ) => {
+                                                    if ( height ) {
+                                                        onHeight( height );
+                                                    }
+                                                    snapshots.capture(
+                                                        artboard.id,
+                                                        element,
+                                                        renderVersion
+                                                    );
+                                                    setRendered( ( current ) =>
+                                                        new Set( current ).add(
+                                                            artboard.id
+                                                        )
+                                                    );
+                                                } }
+                                            />
+                                            <Skeleton className="wfd-artboard__skeleton" />
+                                        </>
+                                    );
+                                } else if (
+                                    tier === 'preview' ||
+                                    ( tier === 'snapshot' &&
+                                        ! rendered.has( artboard.id ) )
+                                ) {
                                     // Never rendered yet.
                                     content = (
                                         <Skeleton className="wfd-artboard__skeleton" />
