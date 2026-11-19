@@ -130,6 +130,25 @@ npm run lint
 - The suite needs the test helper plugin active and wipes the site's content on every test. See "The test helper plugin" in [working-notes.md](working-notes.md).
 - At the time of writing wp-env is running as a demo: the fixture is seeded as "Fixture board", two images are in the media library, and the test helper plugin is switched off.
 
+## Releasing it
+
+A release is a version tag. Pushing `v1.2.3` runs `.github/workflows/release.yml`, which lints, builds, and attaches `wordpress-for-designers.zip` to a GitHub release of that name with generated notes. A tag with a hyphen (`v1.2.3-beta.1`) makes a pre-release.
+
+The version is kept in three places: `package.json`, the plugin header and `WFD_VERSION`. `npm version` changes all three (its `version` script runs `tools/sync-version.mjs`), commits and makes the tag. The workflow stops before building if the tag and the three do not match.
+
+```bash
+npm version minor -m "Release %s"
+```
+
+```bash
+git push --follow-tags
+```
+
+- The zip holds one folder, `wordpress-for-designers/`, with the plugin file, `uninstall.php`, `includes/` and `build/`. `tools/package.sh` has that list; the playground workflow uses it too.
+- `npm run build` then `npm run package` makes the same zip locally in `dist/`.
+- The newest release's zip is always at `https://github.com/draganescu/wordpress-for-designers/releases/latest/download/wordpress-for-designers.zip`.
+- The workflow does not run the end-to-end suite and does not check that the tag is on `master`.
+
 ## Numbers that are built in
 
 | What | Value | Where |
