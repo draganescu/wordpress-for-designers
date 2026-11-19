@@ -148,7 +148,9 @@ Unless a criterion says otherwise, the fixture in `architecture.md` is loaded an
 - AC-BROWSER-02 Outside browsing, a click on a browser's page selects the browser and follows no link, and a drag moves it; Delete opens the remove dialog with no checkbox and Remove takes it off the board. `[U]`
 - AC-BROWSER-03 Double-click starts browsing: following a link in the page changes the address field and the document bar; typing an address of the site and pressing Enter goes there; Esc pressed inside the page ends browsing with the browser selected; after a reload of the board the browser shows the last address. `[U]`
 - AC-BROWSER-04 A change to a page made in an artboard is not shown in a browser on that page until it is saved from Review; after the save the browser shows it without Reload being pressed. `[U]`
-- AC-BROWSER-05 The server accepts a browser with exactly its fields and rejects one with an `entityId`, one without a `path`, and one whose `path` does not start with "/". `[N]`
+- AC-BROWSER-05 The server accepts a browser with exactly its fields and rejects one with an `entityId`, one without a `path`, one whose `path` does not start with "/", one without a `height` and one whose `height` is below 200. `[N]`
+- AC-BROWSER-06 Dragging a browser's bottom edge down by 200 board units makes its window 200 units taller, and the height is kept after a reload; Undo, whose tooltip reads "Undo resize browser, on the board", puts it back; dragging it up past 200 stops at 200 (D49). `[U]`
+- AC-BROWSER-07 A page scrolled while browsing stays scrolled where it was after Esc ends browsing (D49). `[U]`
 
 ## NOTE
 

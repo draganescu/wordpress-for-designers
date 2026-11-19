@@ -64,13 +64,13 @@ A media object has `"kind": "media"`, a numeric `entityId` (the attachment), a `
 { "id": "…", "kind": "media", "entityId": 12, "x": 0, "y": 0, "width": 1200, "height": 800 }
 ```
 
-A browser (D48) has `"kind": "browser"`, a `path`, a `device`, and no `entityId`, `width` or `height`:
+A browser (D48) has `"kind": "browser"`, a `path`, a `device`, a `height` (the window's height in board units, 200 or more, D49), and no `entityId` or `width`:
 
 ```json
-{ "id": "…", "kind": "browser", "path": "/", "device": "desktop", "x": 0, "y": 0 }
+{ "id": "…", "kind": "browser", "path": "/", "device": "desktop", "x": 0, "y": 0, "height": 900 }
 ```
 
-`path` is the address relative to the site's home URL: it starts with `/`, may hold a query and a fragment, and is at most 2000 characters. A new browser has `/`, the homepage. Its window is always 900 board units tall. `[U]` for the window, `[N]` for the field list and the length
+`path` is the address relative to the site's home URL: it starts with `/`, may hold a query and a fragment, and is at most 2000 characters. A new browser has `/`, the homepage, and a window 900 board units tall. `[U]` for the window, `[N]` for the field list and the length
 
 The layout may also have a `notes` list (D46). A layout without it has no notes; a board with no notes is saved without it. Each note has exactly these fields: `[U]`
 
