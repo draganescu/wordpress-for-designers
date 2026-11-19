@@ -12,7 +12,7 @@ The plugin is built through Milestone 12 of `spec/build-order.md`, plus the deci
 | End-to-end tests, one per criterion | 134. On 2026-11-19 the whole suite was run three times on `master`: all pass after two fixes to the tests. AC-CANVAS-03 used an empty-board point that D42's Keyboard shortcuts control now covers; AC-STYLE-07 (and three like it in `ins.spec.ts` and `style.spec.ts`) counted menu rows once instead of waiting for them, and failed one run in three. On the browser branch (D55 to D57), before merging those fixes, the suite ran with 132 passing: AC-CANVAS-03 (fixed on `master`) and AC-PERF-03, which still fails on a worktree environment (see working-notes.md) |
 | `npm run lint` | Exits 0, no disabled lines |
 | CI | `.github/workflows/tests.yml` runs lint, build and the suite (Chromium, wp-env) on every pull request; CI retries a failed test twice and reports a pass on retry as flaky |
-| Open questions waiting for the product owner | 29 (`spec/open-questions.md`) |
+| Open questions waiting for the product owner | 30 (`spec/open-questions.md`) |
 | Browsers the suite runs in | Chromium only |
 | WordPress it was built and tested on | 7.2-RC2, Twenty Twenty-Five, PHP 8.2, no Gutenberg plugin |
 
