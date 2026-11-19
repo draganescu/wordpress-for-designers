@@ -129,6 +129,10 @@ What to do differently:
 - **A new template or part has no saved record.** It lives as edits on an id that does not exist yet. `startResolution` and `finishResolution` are called on that id so core-data does not request it and get a 404.
 - **Key events from the canvas iframe arrive late.** WordPress re-dispatches them on the iframe element after the editor has handled them. Whether a popover was open has to be recorded at capture time, inside the canvas document as well as the top one, or Esc cannot tell "close the popover" from "leave edit".
 - **Pointer capture retargets `dblclick`** to the capturing element. The canvas uses `elementFromPoint` to find what was double-clicked. For the same reason a button inside an artboard (Retry) needs the canvas to skip capture on it.
+- **A post changed inside `posts_results` reaches the object cache.** When the filter gives back the same objects, `WP_Query` hands them to `update_post_caches()`. The preview changes a copy of each post instead (`includes/preview.php`).
+- **`wp_filter_global_styles_post()` drops `version`.** Styles passed through it must be given their schema version again, or `WP_Theme_JSON_Data` reads them as empty.
+- **An iframe's `load` comes too late for its listeners.** A link pressed while the page is still loading is followed without them. A browser's page gets its listeners as soon as the new document exists, found by watching from the old one's `pagehide` (`src/artboard-frame/browser.js`).
+- **`location.href` is not the string WordPress gave.** The web browser writes the host in lower case and in punycode and drops a default port, so a page's address is compared with the home URL by origin and path, not as a prefix.
 - **`wp-polyfill`** must be enqueued in the parent page, or every artboard iframe requests it again (AC-PERF-03).
 - **`defaultTemplateTypes`** in the editor settings is an object keyed by slug, not an array.
 - **Theme patterns have no `source` field.**
