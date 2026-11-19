@@ -109,11 +109,11 @@ html.wp-toolbar:has(.wfd-board-page) {
     }
 }
 
-// A block toolbar wider than its room scrolls sideways.
+// The stock toolbar inside takes this width and, when it is wider, scrolls
+// sideways by itself.
 .wfd-header__toolbar {
     min-width: 0;
-    overflow: auto hidden;
-    scrollbar-width: none;
+    overflow: hidden;
 }
 
 .wfd-header__document {
@@ -138,7 +138,6 @@ html.wp-toolbar:has(.wfd-board-page) {
 
 .wfd-header__end {
     display: flex;
-    flex: none;
     align-items: center;
     justify-content: flex-end;
     column-gap: var(--wpds-dimension-gap-md);
