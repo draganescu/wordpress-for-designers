@@ -17,11 +17,11 @@ The plugin is built through Milestone 12 of `spec/build-order.md`, plus the deci
 
 Not done or not verified:
 
-- **The plugin code is not committed.** Git holds only the spec: the spec as received and six decision commits. Everything outside `spec/` is untracked.
+- **Nothing is pushed.** The repository has no remote. Everything is committed on `master`: the spec as received, six decision commits, the plugin (`0a5f318`) and the spike material.
 - **Clean activation** was checked on the wp-env site with the test helper plugin and test theme also installed, not on a clean WordPress 7.2 final. No PHP messages and no console errors appeared on the Plugins, Boards and board screens.
 - **`spec/shell-check.md`** (the comparison of each screen with its image) was done at Milestone 2. It has not been redone since, so it does not cover D32 to D38.
 - **Firefox and WebKit** were used only in the second spike, on the recipe for editing below 100%, not on the app as built.
-- **`spikes/`** still holds the throwaway code and evidence of both spikes.
+- **`spikes/`** still holds the throwaway code and evidence of both spikes. The second spike's screenshots and logs (about 90 MB, under `spikes/zoom-edit/`) are on disk but not committed.
 
 ## What the plugin does now
 
@@ -168,9 +168,8 @@ Twenty entries are open, OQ-4 and OQ-6 to OQ-24. The missing numbers were decide
 
 These are suggestions, not decisions.
 
-1. Commit the plugin code.
-2. Have the product owner go through the open questions; OQ-17, OQ-19 and OQ-21 change what "done" means.
-3. Activate on a clean WordPress 7.2 final with only a block theme, and confirm there are no PHP notices or console errors.
-4. Run the suite in Firefox and WebKit, at least AC-EDIT-09.
-5. Redo `spec/shell-check.md` against the screens as they are now.
-6. Decide what to do with `spikes/`.
+1. Have the product owner go through the open questions; OQ-17, OQ-19 and OQ-21 change what "done" means.
+2. Activate on a clean WordPress 7.2 final with only a block theme, and confirm there are no PHP notices or console errors.
+3. Run the suite in Firefox and WebKit, at least AC-EDIT-09.
+4. Redo `spec/shell-check.md` against the screens as they are now.
+5. Decide what to do with `spikes/`, including its uncommitted screenshots.
