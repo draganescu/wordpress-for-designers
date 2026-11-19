@@ -1,0 +1,87 @@
+// The Styles panel (S1 to S6, Blocks and History tabs). Layout only.
+
+.wfd-styles__tabs {
+    padding: 0 var(--wpds-dimension-padding-lg);
+}
+
+.wfd-styles__section + .wfd-styles__section {
+    border-top: var(--wpds-border-width-xs) solid var(--wpds-color-stroke-surface-neutral-weak);
+}
+
+.wfd-styles__section {
+    padding-bottom: var(--wpds-dimension-padding-sm);
+}
+
+.wfd-styles__swatch {
+    display: flex;
+}
+
+.wfd-styles__suffix {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--wpds-dimension-gap-lg);
+}
+
+.wfd-styles__hex {
+    font-family: var(--wpds-typography-font-family-mono);
+    font-size: var(--wpds-typography-font-size-sm);
+}
+
+.wfd-styles__uses {
+    min-width: var(--wpds-dimension-size-2xs);
+    text-align: end;
+}
+
+.wfd-styles__add {
+    padding: var(--wpds-dimension-padding-sm) var(--wpds-dimension-padding-lg);
+}
+
+.wfd-styles__type-sample {
+    display: inline-block;
+    min-width: var(--wpds-dimension-size-sm);
+    font-size: var(--wpds-typography-font-size-xl);
+    line-height: var(--wpds-typography-line-height-xl);
+}
+
+.wfd-styles__spacing {
+    padding: var(--wpds-dimension-padding-sm) var(--wpds-dimension-padding-lg) var(--wpds-dimension-padding-lg);
+}
+
+.wfd-styles__spacing-square {
+    display: block;
+    background: var(--wpds-color-foreground-content-neutral);
+}
+
+.wfd-styles__search {
+    padding: var(--wpds-dimension-padding-md) var(--wpds-dimension-padding-lg) var(--wpds-dimension-padding-sm);
+}
+
+.wfd-styles__changes {
+    color: var(--wpds-color-foreground-interactive-brand);
+}
+
+.wfd-styles__help {
+    margin: 0;
+    padding: var(--wpds-dimension-padding-lg);
+}
+
+.wfd-styles__block-back {
+    padding: var(--wpds-dimension-padding-sm) var(--wpds-dimension-padding-lg);
+}
+
+.wfd-styles__history {
+    padding-top: var(--wpds-dimension-padding-sm);
+
+    .wfd-row__icon {
+        display: none;
+    }
+
+    .wfd-row__name {
+        font-weight: var(--wpds-typography-font-weight-emphasis);
+    }
+}
+
+.wfd-styles__history-actions {
+    padding: var(--wpds-dimension-padding-lg);
+    border-top: var(--wpds-border-width-xs) solid var(--wpds-color-stroke-surface-neutral-weak);
+}

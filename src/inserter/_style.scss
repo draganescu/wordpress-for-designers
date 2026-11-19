@@ -1,0 +1,63 @@
+.wfd-inserter {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+}
+
+.wfd-inserter__search {
+    flex: none;
+    padding: var(--wpds-dimension-padding-lg) var(--wpds-dimension-padding-lg) var(--wpds-dimension-padding-sm);
+}
+
+.wfd-inserter__tabs {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.wfd-inserter__tab-strip {
+    flex: none;
+    padding: 0 var(--wpds-dimension-padding-lg);
+    border-bottom: var(--wpds-border-width-xs) solid var(--wpds-color-stroke-surface-neutral-weak);
+}
+
+.wfd-inserter__panel {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+}
+
+.wfd-inserter__upload {
+    padding: var(--wpds-dimension-padding-sm) var(--wpds-dimension-padding-lg);
+}
+
+.wfd-inserter__empty {
+    margin: 0 auto;
+    padding: var(--wpds-dimension-padding-2xl) var(--wpds-dimension-padding-lg);
+}
+
+.wfd-inserter__hint {
+    flex: none;
+    margin: 0;
+    padding: var(--wpds-dimension-padding-lg);
+    background: var(--wpds-color-background-surface-neutral-weak);
+    border-top: var(--wpds-border-width-xs) solid var(--wpds-color-stroke-surface-neutral-weak);
+}
+
+// Kept off screen; the browser snapshots it as the drag image.
+.wfd-inserter__drag-chip {
+    position: fixed;
+    top: -100vh;
+    left: 0;
+    padding: var(--wpds-dimension-padding-sm) var(--wpds-dimension-padding-md);
+    background: var(--wpds-color-background-surface-neutral);
+    border: var(--wpds-border-width-xs) solid var(--wpds-color-stroke-surface-brand-strong);
+    border-radius: var(--wpds-border-radius-sm);
+    pointer-events: none;
+
+    &:empty {
+        display: none;
+    }
+}

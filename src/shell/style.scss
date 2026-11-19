@@ -1,0 +1,410 @@
+@import "primitives";
+@import "../styles/style";
+@import "../inserter/style";
+@import "../review/style";
+
+html.wp-toolbar:has(.wfd-board-page) {
+    padding: 0;
+}
+
+.wfd-board-page,
+.wfd-board-page #wfd-board-root {
+    height: 100%;
+    margin: 0;
+    overflow: hidden;
+}
+
+.wfd-shell {
+    display: grid;
+    grid-template: "header header header" auto "left main right" minmax(0, 1fr) / 280px minmax(0, 1fr) 360px;
+    position: fixed;
+    inset: 0;
+    color: var(--wpds-color-foreground-content-neutral);
+    background: var(--wpds-color-background-surface-neutral);
+
+    &.has-no-left {
+        grid-template-columns: 0 minmax(0, 1fr) 360px;
+    }
+
+    &.has-no-right {
+        grid-template-columns: 280px minmax(0, 1fr) 0;
+    }
+
+    &.has-no-left.has-no-right {
+        grid-template-columns: 0 minmax(0, 1fr) 0;
+    }
+}
+
+.wfd-header {
+    grid-area: header;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    align-items: center;
+    column-gap: var(--wpds-dimension-gap-lg);
+    border-bottom: var(--wpds-border-width-xs) solid var(--wpds-color-stroke-surface-neutral);
+}
+
+.wfd-header a.wfd-header__boards {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 60px;
+    height: 60px;
+    color: var(--wpds-color-foreground-interactive-neutral-strong);
+    background: var(--wpds-color-background-interactive-neutral-strong);
+
+    svg {
+        fill: currentcolor;
+    }
+}
+
+.wfd-header__start {
+    display: flex;
+    align-items: center;
+    column-gap: var(--wpds-dimension-gap-md);
+    min-width: 0;
+}
+
+.wfd-header__tools {
+    display: flex;
+    align-items: center;
+    column-gap: var(--wpds-dimension-gap-sm);
+    min-width: 0;
+}
+
+.wfd-header__toolbar {
+    min-width: 0;
+    overflow: hidden;
+}
+
+.wfd-header__document {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    column-gap: var(--wpds-dimension-gap-sm);
+    width: 300px;
+    min-height: var(--wpds-dimension-size-lg);
+    padding: 0 var(--wpds-dimension-padding-sm);
+    background: var(--wpds-color-background-surface-neutral-weak);
+    border-radius: var(--wpds-border-radius-md);
+}
+
+.wfd-header__document-name {
+    flex: 1;
+    overflow: hidden;
+    text-align: center;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.wfd-header__end {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    column-gap: var(--wpds-dimension-gap-md);
+    padding-inline-end: var(--wpds-dimension-padding-lg);
+}
+
+.wfd-body {
+    display: contents;
+}
+
+.wfd-left {
+    grid-area: left;
+    overflow: auto;
+    border-inline-end: var(--wpds-border-width-xs) solid var(--wpds-color-stroke-surface-neutral);
+}
+
+.wfd-right {
+    grid-area: right;
+    overflow: auto;
+    border-inline-start: var(--wpds-border-width-xs) solid var(--wpds-color-stroke-surface-neutral);
+}
+
+.wfd-main {
+    grid-area: main;
+    position: relative;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.wfd-artboards-panel__empty {
+    display: block;
+    padding: 0 var(--wpds-dimension-padding-lg);
+}
+
+.wfd-canvas {
+    position: absolute;
+    inset: 0;
+    // Clipped, not hidden: a hidden box can still be scrolled by script, and
+    // the editor scrolls its selection into view.
+    overflow: clip;
+    background: var(--wpds-color-background-surface-neutral-weak);
+    outline: none;
+}
+
+.wfd-canvas__surface {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 0;
+    height: 0;
+    transform-origin: 0 0;
+
+    --wfd-zoom: 1;
+}
+
+.wfd-canvas__banner {
+    position: absolute;
+    top: var(--wpds-dimension-padding-lg);
+    left: var(--wpds-dimension-padding-lg);
+    width: var(--wpds-dimension-surface-width-md);
+    max-width: calc(100% - 2 * var(--wpds-dimension-padding-lg));
+}
+
+.wfd-banner__text {
+    display: flex;
+    align-items: center;
+    column-gap: var(--wpds-dimension-gap-sm);
+}
+
+.wfd-canvas__empty {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.wfd-artboard {
+    position: absolute;
+}
+
+.wfd-artboard__label {
+    position: absolute;
+    bottom: 100%;
+    left: 0;
+    display: flex;
+    align-items: center;
+    column-gap: var(--wpds-dimension-gap-sm);
+    padding-bottom: var(--wpds-dimension-padding-xs);
+    white-space: nowrap;
+    transform: scale(calc(1 / var(--wfd-zoom)));
+    transform-origin: 0 100%;
+}
+
+.wfd-artboard__label-text {
+    color: var(--wpds-color-foreground-content-neutral-weak);
+}
+
+.wfd-artboard__label.is-live .wfd-artboard__label-text,
+.wfd-artboard__label-uses {
+    color: var(--wpds-color-foreground-interactive-brand);
+}
+
+.wfd-artboard__label-changed {
+    color: var(--wpds-color-foreground-content-caution);
+}
+
+.wfd-artboard__frame {
+    position: relative;
+    overflow: hidden;
+    background: var(--wpds-color-background-surface-neutral);
+    outline: calc(var(--wpds-border-width-xs) / var(--wfd-zoom)) solid var(--wpds-color-stroke-surface-neutral);
+}
+
+.wfd-artboard__media {
+    display: block;
+    width: 100%;
+    height: 100%;
+    user-select: none;
+}
+
+.wfd-artboard.is-selected .wfd-artboard__frame {
+    outline: calc(var(--wpds-border-width-sm) / var(--wfd-zoom)) solid var(--wpds-color-stroke-interactive-brand);
+}
+
+.wfd-artboard.is-changed .wfd-artboard__frame {
+    outline: calc(var(--wpds-border-width-sm) / var(--wfd-zoom)) solid var(--wpds-color-stroke-surface-caution-strong);
+}
+
+.wfd-artboard:has(.wfd-artboard__frame.has-error) {
+    z-index: 1;
+}
+
+.wfd-artboard__frame.has-error {
+    min-height: calc(170px / var(--wfd-zoom));
+    overflow: visible;
+}
+
+.wfd-artboard__error {
+    position: absolute;
+    top: 0;
+    left: 0;
+    box-sizing: border-box;
+    width: calc(100% * var(--wfd-zoom));
+    min-width: 240px;
+    padding: var(--wpds-dimension-padding-md);
+    transform: scale(calc(1 / var(--wfd-zoom)));
+    transform-origin: 0 0;
+}
+
+.wfd-placement {
+    position: absolute;
+    // The outline follows the pointer; it must never be the pointer's target.
+    pointer-events: none;
+}
+
+.wfd-placement__outline {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    background: var(--wpds-color-background-surface-brand);
+    outline: calc(var(--wpds-border-width-sm) / var(--wfd-zoom)) dashed var(--wpds-color-stroke-interactive-brand);
+}
+
+.wfd-placement__hint {
+    flex: none;
+    width: calc(100% * var(--wfd-zoom));
+    color: var(--wpds-color-foreground-interactive-brand);
+    text-align: center;
+    transform: scale(calc(1 / var(--wfd-zoom)));
+}
+
+.wfd-entity-card,
+.wfd-device-control,
+.wfd-template-control,
+.wfd-scope-switch,
+.wfd-artboard-settings__actions,
+.wfd-live-notice {
+    margin: var(--wpds-dimension-padding-lg);
+
+    h2 {
+        margin: 0;
+    }
+}
+
+.wfd-artboard-settings__hint {
+    display: block;
+    margin: 0 var(--wpds-dimension-padding-lg);
+}
+
+.wfd-add-menu {
+    max-width: var(--wpds-dimension-surface-width-sm);
+}
+
+.wfd-remove-dialog__checkbox {
+    margin-top: var(--wpds-dimension-gap-lg);
+}
+
+.wfd-editing-panel [role="tablist"] {
+    padding: 0 var(--wpds-dimension-padding-lg);
+}
+
+.wfd-canvas.is-pan-ready {
+    cursor: grab;
+}
+
+.wfd-canvas.is-panning {
+    cursor: grabbing;
+}
+
+.wfd-artboard__frame {
+    cursor: default;
+    user-select: none;
+}
+
+.wfd-artboard__skeleton {
+    position: absolute;
+    inset: 0;
+}
+
+.wfd-preview {
+    position: relative;
+    pointer-events: none;
+}
+
+.wfd-canvas.is-pan-ready iframe,
+.wfd-canvas.is-panning iframe,
+.wfd-artboard[data-wfd-tier="warm"] iframe {
+    pointer-events: none;
+}
+
+.wfd-artboard[data-wfd-tier="live"] .wfd-artboard__frame {
+    cursor: auto;
+    user-select: auto;
+    // Popovers of the block tools are placed inside the frame's box
+    // otherwise, over the content.
+    overflow: visible;
+}
+
+.wfd-artboard[data-wfd-tier="live"] {
+    z-index: 2;
+}
+
+// Editing at any zoom. WordPress's block tools are placed correctly only
+// when they are at screen size, so the editor is drawn at screen size and
+// only its canvas iframe carries the board's zoom. Measured in
+// spec/spike-report.md, "Editing below 100%".
+.wfd-artboard:is([data-wfd-tier="live"], [data-wfd-tier="warm"]) .wfd-artboard__frame > div:has(> .block-editor-iframe__container) {
+    transform: scale(calc(1 / var(--wfd-zoom)));
+    transform-origin: 0 0;
+    // At screen size this box is larger than the artboard looks.
+    pointer-events: none;
+
+    iframe[name="editor-canvas"] {
+        transform: scale(var(--wfd-zoom));
+        transform-origin: 0 0;
+    }
+}
+
+.wfd-canvas:not(.is-pan-ready, .is-panning) .wfd-artboard[data-wfd-tier="live"] .wfd-artboard__frame > div:has(> .block-editor-iframe__container) {
+
+    iframe[name="editor-canvas"],
+    .popover-slot {
+        pointer-events: auto;
+    }
+}
+
+// Tools that cover a block (the add-block button of an empty paragraph, the
+// spacing and grid overlays) take the block's unscaled size. Some of them
+// are drawn outside the artboard, so this is not scoped to it.
+.block-editor-block-popover > .components-popover__content > div[style*="position: absolute"] {
+    zoom: var(--wfd-zoom, 1);
+
+    > .block-editor-block-list__empty-block-inserter {
+        zoom: calc(1 / var(--wfd-zoom, 1));
+    }
+}
+
+.wfd-header__toolbar .block-editor-block-toolbar {
+    border: 0;
+}
+
+.wfd-slot-list-view,
+.wfd-slot-inspector {
+    display: block;
+}
+
+.wfd-canvas__placer {
+    position: absolute;
+    inset: 0;
+    cursor: crosshair;
+}
+
+.wfd-entity-card > svg {
+    flex: none;
+}
+
+.wfd-brand-probe {
+    position: absolute;
+    visibility: hidden;
+    color: var(--wpds-color-stroke-interactive-brand);
+}
+
+.wfd-snapshot,
+.wfd-snapshot__copy {
+    position: relative;
+    pointer-events: none;
+}

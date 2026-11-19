@@ -1,0 +1,214 @@
+<?php
+/**
+ * The board post type and the validation of its layout.
+ *
+ * @package WordPressForDesigners
+ */
+
+defined( 'ABSPATH' ) || exit;
+
+/**
+ * Registers the wfd_board post type (spec/data-model.md, Board).
+ */
+function wfd_register_post_type() {
+    $caps = array();
+    foreach ( array( 'edit_post', 'read_post', 'delete_post', 'edit_posts', 'edit_others_posts', 'delete_posts', 'publish_posts', 'read_private_posts', 'read', 'delete_private_posts', 'delete_published_posts', 'delete_others_posts', 'edit_private_posts', 'edit_published_posts', 'create_posts' ) as $cap ) {
+        $caps[ $cap ] = WFD_CAPABILITY;
+    }
+
+    register_post_type(
+        WFD_POST_TYPE,
+        array(
+            'labels'       => array(
+                'name'          => __( 'Boards', 'wordpress-for-designers' ),
+                'singular_name' => __( 'Board', 'wordpress-for-designers' ),
+            ),
+            'public'       => false,
+            'show_ui'      => false,
+            'show_in_rest' => true,
+            'rest_base'    => 'wfd-boards',
+            'supports'     => array( 'title' ),
+            'capabilities' => $caps,
+            'map_meta_cap' => false,
+        )
+    );
+
+    register_rest_field(
+        WFD_POST_TYPE,
+        'layout',
+        array(
+            'get_callback'    => 'wfd_get_layout',
+            'update_callback' => 'wfd_update_layout',
+            'schema'          => array(
+                'description' => __( 'The board layout.', 'wordpress-for-designers' ),
+                'type'        => 'object',
+                'context'     => array( 'view', 'edit' ),
+                'arg_options' => array(
+                    'validate_callback' => 'wfd_validate_layout',
+                ),
+            ),
+        )
+    );
+}
+add_action( 'init', 'wfd_register_post_type' );
+
+/**
+ * The layout of an empty board.
+ *
+ * @return array
+ */
+function wfd_empty_layout() {
+    return array(
+        'version'   => 1,
+        'artboards' => array(),
+    );
+}
+
+/**
+ * Reads the layout stored in post_content.
+ *
+ * @param array $post Prepared post data.
+ * @return array
+ */
+function wfd_get_layout( $post ) {
+    $raw    = get_post_field( 'post_content', $post['id'], 'raw' );
+    $layout = json_decode( (string) $raw, true );
+    if ( ! is_array( $layout ) || true !== wfd_layout_error( $layout ) ) {
+        return wfd_empty_layout();
+    }
+    return $layout;
+}
+
+/**
+ * Stores the layout as a JSON string in post_content.
+ *
+ * @param array   $layout The validated layout.
+ * @param WP_Post $post   The board.
+ * @return true|WP_Error
+ */
+function wfd_update_layout( $layout, $post ) {
+    $error = wfd_layout_error( $layout );
+    if ( true !== $error ) {
+        return new WP_Error( 'wfd_invalid_layout', $error, array( 'status' => 400 ) );
+    }
+    $result = wp_update_post(
+        array(
+            'ID'           => $post->ID,
+            'post_content' => wp_slash( wp_json_encode( $layout ) ),
+        ),
+        true
+    );
+    return is_wp_error( $result ) ? $result : true;
+}
+
+/**
+ * REST argument validation for the layout.
+ *
+ * @param mixed $value The submitted value.
+ * @return true|WP_Error
+ */
+function wfd_validate_layout( $value ) {
+    $error = wfd_layout_error( $value );
+    if ( true !== $error ) {
+        return new WP_Error( 'rest_invalid_param', $error, array( 'status' => 400 ) );
+    }
+    return true;
+}
+
+/**
+ * Whether a value is strictly a JSON number (not a numeric string).
+ *
+ * @param mixed $value The value.
+ * @return bool
+ */
+function wfd_is_number( $value ) {
+    return is_int( $value ) || is_float( $value );
+}
+
+/**
+ * Checks a layout against the shape in spec/data-model.md.
+ *
+ * @param mixed $layout The decoded layout.
+ * @return true|string True when valid, otherwise the reason.
+ */
+function wfd_layout_error( $layout ) {
+    if ( ! is_array( $layout ) ) {
+        return __( 'The layout must be an object.', 'wordpress-for-designers' );
+    }
+    if ( array_diff( array_keys( $layout ), array( 'version', 'artboards' ) ) || 2 !== count( $layout ) ) {
+        return __( 'The layout must have exactly the fields version and artboards.', 'wordpress-for-designers' );
+    }
+    if ( 1 !== $layout['version'] ) {
+        return __( 'The layout version must be 1.', 'wordpress-for-designers' );
+    }
+    if ( ! is_array( $layout['artboards'] ) || ( $layout['artboards'] && ! wp_is_numeric_array( $layout['artboards'] ) ) ) {
+        return __( 'The layout artboards must be a list.', 'wordpress-for-designers' );
+    }
+
+    $ids = array();
+    foreach ( $layout['artboards'] as $artboard ) {
+        // A media object has a width and no device; every other kind has a device and no width.
+        $is_media = is_array( $artboard ) && isset( $artboard['kind'] ) && 'media' === $artboard['kind'];
+        $fields   = $is_media
+            ? array( 'id', 'kind', 'entityId', 'x', 'y', 'width', 'height' )
+            : array( 'id', 'kind', 'entityId', 'device', 'x', 'y', 'height' );
+        if ( ! is_array( $artboard ) || array_diff( array_keys( $artboard ), $fields ) || count( $artboard ) !== count( $fields ) ) {
+            return $is_media
+                ? __( 'Each media object must have exactly the fields id, kind, entityId, x, y, width and height.', 'wordpress-for-designers' )
+                : __( 'Each artboard must have exactly the fields id, kind, entityId, device, x, y and height.', 'wordpress-for-designers' );
+        }
+        if ( ! is_string( $artboard['id'] ) || ! wp_is_uuid( $artboard['id'] ) || isset( $ids[ $artboard['id'] ] ) ) {
+            return __( 'Each artboard id must be a unique UUID.', 'wordpress-for-designers' );
+        }
+        $ids[ $artboard['id'] ] = true;
+        if ( ! in_array( $artboard['kind'], array( 'page', 'template', 'template-part', 'pattern', 'media' ), true ) ) {
+            return __( 'The artboard kind is not valid.', 'wordpress-for-designers' );
+        }
+        $numeric_entity = in_array( $artboard['kind'], array( 'page', 'pattern', 'media' ), true );
+        if ( $numeric_entity ? ! is_int( $artboard['entityId'] ) : ( ! is_string( $artboard['entityId'] ) || '' === $artboard['entityId'] ) ) {
+            return __( 'The artboard entityId has the wrong type for its kind.', 'wordpress-for-designers' );
+        }
+        if ( ! $is_media && ! in_array( $artboard['device'], array( 'desktop', 'tablet', 'mobile' ), true ) ) {
+            return __( 'The artboard device is not valid.', 'wordpress-for-designers' );
+        }
+        foreach ( $is_media ? array( 'x', 'y', 'width', 'height' ) : array( 'x', 'y', 'height' ) as $number ) {
+            if ( ! wfd_is_number( $artboard[ $number ] ) ) {
+                return $is_media
+                    ? __( 'The media object x, y, width and height must be numbers.', 'wordpress-for-designers' )
+                    : __( 'The artboard x, y and height must be numbers.', 'wordpress-for-designers' );
+            }
+        }
+    }
+    return true;
+}
+
+/**
+ * A board is always published; a removed board goes to the trash.
+ *
+ * @param stdClass $prepared The post about to be inserted or updated.
+ * @return stdClass
+ */
+function wfd_force_publish( $prepared ) {
+    $prepared->post_status = 'publish';
+    return $prepared;
+}
+add_filter( 'rest_pre_insert_' . WFD_POST_TYPE, 'wfd_force_publish' );
+
+/**
+ * Gives a board created without a layout the empty layout.
+ *
+ * @param WP_Post $post     The board.
+ * @param mixed   $request  The request.
+ * @param bool    $creating Whether the board is being created.
+ */
+function wfd_default_layout( $post, $request, $creating ) {
+    if ( $creating && '' === $post->post_content ) {
+        wp_update_post(
+            array(
+                'ID'           => $post->ID,
+                'post_content' => wp_slash( wp_json_encode( wfd_empty_layout() ) ),
+            )
+        );
+    }
+}
+add_action( 'rest_after_insert_' . WFD_POST_TYPE, 'wfd_default_layout', 10, 3 );

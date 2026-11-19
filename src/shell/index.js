@@ -1,0 +1,22 @@
+/**
+ * Entry point of the board app.
+ */
+import { createRoot } from '@wordpress/element';
+import { getQueryArg } from '@wordpress/url';
+import { ThemeProvider } from '@wordpress/theme';
+import { App } from './app';
+import { StaticScreen } from '../static';
+import './style.scss';
+
+const root = document.getElementById( 'wfd-board-root' );
+const screen =
+    window.wfdConfig.isTestBuild &&
+    getQueryArg( window.location.href, 'wfd-screen' );
+
+if ( root ) {
+    createRoot( root ).render(
+        <ThemeProvider>
+            { screen ? <StaticScreen name={ screen } /> : <App /> }
+        </ThemeProvider>
+    );
+}
