@@ -624,7 +624,9 @@ test.describe( 'BROWSER', () => {
         expect( await pageUrl( page ) ).toContain( 'wfd_preview=' );
         await address( page ).fill( '/' );
         await address( page ).press( 'Enter' );
-        await expect( address( page ) ).toHaveValue( '/' );
+        await expect
+            .poll( () => pageUrl( page ) )
+            .toMatch( /^https?:\/\/[^/]+\/\?wfd_preview=/ );
         await address( page ).fill( path );
         await address( page ).press( 'Enter' );
         await expect(
@@ -680,15 +682,20 @@ test.describe( 'BROWSER', () => {
 
         // The header part, in its artboard.
         await enterEdit( page, header.id );
-        await editorFrame( page, header.id )
+        const text = editorFrame( page, header.id )
             .locator( 'p', { hasText: 'Fixture header text' } )
-            .first()
-            .click();
-        await page.keyboard.press( 'End' );
-        await page.keyboard.type( ' Edited' );
+            .first();
+        // The editor is drawn again after the styles change; typing that
+        // meets it half drawn is lost, so it is tried until it shows.
+        await expect( async () => {
+            await text.click();
+            await page.keyboard.press( 'End' );
+            await page.keyboard.type( ' Edited' );
+            await expect( text ).toContainText( 'Edited', { timeout: 1000 } );
+        } ).toPass();
         await page.getByRole( 'button', { name: 'Back to the board' } ).click();
         await expect(
-            shown.getByText( 'Fixture header text Edited' )
+            shown.getByText( /Fixture header text Edited/ )
         ).toBeVisible( { timeout: 8000 } );
     } );
 } );

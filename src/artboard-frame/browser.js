@@ -250,12 +250,15 @@ export function ArtboardBrowser( {
         return listeners.stop;
     }, [ listeners ] );
 
-    // A new address from outside (typed in the address field) is gone to.
+    // A new address from outside (typed in the address field) is gone to,
+    // also while an earlier one is still loading.
+    const asked = useRef( path );
     useEffect( () => {
         const frame = iframeRef.current;
-        if ( current.current === null || current.current === path ) {
+        if ( asked.current === path ) {
             return;
         }
+        asked.current = path;
         try {
             frame.contentWindow.location.assign(
                 urlOf( path, homeUrl, latest.current.preview )
@@ -346,6 +349,7 @@ export function ArtboardBrowser( {
             askedAgain.current = null;
         }
         current.current = address;
+        asked.current = address;
         setLoaded( true );
         if ( scrollBack.current ) {
             frame.contentWindow.scrollTo(
