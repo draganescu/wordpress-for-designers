@@ -934,7 +934,11 @@ export function App() {
                                     updateArtboard( artboard.id, { height } );
                                 // The one render of a Snapshot artboard
                                 // that has no frozen copy, or whose copy
-                                // was made with older styles (D51).
+                                // was made with older styles (D51). It
+                                // takes the styles without the highlight
+                                // of the picked token, which a frozen
+                                // copy would keep after the token is
+                                // let go.
                                 const once = tier === 'snapshot' &&
                                     source === artboard.id &&
                                     ! hasCopy( artboard.id ) && (
@@ -942,7 +946,7 @@ export function App() {
                                             key="once"
                                             artboard={ artboard }
                                             width={ width }
-                                            settings={ previewSettings }
+                                            settings={ styles.editorSettings }
                                             isBusy={ viewport.isGesturing }
                                             onSettled={ ( element, height ) => {
                                                 if ( height ) {
