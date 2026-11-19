@@ -121,20 +121,28 @@ export function useStylesPanel( { styles, serverSettings, usesOf } ) {
     // type. Left out, as in the stock styles screens: block style
     // variations, and the colour-only and type-only presets (the stock
     // Colors and Typography screens list those as palettes and typesets).
-    // A title is listed once.
+    // A title is listed once. Each is given the settings and the styles it
+    // leaves out, empty, as the user's styles have them: the menu tells
+    // which one the styles are by comparing the two (D54).
     const variations = useMemo( () => {
         const seen = new Set();
-        return allVariations.filter( ( variation ) => {
-            if (
-                variation.blockTypes ||
-                isPartialVariation( variation ) ||
-                seen.has( variation.title )
-            ) {
-                return false;
-            }
-            seen.add( variation.title );
-            return true;
-        } );
+        return allVariations
+            .filter( ( variation ) => {
+                if (
+                    variation.blockTypes ||
+                    isPartialVariation( variation ) ||
+                    seen.has( variation.title )
+                ) {
+                    return false;
+                }
+                seen.add( variation.title );
+                return true;
+            } )
+            .map( ( variation ) => ( {
+                ...variation,
+                settings: variation.settings ?? {},
+                styles: variation.styles ?? {},
+            } ) );
     }, [ allVariations ] );
     const { revisions } = useGlobalStylesRevisions();
 
@@ -321,10 +329,7 @@ export function useStylesPanel( { styles, serverSettings, usesOf } ) {
                     ( item ) => item.title === title
                 );
                 if ( variation ) {
-                    update( {
-                        settings: variation.settings ?? {},
-                        styles: variation.styles ?? {},
-                    } );
+                    update( variation );
                 }
             },
             tab,
