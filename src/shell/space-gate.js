@@ -3,7 +3,12 @@
  * is replaced by a message and nothing of it can be used; with room again it
  * comes back as it was.
  */
-import { useEffect, useLayoutEffect, useRef } from '@wordpress/element';
+import {
+    createPortal,
+    useEffect,
+    useLayoutEffect,
+    useRef,
+} from '@wordpress/element';
 import { useMediaQuery } from '@wordpress/compose';
 import { __ } from '@wordpress/i18n';
 import { chevronLeft, chevronRight } from '@wordpress/icons';
@@ -44,7 +49,9 @@ function Squeeze() {
 /**
  * The message. It is shown as a modal dialog element so that the browser
  * itself makes everything else on the page inert, the overlays that the
- * components portal into the body included.
+ * components portal into the body included. It is in the body itself: an
+ * open dialog or drawer hides the board's root from assistive technology,
+ * and the message must not be hidden with it.
  */
 function NeedsSpace() {
     const ref = useRef();
@@ -85,7 +92,7 @@ function NeedsSpace() {
                 window.removeEventListener( type, stop, true )
             );
     }, [] );
-    return (
+    return createPortal(
         <dialog
             ref={ ref }
             className="wfd-needs-space"
@@ -110,7 +117,8 @@ function NeedsSpace() {
                     ) }
                 </EmptyState.Description>
             </EmptyState.Root>
-        </dialog>
+        </dialog>,
+        document.body
     );
 }
 
