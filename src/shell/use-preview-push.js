@@ -14,6 +14,9 @@ const DELAY = 1000;
 // The server keeps what a board page sent for an hour after its last send
 // (includes/preview.php); unsaved changes are sent again well inside that.
 const RESEND_AFTER = 10 * 60 * 1000;
+// A send that failed is tried again after 2 seconds, then 4, 8 and so on,
+// up to a minute.
+const LONGEST_RETRY = 60 * 1000;
 const POST_TYPES = [ 'page', 'post', 'wp_block', 'wp_navigation' ];
 const TEMPLATE_TYPES = [ 'wp_template', 'wp_template_part' ];
 
@@ -119,24 +122,29 @@ export function usePreviewPush() {
         let sent = null;
         let sentAt = 0;
         let isSending = false;
+        let failures = 0;
+        let retryAt = 0;
         // What the preview argument holds; it names this board page.
         let value = window.wfdConfig.preview;
-        const board = () => registry.select( boardStore );
-        const isWanted = () =>
-            board()
-                .getArtboards()
-                .some(
-                    ( artboard ) =>
-                        artboard.kind === 'browser' &&
-                        artboard.shows === 'unsaved'
-                );
-        const send = async () => {
+        // What the last look at the stores saw. The changes are put together
+        // again only when one of these is different.
+        let isWanted = false;
+        let seenDirty = null;
+        let seenArtboards = null;
+        let seenDrafts = '';
+
+        function sendIn( delay ) {
+            clearTimeout( timer );
+            timer = setTimeout( send, Math.max( delay, retryAt - Date.now() ) );
+        }
+
+        async function send() {
             timer = null;
-            if ( ! isWanted() ) {
+            if ( ! isWanted ) {
                 return;
             }
             if ( isSending ) {
-                timer = setTimeout( send, DELAY );
+                sendIn( DELAY );
                 return;
             }
             const changes = previewChanges( registry );
@@ -160,32 +168,62 @@ export function usePreviewPush() {
                 } );
                 value = preview;
                 sentAt = Date.now();
+                failures = 0;
+                retryAt = 0;
                 // Browsers reload when the changes are new, or the server
                 // had stopped keeping them.
                 const isSent = json !== sent || ! held;
                 sent = json;
                 registry.dispatch( boardStore ).setPreview( preview, isSent );
             } catch {
-                // Tried again with the next change.
+                failures++;
+                retryAt =
+                    Date.now() +
+                    Math.min( LONGEST_RETRY, DELAY * 2 ** failures );
+                if ( sent === null && failures === 1 ) {
+                    // Browsers waiting for the first send load the site as
+                    // it is saved rather than wait for ever.
+                    registry.dispatch( boardStore ).setPreview( value, true );
+                }
+                sendIn( 0 );
             }
             isSending = false;
-        };
-        const schedule = () => {
-            if ( ! isWanted() ) {
-                return;
+        }
+
+        const look = () => {
+            const dirty = getDirtyEntityRecords( registry.select );
+            const artboards = registry.select( boardStore ).getArtboards();
+            let hasChanged = dirty !== seenDirty;
+            seenDirty = dirty;
+            if ( artboards !== seenArtboards ) {
+                seenArtboards = artboards;
+                const wasWanted = isWanted;
+                isWanted = artboards.some(
+                    ( artboard ) =>
+                        artboard.kind === 'browser' &&
+                        artboard.shows === 'unsaved'
+                );
+                // New templates and parts are found through their artboards.
+                const drafts = artboards
+                    .filter( ( artboard ) => artboard.draft )
+                    .map( ( artboard ) => artboard.entityId )
+                    .join();
+                hasChanged ||= drafts !== seenDrafts;
+                seenDrafts = drafts;
+                if ( isWanted && ! wasWanted ) {
+                    // At once, so the browsers can load.
+                    sendIn( 0 );
+                    return;
+                }
             }
-            if ( sent === null && ! timer ) {
-                // The first send is at once, so the browsers can load.
-                timer = setTimeout( send, 0 );
-                return;
+            if ( hasChanged && isWanted ) {
+                sendIn( DELAY );
             }
-            clearTimeout( timer );
-            timer = setTimeout( send, DELAY );
         };
-        schedule();
-        const unsubscribe = registry.subscribe( schedule );
+        look();
+        const unsubscribe = registry.subscribe( look );
         const resend = setInterval( () => {
-            if ( ! timer ) {
+            if ( isWanted && ! timer ) {
                 send();
             }
         }, RESEND_AFTER );
