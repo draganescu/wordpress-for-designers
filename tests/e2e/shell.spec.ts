@@ -607,7 +607,7 @@ test.describe( 'SHELL', () => {
         ).toBeVisible();
     } );
 
-    test( 'AC-SHELL-12 At 1180 × 820 with a block selected in an artboard in edit, the header controls keep their order without overlapping, none is squeezed, the block toolbar scrolls when it is wider than its room, and the panels are narrower', async ( {
+    test( 'AC-SHELL-12 At 1180 × 820 with a block selected in an artboard in edit, the header controls keep their order without overlapping, none is squeezed, the document bar is narrow and next to the end controls, the block toolbar is wider than its room and scrolls, and the panels are narrower', async ( {
         page,
     } ) => {
         await page.setViewportSize( { width: 1180, height: 820 } );
@@ -670,15 +670,26 @@ test.describe( 'SHELL', () => {
         for ( const id of [ 'H2', 'H3', 'H4', 'H5', 'H10', 'H13' ] ) {
             expect( widthOf( id ) ).toBe( widthOf( 'H12' ) );
         }
-        // The whole block toolbar can be reached.
-        const reach = await toolbar.evaluate( ( element ) => {
-            element.scrollLeft = element.scrollWidth;
-            return {
-                hidden: element.scrollWidth - element.clientWidth,
-                scrolled: element.scrollLeft,
-            };
-        } );
-        expect( reach.scrolled ).toBeGreaterThanOrEqual( reach.hidden - 1 );
+        // The document bar is narrow and next to the controls at the end.
+        const boxOf = ( id: string ) => boxes.find( ( box ) => box.id === id )!;
+        expect( widthOf( 'H7' ) ).toBeLessThan( 300 );
+        expect( boxOf( 'H12' ).left - boxOf( 'H7' ).right ).toBeLessThanOrEqual(
+            16
+        );
+        // The block toolbar is wider than its room, and the wheel takes it
+        // to its end.
+        const scroller = toolbar.locator( '.block-editor-block-toolbar' );
+        const hidden = await scroller.evaluate(
+            ( element ) => element.scrollWidth - element.clientWidth
+        );
+        expect( hidden ).toBeGreaterThan( 0 );
+        await scroller.hover();
+        await page.mouse.wheel( hidden, 0 );
+        await expect
+            .poll( () =>
+                scroller.evaluate( ( element ) => element.scrollLeft )
+            )
+            .toBeGreaterThanOrEqual( hidden - 1 );
 
         const left = ( await page
             .locator( '[data-wfd-region="left"]' )
