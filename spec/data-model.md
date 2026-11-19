@@ -95,6 +95,7 @@ When the entity is deleted, trashed or reset, every other artboard on any board 
 - A failed save leaves the item checked and listed with its error. `[U]`
 - Saving never changes a page's or pattern's status. Publishing drafts is done in wp-admin. `[N]`
 - Global styles save as the `globalStyles` entity of the active theme. `[B7]`
+- Edits that blocks make to other records (the site's title, tagline and logo; navigation menus) are listed in Review as their own items and saved the same way. `[U]`
 
 ## Locks
 
