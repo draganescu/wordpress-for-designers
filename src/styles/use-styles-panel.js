@@ -257,6 +257,13 @@ export function useStylesPanel( { styles, serverSettings, usesOf } ) {
             baseValue={ base }
             onChange={ update }
             path={ '/blocks/' + encodeURIComponent( name ) }
+            onPathChange={ ( next ) => {
+                // The stock block screen has its own back control; leaving
+                // the block's screens returns to the plugin's block list.
+                if ( ! next.startsWith( '/blocks/' ) ) {
+                    setOpenBlock( null );
+                }
+            } }
             serverCSS={ serverSettings.styles }
             serverSettings={ serverSettings }
         />

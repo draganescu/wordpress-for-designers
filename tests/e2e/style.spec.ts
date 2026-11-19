@@ -269,9 +269,15 @@ test.describe( 'STYLE', () => {
         await expect( stock.getByText( 'Typography' ).first() ).toBeVisible();
         await expect( stock.getByText( 'Color' ).first() ).toBeVisible();
         await expect( rows ).toHaveCount( 0 );
-        await panel
-            .locator( '.wfd-styles__block-back' )
-            .getByRole( 'button' )
+        // One heading only: the stock screen's, with its back control.
+        await expect(
+            panel.getByRole( 'button', { name: 'Back', exact: true } )
+        ).toHaveCount( 1 );
+        await expect(
+            panel.getByRole( 'button', { name: 'Button', exact: true } )
+        ).toHaveCount( 0 );
+        await stock
+            .getByRole( 'button', { name: 'Back', exact: true } )
             .click();
         await expect( stock ).toHaveCount( 0 );
         await expect( rows.first() ).toBeVisible();

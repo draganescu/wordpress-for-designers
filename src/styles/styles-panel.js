@@ -347,21 +347,8 @@ function BlocksTab( {
     renderBlockStyles,
 } ) {
     if ( openBlock ) {
-        const open = blocks.find( ( { name } ) => name === openBlock );
         return (
             <div className="wfd-styles__block">
-                <div className="wfd-styles__block-back">
-                    <Button
-                        variant="minimal"
-                        tone="neutral"
-                        onClick={ () => onOpenBlock?.( null ) }
-                    >
-                        <Button.Icon
-                            icon={ isRTL() ? chevronRight : chevronLeft }
-                        />
-                        { open?.title ?? openBlock }
-                    </Button>
-                </div>
                 <div className="wfd-styles__block-styles">
                     { renderBlockStyles?.( openBlock ) }
                 </div>
