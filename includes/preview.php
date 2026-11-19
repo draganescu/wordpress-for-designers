@@ -199,7 +199,7 @@ function wfd_preview_keep( $request ) {
             }
         }
         if ( isset( $post['template'] ) ) {
-            $changes['posts'][ $id ]['template'] = sanitize_file_name( $post['template'] );
+            $changes['posts'][ $id ]['template'] = sanitize_text_field( $post['template'] );
         }
     }
 
@@ -218,7 +218,8 @@ function wfd_preview_keep( $request ) {
             $changes['site'][ $field ] = sanitize_text_field( $request['site'][ $field ] );
         }
     }
-    if ( isset( $request['site']['site_logo'] ) ) {
+    // A logo taken away is sent as null and kept as 0, no logo.
+    if ( array_key_exists( 'site_logo', (array) $request['site'] ) ) {
         $changes['site']['site_logo'] = absint( $request['site']['site_logo'] );
     }
 
@@ -295,6 +296,37 @@ function wfd_preview_new_template( $id, $template ) {
         $object->area = $template['area'] ? $template['area'] : WP_TEMPLATE_PART_AREA_UNCATEGORIZED;
     }
     return $object;
+}
+
+/**
+ * Draws a synced pattern from its kept content the way the core/block block
+ * draws the saved one: with its embeds and its overrides, and once only when
+ * it holds itself.
+ *
+ * @param string $content    The kept content.
+ * @param array  $attributes The block's attributes.
+ * @return string
+ */
+function wfd_preview_pattern( $content, $attributes ) {
+    static $seen = array();
+    global $wp_embed;
+    $ref = $attributes['ref'];
+    if ( isset( $seen[ $ref ] ) ) {
+        return '';
+    }
+    $seen[ $ref ] = true;
+    $overrides    = $attributes['content'] ?? $attributes['overrides'] ?? null;
+    $with         = function ( $context ) use ( $overrides ) {
+        if ( null !== $overrides ) {
+            $context['pattern/overrides'] = $overrides;
+        }
+        return $context;
+    };
+    add_filter( 'render_block_context', $with, 1 );
+    $html = do_blocks( $wp_embed->autoembed( $wp_embed->run_shortcode( $content ) ) );
+    remove_filter( 'render_block_context', $with, 1 );
+    unset( $seen[ $ref ] );
+    return $html;
 }
 
 /**
@@ -381,10 +413,17 @@ function wfd_preview_hooks( $wp ) {
                 $results[ $index ] = $swap( $template, $template->id, $type );
                 $found[]           = $template->id;
             }
-            $slugs = $query['slug__in'] ?? null;
+            // A kept template or part that was not found is new. It is
+            // offered where the query could find one like it.
+            if ( ! empty( $query['wp_id'] ) || ! empty( $query['post_type'] ) ) {
+                return $results;
+            }
             foreach ( $templates as $id => $template ) {
-                $is_wanted = ! $slugs || in_array( $template['slug'], $slugs, true );
-                if ( $template['postType'] === $type && $is_wanted && ! in_array( $id, $found, true ) ) {
+                $is_wanted = $template['postType'] === $type
+                    && ( empty( $query['slug__in'] ) || in_array( $template['slug'], $query['slug__in'], true ) )
+                    && ( empty( $query['slug__not_in'] ) || ! in_array( $template['slug'], $query['slug__not_in'], true ) )
+                    && ( empty( $query['area'] ) || $template['area'] === $query['area'] );
+                if ( $is_wanted && ! in_array( $id, $found, true ) ) {
                     $results[] = wfd_preview_new_template( $id, $template );
                 }
             }
@@ -403,7 +442,7 @@ function wfd_preview_hooks( $wp ) {
             if ( 'core/block' !== $parsed['blockName'] || ! $ref || ! isset( $posts[ $ref ]['content'] ) ) {
                 return $pre;
             }
-            return do_blocks( $posts[ $ref ]['content'] );
+            return wfd_preview_pattern( $posts[ $ref ]['content'], $parsed['attrs'] );
         },
         10,
         2
@@ -438,11 +477,18 @@ function wfd_preview_hooks( $wp ) {
         add_filter(
             'wp_theme_json_data_user',
             function ( $saved ) use ( $styles ) {
+                $version = $saved->get_data()['version'];
+                if ( ! current_user_can( 'unfiltered_html' ) ) {
+                    // What WordPress would take out when saving them.
+                    $styles['version']                     = $version;
+                    $styles['isGlobalStylesUserThemeJSON'] = true;
+                    $styles                                = json_decode( wp_unslash( wp_filter_global_styles_post( wp_slash( wp_json_encode( $styles ) ) ) ), true );
+                }
                 return new WP_Theme_JSON_Data(
                     array(
-                        'version'  => $saved->get_data()['version'],
-                        'styles'   => $styles['styles'],
-                        'settings' => $styles['settings'],
+                        'version'  => $version,
+                        'styles'   => $styles['styles'] ?? array(),
+                        'settings' => $styles['settings'] ?? array(),
                     ),
                     'custom'
                 );
