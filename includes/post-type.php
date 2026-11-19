@@ -195,7 +195,7 @@ function wfd_layout_error( $layout ) {
 }
 
 /**
- * Checks a browser of a layout (spec/data-model.md, D48).
+ * Checks a browser of a layout (spec/data-model.md, D55).
  *
  * @param array $browser The decoded browser.
  * @param array $ids     Ids already used.
@@ -218,11 +218,11 @@ function wfd_browser_error( $browser, $ids ) {
     if ( ! wfd_is_number( $browser['x'] ) || ! wfd_is_number( $browser['y'] ) ) {
         return __( 'The browser x and y must be numbers.', 'wordpress-for-designers' );
     }
-    // The window is 200 board units tall at least (D49).
+    // The window is 200 board units tall at least (D56).
     if ( ! wfd_is_number( $browser['height'] ) || $browser['height'] < 200 ) {
         return __( 'The browser height must be a number of 200 or more.', 'wordpress-for-designers' );
     }
-    // What it shows (D50).
+    // What it shows (D57).
     if ( ! in_array( $browser['shows'], array( 'unsaved', 'saved' ), true ) ) {
         return __( 'The browser shows must be unsaved or saved.', 'wordpress-for-designers' );
     }

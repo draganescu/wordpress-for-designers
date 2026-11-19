@@ -47,7 +47,7 @@ export function useInserterActions( {
     const dragged = useRef( null );
     const [ dropTarget, setDropTarget ] = useState( null );
 
-    // A browser being browsed has no content to insert into (D48).
+    // A browser being browsed has no content to insert into (D55).
     const isEditing = useCallback( () => {
         const board = registry.select( boardStore );
         const live = board.getArtboard( board.getLiveId() );

@@ -12,7 +12,7 @@ Part names in this file are fixed. Use them for the top-level folders under `src
 | Board post type | `wfd_board`, as in `data-model.md`, with server-side validation of the layout JSON. | `[U]` |
 | Editor bootstrap | Passes block editor settings, block definitions and block assets to the app using the same public PHP functions wp-admin's editor uses (`get_block_editor_settings`, `WP_Block_Editor_Context`, REST preloading). Loaded once and shared by every editor. | `[B6]` `[V]` |
 | Lock route | REST route `wfd/v1/lock` for pages and patterns: check, take, refresh and release the WordPress post lock with `wp_check_post_lock` and `wp_set_post_lock`. Requires `edit_theme_options` and permission to edit the post. | `[U]` |
-| Preview route | REST route `wfd/v1/preview` (D50): takes the board's unsaved changes and keeps them for the current user, or removes them when the list is empty. Requires `edit_theme_options`. | `[U]` |
+| Preview route | REST route `wfd/v1/preview` (D57): takes the board's unsaved changes and keeps them for the current user, or removes them when the list is empty. Requires `edit_theme_options`. | `[U]` |
 | Preview layer | On a front-end request with `wfd_preview=1` from a user with `edit_theme_options`, puts that user's kept changes in place of the saved content through public filters: posts and parts found by queries, block templates and parts, synced patterns and navigation menus as they render, global styles, and the site's title, tagline and logo. The page is sent with no-cache headers. | `[U]` |
 | Uninstall | Deletes all `wfd_board` posts. Site content is untouched. | `[N]` |
 
@@ -48,7 +48,7 @@ Part names in this file are fixed. Use them for the top-level folders under `src
 Rules:
 
 - At most 12 Previews are mounted; the nearest to the viewport centre win. `[U]`
-- A browser (D48) is not tiered: far from view (the Ghost rule) it is a sized box; otherwise its page is loaded, at every zoom. It is not counted among the 12 and has no Snapshot. `[U]`
+- A browser (D55) is not tiered: far from view (the Ghost rule) it is a sized box; otherwise its page is loaded, at every zoom. It is not counted among the 12 and has no Snapshot. `[U]`
 - Up to 2 editors that were Live most recently stay mounted but inactive, so returning to them is immediate. They do not fill chrome slots and hold no lock. `[B5]` `[U]`
 - Mounting goes through the queue: nearest to the viewport centre first, one mount per idle slice. `[B5]`
 - Thresholds use hysteresis so tiers do not flicker: an artboard changes tier at the stated zoom going down, and at the stated zoom plus 2 percentage points going up. `[B5]` for hysteresis, `[N]` for the 2 points
@@ -66,7 +66,7 @@ Rules:
 | Nothing selected | Artboards by kind | Styles | Document bar shows the board name | `[U]` `[D:Overview]` |
 | An artboard selected | Artboards by kind, its row highlighted | Artboard settings | Same | `[U]` `[D:Selected]` |
 | An artboard in edit | List view of its blocks when the list view toggle is on (on by default when entering edit); otherwise closed | Tabs: the entity (for example "Template part") and "Block" | Block toolbar shown; document bar shows the artboard's name and kind with a back arrow | `[U]` `[D:Main]` |
-| A browser browsing (D48) | Artboards by kind, its row highlighted | Its settings, without "Browse" | Document bar shows "{address} · Browser" with a back arrow | `[U]` |
+| A browser browsing (D55) | Artboards by kind, its row highlighted | Its settings, without "Browse" | Document bar shows "{address} · Browser" with a back arrow | `[U]` |
 | Inserter toggle on (any state) | Inserter, replacing whatever was there | Unchanged | Toggle shows a close icon | `[U]` `[D:Library]` |
 
 The list view toggle is disabled when no artboard is in edit. `[N]`
@@ -129,16 +129,16 @@ Delete and Backspace do the same with focus on a row of the left panel's artboar
 
 A selected note counts as a selected artboard for Shift + 2, the arrow keys and Delete; Delete takes a note off the board with no confirmation. Enter on one selected note edits its text, and Esc while its text is edited ends that and keeps the note selected. Tab and Shift + Tab step through artboards only. While the note tool is armed, Esc switches it off (D46). `[U]`
 
-A browser (D48) counts as an artboard for every key above; Enter starts browsing. While browsing, keys typed in the page go to the page, except Esc, which ends browsing and keeps the browser selected. Cmd/Ctrl + Z acts on the layout history while the focus is on the board. `[U]`
+A browser (D55) counts as an artboard for every key above; Enter starts browsing. While browsing, keys typed in the page go to the page, except Esc, which ends browsing and keeps the browser selected. Cmd/Ctrl + Z acts on the layout history while the focus is on the board. `[U]`
 
 Tab order and the Shift + arrow step are `[N]`.
 
 ## Undo
 
 - Content history is core-data's undo stack. It is active while an artboard is Live. `[B8]`
-- Layout history lives in `board-store`: moves, tidying up (D45), device changes, browser resizes (D49), adds and removals from the board, and every change to a note (D46). It lasts for the session. Removing an artboard with the "also delete" box checked is not undoable and clears nothing else. `[B8]` `[U]` `[N]`
+- Layout history lives in `board-store`: moves, tidying up (D45), device changes, browser resizes (D56), adds and removals from the board, and every change to a note (D46). It lasts for the session. Removing an artboard with the "also delete" box checked is not undoable and clears nothing else. `[B8]` `[U]` `[N]`
 - The header's Undo and Redo act on the active history. Their tooltips name the action and scope, in the form "Undo {action}, in {artboard name}" and "Undo {action}, on the board" (the same with "Redo"). `[U]` `[D:Main]` `[D:Overview]`
-- Action names. On the board: "move artboard", "tidy up", "change device", "add artboard", "remove artboard"; for browsers "resize browser" (D49); for notes "add note", "move note", "edit note", "change note color", "remove note". Moving or removing artboards and notes together is named for artboards. Editing a note's text, from the moment it enters edit until it leaves, is one step. In an artboard the action is always "edit" ("Undo edit, in Header"); WordPress keeps no name for a content change, so the "block spacing" in `images/Main.png` is not built. `[U]`
+- Action names. On the board: "move artboard", "tidy up", "change device", "add artboard", "remove artboard"; for browsers "resize browser" (D56); for notes "add note", "move note", "edit note", "change note color", "remove note". Moving or removing artboards and notes together is named for artboards. Editing a note's text, from the moment it enters edit until it leaves, is one step. In an artboard the action is always "edit" ("Undo edit, in Header"); WordPress keeps no name for a content change, so the "block spacing" in `images/Main.png` is not built. `[U]`
 
 ## Styles
 

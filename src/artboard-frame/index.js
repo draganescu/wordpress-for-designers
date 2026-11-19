@@ -89,7 +89,7 @@ export function ArtboardError( { kind, onRetry } ) {
 }
 
 /**
- * The address field of a browser being browsed (D48).
+ * The address field of a browser being browsed (D55).
  *
  * @param {Object}   props
  * @param {string}   props.path      The address the browser is on.
@@ -245,7 +245,7 @@ function Label( {
  * @param {Object}   props.frameProps     Pointer handlers for the frame.
  * @param {boolean}  props.hasError       Whether the error state is shown.
  * @param {boolean}  props.isStale        Whether its Snapshot is out of date.
- * @param {Function} props.onAddress      A browser's typed address (D48).
+ * @param {Function} props.onAddress      A browser's typed address (D55).
  * @param {Function} props.onReload       Reloads a browser's page.
  * @param {Element}  props.children       The tier content.
  */
@@ -306,7 +306,7 @@ export function ArtboardFrame( {
                 </FrameElementContext.Provider>
             </div>
             { artboard.kind === 'browser' && ! isLive && (
-                // The window's bottom edge resizes it (D49).
+                // The window's bottom edge resizes it (D56).
                 <div className="wfd-artboard__resize" data-wfd-resize />
             ) }
         </div>

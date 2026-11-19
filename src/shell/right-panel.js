@@ -149,7 +149,7 @@ export function ArtboardSettings( {
     onShowsChange,
 } ) {
     if ( artboard.kind === 'browser' ) {
-        // A browser browses instead of editing, and reloads (D48).
+        // A browser browses instead of editing, and reloads (D55).
         return (
             <div className="wfd-artboard-settings" data-wfd-panel="settings">
                 <EntityCard artboard={ artboard } info={ info } />

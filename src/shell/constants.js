@@ -46,7 +46,7 @@ export const KINDS = {
         icon: image,
         postType: 'attachment',
     },
-    // A window onto the site's front end (D48): it has a device and an
+    // A window onto the site's front end (D55): it has a device and an
     // address, and no entity.
     browser: {
         label: __( 'Browser', 'wordpress-for-designers' ),
@@ -57,12 +57,12 @@ export const KINDS = {
 };
 
 /**
- * Height of a new browser's window, in board units (D48).
+ * Height of a new browser's window, in board units (D55).
  */
 export const BROWSER_HEIGHT = 900;
 
 /**
- * Lowest a browser's window can be resized to, in board units (D49).
+ * Lowest a browser's window can be resized to, in board units (D56).
  */
 export const MIN_BROWSER_HEIGHT = 200;
 

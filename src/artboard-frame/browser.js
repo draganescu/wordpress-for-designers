@@ -1,6 +1,6 @@
 /**
- * A browser on the board (D48): the site's front end in a window at the
- * device width, as visitors see it, as tall as the browser's height (D49).
+ * A browser on the board (D55): the site's front end in a window at the
+ * device width, as visitors see it, as tall as the browser's height (D56).
  */
 import { useEffect, useRef, useState } from '@wordpress/element';
 import { Skeleton } from '@wordpress/ui';
@@ -13,7 +13,7 @@ const PAGE_CSS =
 
 /**
  * The query argument that asks for a page with the board's unsaved changes
- * (D50).
+ * (D57).
  */
 const PREVIEW_ARG = 'wfd_preview';
 
@@ -66,7 +66,7 @@ export function normalizeAddress( typed ) {
  *
  * @param {string}  path      The address, starting with a slash.
  * @param {string}  homeUrl   The site's home URL, ending with a slash.
- * @param {boolean} isPreview Whether it asks for unsaved changes (D50).
+ * @param {boolean} isPreview Whether it asks for unsaved changes (D57).
  * @return {string} The URL.
  */
 export function urlOf( path, homeUrl, isPreview = false ) {
@@ -78,7 +78,7 @@ export function urlOf( path, homeUrl, isPreview = false ) {
  * @param {string}   props.path        The address to show.
  * @param {string}   props.homeUrl     The site's home URL.
  * @param {boolean}  props.isBrowsing  Whether the page takes input.
- * @param {boolean}  props.isPreview   Whether it shows unsaved changes (D50).
+ * @param {boolean}  props.isPreview   Whether it shows unsaved changes (D57).
  * @param {number}   props.reloadToken Reloads the page when it changes.
  * @param {Function} props.onNavigate  Called with the address the page is on.
  * @param {Function} props.onEscape    Called when Esc is pressed in the page.
@@ -137,7 +137,7 @@ export function ArtboardBrowser( {
     }, [ reloadToken ] );
 
     // Outside browsing the page takes no input; it stays where it was
-    // scrolled to (D49).
+    // scrolled to (D56).
     useEffect( () => {
         if ( isBrowsing ) {
             iframeRef.current.removeAttribute( 'inert' );

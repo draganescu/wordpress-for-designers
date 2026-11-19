@@ -303,7 +303,7 @@ export function useReview() {
             }
         }
         if ( hasSaved ) {
-            // Browsers show the saved site (D48).
+            // Browsers show the saved site (D55).
             board.bumpSiteVersion();
         }
         setFailed( nextFailed );

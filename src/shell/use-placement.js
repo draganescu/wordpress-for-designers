@@ -29,7 +29,7 @@ const NAMES = {
     pattern: __( 'Untitled pattern', 'wordpress-for-designers' ),
     template: __( 'Untitled template', 'wordpress-for-designers' ),
     'template-part': __( 'Untitled part', 'wordpress-for-designers' ),
-    // A browser is named by its address, and starts on the homepage (D48).
+    // A browser is named by its address, and starts on the homepage (D55).
     browser: '/',
 };
 
@@ -155,7 +155,7 @@ export function usePlacement( { theme, enterEdit } ) {
             const chosen = placement;
             setPlacement( null );
             if ( chosen.kind === 'browser' ) {
-                // Selected, not browsing (D48).
+                // Selected, not browsing (D55).
                 const browser = {
                     id: window.crypto.randomUUID(),
                     kind: 'browser',

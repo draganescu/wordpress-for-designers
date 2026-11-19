@@ -1,6 +1,6 @@
 /**
  * Sends the board's unsaved changes to the preview route while any browser
- * shows unsaved changes (D50), about one second after the last change.
+ * shows unsaved changes (D57), about one second after the last change.
  */
 import apiFetch from '@wordpress/api-fetch';
 import { useEffect } from '@wordpress/element';

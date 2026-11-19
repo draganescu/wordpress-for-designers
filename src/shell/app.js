@@ -262,7 +262,7 @@ export function App() {
         setBrowserPath,
         setBrowserShows,
     } = useDispatch( boardStore );
-    // Reloads asked for each browser (D48), by id.
+    // Reloads asked for each browser (D55), by id.
     const [ reloads, setReloads ] = useState( {} );
     const reload = ( id ) =>
         setReloads( ( current ) => ( {
@@ -545,7 +545,7 @@ export function App() {
     }
     const renderVersion = versionRef.current.value;
 
-    // A browser stops browsing when it is no longer selected (D38, D48), for
+    // A browser stops browsing when it is no longer selected (D38, D55), for
     // example when the inserter places something.
     const browsingId = artboards.find(
         ( artboard ) => artboard.id === liveId && artboard.kind === 'browser'
@@ -564,7 +564,7 @@ export function App() {
 
     const selected = artboards.find( ( a ) => a.id === selectedId );
     const live = artboards.find( ( a ) => a.id === liveId );
-    // A browser being browsed counts as in edit, but has no blocks (D48).
+    // A browser being browsed counts as in edit, but has no blocks (D55).
     const isBrowsing = live?.kind === 'browser';
     const liveEditor = isBrowsing ? null : live;
     const removing = artboards.find( ( a ) => a.id === removingId );
@@ -970,7 +970,7 @@ export function App() {
                                     : tiers.get( artboard.id ) || 'ghost';
                                 if ( isBrowser ) {
                                     // Loaded whenever it is near the view
-                                    // (D48).
+                                    // (D55).
                                     if ( artboard.id === liveId ) {
                                         tier = 'live';
                                     } else if (
@@ -999,7 +999,7 @@ export function App() {
                                     );
                                 } else if ( isBrowser && tier !== 'ghost' ) {
                                     // Unsaved changes are shown once they have
-                                    // been sent (D50); until then, a Skeleton.
+                                    // been sent (D57); until then, a Skeleton.
                                     const isPreview =
                                         artboard.shows === 'unsaved';
                                     content =

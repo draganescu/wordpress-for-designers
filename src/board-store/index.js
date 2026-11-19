@@ -31,10 +31,10 @@ const DEFAULT_STATE = {
     past: [],
     future: [],
     removingId: null,
-    // Goes up each time Review has saved something; browsers reload (D48).
+    // Goes up each time Review has saved something; browsers reload (D55).
     siteVersion: 0,
     // Goes up each time the unsaved changes have been sent for browsers to
-    // preview (D50); 0 until the first send.
+    // preview (D57); 0 until the first send.
     previewVersion: 0,
 };
 
@@ -48,7 +48,7 @@ const DEFAULT_STATE = {
 function restore( snapshot, current ) {
     const heights = new Map( current.map( ( a ) => [ a.id, a.height ] ) );
     return snapshot.map( ( artboard ) =>
-        // A browser's height is set by hand, not measured (D49).
+        // A browser's height is set by hand, not measured (D56).
         artboard.kind !== 'browser' && heights.has( artboard.id )
             ? { ...artboard, height: heights.get( artboard.id ) }
             : artboard
@@ -383,7 +383,7 @@ const actions = {
         },
 
     /**
-     * Keeps the address a browser is on, outside the history (D48).
+     * Keeps the address a browser is on, outside the history (D55).
      *
      * @param {string} id   The browser.
      * @param {string} path The address, relative to the site's home.
@@ -408,7 +408,7 @@ const actions = {
             } );
         },
     /**
-     * Changes a browser's window height, as one step of the history (D49).
+     * Changes a browser's window height, as one step of the history (D56).
      *
      * @param {string} id     The browser.
      * @param {number} height The height in board units.
@@ -422,7 +422,7 @@ const actions = {
                 : artboards
         ),
     /**
-     * Chooses what a browser shows, outside the history (D50).
+     * Chooses what a browser shows, outside the history (D57).
      *
      * @param {string} id    The browser.
      * @param {string} shows 'unsaved' or 'saved'.

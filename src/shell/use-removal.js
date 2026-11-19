@@ -23,7 +23,7 @@ export function removalInfo( artboard ) {
         !! artboard.record?.has_theme_file;
     return {
         // A media object is only ever taken off the board.
-        // So is a browser (D48).
+        // So is a browser (D55).
         isBoardOnly: artboard.kind === 'media' || artboard.kind === 'browser',
         isDraft: !! artboard.draft,
         isThemeItem,

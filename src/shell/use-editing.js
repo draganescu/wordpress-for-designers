@@ -146,7 +146,7 @@ export function useEditing( { viewport, areaRef, getArtboards, widthOf } ) {
                         : `[data-wfd-artboard="${ id }"] iframe[name="editor-canvas"]`
                 );
                 if (
-                    // A browser's page takes the keys while browsing (D48).
+                    // A browser's page takes the keys while browsing (D55).
                     ( artboard.kind === 'browser' && iframe ) ||
                     iframe?.contentDocument?.querySelector(
                         '.is-root-container'
@@ -205,7 +205,7 @@ export function useEditing( { viewport, areaRef, getArtboards, widthOf } ) {
                 if (
                     board.getArtboard( board.getLiveId() )?.kind === 'browser'
                 ) {
-                    // A browser has no content history (D48).
+                    // A browser has no content history (D55).
                     if ( event.shiftKey ) {
                         registry.dispatch( boardStore ).redoLayout();
                     } else {

@@ -22,7 +22,7 @@ function intersects( a, b ) {
 
 /**
  * Whether a rectangle is within one viewport width or height of the visible
- * area: the opposite of the Ghost rule. Browsers use it alone (D48).
+ * area: the opposite of the Ghost rule. Browsers use it alone (D55).
  *
  * @param {Object} rect     The rectangle in board units.
  * @param {Object} viewport The settled viewport.

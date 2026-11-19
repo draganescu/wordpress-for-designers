@@ -271,7 +271,7 @@ export function useCanvasInteractions( {
                 event.target.closest( '[data-wfd-resize]' ) &&
                 board().getLiveId() !== id
             ) {
-                // The bottom edge of a browser's window (D49).
+                // The bottom edge of a browser's window (D56).
                 if ( board().getLiveId() ) {
                     latest.current.onLeaveEdit();
                 }

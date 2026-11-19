@@ -1,6 +1,6 @@
 <?php
 /**
- * The preview layer (D50): the board's unsaved changes, kept per user, put in
+ * The preview layer (D57): the board's unsaved changes, kept per user, put in
  * place of the saved content on front-end pages asked for with wfd_preview=1.
  *
  * @package WordPressForDesigners
