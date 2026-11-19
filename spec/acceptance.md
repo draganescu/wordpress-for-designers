@@ -83,7 +83,7 @@ Unless a criterion says otherwise, the fixture in `architecture.md` is loaded an
 
 ## UNDO
 
-- AC-UNDO-01 In edit, Undo reverts the last content change and its tooltip reads "Undo {action}, in {artboard name}". `[U]`
+- AC-UNDO-01 In edit, Undo reverts the last content change and its tooltip reads "Undo edit, in {artboard name}". `[U]`
 - AC-UNDO-02 On the board, Undo reverts the last layout change and its tooltip reads "Undo {action}, on the board". `[U]`
 - AC-UNDO-03 Layout undo does not revert content, and content undo does not move artboards. `[B8]`
 

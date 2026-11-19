@@ -4,7 +4,7 @@
 
 | Kind | WordPress entity (`kind`, `name`) | Rendered as | Draft state | Source |
 |---|---|---|---|---|
-| Page | `postType`, `page` | Page content inside its template; the template around it is shown locked | Draft until published | `[B3]` `[U]` |
+| Page | `postType`, `page` | Page content inside its template; the template around it is shown locked. The page is given to the template's blocks through `BlockContextProvider` (`postId`, `postType`). | Draft until published | `[B3]` `[U]` |
 | Template | `postType`, `wp_template` | Whole template with its parts inlined | None. Saving is live | `[B3]` `[U]` |
 | Template part | `postType`, `wp_template_part` | The part alone | None. Saving is live | `[B3]` `[U]` |
 | Pattern | `postType`, `wp_block` | The pattern alone | Draft until published | `[B3]` `[U]` |
