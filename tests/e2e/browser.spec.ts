@@ -599,6 +599,24 @@ test.describe( 'BROWSER', () => {
         await unsaved.locator( '.wp-block-site-title a' ).first().click();
         await expect( address( page ) ).toHaveValue( '/' );
         expect( await pageUrl( page ) ).toContain( 'wfd_preview=' );
+        // A page that arrives without the argument, as after a redirect or
+        // a script, is asked for again with it.
+        await page.evaluate(
+            ( [ selector, url ] ) => {
+                (
+                    document.querySelector( selector ) as HTMLIFrameElement
+                 ).contentWindow!.location.href = url;
+            },
+            [
+                `[data-wfd-artboard="${ BROWSER_ID }"] iframe.wfd-browser`,
+                new URL( path.slice( 1 ), new URL( '/', previewUrl ) ).href,
+            ]
+        );
+        await expect( address( page ) ).toHaveValue( path );
+        expect( await pageUrl( page ) ).toContain( 'wfd_preview=' );
+        await address( page ).fill( '/' );
+        await address( page ).press( 'Enter' );
+        await expect( address( page ) ).toHaveValue( '/' );
         await address( page ).fill( path );
         await address( page ).press( 'Enter' );
         await expect(

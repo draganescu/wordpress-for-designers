@@ -26,6 +26,10 @@ const PREVIEW_ARG = 'wfd_preview';
  */
 function withPreview( href, preview ) {
     const url = new URL( href );
+    if ( ( url.searchParams.get( PREVIEW_ARG ) ?? null ) === preview ) {
+        // Left exactly as it is.
+        return href;
+    }
     if ( preview ) {
         url.searchParams.set( PREVIEW_ARG, preview );
     } else {
@@ -89,6 +93,111 @@ export function urlOf( path, homeUrl, preview = null ) {
 }
 
 /**
+ * The listeners of a browser's page. Each document the window loads gets
+ * them as soon as it is there, before it has loaded, so that a link pressed
+ * early is handled like any other.
+ *
+ * @param {Object} iframeRef Ref of the iframe.
+ * @param {Object} latest    Ref of the component's latest props.
+ * @return {Object} `prepare( doc )`, `awaitDocument()` and `stop()`.
+ */
+function createPageListeners( iframeRef, latest ) {
+    // The document that has the listeners, and the frame request of the
+    // wait for the next one.
+    let prepared = null;
+    let waiting = null;
+
+    function prepare( doc ) {
+        if ( prepared === doc ) {
+            return;
+        }
+        prepared = doc;
+        const frame = iframeRef.current;
+        const addStyle = () => {
+            const style = doc.createElement( 'style' );
+            style.textContent = PAGE_CSS;
+            doc.head?.appendChild( style );
+        };
+        if ( doc.readyState === 'loading' ) {
+            doc.addEventListener( 'DOMContentLoaded', addStyle );
+        } else {
+            addStyle();
+        }
+        doc.addEventListener(
+            'click',
+            ( event ) => {
+                const { homeUrl, preview } = latest.current;
+                // A link to another site does nothing.
+                const link = event.target.closest?.( 'a[href]' );
+                if ( link && addressOf( link.href, homeUrl ) === null ) {
+                    event.preventDefault();
+                } else if ( link && preview ) {
+                    // A link followed keeps showing unsaved changes, with
+                    // no second request.
+                    link.href = withPreview( link.href, preview );
+                }
+            },
+            true
+        );
+        doc.addEventListener( 'keydown', ( event ) => {
+            if ( event.key === 'Escape' && ! event.defaultPrevented ) {
+                latest.current.onEscape();
+            }
+        } );
+        doc.addEventListener(
+            'wheel',
+            ( event ) => {
+                // Cmd/Ctrl + wheel zooms the board; the plain wheel scrolls
+                // the page.
+                if ( event.ctrlKey || event.metaKey ) {
+                    latest.current.onWheel( event, frame );
+                }
+            },
+            { passive: false }
+        );
+        doc.defaultView.addEventListener( 'pagehide', awaitDocument );
+    }
+
+    function awaitDocument() {
+        const view = iframeRef.current?.ownerDocument.defaultView;
+        if ( ! view || waiting !== null ) {
+            return;
+        }
+        const since = Date.now();
+        const look = () => {
+            waiting = null;
+            let doc = null;
+            try {
+                doc = iframeRef.current?.contentDocument;
+                if ( doc?.location.href === 'about:blank' ) {
+                    doc = null;
+                }
+            } catch {
+                doc = null;
+            }
+            if ( doc && doc !== prepared ) {
+                prepare( doc );
+            } else if ( iframeRef.current && Date.now() - since < 10000 ) {
+                // A page slower than that gets them when it has loaded.
+                waiting = view.requestAnimationFrame( look );
+            }
+        };
+        waiting = view.requestAnimationFrame( look );
+    }
+
+    function stop() {
+        if ( waiting !== null ) {
+            iframeRef.current?.ownerDocument.defaultView.cancelAnimationFrame(
+                waiting
+            );
+            waiting = null;
+        }
+    }
+
+    return { prepare, awaitDocument, stop };
+}
+
+/**
  * @param {Object}   props
  * @param {string}   props.path        The address to show.
  * @param {string}   props.homeUrl     The site's home URL.
@@ -121,6 +230,9 @@ export function ArtboardBrowser( {
     // Whether the page has been sent back once from a page that is off the
     // site or cannot be read.
     const hasGoneBack = useRef( false );
+    // The address asked for again because it came without the preview
+    // argument, so that it is asked for again only once.
+    const askedAgain = useRef( null );
     const latest = useRef( {} );
     latest.current = {
         onNavigate,
@@ -130,6 +242,13 @@ export function ArtboardBrowser( {
         preview,
         path,
     };
+    const [ listeners ] = useState( () =>
+        createPageListeners( iframeRef, latest )
+    );
+    useEffect( () => {
+        listeners.awaitDocument();
+        return listeners.stop;
+    }, [ listeners ] );
 
     // A new address from outside (typed in the address field) is gone to.
     useEffect( () => {
@@ -158,7 +277,14 @@ export function ArtboardBrowser( {
             const view = frame.contentWindow;
             // A reload keeps the page where it was scrolled to.
             scrollBack.current = { x: view.scrollX, y: view.scrollY };
-            view.location.reload();
+            const href = view.location.href;
+            const wanted = withPreview( href, latest.current.preview );
+            if ( wanted === href ) {
+                view.location.reload();
+            } else {
+                view.location.replace( wanted );
+            }
+            listeners.awaitDocument();
         } catch {
             // The page cannot be read: its address is asked for again.
             frame.src = urlOf(
@@ -167,7 +293,7 @@ export function ArtboardBrowser( {
                 latest.current.preview
             );
         }
-    }, [ reloadToken ] );
+    }, [ reloadToken, listeners ] );
 
     // Outside browsing the page takes no input; it stays where it was
     // scrolled to (D56).
@@ -180,8 +306,9 @@ export function ArtboardBrowser( {
     }, [ isBrowsing ] );
 
     function onLoad() {
+        listeners.stop();
         const frame = iframeRef.current;
-        const { homeUrl: home } = latest.current;
+        const { homeUrl: home, preview: value } = latest.current;
         let doc;
         let href;
         try {
@@ -200,14 +327,24 @@ export function ArtboardBrowser( {
                 return;
             }
             hasGoneBack.current = true;
-            frame.src = urlOf(
-                current.current ?? '/',
-                home,
-                latest.current.preview
-            );
+            frame.src = urlOf( current.current ?? '/', home, value );
+            listeners.awaitDocument();
             return;
         }
         hasGoneBack.current = false;
+        listeners.prepare( doc );
+        const wanted = withPreview( href, value );
+        if ( wanted !== href && askedAgain.current !== address ) {
+            // The page came without the preview argument, or with an old
+            // one (a form, a redirect, a script): it is asked for again
+            // with it, once.
+            askedAgain.current = address;
+            frame.contentWindow.location.replace( wanted );
+            return;
+        }
+        if ( wanted === href ) {
+            askedAgain.current = null;
+        }
         current.current = address;
         setLoaded( true );
         if ( scrollBack.current ) {
@@ -217,60 +354,6 @@ export function ArtboardBrowser( {
             );
             scrollBack.current = null;
         }
-        const style = doc.createElement( 'style' );
-        style.textContent = PAGE_CSS;
-        doc.head?.appendChild( style );
-        doc.addEventListener(
-            'click',
-            ( event ) => {
-                // A link to another site does nothing.
-                const link = event.target.closest?.( 'a[href]' );
-                if ( link && addressOf( link.href, home ) === null ) {
-                    event.preventDefault();
-                } else if ( link && latest.current.preview ) {
-                    // A link followed keeps showing unsaved changes.
-                    link.href = withPreview(
-                        link.href,
-                        latest.current.preview
-                    );
-                }
-            },
-            true
-        );
-        if ( preview ) {
-            doc.addEventListener(
-                'submit',
-                ( event ) => {
-                    const form = event.target;
-                    if (
-                        ! form.querySelector?.( `[name="${ PREVIEW_ARG }"]` )
-                    ) {
-                        const field = doc.createElement( 'input' );
-                        field.type = 'hidden';
-                        field.name = PREVIEW_ARG;
-                        field.value = latest.current.preview;
-                        form.appendChild( field );
-                    }
-                },
-                true
-            );
-        }
-        doc.addEventListener( 'keydown', ( event ) => {
-            if ( event.key === 'Escape' && ! event.defaultPrevented ) {
-                latest.current.onEscape();
-            }
-        } );
-        doc.addEventListener(
-            'wheel',
-            ( event ) => {
-                // Cmd/Ctrl + wheel zooms the board; the plain wheel scrolls
-                // the page.
-                if ( event.ctrlKey || event.metaKey ) {
-                    latest.current.onWheel( event, frame );
-                }
-            },
-            { passive: false }
-        );
         latest.current.onNavigate( address );
     }
 
