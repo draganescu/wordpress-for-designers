@@ -22,6 +22,12 @@ env:
     ROUNDS: 3
     RESULTS: ${{ github.workspace }}/results
     PERF_APPEND: 1
+    # How many times slower the page's main thread is made for the timing
+    # tests. The runner is already about 1.6 times slower than a recent
+    # laptop. At 4 here the frame indicators were at their worst value on
+    # every run, and a board of 30 artboards came close to never finishing
+    # (docs/performance.md, "Things to know").
+    PERF_CPU_THROTTLE: 2
 
 jobs:
     perf:

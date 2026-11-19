@@ -25,7 +25,7 @@ The tests are in two groups, by tag:
 The report is in the job summary:
 
 - **Over budget** fails the job. A budgeted indicator that was not measured also fails it.
-- **Changes worth a look** lists what moved: a count by 2% or more, a size by 5% or more, a timing by 10% or more and outside the range the base was seen in. This does not fail the job.
+- **Changes worth a look** lists what moved: a count by 2% or more, a size by 5% or more, a timing by 10% or more and outside the range the base was seen in. Indicators that vary between runs of the same code need more: 8% for the counts taken while a board opens, 25% for the memory differences. This does not fail the job.
 - **Every indicator** is the full table.
 
 The results files are uploaded as the `perf-results` artifact for 30 days.
@@ -58,7 +58,7 @@ A CI runner has no graphics chip: Chromium draws in software there. The frame, r
 PERF_CPU_THROTTLE=1 npm run test:perf -- gestures.spec.ts --headed
 ```
 
-`PERF_CPU_THROTTLE` is how many times slower the page's main thread is made for the timing tests. It is 4 by default, which on a CI runner stands for an older laptop.
+`PERF_CPU_THROTTLE` is how many times slower the page's main thread is made for the timing tests. It is 4 by default. `perf.yml` sets 2, because the runner is itself about 1.6 times slower than a recent laptop.
 
 ## The indicators
 
@@ -126,6 +126,8 @@ A board of 30 artboards with twelve Previews in view.
 
 - **A board opens fitted.** For the fixture that is 11% zoom, so every artboard is a Snapshot. Tests that need Previews store a viewport first with `openBoardAt`.
 - **`settle()` does not use Playwright's "networkidle".** Two `OPTIONS` requests on the board never report as finished to Playwright, so it would wait for ever. `settle()` waits for the render counter, the resource count and the iframe count to stop changing.
+- **Do not poll every frame while artboards mount.** The app mounts Previews and makes frozen copies in the main thread's idle time (`@wordpress/priority-queue`). A check that runs on every animation frame asks for a frame every 16 ms, and on a slow machine that leaves no idle time: the first CI run timed out this way. `drawn()` and the open test check on an interval; `timeUntil` takes an interval as its last argument for the same reason.
+- **The app itself has this limit.** With the main thread slowed 12 times here, a board of 30 artboards had shown 21 of them after four minutes; at 7 times it took 44 seconds. On a machine slow enough to have no idle time, artboards mount very slowly.
 - **No retries.** A retried test would record its numbers twice.
 - **Budgets were set on macOS.** The memory ceilings in particular may sit differently on the Linux runner; check them against the first CI run.
 - **Base is measured with head's tests.** If a new test needs something base does not have, base's run of it fails, its indicators are missing from the comparison, and the job goes on.

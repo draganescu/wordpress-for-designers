@@ -170,14 +170,17 @@ test.describe( 'Gestures', { tag: '@timing' }, () => {
             rasters.reduce( ( sum, event ) => sum + event.dur, 0 ) / 1000,
             'ms'
         );
-        record(
-            testInfo,
-            'zoom.sharpen',
-            Math.max(
-                0,
-                ...rasters.map( ( event ) => event.ts + event.dur - end )
-            ) / 1000,
-            'ms'
-        );
+        // The drawing that follows the zoom without a pause of a quarter of
+        // a second; anything later is not the zoom's.
+        let sharp = end;
+        for ( const event of rasters
+            .filter( ( raster ) => raster.ts + raster.dur > end )
+            .sort( ( a, b ) => a.ts - b.ts ) ) {
+            if ( event.ts - sharp > 250_000 ) {
+                break;
+            }
+            sharp = Math.max( sharp, event.ts + event.dur );
+        }
+        record( testInfo, 'zoom.sharpen', ( sharp - end ) / 1000, 'ms' );
     } );
 } );

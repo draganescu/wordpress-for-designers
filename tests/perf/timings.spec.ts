@@ -66,9 +66,10 @@ async function timeOpen(
                 state.last = performance.now();
                 state.first ||= state.last;
             }
-            requestAnimationFrame( tick );
         };
-        requestAnimationFrame( tick );
+        // Ten times a second, not every frame: asking for frames would
+        // take the idle time the app mounts artboards in.
+        window.setInterval( tick, 100 );
     } );
     await openBoard( page, fixture.boardId, size );
     await drawn( page );
@@ -275,7 +276,8 @@ test.describe( 'Timings', { tag: '@timing' }, () => {
                         )
                     );
                 },
-                null
+                null,
+                100
             ),
             'ms'
         );

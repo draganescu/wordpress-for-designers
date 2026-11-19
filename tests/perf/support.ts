@@ -12,9 +12,10 @@ import type { RequestUtils } from '@wordpress/e2e-test-utils-playwright';
 import { openBoard } from '../e2e/utils';
 
 /**
- * How much slower than the machine running the suite the page's main thread
- * is made for timing tests. 4 stands for an older laptop when run on a CI
- * runner; use 1 when the suite runs on the laptop itself.
+ * How many times slower than the machine running the suite the page's main
+ * thread is made for timing tests, to stand for an older laptop. The CI
+ * workflow sets 2, its runner being slow already; use 1 when the suite runs
+ * on the laptop itself.
  */
 export const CPU_THROTTLE = Number( process.env.PERF_CPU_THROTTLE ?? 4 );
 
@@ -230,27 +231,36 @@ export async function watchLongTasks( page: Page ) {
 
 /**
  * Times something from just before `action` until `done` first holds, in
- * the page's own clock. `done` runs in the page once per animation frame.
+ * the page's own clock.
  *
- * @param page   The page.
- * @param action What to do, from the test.
- * @param done   The condition, evaluated in the page.
- * @param arg    A value passed to `done`.
+ * `done` runs in the page once per animation frame by default, which is
+ * exact but asks the browser for a frame every 16 ms. The app mounts
+ * artboards in the main thread's idle time, and on a slow machine those
+ * frames leave none: the thing being timed then never finishes. Anything
+ * that takes seconds and goes through that queue must be given an interval
+ * in milliseconds instead.
+ *
+ * @param page    The page.
+ * @param action  What to do, from the test.
+ * @param done    The condition, evaluated in the page.
+ * @param arg     A value passed to `done`.
+ * @param polling How often to check: every frame, or every so many ms.
  */
 export async function timeUntil< T >(
     page: Page,
     action: () => Promise< unknown >,
     done: ( arg: T ) => boolean,
-    arg: T
+    arg: T,
+    polling: 'raf' | number = 'raf'
 ): Promise< number > {
     const start = await page.evaluate( () => performance.now() );
-    // The page's clock at the first frame on which the condition holds.
+    // The page's clock at the first check on which the condition holds.
     const end = page.waitForFunction(
         `(${ done.toString() })(${ JSON.stringify(
             arg
         ) }) ? performance.now() : 0`,
         undefined,
-        { polling: 'raf', timeout: 240_000 }
+        { polling, timeout: 240_000 }
     );
     await action();
     return ( ( await ( await end ).jsonValue() ) as number ) - start;
@@ -326,9 +336,11 @@ export function isDrawn(): boolean {
  * @param page The page.
  */
 export async function drawn( page: Page ) {
-    await page.waitForFunction( isDrawn, undefined, { timeout: 240_000 } );
+    // Checked four times a second, not every frame: see `timeUntil`.
+    const options = { polling: 250, timeout: 240_000 };
+    await page.waitForFunction( isDrawn, undefined, options );
     await settle( page );
-    await page.waitForFunction( isDrawn, undefined, { timeout: 240_000 } );
+    await page.waitForFunction( isDrawn, undefined, options );
 }
 
 /**

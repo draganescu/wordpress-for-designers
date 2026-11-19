@@ -76,8 +76,22 @@ function format( value, unit ) {
     return Math.round( value ).toLocaleString( 'en-US' );
 }
 
-// How much a figure of each unit must move before the report points at it.
+// How much a figure must move before the report points at it: by unit, and
+// more for the indicators known to vary between runs of the same code.
 const NOTABLE = { count: 0.02, bytes: 0.05, ms: 0.1 };
+const VARIES = [
+    // Counts while the board opens depend on the order requests come back.
+    [ /^(open|board-\d+)\.(renders|requests|rest-requests)$/, 0.08 ],
+    // Differences between process sizes.
+    [ /^(memory\.|leak\.(heap|tab-memory)$)/, 0.25 ],
+    // Counted, but from frame timings.
+    [ /\.frames-dropped(@2x)?$/, 0.25 ],
+];
+// A timing must also move by a frame: the latencies come in steps of 8 ms.
+const SMALLEST = { count: 0, bytes: 0, ms: 16 };
+const notableFrom = ( name, unit ) =>
+    VARIES.find( ( [ pattern ] ) => pattern.test( name ) )?.[ 1 ] ??
+    NOTABLE[ unit ];
 
 const head = read( headFile );
 const base = baseFile && fs.existsSync( baseFile ) ? read( baseFile ) : null;
@@ -96,15 +110,18 @@ for ( const [ name, { unit, values, list } ] of head ) {
         row.baseList = before.list;
         const change = row.base ? ( value - row.base ) / row.base : 0;
         row.change = change;
-        // A timing has to leave the range the other build was seen in.
+        // It has to leave the range the other build was seen in, which
+        // for a figure measured several times sets run-to-run variation
+        // aside.
         const isOutside =
-            unit !== 'ms' ||
             value > Math.max( ...before.values ) ||
             value < Math.min( ...before.values );
         row.isNotable =
-            ( row.base === 0
-                ? value !== 0
-                : Math.abs( change ) >= NOTABLE[ unit ] ) && isOutside;
+            ( row.base <= 0
+                ? value > 0 && row.base === 0
+                : Math.abs( change ) >= notableFrom( name, unit ) ) &&
+            Math.abs( value - row.base ) >= SMALLEST[ unit ] &&
+            isOutside;
     }
     if ( name in budgets ) {
         row.budget = budgets[ name ];
