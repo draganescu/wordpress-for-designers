@@ -267,19 +267,7 @@ export function App() {
         onEdit,
         onLeaveEdit: editing.leaveEdit,
         onTogglePanels: () => togglePanels.current?.(),
-        onRemoveMany: ( ids ) => {
-            // Several artboards leave the board at once, with no dialog
-            // and no change to the site. One never saved is dropped with
-            // its edits, as when it is removed alone.
-            const leaving = artboards.filter( ( a ) => ids.includes( a.id ) );
-            leaving
-                .filter( ( a ) => a.draft )
-                .forEach( ( a ) => remove( a, false ) );
-            removeArtboards(
-                leaving.filter( ( a ) => ! a.draft ).map( ( a ) => a.id ),
-                { undoable: true }
-            );
-        },
+        onRemoveMany: ( ids ) => removeMany( ids ),
         isReady: isLoaded,
     } );
 
@@ -368,6 +356,20 @@ export function App() {
         .filter( ( artboard ) => artboard.status === 'missing' )
         .map( ( artboard ) => artboard.id )
         .join( ',' );
+    // Several artboards leave the board at once, with no dialog and no
+    // change to the site. One never saved is dropped with its edits, as
+    // when it is removed alone.
+    const removeMany = ( ids ) => {
+        const leaving = artboards.filter( ( a ) => ids.includes( a.id ) );
+        leaving
+            .filter( ( a ) => a.draft )
+            .forEach( ( a ) => remove( a, false ) );
+        removeArtboards(
+            leaving.filter( ( a ) => ! a.draft ).map( ( a ) => a.id ),
+            { undoable: true }
+        );
+    };
+
     useEffect( () => {
         if ( missingIds ) {
             removeArtboards( missingIds.split( ',' ) );
@@ -577,6 +579,17 @@ export function App() {
                     }
                 } }
                 onEdit={ onEdit }
+                onRemove={ () => {
+                    // Delete on a row acts on the selection, as on the
+                    // board.
+                    if ( selectedIds.length === 1 ) {
+                        setRemovingId( selectedIds[ 0 ] );
+                    } else if ( selectedIds.length > 1 ) {
+                        removeMany( selectedIds );
+                        // The focused row may be gone.
+                        focusBoard();
+                    }
+                } }
                 addMenu={ addMenu }
             />
         );

@@ -8,8 +8,8 @@ The plugin is built through Milestone 12 of `spec/build-order.md`, plus the deci
 
 | Check | Result |
 |---|---|
-| Acceptance criteria in `spec/acceptance.md` | 113 |
-| End-to-end tests, one per criterion | 113, all passing in the last full run |
+| Acceptance criteria in `spec/acceptance.md` | 114 |
+| End-to-end tests, one per criterion | 114, all passing in the last full run |
 | `npm run lint` | Exits 0, no disabled lines |
 | Open questions waiting for the product owner | 22 (`spec/open-questions.md`) |
 | Browsers the suite runs in | Chromium only |

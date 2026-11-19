@@ -323,4 +323,35 @@ test.describe( 'DEL', () => {
             ).toHaveCount( 1 );
         }
     } );
+
+    test( 'AC-DEL-06 Delete with focus on a list row acts on the selection: the dialog for one, no dialog for several', async ( {
+        page,
+    } ) => {
+        const hero = artboardOf( fixture, 'pattern' );
+        const sign = artboardOf( fixture, 'pattern', 'desktop', 1 );
+        const heroRow = page.locator( `[data-wfd-row="${ hero.id }"]` );
+        const signRow = page.locator( `[data-wfd-row="${ sign.id }"]` );
+        const dialog = page.getByRole( 'alertdialog' );
+
+        // One selected: the click leaves the focus on the row.
+        await heroRow.click();
+        await expect( heroRow ).toBeFocused();
+        await page.keyboard.press( 'Delete' );
+        await expect( dialog ).toContainText( 'Remove Hero from this board?' );
+        await dialog.getByRole( 'button', { name: 'Cancel' } ).click();
+        await expect( dialog ).toHaveCount( 0 );
+        await expect( page.locator( '[data-wfd-artboard]' ) ).toHaveCount( 9 );
+
+        // Several selected: they all go, with no dialog.
+        await heroRow.click();
+        await signRow.click( { modifiers: [ 'ControlOrMeta' ] } );
+        await expect( signRow ).toBeFocused();
+        await page.keyboard.press( 'Backspace' );
+        await expect( page.locator( '[data-wfd-artboard]' ) ).toHaveCount( 7 );
+        await expect( dialog ).toHaveCount( 0 );
+        await expect( heroRow ).toHaveCount( 0 );
+        await expect( signRow ).toHaveCount( 0 );
+        await page.locator( '[data-wfd-control="H3"]' ).click();
+        await expect( page.locator( '[data-wfd-artboard]' ) ).toHaveCount( 9 );
+    } );
 } );

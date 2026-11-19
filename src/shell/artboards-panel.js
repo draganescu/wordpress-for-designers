@@ -51,6 +51,7 @@ export function ArtboardsPanel( {
     selectedIds,
     onSelect,
     onEdit,
+    onRemove,
     addMenu,
 } ) {
     const groups = groupArtboards( artboards );
@@ -92,6 +93,14 @@ export function ArtboardsPanel( {
                                 }
                                 onDoubleClick={ () => onEdit( artboard.id ) }
                                 onKeyDown={ ( event ) => {
+                                    if (
+                                        event.key === 'Delete' ||
+                                        event.key === 'Backspace'
+                                    ) {
+                                        event.preventDefault();
+                                        onRemove();
+                                        return;
+                                    }
                                     // A media object cannot be edited: the
                                     // key is left to the row's own click.
                                     if (
