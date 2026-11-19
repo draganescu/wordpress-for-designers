@@ -2,7 +2,7 @@
 
 ![Board: editing an artboard](images/Main.png)
 
-**State.** Header (template part, Desktop) is in edit at 100% (the image was drawn at 50%; the zoom in it is not binding, C18). Its Navigation block is selected. Front page, below it, is a Preview showing the same header.
+**State.** Header (template part, Desktop) is in edit at 50%, as drawn (C18, D37). Its Navigation block is selected. Front page, below it, is a Preview showing the same header.
 
 **Source.** [U]
 

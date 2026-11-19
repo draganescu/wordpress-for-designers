@@ -56,5 +56,5 @@ Use WordPress public functions only. The ones this plugin needs: `register_post_
 ## Known risks to settle in Milestone 0
 
 - `EntitiesSavedStates` comes from `@wordpress/editor` and must work without `EditorProvider`. Settled: it does (`spike-report.md`). `PostLockedModal` does not and was replaced by the plugin lock route and dialog (D31). `[U]`
-- Editing with block tools positioned correctly. Settled: correct only at 100% zoom, so editing happens at 100% (C18, D30). `[U]`
+- Editing with block tools positioned correctly. Settled: correct at 30% zoom and more with the structure and CSS in `spike-report.md`, "Editing below 100%" (C18, D37). `[U]`
 - A frozen Snapshot that keeps exact appearance with no React root. Outcome unknown.

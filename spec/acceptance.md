@@ -57,8 +57,8 @@ Unless a criterion says otherwise, the fixture in `architecture.md` is loaded an
 - AC-TIER-04 An artboard more than one viewport outside the visible area has tier `ghost` and contains no iframe. `[U]`
 - AC-TIER-05 Previews mount nearest-to-centre first. `[B5]`
 - AC-TIER-06 Below 20% zoom every non-Ghost artboard is `snapshot`; zooming back to 22% or more returns eligible ones to `preview`. `[U]`
-- AC-TIER-07 Double-clicking an artboard at 30% zoom ends with zoom at 100%, that artboard Live and its top-left corner at the top-left of the canvas area. `[U]`
-- AC-TIER-08 Changing zoom while an artboard is Live leaves edit; panning does not. `[B8]` `[U]`
+- AC-TIER-07 Double-clicking an artboard below 30% zoom ends with that artboard Live, the zoom set so its width fits the canvas area (between 30% and 100%) and its top-left corner at the top-left of the canvas area. At 30% zoom or more it enters edit without changing zoom or pan. `[U]`
+- AC-TIER-08 Zooming while an artboard is Live keeps it in edit at 30% or more; when the zoom settles below 30% edit ends and the artboard stays selected; panning does not leave edit. `[U]`
 - AC-TIER-09 After editing artboards A, B, C, D in turn, D is `live`, C and B are `warm`, A is not. `[U]`
 - AC-TIER-10 A `snapshot` artboard's frame contains no React root and triggers no store subscription callbacks when an entity changes. `[B5]`
 - AC-TIER-11 After a global style change, an artboard that was `snapshot` shows the new style when it next becomes `preview`. `[B5]`
@@ -83,6 +83,9 @@ Unless a criterion says otherwise, the fixture in `architecture.md` is loaded an
 - AC-EDIT-05 A page artboard shows its template around the content; template blocks cannot be edited from the page artboard. `[U]`
 - AC-EDIT-06 Entering edit on a page takes the post lock; leaving releases it. If another user holds the lock, the lock dialog appears and the artboard stays a Preview; Cancel leaves it a Preview; Take over takes the lock and enters edit. `[U]`
 - AC-EDIT-07 The back button, and Esc as in AC-KEY-03, leave edit. `[U]`
+- AC-EDIT-09 At 30%, 50% and 75% zoom the editor works as at 100%: a click puts the caret in the block under the pointer, the block toolbar is in the header at full size, and the add-block button, slash inserter and link popover sit at the block they belong to. `[U]` `[V]`
+- AC-EDIT-10 Deselecting ends edit: a click on empty board leaves edit and clears the selection; a click on another artboard leaves edit and selects that one. `[U]`
+- AC-EDIT-08 A page's "Template" select, in the artboard settings and in the Page tab, lists "Default template" and the site's custom templates; choosing one redraws the artboard with that template, lists the page in Review with "Template: changed", and saving stores it on the page. `[U]`
 
 ## UNDO
 
@@ -94,7 +97,7 @@ Unless a criterion says otherwise, the fixture in `architecture.md` is loaded an
 
 - AC-NEW-01 The Add artboard menu lists the four kinds with their descriptions; Template has the submenu described in `screens/AddArtboard.md`. `[U]`
 - AC-NEW-02 After choosing a kind, a placement ghost follows the pointer; Esc cancels and nothing is created. `[U]`
-- AC-NEW-03 Placing a Page creates a draft page titled "Untitled page"; placing a Pattern creates a draft synced pattern titled "Untitled pattern". `[U]`
+- AC-NEW-03 Placing a Page creates a draft page titled "Untitled page" whose template is the theme's `blank` template, or else its `page-no-title` template, when the theme has one; placing a Pattern creates a draft synced pattern titled "Untitled pattern". `[U]`
 - AC-NEW-04 Placing a Template or Template part creates no post until it is saved from Review, where it is listed as "New". `[U]`
 - AC-NEW-05 No control changes an artboard's kind. `[U]`
 - AC-NEW-06 A new template's first tab shows the caution notice about having no draft. `[U]`
@@ -112,13 +115,19 @@ Unless a criterion says otherwise, the fixture in `architecture.md` is loaded an
 
 - AC-INS-01 Blocks tab lists allowed blocks by category; clicking one inserts it at the insertion point of the artboard in edit. `[U]`
 - AC-INS-02 Patterns tab groups user patterns under "Yours" and others by source, each with the correct usage line. `[U]`
-- AC-INS-03 With no artboard in edit, clicking a block row inserts nothing and the hint reads "Edit an artboard to insert blocks." `[N]`
+- AC-INS-03 With no artboard in edit the inserter has no Blocks tab: its tabs are Patterns, Templates and Media, and Patterns is selected. Entering edit brings the Blocks tab back. `[U]`
 - AC-INS-04 Dragging a pattern, template or part to empty board shows the drop target and opens it as a Desktop artboard at the drop point. `[U]`
 - AC-INS-05 Clicking a pattern inserts its blocks into the artboard in edit. `[U]`
 - AC-INS-06 No inserter row contains a rendered preview or iframe. `[U]`
 - AC-INS-07 Clicking a template part row inserts a Template Part block; clicking a template row does nothing. `[U]`
 - AC-INS-08 Media tab lists images with dimensions; clicking one inserts an Image block for it; Upload adds a file and lists it. `[U]`
 - AC-INS-09 Search filters all tabs. `[U]`
+
+## MEDIA
+
+- AC-MEDIA-01 Dragging an image from the Media tab to empty board shows the drop target at the image's size and places a media object there, labelled "{Name} · Media", listed under "Media" in the left panel; after a reload it is still there. `[U]`
+- AC-MEDIA-02 A media object is selected by a click, moved by dragging and removed with Delete through a dialog with no checkbox; double-click and Enter do not enter edit; its settings show the image's pixel size and only "Remove from board". `[U]`
+- AC-MEDIA-03 The server accepts a media object with exactly its fields and rejects one with a device or without a width; a media object whose image no longer exists is removed from the board on load. `[N]`
 
 ## STYLE
 

@@ -8,6 +8,7 @@
 | Template | `postType`, `wp_template` | Whole template with its parts inlined | None. Saving is live | `[B3]` `[U]` |
 | Template part | `postType`, `wp_template_part` | The part alone | None. Saving is live | `[B3]` `[U]` |
 | Pattern | `postType`, `wp_block` | The pattern alone | Draft until published | `[B3]` `[U]` |
+| Media | `postType`, `attachment` (images only) | The image itself. Not editable, no device, not part of the tiers (D34) | None. Nothing about it is ever saved | `[U]` |
 
 The same entity may appear on several artboards, for example Header on Desktop and on Mobile. All of them show the same content. `[B3]`
 
@@ -22,6 +23,8 @@ Posts and other post types are not artboard kinds in this version. `[D:AddArtboa
 | Mobile | 360 px, or the theme's mobile breakpoint if that is smaller | `[U]` `[V]` |
 
 Breakpoints are read from the merged global styles `settings.viewport` (`mobile`, `tablet`), defaults 480 px and 782 px. `[V]`
+
+A media object is as wide as its image in pixels, up to 1440, and as high as keeps the image's proportions. Both are fixed when it is placed. `[U]` for a fixed width, `[N]` for the cap
 
 An artboard's height is the height of its rendered content. The last measured height is cached on the board so Ghost artboards have the right size. `[B5]`
 
@@ -55,6 +58,12 @@ Post type registration: `[N]`
 }
 ```
 
+A media object has `"kind": "media"`, a numeric `entityId` (the attachment), a `width` (number, board units) and no `device`:
+
+```json
+{ "id": "…", "kind": "media", "entityId": 12, "x": 0, "y": 0, "width": 1200, "height": 800 }
+```
+
 One board unit is one CSS pixel at 100% zoom. Artboard order in the array is the order of creation. `[N]`
 
 The viewport (pan and zoom) is not stored on the board, because boards are shared. It is kept per user and per board in `localStorage` and restored on open; with nothing stored, the board opens fitted to all artboards. `[N]`
@@ -65,7 +74,8 @@ The server validates the JSON against this shape on save and rejects anything el
 
 | Kind | What is created | When | Source |
 |---|---|---|---|
-| Page | A `page` with status `draft`, title "Untitled page", empty content | At placement | `[U]` |
+| Page | A `page` with status `draft`, title "Untitled page", empty content, and as its template the theme's `blank` template if it has one, else its `page-no-title` template if it has one, else none (D36) | At placement | `[U]` |
+| Media | Nothing. The object refers to an image already in the media library | | `[U]` |
 | Pattern | A `wp_block` with status `draft`, title "Untitled pattern", empty content, synced | At placement | `[U]` |
 | Template | A `wp_template` for the chosen purpose, with content: the theme's Header part, one empty paragraph, the theme's Footer part | At first save from Review, never before | `[U]` `[D:AddArtboard2]` |
 | Template part | A `wp_template_part` titled "Untitled part", area `uncategorized` (labelled General), empty content | At first save from Review, never before | `[U]` `[V]` |
@@ -86,6 +96,8 @@ Pressing Delete on a selected artboard, or "Remove from board", opens a confirma
 | Template or part created by a user (`has_theme_file` false) | Delete | `[U]` `[V]` |
 | Template or part that ships with the theme (`has_theme_file` true) | Reset to the theme's version (REST update with `source: "theme"`) | `[U]` `[V]` |
 
+A media object has no checkbox: removing it only takes it off the board. `[U]`
+
 When the entity is deleted, trashed or reset, every other artboard on any board that references it is handled on next load: a missing entity removes the artboard from that board. `[N]`
 
 ## Saving
@@ -93,6 +105,7 @@ When the entity is deleted, trashed or reset, every other artboard on any board 
 - Edits live in core-data as edited entity records until saved. `[B6]`
 - Review changes saves the checked items, one REST request per item. `[B6]` `[U]`
 - A failed save leaves the item checked and listed with its error. `[U]`
+- A page's template, changed from the right panel (D35), is an edit of the page like any other: listed under the page in Review with the line "Template: changed" and saved with it. `[U]`
 - Saving never changes a page's or pattern's status. Publishing drafts is done in wp-admin. `[N]`
 - Global styles save as the `globalStyles` entity of the active theme. `[B7]`
 - Edits that blocks make to other records (the site's title, tagline and logo; navigation menus) are listed in Review as their own items and saved the same way. `[U]`

@@ -25,11 +25,20 @@ Left to right:
 | H10 | Left panel toggle | `IconButton`, `drawerLeft`, pressed state while the left panel is shown | Labels "Hide left panel" / "Show left panel" | Hides or shows the left panel (D32). Sits after H5. |
 | H6 | Block toolbar | `be.BlockToolbar`, filled from the Live editor through a slot | Stock | Present only while an artboard is in edit and a block is selected. |
 | H7 | Document bar | Centred `Text` on a weak neutral surface; in edit, preceded by an `IconButton` with `arrowLeft` | Board name; in edit "{artboard name} · {Kind}", back button label "Back to the board" | Back button leaves edit. The bar itself is not clickable. `[N]` |
-| H8 | Zoom menu | `Menu` whose trigger shows the zoom as a percentage with `chevronDown` | Trigger label "Zoom"; items "Zoom in", "Zoom out", "Zoom to 50%", "Zoom to 100%", "Fit all", "Fit selection" | Items act on the viewport. "Fit selection" is disabled with nothing selected. Any item that changes the zoom while an artboard is in edit leaves edit (D30). `[N]` for the item list |
+| H8 | Zoom menu | `Menu` whose trigger shows the zoom as a percentage with `chevronDown` | Trigger label "Zoom"; items "Zoom in", "Zoom out", "Zoom to 50%", "Zoom to 100%", "Fit all", "Fit selection" | Items act on the viewport. "Fit selection" is disabled with nothing selected. An item that takes the zoom below 30% while an artboard is in edit leaves edit (D37). `[N]` for the item list |
 | H11 | Right panel toggle | `IconButton`, `drawerRight`, pressed state while the right panel is shown | Labels "Hide right panel" / "Show right panel" | Hides or shows the right panel (D32). Sits between H8 and H9. |
 | H9 | Review button | `Button`, solid brand | "Review {n} changes", "Review 1 change"; with none, "Review changes", disabled | Opens the Review drawer. |
 
 Kind names used in labels: "Page", "Template", "Template part", "Pattern". `[D:Overview]`
+
+Media objects (D34): `[U]`
+
+- Kind name "Media", `image` icon. In the left panel they are the last group, "Media"; a row has no device word.
+- On the board a media object is the image in a frame like an artboard's, with the label "{Name} · Media", where the name is the attachment's title. It is selected, moved, nudged and removed like an artboard. Double-click and Enter do nothing.
+- Selected, the right panel shows the entity card (name; description "{width} × {height}", the image's pixel size) and one `Button` outline "Remove from board". No device control, no "Edit", no hint line.
+- The remove dialog has its title and buttons only: no description and no checkbox.
+- If the image cannot be loaded the error state reads "Couldn't load this image."
+- Dragging a row of the Media tab over empty board shows the drop target at the object's size with the label "{file name} · Media"; dropping places it there. This works with or without an artboard in edit.
 
 ## Region: Left panel, artboards by kind `[D:Overview]` `[U]`
 
@@ -37,7 +46,7 @@ Kind names used in labels: "Page", "Template", "Template part", "Pattern". `[D:O
 |---|---|---|---|---|
 | L1 | Panel heading | `Text` heading-md | "Artboards" | |
 | L2 | Add artboard | `IconButton`, `plus`, opens a `Menu` | Label "Add artboard" | See the "New artboard 1" screen. |
-| L3 | Group heading | `Text` heading-sm with a count at the right | "Pages", "Templates", "Template parts", "Patterns" | A group with no artboards is not shown. `[N]` |
+| L3 | Group heading | `Text` heading-sm with a count at the right | "Pages", "Templates", "Template parts", "Patterns", "Media" | A group with no artboards is not shown. `[N]` |
 | L4 | Artboard row | `wpc.ItemGroup` / `Item` row: kind icon (`page`, `layout`, `header`, `symbol`), name, device at the right | Device words "Desktop", "Tablet", "Mobile" | Click selects the artboard and scrolls it into view. Double-click or Enter edits it. Selected row uses the brand surface. |
 
 Rows are ordered by name within a group, then Desktop, Tablet, Mobile. `[N]`
@@ -54,7 +63,7 @@ Rows are ordered by name within a group, then Desktop, Tablet, Mobile. `[N]`
 | ID | Element | Component | Text | Behaviour |
 |---|---|---|---|---|
 | L7 | Search | `wpc.SearchControl` | Placeholder "Search" | Filters all four tabs; the tab strip stays. |
-| L8 | Tabs | `Tabs` | "Blocks", "Patterns", "Templates", "Media" | |
+| L8 | Tabs | `Tabs` | "Blocks", "Patterns", "Templates", "Media" | With no artboard in edit the Blocks tab is not shown and Patterns is the first tab (D33). |
 | L9 | Group heading | as L3 | per tab, see each inserter screen | |
 | L10 | Item row | as L4: icon, name, optional second line | per tab | Click inserts into the artboard in edit at the editor's insertion point. With no artboard in edit, click does nothing and the row is not disabled. `[N]` for the last sentence |
 | L11 | Hint | `Text` on a weak neutral surface, pinned to the panel bottom | per tab | |
@@ -63,7 +72,7 @@ Rows are ordered by name within a group, then Desktop, Tablet, Mobile. `[N]`
 
 | ID | Element | Component | Text | Behaviour |
 |---|---|---|---|---|
-| A1 | Artboard label | `Text` body-sm above the artboard's top-left corner | "{Name} · {Kind} · {Device}" | Not interactive, except on the Live artboard (A2). |
+| A1 | Artboard label | `Text` body-sm above the artboard's top-left corner | "{Name} · {Kind} · {Device}"; for a media object "{Name} · Media" | Not interactive, except on the Live artboard (A2). |
 | A2 | Live artboard label | `Text` in brand colour, "{Name} · {Kind}", followed by a `Menu` trigger showing the device | Menu items "Desktop", "Tablet", "Mobile"; trigger label "Artboard device" | Choosing a device changes this artboard's device. |
 | A3 | Artboard | The tier content at the device width, scaled by the zoom | | Click selects; drag moves; double-click edits. |
 | A4 | Selection outline | 2 px brand stroke around the selected or Live artboard | | |
@@ -91,4 +100,5 @@ The canvas background is the weak neutral surface. Dragging an artboard moves it
 | E4 | Block tab: controls | `be.BlockInspector` filled through a slot, or `gs.GlobalStylesUI` when E3 is on "All" | Stock | |
 | E5 | Kind tab: entity card | kind icon, `Text` heading-md name, `Text` weak description | Description by kind, see the "New artboard 2" and "Selected" screens | |
 | E6 | Kind tab: device | `wpc.ToggleGroupControl` | Label "Artboard device"; "Desktop", "Tablet", "Mobile" | Changes this artboard's device. |
+| E8 | Kind tab: page template | `wpc.SelectControl`, pages only, after E6 | Label "Template"; first option "Default template", then the site's custom templates by title | Changes the page's template (D35). The same control is in the artboard settings of a selected page, after the device control. |
 | E7 | Kind tab: live notice | `Notice`, caution tone, templates and parts only | "Templates have no draft. Saving this one puts it live on every archive of the site." for the Archive template; "Templates have no draft. Saving this one puts it live on the site." for every other template; "Template parts have no draft. Saving this one puts it live everywhere it is used." for parts | The parts wording is `[N]`. |

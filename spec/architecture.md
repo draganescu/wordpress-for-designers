@@ -41,7 +41,7 @@ Part names in this file are fixed. Use them for the top-level folders under `src
 | Ghost | The artboard is more than one viewport width or height outside the visible area | A sized box using the cached height | None | `[B5]` `[U]` |
 | Snapshot | Zoom below 20%; or during any pan or zoom gesture; or the artboard would be a Preview but 12 Previews are already mounted | Frozen copy of the last Preview render | Select, move | `[B5]` `[U]` |
 | Preview | Within one viewport of the visible area, zoom 20% or more, not Live | `artboard-preview` | Select, move, double-click to edit | `[B5]` `[U]` |
-| Live | The one artboard in edit, zoom exactly 100% | `artboard-editor` | Everything | `[B5]` `[U]` |
+| Live | The one artboard in edit, zoom 30% or more (D37) | `artboard-editor` | Everything | `[B5]` `[U]` |
 
 Rules:
 
@@ -52,7 +52,8 @@ Rules:
 - An artboard that has never been rendered goes straight to the Preview queue when eligible; until rendered it shows a `Skeleton`. `[N]`
 - When a shared thing changes (global styles, a part used by a template, a synced pattern), Live and Preview artboards update; Snapshots are marked stale and re-rendered the next time they become Previews. `[B5]`
 - If zoom changes while an artboard is Live, it leaves edit and becomes a Preview. Panning does not leave edit. `[B8]` `[U]`
-- The hysteresis rule applies to the 20% threshold only. Live has no threshold: entering edit sets zoom to 100% (D30). `[U]`
+- The hysteresis rule applies to the 20% threshold only. Edit ends when the zoom settles below 30% and is not started again by zooming back in (D37). `[U]`
+- The Live editor is drawn at screen size with only its canvas iframe scaled to the board's zoom, so that WordPress's block tools, which are placed correctly only at screen size, work at every zoom. The plugin adds no element of its own around or inside the canvas for this; it styles the elements WordPress renders (`spike-report.md`, "Editing below 100%"). `[V]`
 
 ## State rules
 
@@ -110,6 +111,8 @@ Outside an artboard in edit: `[U]`
 | Delete / Backspace | Remove the selected artboard (opens the confirmation) |
 | Cmd/Ctrl + Z, Cmd/Ctrl + Shift + Z | Undo, redo layout |
 | Esc | Clear selection |
+
+While an artboard is in edit, a click on empty board leaves edit and clears the selection, and a click on another artboard leaves edit and selects it (D38). `[U]`
 
 Inside an artboard in edit, the block editor's own shortcuts apply unchanged. Esc, pressed when the editor itself has nothing left to dismiss, leaves edit and keeps the artboard selected. Cmd/Ctrl + Z undoes content. `[U]` `[B1]`
 
