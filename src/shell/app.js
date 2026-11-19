@@ -206,6 +206,7 @@ export function App() {
         selectedIds,
         anchorId,
         liveId,
+        browsingId,
         isInserterOpen,
         isListViewOpen,
         zoom,
@@ -234,6 +235,7 @@ export function App() {
             selectedIds: board.getSelectedIds(),
             anchorId: board.getSelectionAnchorId(),
             liveId: board.getLiveId(),
+            browsingId: board.getBrowsingId(),
             isInserterOpen: board.isInserterOpen(),
             isListViewOpen: board.isListViewOpen(),
             zoom: board.getViewport().zoom,
@@ -430,7 +432,7 @@ export function App() {
     }, [ missingIds, removeArtboards ] );
 
     const focused = artboards.find(
-        ( artboard ) => artboard.id === ( liveId || selectedId )
+        ( artboard ) => artboard.id === ( liveId || browsingId || selectedId )
     );
     const entityInfo = useEntityInfo( focused );
     const [ resizeListener, areaSize ] = useResizeObserver();
@@ -548,9 +550,6 @@ export function App() {
 
     // A browser stops browsing when it is no longer selected (D38, D55), for
     // example when the inserter places something.
-    const browsingId = artboards.find(
-        ( artboard ) => artboard.id === liveId && artboard.kind === 'browser'
-    )?.id;
     const isBrowsingSelected = selectedIds.includes( browsingId );
     const leaveEdit = editing.leaveEdit;
     useEffect( () => {
@@ -565,14 +564,15 @@ export function App() {
 
     const selected = artboards.find( ( a ) => a.id === selectedId );
     const live = artboards.find( ( a ) => a.id === liveId );
-    // A browser being browsed counts as in edit, but has no blocks (D55).
-    const isBrowsing = live?.kind === 'browser';
-    const liveEditor = isBrowsing ? null : live;
+    // The artboard in edit: the Live editor, or the browser being browsed,
+    // which has no blocks (D55).
+    const inEdit =
+        live ?? artboards.find( ( a ) => a.id === browsingId ) ?? null;
     const removing = artboards.find( ( a ) => a.id === removingId );
     let banner = null;
     if ( styles.preview?.banner ) {
         banner = <PreviewBanner { ...styles.preview.banner } />;
-    } else if ( token && located && ! live && ! selected ) {
+    } else if ( token && located && ! inEdit && ! selected ) {
         const picked =
             stylesPanel.panelProps.colors.find(
                 ( color ) => token.type === 'color' && color.slug === token.slug
@@ -611,7 +611,7 @@ export function App() {
                 onQueryChange={ setInserterQuery }
                 tab={ inserterTab }
                 onTabChange={ setInserterTab }
-                liveArtboardName={ liveEditor?.name ?? null }
+                liveArtboardName={ live?.name ?? null }
                 blocks={ inserterData.blocks }
                 patterns={ inserterData.patterns }
                 templates={ inserterData.templates }
@@ -620,7 +620,7 @@ export function App() {
                 { ...inserter.panelProps }
             />
         );
-    } else if ( liveEditor ) {
+    } else if ( live ) {
         left = isListViewOpen ? (
             <ListViewPanel onClose={ () => setListViewOpen( false ) } />
         ) : null;
@@ -675,7 +675,7 @@ export function App() {
     const isLeftShown = ! isLeftHidden && !! left;
     const showLeft = () => {
         setLeftHidden( false );
-        if ( liveEditor && ! isInserterOpen && ! isListViewOpen ) {
+        if ( live && ! isInserterOpen && ! isListViewOpen ) {
             setListViewOpen( true );
         }
     };
@@ -690,7 +690,7 @@ export function App() {
     };
 
     let right;
-    if ( liveEditor ) {
+    if ( live ) {
         right = (
             <EditingPanel
                 artboard={ live }
@@ -735,7 +735,7 @@ export function App() {
                 }
                 onEdit={ () => onEdit( selected.id ) }
                 onRemove={ () => setRemovingId( selected.id ) }
-                isBrowsing={ selected.id === liveId }
+                isBrowsing={ selected.id === browsingId }
                 onReload={ () => reload( selected.id ) }
                 onShowsChange={ ( shows ) =>
                     updateArtboard( selected.id, { shows } )
@@ -760,7 +760,7 @@ export function App() {
                         <Header
                             boardsUrl={ boardsUrl }
                             boardName={ title }
-                            liveName={ live ? liveLabel( live ) : null }
+                            liveName={ inEdit ? liveLabel( inEdit ) : null }
                             isInserterOpen={ isInserterOpen }
                             onToggleInserter={ () => {
                                 if ( ! isInserterOpen ) {
@@ -770,7 +770,7 @@ export function App() {
                             } }
                             onBack={ editing.leaveEdit }
                             undo={
-                                liveEditor
+                                live
                                     ? {
                                           label: hasContentUndo
                                               ? contentTooltip(
@@ -794,7 +794,7 @@ export function App() {
                                       }
                             }
                             redo={
-                                liveEditor
+                                live
                                     ? {
                                           label: hasContentRedo
                                               ? contentTooltip(
@@ -817,8 +817,8 @@ export function App() {
                                           onClick: redoLayout,
                                       }
                             }
-                            isListViewOpen={ !! liveEditor && isListViewOpen }
-                            isListViewDisabled={ ! liveEditor }
+                            isListViewOpen={ !! live && isListViewOpen }
+                            isListViewDisabled={ ! live }
                             onToggleListView={ () => {
                                 if ( ! isListViewOpen ) {
                                     setLeftHidden( false );
@@ -837,11 +837,11 @@ export function App() {
                             onZoom={ canvas.zoom }
                             canFitSelection={ selectedIds.length > 0 }
                             isNoteToolArmed={ isNoteToolArmed }
-                            isNoteToolDisabled={ !! live }
+                            isNoteToolDisabled={ !! inEdit }
                             onToggleNoteTool={ () =>
                                 setNoteToolArmed( ! isNoteToolArmed )
                             }
-                            canTidy={ ! live && artboards.length > 1 }
+                            canTidy={ ! inEdit && artboards.length > 1 }
                             onTidy={ () => {
                                 moveArtboards(
                                     tidyMoves( artboards, widthOf ),
@@ -906,7 +906,7 @@ export function App() {
                                 )
                             }
                             placer={
-                                isNoteToolArmed && ! live ? (
+                                isNoteToolArmed && ! inEdit ? (
                                     <div
                                         className="wfd-canvas__placer"
                                         data-wfd-placer="note"
@@ -972,7 +972,7 @@ export function App() {
                                 if ( isBrowser ) {
                                     // Loaded whenever it is near the view
                                     // (D55).
-                                    if ( artboard.id === liveId ) {
+                                    if ( artboard.id === browsingId ) {
                                         tier = 'live';
                                     } else if (
                                         isNearView(

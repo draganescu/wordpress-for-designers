@@ -33,11 +33,11 @@ const OPEN_OVERLAY =
  */
 export function useEditing( { viewport, areaRef, getArtboards, widthOf } ) {
     const registry = useRegistry();
-    const liveId = useSelect(
-        ( select ) => select( boardStore ).getLiveId(),
-        []
-    );
-    const { setLiveId } = useDispatch( boardStore );
+    const { liveId, editId } = useSelect( ( select ) => {
+        const board = select( boardStore );
+        return { liveId: board.getLiveId(), editId: board.getEditId() };
+    }, [] );
+    const { setLiveId, setBrowsingId } = useDispatch( boardStore );
     const [ lockDialog, setLockDialog ] = useState( null );
     const [ selectedBlock, setSelectedBlock ] = useState( null );
     const [ allowedBlocks, setAllowedBlocks ] = useState( null );
@@ -56,14 +56,15 @@ export function useEditing( { viewport, areaRef, getArtboards, widthOf } ) {
     }, [] );
 
     const leaveEdit = useCallback( () => {
-        if ( ! registry.select( boardStore ).getLiveId() ) {
+        if ( ! registry.select( boardStore ).getEditId() ) {
             return;
         }
         releaseLock();
         setSelectedBlock( null );
         setLiveId( null );
+        setBrowsingId( null );
         areaRef.current?.focus( { preventScroll: true } );
-    }, [ registry, releaseLock, setLiveId, areaRef ] );
+    }, [ registry, releaseLock, setLiveId, setBrowsingId, areaRef ] );
 
     const enterEdit = useCallback(
         async ( id, { takeover = false } = {} ) => {
@@ -74,7 +75,7 @@ export function useEditing( { viewport, areaRef, getArtboards, widthOf } ) {
                 ! artboard ||
                 // A media object is not editable.
                 artboard.kind === 'media' ||
-                registry.select( boardStore ).getLiveId() === id
+                registry.select( boardStore ).getEditId() === id
             ) {
                 return;
             }
@@ -132,12 +133,17 @@ export function useEditing( { viewport, areaRef, getArtboards, widthOf } ) {
                 );
             }
             setSelectedBlock( null );
-            setLiveId( id );
+            if ( artboard.kind === 'browser' ) {
+                // Browsing is the browser's way of being in edit (D55).
+                setBrowsingId( id );
+            } else {
+                setLiveId( id );
+            }
             // Keyboard focus follows into the artboard's document once it
             // is there, so typing and Tab reach the blocks.
             const started = Date.now();
             const focusCanvas = () => {
-                if ( registry.select( boardStore ).getLiveId() !== id ) {
+                if ( registry.select( boardStore ).getEditId() !== id ) {
                     return;
                 }
                 const iframe = areaRef.current?.querySelector(
@@ -159,7 +165,7 @@ export function useEditing( { viewport, areaRef, getArtboards, widthOf } ) {
             };
             focusCanvas();
         },
-        [ registry, viewport, releaseLock, setLiveId, areaRef ]
+        [ registry, viewport, releaseLock, setLiveId, setBrowsingId, areaRef ]
     );
 
     // Zooming out below 30% while an artboard is Live leaves edit.
@@ -184,7 +190,7 @@ export function useEditing( { viewport, areaRef, getArtboards, widthOf } ) {
     // Keys handled by the shell while editing. Key events from the canvas
     // document bubble to this one.
     useEffect( () => {
-        if ( ! liveId ) {
+        if ( ! editId ) {
             return;
         }
         const doc = areaRef.current?.ownerDocument ?? document;
@@ -200,26 +206,9 @@ export function useEditing( { viewport, areaRef, getArtboards, widthOf } ) {
         function onKeyDown( event ) {
             const mod = event.metaKey || event.ctrlKey;
             if ( mod && ! event.altKey && event.key.toLowerCase() === 'z' ) {
-                const board = registry.select( boardStore );
-                if (
-                    board.getArtboard( board.getLiveId() )?.kind === 'browser'
-                ) {
-                    // A browser has no content history (D55): the layout's
-                    // is used, unless a text field has the key, such as the
-                    // address field, which undoes its own typing.
-                    if (
-                        event.target?.matches?.(
-                            'input, textarea, [contenteditable]'
-                        )
-                    ) {
-                        return;
-                    }
-                    event.preventDefault();
-                    if ( event.shiftKey ) {
-                        registry.dispatch( boardStore ).redoLayout();
-                    } else {
-                        registry.dispatch( boardStore ).undoLayout();
-                    }
+                if ( ! registry.select( boardStore ).getLiveId() ) {
+                    // A browser has no content history (D55): the board
+                    // undoes its layout when it has the key.
                     return;
                 }
                 event.preventDefault();
@@ -242,7 +231,10 @@ export function useEditing( { viewport, areaRef, getArtboards, widthOf } ) {
             ) {
                 return;
             }
-            if ( bridgeRef.current?.hasSelection() ) {
+            if (
+                registry.select( boardStore ).getLiveId() &&
+                bridgeRef.current?.hasSelection()
+            ) {
                 bridgeRef.current.clearSelection();
                 // Focus leaves the canvas document with the selection.
                 areaRef.current?.focus( { preventScroll: true } );
@@ -256,7 +248,7 @@ export function useEditing( { viewport, areaRef, getArtboards, widthOf } ) {
             doc.removeEventListener( 'keydown', onKeyDownCapture, true );
             doc.removeEventListener( 'keydown', onKeyDown );
         };
-    }, [ liveId, registry, leaveEdit, areaRef ] );
+    }, [ editId, registry, leaveEdit, areaRef ] );
 
     const noteKeyDown = useCallback( () => {
         const doc = areaRef.current?.ownerDocument ?? document;

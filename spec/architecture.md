@@ -21,7 +21,7 @@ Part names in this file are fixed. Use them for the top-level folders under `src
 | Part | Responsibility | Source |
 |---|---|---|
 | `shell` | Header, left panel, canvas area, right panel. Owns which panel content shows (see State rules). | `[B2]` `[U]` |
-| `board-store` | A `@wordpress/data` store named `wfd/board`: artboard list, notes (D46), selection, which artboard is Live, layout undo history. Autosaves layout 2 s after the last change. | `[B4]` `[U]` |
+| `board-store` | A `@wordpress/data` store named `wfd/board`: artboard list, notes (D46), selection, which artboard is Live, which browser is browsed (D55), layout undo history. Autosaves layout 2 s after the last change. | `[B4]` `[U]` |
 | `viewport` | Pan and zoom state kept outside React. Writes one CSS transform on the canvas surface per animation frame and notifies React only when a gesture settles. | `[B4]` `[B6]` |
 | `tier-scheduler` | Decides each artboard's tier from visibility and zoom, and mounts through a `@wordpress/priority-queue` queue. | `[B4]` `[B5]` `[V]` |
 | `artboard-frame` | One per artboard: position, label, selection outline, tier content. | `[B4]` |

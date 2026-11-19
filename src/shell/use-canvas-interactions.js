@@ -266,10 +266,10 @@ export function useCanvasInteractions( {
             const id = idOf( element );
             if (
                 event.target.closest( '[data-wfd-resize]' ) &&
-                board().getLiveId() !== id
+                board().getEditId() !== id
             ) {
                 // The bottom edge of a browser's window (D56).
-                if ( board().getLiveId() ) {
+                if ( board().getEditId() ) {
                     latest.current.onLeaveEdit();
                 }
                 actions().selectArtboard( id );
@@ -290,19 +290,19 @@ export function useCanvasInteractions( {
                 // The text field of the note being edited.
                 return;
             }
-            const liveId = board().getLiveId();
-            if ( liveId === id ) {
+            const editId = board().getEditId();
+            if ( editId === id ) {
                 // The Live artboard's own label and tools.
                 return;
             }
-            if ( liveId ) {
+            if ( editId ) {
                 // Selecting another artboard ends edit.
                 latest.current.onLeaveEdit();
             }
             if ( ! isBody( event.target ) ) {
                 return;
             }
-            if ( ! liveId && ( event.metaKey || event.ctrlKey ) ) {
+            if ( ! editId && ( event.metaKey || event.ctrlKey ) ) {
                 // Cmd/Ctrl + click adds the artboard to the selection or
                 // takes it out.
                 actions().toggleArtboardSelection( id );
@@ -364,7 +364,7 @@ export function useCanvasInteractions( {
         // The selection rectangle (D43). It is kept in board units, so it
         // stays put on the board if the board is scrolled during the drag.
         function startMarquee() {
-            const isEditing = !! board().getLiveId();
+            const isEditing = !! board().getEditId();
             const before = board().getSelectedIds();
             if ( isEditing ) {
                 // Deselecting ends edit.
@@ -513,7 +513,7 @@ export function useCanvasInteractions( {
                 )
             ) {
                 // Deselecting ends edit.
-                if ( board().getLiveId() ) {
+                if ( board().getEditId() ) {
                     latest.current.onLeaveEdit();
                 }
                 actions().clearSelection();
@@ -537,7 +537,7 @@ export function useCanvasInteractions( {
             if (
                 element &&
                 isBody( target ) &&
-                element.dataset.wfdArtboard !== board().getLiveId()
+                element.dataset.wfdArtboard !== board().getEditId()
             ) {
                 latest.current.onEdit( element.dataset.wfdArtboard );
             }
@@ -604,6 +604,11 @@ export function useCanvasInteractions( {
                     actions().undoLayout();
                 }
                 return done();
+            }
+            if ( board().getBrowsingId() ) {
+                // While a browser is browsed the board has those keys only;
+                // Esc is the shell's (see use-editing.js).
+                return;
             }
             if ( mod || event.altKey ) {
                 return;
