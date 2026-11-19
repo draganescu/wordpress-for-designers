@@ -36,6 +36,8 @@ const DEFAULT_STATE = {
     // Goes up each time the unsaved changes have been sent for browsers to
     // preview (D57); 0 until the first send.
     previewVersion: 0,
+    // What the preview argument must hold: a nonce of this user.
+    previewValue: null,
 };
 
 /**
@@ -445,13 +447,18 @@ const actions = {
         },
     /**
      * Tells browsers showing unsaved changes that they have been sent.
+     *
+     * @param {string} value What the preview argument must hold from now on.
      */
     bumpPreviewVersion:
-        () =>
+        ( value ) =>
         ( { select, dispatch } ) => {
             dispatch( {
                 type: 'PATCH',
-                patch: { previewVersion: select.getPreviewVersion() + 1 },
+                patch: {
+                    previewVersion: select.getPreviewVersion() + 1,
+                    previewValue: value,
+                },
             } );
         },
     /**
@@ -622,6 +629,7 @@ const selectors = {
     getRemovingId: ( state ) => state.removingId,
     getSiteVersion: ( state ) => state.siteVersion,
     getPreviewVersion: ( state ) => state.previewVersion,
+    getPreviewValue: ( state ) => state.previewValue,
     getUndoName: ( state ) => state.past[ state.past.length - 1 ]?.name ?? null,
     getRedoName: ( state ) =>
         state.future[ state.future.length - 1 ]?.name ?? null,

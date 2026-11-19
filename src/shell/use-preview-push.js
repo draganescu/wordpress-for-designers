@@ -139,13 +139,13 @@ export function usePreviewPush() {
             }
             isSending = true;
             try {
-                await apiFetch( {
+                const { preview } = await apiFetch( {
                     path: '/wfd/v1/preview',
                     method: 'POST',
                     data: JSON.parse( json ),
                 } );
                 sent = json;
-                registry.dispatch( boardStore ).bumpPreviewVersion();
+                registry.dispatch( boardStore ).bumpPreviewVersion( preview );
             } catch {
                 // Tried again with the next change.
             }

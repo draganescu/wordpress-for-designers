@@ -140,7 +140,7 @@ test.describe( 'BROWSER', () => {
         const id = ( await placed.getAttribute( 'data-wfd-artboard' ) )!;
         await expect
             .poll( () => pageUrl( page, id ) )
-            .toMatch( /^https?:\/\/[^/]+\/\?wfd_preview=1$/ );
+            .toMatch( /^https?:\/\/[^/]+\/\?wfd_preview=[\w.-]+$/ );
         await expect( page$( page, id ).locator( 'body' ) ).toBeVisible();
         // WordPress's toolbar is not shown.
         await expect( page$( page, id ).locator( '#wpadminbar' ) ).toBeHidden();
@@ -532,12 +532,12 @@ test.describe( 'BROWSER', () => {
         };
     };
 
-    test( 'AC-BROWSER-08 A browser showing unsaved changes shows a change typed into a page\'s artboard, without a save and without Reload being pressed, and keeps showing it on a link followed to another page and back; a browser on the same page set to "Saved site" does not show it until Review saves it. The page requested without signing in shows the saved content even with `wfd_preview=1`', async ( {
+    test( "AC-BROWSER-08 A browser showing unsaved changes shows a change typed into a page's artboard, without a save and without Reload being pressed, and keeps showing it on a link followed to another page and back; a browser on the same page set to \"Saved site\" does not show it until Review saves it. The page requested without signing in shows the saved content even with that browser's `wfd_preview` argument, and so does the signed-in user's own request with another value", async ( {
         page,
         requestUtils,
         playwright,
     } ) => {
-        const { link, path } = await aboutAddress( requestUtils );
+        const { path } = await aboutAddress( requestUtils );
         const { about, at } = await seedPair( requestUtils, path );
         await openBoard( page, fixture.boardId, 11 );
         await setViewport( page, {
@@ -567,19 +567,25 @@ test.describe( 'BROWSER', () => {
             saved.locator( 'p', { hasText: 'About paragraph.' } )
         ).not.toContainText( 'Previewed' );
 
-        // Without signing in the argument does nothing.
+        // Without signing in the argument does nothing, and neither does
+        // a value that is not the signed-in user's nonce.
+        const previewUrl = ( await pageUrl( page ) )!;
+        expect(
+            new URL( previewUrl ).searchParams.get( 'wfd_preview' )
+        ).toMatch( /^[\w.-]{6,}$/ );
         const visitor = await playwright.request.newContext( {
             storageState: { cookies: [], origins: [] },
         } );
-        const html = await (
-            await visitor.get(
-                `${ link }${ link.includes( '?' ) ? '&' : '?' }wfd_preview=1`
-            )
-        ).text();
+        const html = await ( await visitor.get( previewUrl ) ).text();
         expect( html ).not.toContain( 'id="wpadminbar"' );
         expect( html ).toMatch( /About paragraph\.<\/p>/ );
         expect( html ).not.toContain( 'About paragraph. Previewed' );
         await visitor.dispose();
+        const wrong = new URL( previewUrl );
+        wrong.searchParams.set( 'wfd_preview', '1' );
+        const own = await ( await page.request.get( wrong.href ) ).text();
+        expect( own ).toContain( 'id="wpadminbar"' );
+        expect( own ).not.toContain( 'About paragraph. Previewed' );
 
         // A link to another page and back.
         const box = ( await browser( page )
@@ -592,7 +598,7 @@ test.describe( 'BROWSER', () => {
         );
         await unsaved.locator( '.wp-block-site-title a' ).first().click();
         await expect( address( page ) ).toHaveValue( '/' );
-        expect( await pageUrl( page ) ).toContain( 'wfd_preview=1' );
+        expect( await pageUrl( page ) ).toContain( 'wfd_preview=' );
         await address( page ).fill( path );
         await address( page ).press( 'Enter' );
         await expect(

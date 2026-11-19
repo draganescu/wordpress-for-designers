@@ -70,7 +70,8 @@ import { useEntityInfo } from './use-entity-info';
 import { NEW_ARTBOARD_HEIGHT, usePlacement } from './use-placement';
 import { removalInfo, useRemoval } from './use-removal';
 
-const { boardId, boardsUrl, userId, theme, homeUrl } = window.wfdConfig;
+const { boardId, boardsUrl, userId, theme, homeUrl, preview } =
+    window.wfdConfig;
 bootEditor();
 
 const VIEWPORT_KEY = `wfd/viewport/${ userId }/${ boardId }`;
@@ -217,11 +218,13 @@ export function App() {
         isNoteToolArmed,
         siteVersion,
         previewVersion,
+        previewValue,
     } = useSelect( ( select ) => {
         const board = select( boardStore );
         return {
             siteVersion: board.getSiteVersion(),
             previewVersion: board.getPreviewVersion(),
+            previewValue: board.getPreviewValue() ?? preview,
             notes: board.getNotes(),
             selectedNoteId: board.getSelectedNoteId(),
             editingNoteId: board.getEditingNoteId(),
@@ -1011,7 +1014,11 @@ export function App() {
                                                 path={ artboard.path }
                                                 homeUrl={ homeUrl }
                                                 isBrowsing={ tier === 'live' }
-                                                isPreview={ isPreview }
+                                                preview={
+                                                    isPreview
+                                                        ? previewValue
+                                                        : null
+                                                }
                                                 reloadToken={
                                                     ( isPreview
                                                         ? previewVersion

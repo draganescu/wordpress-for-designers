@@ -1,7 +1,8 @@
 <?php
 /**
  * The preview layer (D57): the board's unsaved changes, kept per user, put in
- * place of the saved content on front-end pages asked for with wfd_preview=1.
+ * place of the saved content on front-end pages asked for with a wfd_preview
+ * argument that holds a nonce of that user.
  *
  * @package WordPressForDesigners
  */
@@ -10,6 +11,15 @@ defined( 'ABSPATH' ) || exit;
 
 define( 'WFD_PREVIEW_META', 'wfd_preview' );
 define( 'WFD_PREVIEW_ARG', 'wfd_preview' );
+
+/**
+ * The value the preview argument must have for the current user.
+ *
+ * @return string
+ */
+function wfd_preview_value() {
+    return wp_create_nonce( WFD_PREVIEW_ARG );
+}
 
 /**
  * Registers the preview route.
@@ -119,29 +129,33 @@ function wfd_preview_keep( $request ) {
     } else {
         update_user_meta( $user_id, WFD_PREVIEW_META, wp_slash( wp_json_encode( $changes ) ) );
     }
-    return rest_ensure_response( array( 'kept' => ! $is_empty ) );
+    return rest_ensure_response(
+        array(
+            'kept'    => ! $is_empty,
+            // A nonce lasts a day at most; the board takes a new one with each send.
+            'preview' => wfd_preview_value(),
+        )
+    );
 }
 
 /**
- * The kept changes for this request, or null when it is not a preview.
+ * The kept changes for this request, or null when it is not a preview: a
+ * front-end request, never one to the REST API, whose preview argument is a
+ * nonce of a user who may open the plugin.
  *
+ * @param WP $wp The request, parsed.
  * @return array|null
  */
-function wfd_preview_changes() {
-    static $changes = false;
-    if ( false !== $changes ) {
-        return $changes;
+function wfd_preview_changes( $wp ) {
+    if ( is_admin() || ! empty( $wp->query_vars['rest_route'] ) || ! isset( $_GET[ WFD_PREVIEW_ARG ] ) ) {
+        return null;
     }
-    $changes = null;
-    // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read only, for the current user's own changes.
-    if ( ! isset( $_GET[ WFD_PREVIEW_ARG ] ) || is_admin() || ! current_user_can( WFD_CAPABILITY ) ) {
-        return $changes;
+    $nonce = sanitize_text_field( wp_unslash( $_GET[ WFD_PREVIEW_ARG ] ) );
+    if ( ! wp_verify_nonce( $nonce, WFD_PREVIEW_ARG ) || ! current_user_can( WFD_CAPABILITY ) ) {
+        return null;
     }
     $stored = json_decode( (string) get_user_meta( get_current_user_id(), WFD_PREVIEW_META, true ), true );
-    if ( is_array( $stored ) ) {
-        $changes = $stored;
-    }
-    return $changes;
+    return is_array( $stored ) ? $stored : null;
 }
 
 /**
@@ -172,9 +186,11 @@ function wfd_preview_new_template( $id, $template ) {
 
 /**
  * Puts the kept changes in place, for a preview request.
+ *
+ * @param WP $wp The request, parsed.
  */
-function wfd_preview_hooks() {
-    $changes = wfd_preview_changes();
+function wfd_preview_hooks( $wp ) {
+    $changes = wfd_preview_changes( $wp );
     if ( null === $changes ) {
         return;
     }
@@ -316,7 +332,7 @@ function wfd_preview_hooks() {
                 );
             }
         );
-        // Styles read before this request's user was known are read again.
+        // Styles read earlier in the request are read again.
         if ( function_exists( 'wp_clean_theme_json_cache' ) ) {
             wp_clean_theme_json_cache();
         } else {
@@ -343,4 +359,6 @@ function wfd_preview_hooks() {
         }
     }
 }
-add_action( 'init', 'wfd_preview_hooks', 0 );
+// Once the request is known not to be for the REST API, and before the page
+// is queried.
+add_action( 'parse_request', 'wfd_preview_hooks', 0 );

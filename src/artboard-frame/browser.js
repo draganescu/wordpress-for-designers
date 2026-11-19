@@ -13,21 +13,21 @@ const PAGE_CSS =
 
 /**
  * The query argument that asks for a page with the board's unsaved changes
- * (D57).
+ * (D57). Its value is a nonce the server gives.
  */
 const PREVIEW_ARG = 'wfd_preview';
 
 /**
  * A URL with or without the preview argument.
  *
- * @param {string}  href      The URL.
- * @param {boolean} isPreview Whether it asks for unsaved changes.
+ * @param {string}      href    The URL.
+ * @param {string|null} preview The argument's value, or null for none.
  * @return {string} The URL.
  */
-function withPreview( href, isPreview ) {
+function withPreview( href, preview ) {
     const url = new URL( href );
-    if ( isPreview ) {
-        url.searchParams.set( PREVIEW_ARG, '1' );
+    if ( preview ) {
+        url.searchParams.set( PREVIEW_ARG, preview );
     } else {
         url.searchParams.delete( PREVIEW_ARG );
     }
@@ -47,7 +47,7 @@ export function addressOf( href, homeUrl ) {
         return null;
     }
     // The preview argument is not part of the address.
-    return '/' + withPreview( href, false ).slice( homeUrl.length );
+    return '/' + withPreview( href, null ).slice( homeUrl.length );
 }
 
 /**
@@ -64,13 +64,14 @@ export function normalizeAddress( typed ) {
 /**
  * The URL of an address on the site.
  *
- * @param {string}  path      The address, starting with a slash.
- * @param {string}  homeUrl   The site's home URL, ending with a slash.
- * @param {boolean} isPreview Whether it asks for unsaved changes (D57).
+ * @param {string}      path    The address, starting with a slash.
+ * @param {string}      homeUrl The site's home URL, ending with a slash.
+ * @param {string|null} preview The preview argument's value, to ask for
+ *                              unsaved changes (D57).
  * @return {string} The URL.
  */
-export function urlOf( path, homeUrl, isPreview = false ) {
-    return withPreview( homeUrl + path.slice( 1 ), isPreview );
+export function urlOf( path, homeUrl, preview = null ) {
+    return withPreview( homeUrl + path.slice( 1 ), preview );
 }
 
 /**
@@ -78,7 +79,8 @@ export function urlOf( path, homeUrl, isPreview = false ) {
  * @param {string}   props.path        The address to show.
  * @param {string}   props.homeUrl     The site's home URL.
  * @param {boolean}  props.isBrowsing  Whether the page takes input.
- * @param {boolean}  props.isPreview   Whether it shows unsaved changes (D57).
+ * @param {string}   props.preview     The preview argument's value when it
+ *                                     shows unsaved changes (D57).
  * @param {number}   props.reloadToken Reloads the page when it changes.
  * @param {Function} props.onNavigate  Called with the address the page is on.
  * @param {Function} props.onEscape    Called when Esc is pressed in the page.
@@ -89,7 +91,7 @@ export function ArtboardBrowser( {
     path,
     homeUrl,
     isBrowsing,
-    isPreview = false,
+    preview = null,
     reloadToken,
     onNavigate,
     onEscape,
@@ -99,11 +101,11 @@ export function ArtboardBrowser( {
     // The address the page is on, as last loaded.
     const current = useRef( null );
     const [ isLoaded, setLoaded ] = useState( false );
-    const [ src ] = useState( () => urlOf( path, homeUrl, isPreview ) );
+    const [ src ] = useState( () => urlOf( path, homeUrl, preview ) );
     // Where the page was scrolled to before a reload.
     const scrollBack = useRef( null );
     const latest = useRef( {} );
-    latest.current = { onNavigate, onEscape, onWheel, homeUrl, isPreview };
+    latest.current = { onNavigate, onEscape, onWheel, homeUrl, preview };
 
     // A new address from outside (typed in the address field) is gone to.
     useEffect( () => {
@@ -113,10 +115,10 @@ export function ArtboardBrowser( {
         }
         try {
             frame.contentWindow.location.assign(
-                urlOf( path, homeUrl, latest.current.isPreview )
+                urlOf( path, homeUrl, latest.current.preview )
             );
         } catch {
-            frame.src = urlOf( path, homeUrl, latest.current.isPreview );
+            frame.src = urlOf( path, homeUrl, latest.current.preview );
         }
     }, [ path, homeUrl ] );
 
@@ -148,7 +150,7 @@ export function ArtboardBrowser( {
 
     function onLoad() {
         const frame = iframeRef.current;
-        const { homeUrl: home, isPreview: preview } = latest.current;
+        const { homeUrl: home } = latest.current;
         let doc;
         let href;
         try {
@@ -160,7 +162,11 @@ export function ArtboardBrowser( {
         const address = doc ? addressOf( href, home ) : null;
         if ( address === null ) {
             // Off the site: back to the page it was on.
-            frame.src = urlOf( current.current ?? '/', home, preview );
+            frame.src = urlOf(
+                current.current ?? '/',
+                home,
+                latest.current.preview
+            );
             return;
         }
         current.current = address;
@@ -182,9 +188,12 @@ export function ArtboardBrowser( {
                 const link = event.target.closest?.( 'a[href]' );
                 if ( link && addressOf( link.href, home ) === null ) {
                     event.preventDefault();
-                } else if ( link && preview ) {
+                } else if ( link && latest.current.preview ) {
                     // A link followed keeps showing unsaved changes.
-                    link.href = withPreview( link.href, true );
+                    link.href = withPreview(
+                        link.href,
+                        latest.current.preview
+                    );
                 }
             },
             true
@@ -200,7 +209,7 @@ export function ArtboardBrowser( {
                         const field = doc.createElement( 'input' );
                         field.type = 'hidden';
                         field.name = PREVIEW_ARG;
-                        field.value = '1';
+                        field.value = latest.current.preview;
                         form.appendChild( field );
                     }
                 },
