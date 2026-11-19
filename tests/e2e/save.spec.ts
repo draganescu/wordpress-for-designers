@@ -62,6 +62,36 @@ const changeStyles = async ( page: Page ) => {
     await page.getByRole( 'menuitemradio', { name: 'Evening' } ).click();
 };
 
+/**
+ * Clicks the board at a point of the canvas area, as a placement does.
+ * @param page
+ * @param dx
+ * @param dy
+ */
+const placeAt = async ( page: Page, dx: number, dy: number ) => {
+    const canvas = ( await page
+        .locator( '[data-wfd-region="canvas"]' )
+        .boundingBox() )!;
+    await page.mouse.move( canvas.x + dx - 20, canvas.y + dy - 20 );
+    await page.mouse.move( canvas.x + dx, canvas.y + dy, { steps: 2 } );
+    await page.mouse.down();
+    await page.mouse.up();
+};
+
+/**
+ * Places a new template part, which becomes Live.
+ * @param page
+ * @param dx
+ * @param dy
+ */
+const placeNewPart = async ( page: Page, dx = 300, dy = 620 ) => {
+    await page.locator( '[data-wfd-control="L2"]' ).click();
+    await page
+        .getByRole( 'menuitem', { name: 'Template part', exact: true } )
+        .click();
+    await placeAt( page, dx, dy );
+};
+
 const card = ( page: Page, name: string ) =>
     drawer( page ).locator( '.wfd-review__item', {
         has: page.getByRole( 'checkbox', { name, exact: true } ),
@@ -96,27 +126,14 @@ test.describe( 'SAVE', () => {
             .getByRole( 'menuitem', { name: 'Template', exact: true } )
             .click();
         await page.getByRole( 'menuitem', { name: 'Single item' } ).click();
-        const canvas = ( await page
-            .locator( '[data-wfd-region="canvas"]' )
-            .boundingBox() )!;
-        await page.mouse.move( canvas.x + 280, canvas.y + 600 );
-        await page.mouse.move( canvas.x + 300, canvas.y + 620, { steps: 2 } );
-        await page.mouse.down();
-        await page.mouse.up();
+        await placeAt( page, 300, 620 );
         await expect(
             page.locator( '[data-wfd-tier="live"]' )
         ).toHaveAttribute( 'data-wfd-kind', 'template' );
         await expect( review( page ) ).toHaveText( 'Review 3 changes' );
         // A new part.
         await page.getByRole( 'button', { name: 'Back to the board' } ).click();
-        await page.locator( '[data-wfd-control="L2"]' ).click();
-        await page
-            .getByRole( 'menuitem', { name: 'Template part', exact: true } )
-            .click();
-        await page.mouse.move( canvas.x + 480, canvas.y + 700 );
-        await page.mouse.move( canvas.x + 500, canvas.y + 720, { steps: 2 } );
-        await page.mouse.down();
-        await page.mouse.up();
+        await placeNewPart( page, 500, 720 );
         await expect( review( page ) ).toHaveText( 'Review 4 changes' );
     } );
 
@@ -390,17 +407,7 @@ test.describe( 'SAVE', () => {
         const header = artboardOf( fixture, 'template-part' );
         await editText( page, header.id, 'Fixture header text', ' doomed' );
         await changeStyles( page );
-        await page.locator( '[data-wfd-control="L2"]' ).click();
-        await page
-            .getByRole( 'menuitem', { name: 'Template part', exact: true } )
-            .click();
-        const canvas = ( await page
-            .locator( '[data-wfd-region="canvas"]' )
-            .boundingBox() )!;
-        await page.mouse.move( canvas.x + 280, canvas.y + 600 );
-        await page.mouse.move( canvas.x + 300, canvas.y + 620, { steps: 2 } );
-        await page.mouse.down();
-        await page.mouse.up();
+        await placeNewPart( page );
         await expect( page.locator( '[data-wfd-artboard]' ) ).toHaveCount( 10 );
         await page.getByRole( 'button', { name: 'Back to the board' } ).click();
         await expect( review( page ) ).toHaveText( 'Review 3 changes' );
@@ -490,56 +497,89 @@ test.describe( 'SAVE', () => {
         expect( await warned() ).toBe( false );
     } );
 
-    test( 'AC-SAVE-08 Discard on one item, after confirmation, reverts that record alone, or removes that unsaved new template or part; the other items stay changed', async ( {
+    test( 'AC-SAVE-08 Discard on one item, after confirmation, reverts that record alone as one step that Undo and Redo act on, or removes that unsaved new template or part from the board; the other items stay changed', async ( {
         page,
         requestUtils,
     } ) => {
         const header = artboardOf( fixture, 'template-part' );
         await editText( page, header.id, 'Fixture header text', ' doomed' );
         await changeStyles( page );
-        await page.locator( '[data-wfd-control="L2"]' ).click();
-        await page
-            .getByRole( 'menuitem', { name: 'Template part', exact: true } )
-            .click();
-        const canvas = ( await page
-            .locator( '[data-wfd-region="canvas"]' )
-            .boundingBox() )!;
-        await page.mouse.move( canvas.x + 280, canvas.y + 600 );
-        await page.mouse.move( canvas.x + 300, canvas.y + 620, { steps: 2 } );
-        await page.mouse.down();
-        await page.mouse.up();
+        await placeNewPart( page );
         await expect( page.locator( '[data-wfd-artboard]' ) ).toHaveCount( 10 );
         await page.getByRole( 'button', { name: 'Back to the board' } ).click();
-        await expect( review( page ) ).toHaveText( 'Review 3 changes' );
+        // A step of the board's history that has the new part in it.
+        await page.keyboard.press( 'ArrowRight' );
+        const undo = page.locator( '[data-wfd-control="H3"]' );
+        const redo = page.locator( '[data-wfd-control="H4"]' );
+        await expect( undo ).toHaveAccessibleName(
+            'Undo move artboard, on the board'
+        );
+        // A page whose only edit is to its meta, as a footnote makes.
+        await page.evaluate( ( id ) => {
+            const { select, dispatch } = ( window as any ).wp.data;
+            const args = [ 'postType', 'page', id ];
+            const { meta } = select( 'core' ).getEntityRecord( ...args );
+            dispatch( 'core' ).editEntityRecord( ...args, {
+                meta: { ...meta, footnotes: '[{"id":"a","content":"note"}]' },
+            } );
+        }, fixture.pages.member );
+        await expect( review( page ) ).toHaveText( 'Review 4 changes' );
 
         await review( page ).click();
         const panel = drawer( page );
         const items = panel.locator( '.wfd-review__item' );
-        const discard = ( name: string ) =>
-            card( page, name ).getByRole( 'button', {
-                name: 'Discard',
-                exact: true,
-            } );
+        const confirm = page.getByRole( 'alertdialog' );
+        const discard = async ( name: string ) => {
+            await card( page, name )
+                .getByRole( 'button', { name: 'Discard', exact: true } )
+                .click();
+            await expect( confirm ).toContainText(
+                `Discard changes to ${ name }?`
+            );
+            await expect( confirm.getByRole( 'button' ) ).toHaveText( [
+                'Cancel',
+                'Discard',
+            ] );
+        };
         await expect(
             panel.getByRole( 'button', { name: 'Discard', exact: true } )
-        ).toHaveCount( 3 );
+        ).toHaveCount( 4 );
 
-        // The Header, unchecked first: the checkbox makes no difference.
+        // The page: its meta edit goes too.
+        await discard( 'Become a member' );
+        await confirm.getByRole( 'button', { name: 'Discard' } ).click();
+        await expect( card( page, 'Become a member' ) ).toHaveCount( 0 );
+        await expect( items ).toHaveCount( 3 );
+
+        // The Header, after a save of it alone has failed.
+        await card( page, 'Styles' ).getByRole( 'checkbox' ).uncheck();
+        await card( page, 'Untitled part' ).getByRole( 'checkbox' ).uncheck();
+        const failing = ( route: any ) =>
+            route.request().method() === 'GET'
+                ? route.continue()
+                : route.abort();
+        await page.route( /template-parts/, failing );
+        await panel.getByRole( 'button', { name: 'Save 1 change' } ).click();
+        await expect( card( page, 'Header' ) ).toContainText(
+            "Couldn't save Header."
+        );
+        await page.unroute( /template-parts/, failing );
+        // Unchecked as well: the checkbox makes no difference.
         await card( page, 'Header' ).getByRole( 'checkbox' ).uncheck();
-        await discard( 'Header' ).click();
-        const confirm = page.getByRole( 'alertdialog' );
-        await expect( confirm ).toContainText( 'Discard changes to Header?' );
-        await expect( confirm ).toContainText( "This can't be undone." );
-        await expect( confirm.getByRole( 'button' ) ).toHaveText( [
-            'Cancel',
-            'Discard',
-        ] );
+        await discard( 'Header' );
+        // A saved item's discard can be undone, so nothing says it can't.
+        await expect( confirm ).not.toContainText( "This can't be undone." );
         // Cancel keeps everything.
         await confirm.getByRole( 'button', { name: 'Cancel' } ).click();
         await expect( items ).toHaveCount( 3 );
-        await expect( discard( 'Header' ) ).toBeFocused();
+        await expect(
+            card( page, 'Header' ).getByRole( 'button', {
+                name: 'Discard',
+                exact: true,
+            } )
+        ).toBeFocused();
 
-        await discard( 'Header' ).click();
+        await discard( 'Header' );
         await confirm.getByRole( 'button', { name: 'Discard' } ).click();
         await expect( confirm ).toHaveCount( 0 );
         await expect( items ).toHaveCount( 2 );
@@ -549,15 +589,10 @@ test.describe( 'SAVE', () => {
         ).toBeFocused();
         await expect( card( page, 'Header' ) ).toHaveCount( 0 );
         await expect( card( page, 'Styles' ) ).toHaveCount( 1 );
-        await expect(
-            panel.getByRole( 'button', { name: 'Save 2 changes' } )
-        ).toBeVisible();
 
-        // The new part leaves the board.
-        await discard( 'Untitled part' ).click();
-        await expect( confirm ).toContainText(
-            'Discard changes to Untitled part?'
-        );
+        // The new part leaves the board, which cannot be undone.
+        await discard( 'Untitled part' );
+        await expect( confirm ).toContainText( "This can't be undone." );
         await confirm.getByRole( 'button', { name: 'Discard' } ).click();
         await expect( items ).toHaveCount( 1 );
         await expect( card( page, 'Styles' ) ).toHaveCount( 1 );
@@ -565,6 +600,10 @@ test.describe( 'SAVE', () => {
 
         await panel.getByRole( 'button', { name: 'Keep editing' } ).click();
         await expect( review( page ) ).toHaveText( 'Review 1 change' );
+        // Undo on the board does not bring the new part back.
+        await undo.click();
+        await expect( redo ).toBeEnabled();
+        await expect( page.locator( '[data-wfd-artboard]' ) ).toHaveCount( 9 );
         // The styles change is still there.
         await expect(
             page
@@ -573,11 +612,28 @@ test.describe( 'SAVE', () => {
         ).toBeVisible();
         // The Header shows its saved text again.
         await enterEdit( page, header.id );
+        const paragraph = editorFrame( page, header.id ).locator( 'p', {
+            hasText: 'Fixture header text',
+        } );
+        await expect( paragraph ).toHaveText( 'Fixture header text' );
+
+        // Undo brings the Header's changes back: checked, and with no error
+        // left from the save that failed.
+        await undo.click();
+        await expect( paragraph ).toHaveText( 'Fixture header text doomed' );
+        await expect( review( page ) ).toHaveText( 'Review 2 changes' );
+        await review( page ).click();
         await expect(
-            editorFrame( page, header.id ).locator( 'p', {
-                hasText: 'Fixture header text',
-            } )
-        ).toHaveText( 'Fixture header text' );
+            card( page, 'Header' ).getByRole( 'checkbox' )
+        ).toBeChecked();
+        await expect( card( page, 'Header' ) ).not.toContainText(
+            "Couldn't save Header."
+        );
+        await panel.getByRole( 'button', { name: 'Keep editing' } ).click();
+        // Redo discards them again.
+        await redo.click();
+        await expect( paragraph ).toHaveText( 'Fixture header text' );
+        await expect( review( page ) ).toHaveText( 'Review 1 change' );
         const saved = await requestUtils.rest< { content: { raw: string } } >( {
             path: `/wp/v2/template-parts/${ fixture.theme }//header`,
             params: { context: 'edit' },
