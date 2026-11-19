@@ -3,12 +3,7 @@
  * is replaced by a message and nothing of it can be used; with room again it
  * comes back as it was.
  */
-import {
-    createPortal,
-    useEffect,
-    useLayoutEffect,
-    useRef,
-} from '@wordpress/element';
+import { createPortal, useLayoutEffect, useRef } from '@wordpress/element';
 import { useMediaQuery } from '@wordpress/compose';
 import { __ } from '@wordpress/i18n';
 import { chevronLeft, chevronRight } from '@wordpress/icons';
@@ -17,6 +12,7 @@ import { EmptyState, Icon } from '@wordpress/ui';
 // The narrowest window a board is shown in: an iPad Air in landscape.
 const MIN_BOARD_WIDTH = 1180;
 const QUERY = `(min-width: ${ MIN_BOARD_WIDTH }px)`;
+// WordPress binds shortcuts on the document to all three.
 const KEY_EVENTS = [ 'keydown', 'keypress', 'keyup' ];
 
 /**
@@ -57,40 +53,40 @@ function NeedsSpace() {
     const ref = useRef();
     useLayoutEffect( () => {
         const dialog = ref.current;
-        // Only room takes the message away. Esc is refused, and if the
-        // browser closes the dialog anyway it is shown again.
-        const refuse = ( event ) => event.preventDefault();
-        const reopen = () => {
-            if ( dialog.isConnected && ! dialog.open ) {
-                dialog.showModal();
-            }
-        };
-        dialog.showModal();
-        dialog.addEventListener( 'cancel', refuse );
-        dialog.addEventListener( 'close', reopen );
-        return () => {
-            dialog.removeEventListener( 'cancel', refuse );
-            dialog.removeEventListener( 'close', reopen );
-            dialog.close();
-        };
-    }, [] );
-    useEffect( () => {
-        // The board listens for keys on the document. They stop here; the
-        // browser's own shortcuts are left alone, except Esc, which would
-        // close the dialog.
-        const stop = ( event ) => {
+        // Only room takes the message away, so each way the browser has of
+        // closing a dialog for the user is answered.
+        // Esc: the key is cancelled before the browser acts on it. Every
+        // other key stops here too, because the board and WordPress listen
+        // on the document, which keys reach from the message. The
+        // browser's own shortcuts are left alone.
+        const stopKey = ( event ) => {
             event.stopPropagation();
             if ( event.key === 'Escape' ) {
                 event.preventDefault();
             }
         };
+        // A request to close with no key behind it, such as the back
+        // button on Android: refused.
+        const refuse = ( event ) => event.preventDefault();
+        // A request the browser does not let the page refuse, as Chromium
+        // treats a repeated one: the dialog is shown again.
+        const reopen = () => dialog.showModal();
+
+        dialog.showModal();
         KEY_EVENTS.forEach( ( type ) =>
-            window.addEventListener( type, stop, true )
+            window.addEventListener( type, stopKey, true )
         );
-        return () =>
+        dialog.addEventListener( 'cancel', refuse );
+        dialog.addEventListener( 'close', reopen );
+        return () => {
             KEY_EVENTS.forEach( ( type ) =>
-                window.removeEventListener( type, stop, true )
+                window.removeEventListener( type, stopKey, true )
             );
+            dialog.removeEventListener( 'cancel', refuse );
+            dialog.removeEventListener( 'close', reopen );
+            // Gives focus back to where it was on the board.
+            dialog.close();
+        };
     }, [] );
     return createPortal(
         <dialog
