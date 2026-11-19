@@ -66,6 +66,11 @@ export function usesText( count ) {
  */
 export function entityDescription( artboard, info = {} ) {
     switch ( artboard.kind ) {
+        case 'browser':
+            return __(
+                'The site as visitors see it.',
+                'wordpress-for-designers'
+            );
         case 'media':
             return info.width && info.height
                 ? sprintf(

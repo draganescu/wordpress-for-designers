@@ -149,6 +149,14 @@ function wfd_layout_error( $layout ) {
 
     $ids = array();
     foreach ( $layout['artboards'] as $artboard ) {
+        if ( is_array( $artboard ) && isset( $artboard['kind'] ) && 'browser' === $artboard['kind'] ) {
+            $error = wfd_browser_error( $artboard, $ids );
+            if ( true !== $error ) {
+                return $error;
+            }
+            $ids[ $artboard['id'] ] = true;
+            continue;
+        }
         // A media object has a width and no device; every other kind has a device and no width.
         $is_media = is_array( $artboard ) && isset( $artboard['kind'] ) && 'media' === $artboard['kind'];
         $fields   = $is_media
@@ -184,6 +192,33 @@ function wfd_layout_error( $layout ) {
     return array_key_exists( 'notes', $layout )
         ? wfd_notes_error( $layout['notes'], $ids )
         : true;
+}
+
+/**
+ * Checks a browser of a layout (spec/data-model.md, D48).
+ *
+ * @param array $browser The decoded browser.
+ * @param array $ids     Ids already used.
+ * @return true|string True when valid, otherwise the reason.
+ */
+function wfd_browser_error( $browser, $ids ) {
+    $fields = array( 'id', 'kind', 'path', 'device', 'x', 'y' );
+    if ( array_diff( array_keys( $browser ), $fields ) || count( $browser ) !== count( $fields ) ) {
+        return __( 'Each browser must have exactly the fields id, kind, path, device, x and y.', 'wordpress-for-designers' );
+    }
+    if ( ! is_string( $browser['id'] ) || ! wp_is_uuid( $browser['id'] ) || isset( $ids[ $browser['id'] ] ) ) {
+        return __( 'Each artboard id must be a unique UUID.', 'wordpress-for-designers' );
+    }
+    if ( ! is_string( $browser['path'] ) || '/' !== substr( $browser['path'], 0, 1 ) || strlen( $browser['path'] ) > 2000 ) {
+        return __( 'The browser path must start with / and have at most 2000 characters.', 'wordpress-for-designers' );
+    }
+    if ( ! in_array( $browser['device'], array( 'desktop', 'tablet', 'mobile' ), true ) ) {
+        return __( 'The artboard device is not valid.', 'wordpress-for-designers' );
+    }
+    if ( ! wfd_is_number( $browser['x'] ) || ! wfd_is_number( $browser['y'] ) ) {
+        return __( 'The browser x and y must be numbers.', 'wordpress-for-designers' );
+    }
+    return true;
 }
 
 /**

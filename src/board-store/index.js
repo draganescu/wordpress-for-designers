@@ -31,6 +31,8 @@ const DEFAULT_STATE = {
     past: [],
     future: [],
     removingId: null,
+    // Goes up each time Review has saved something; browsers reload (D48).
+    siteVersion: 0,
 };
 
 /**
@@ -376,6 +378,42 @@ const actions = {
             } );
         },
 
+    /**
+     * Keeps the address a browser is on, outside the history (D48).
+     *
+     * @param {string} id   The browser.
+     * @param {string} path The address, relative to the site's home.
+     */
+    setBrowserPath:
+        ( id, path ) =>
+        ( { select, dispatch } ) => {
+            const artboards = select.getArtboards();
+            const browser = artboards.find( ( a ) => a.id === id );
+            if (
+                ! browser ||
+                browser.kind !== 'browser' ||
+                browser.path === path
+            ) {
+                return;
+            }
+            dispatch( {
+                type: 'LAYOUT_SILENT',
+                artboards: artboards.map( ( a ) =>
+                    a.id === id ? { ...a, path } : a
+                ),
+            } );
+        },
+    /**
+     * Tells browsers that the site has changed.
+     */
+    bumpSiteVersion:
+        () =>
+        ( { select, dispatch } ) => {
+            dispatch( {
+                type: 'PATCH',
+                patch: { siteVersion: select.getSiteVersion() + 1 },
+            } );
+        },
     setNoteToolArmed: ( isArmed ) => ( {
         type: 'PATCH',
         patch: { isNoteToolArmed: isArmed },
@@ -531,6 +569,7 @@ const selectors = {
     isListViewOpen: ( state ) => state.isListViewOpen,
     getViewport: ( state ) => state.viewport,
     getRemovingId: ( state ) => state.removingId,
+    getSiteVersion: ( state ) => state.siteVersion,
     getUndoName: ( state ) => state.past[ state.past.length - 1 ]?.name ?? null,
     getRedoName: ( state ) =>
         state.future[ state.future.length - 1 ]?.name ?? null,
@@ -557,10 +596,25 @@ export function toLayout( artboards, notes = [] ) {
         version: 1,
         artboards: artboards
             .filter( ( artboard ) => ! artboard.draft )
-            .map( ( { id, kind, entityId, device, x, y, width, height } ) =>
-                kind === 'media'
-                    ? { id, kind, entityId, x, y, width, height }
-                    : { id, kind, entityId, device, x, y, height }
+            .map(
+                ( {
+                    id,
+                    kind,
+                    entityId,
+                    path,
+                    device,
+                    x,
+                    y,
+                    width,
+                    height,
+                } ) => {
+                    if ( kind === 'browser' ) {
+                        return { id, kind, path, device, x, y };
+                    }
+                    return kind === 'media'
+                        ? { id, kind, entityId, x, y, width, height }
+                        : { id, kind, entityId, device, x, y, height };
+                }
             ),
         // A board with no notes keeps the layout it always had.
         ...( notes.length && {

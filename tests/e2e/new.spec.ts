@@ -44,18 +44,19 @@ test.describe( 'NEW', () => {
         await openBoard( page, fixture.boardId );
     } );
 
-    test( 'AC-NEW-01 The Add artboard menu lists the four kinds with descriptions; Template has the submenu', async ( {
+    test( 'AC-NEW-01 The Add artboard menu lists the four kinds and Browser with descriptions; Template has the submenu', async ( {
         page,
     } ) => {
         await openMenu( page );
         const menu = page.getByRole( 'menu' ).first();
         const items = menu.getByRole( 'menuitem' );
-        await expect( items ).toHaveCount( 4 );
+        await expect( items ).toHaveCount( 5 );
         const expected = [
             [ 'Page', 'Content at its own address.' ],
             [ 'Template', 'The layout many pages or posts share.' ],
             [ 'Template part', 'A header, footer or other shared region.' ],
             [ 'Pattern', 'A section to drop into any page or template.' ],
+            [ 'Browser', 'The site as visitors see it.' ],
         ];
         for ( const [ index, [ title, line ] ] of expected.entries() ) {
             await expect( items.nth( index ) ).toContainText( title );

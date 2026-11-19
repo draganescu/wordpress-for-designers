@@ -47,10 +47,12 @@ export function useInserterActions( {
     const dragged = useRef( null );
     const [ dropTarget, setDropTarget ] = useState( null );
 
-    const isEditing = useCallback(
-        () => !! registry.select( boardStore ).getLiveId(),
-        [ registry ]
-    );
+    // A browser being browsed has no content to insert into (D48).
+    const isEditing = useCallback( () => {
+        const board = registry.select( boardStore );
+        const live = board.getArtboard( board.getLiveId() );
+        return !! live && live.kind !== 'browser';
+    }, [ registry ] );
 
     /**
      * The blocks an item becomes inside an artboard. A template has none.

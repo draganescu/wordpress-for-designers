@@ -141,9 +141,13 @@ export function useEditing( { viewport, areaRef, getArtboards, widthOf } ) {
                     return;
                 }
                 const iframe = areaRef.current?.querySelector(
-                    `[data-wfd-artboard="${ id }"] iframe[name="editor-canvas"]`
+                    artboard.kind === 'browser'
+                        ? `[data-wfd-artboard="${ id }"] iframe:not([inert])`
+                        : `[data-wfd-artboard="${ id }"] iframe[name="editor-canvas"]`
                 );
                 if (
+                    // A browser's page takes the keys while browsing (D48).
+                    ( artboard.kind === 'browser' && iframe ) ||
                     iframe?.contentDocument?.querySelector(
                         '.is-root-container'
                     )
@@ -197,6 +201,18 @@ export function useEditing( { viewport, areaRef, getArtboards, widthOf } ) {
             const mod = event.metaKey || event.ctrlKey;
             if ( mod && ! event.altKey && event.key.toLowerCase() === 'z' ) {
                 event.preventDefault();
+                const board = registry.select( boardStore );
+                if (
+                    board.getArtboard( board.getLiveId() )?.kind === 'browser'
+                ) {
+                    // A browser has no content history (D48).
+                    if ( event.shiftKey ) {
+                        registry.dispatch( boardStore ).redoLayout();
+                    } else {
+                        registry.dispatch( boardStore ).undoLayout();
+                    }
+                    return;
+                }
                 if ( event.shiftKey ) {
                     registry.dispatch( coreStore ).redo();
                 } else {

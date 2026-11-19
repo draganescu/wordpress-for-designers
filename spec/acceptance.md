@@ -106,7 +106,7 @@ Unless a criterion says otherwise, the fixture in `architecture.md` is loaded an
 
 ## NEW
 
-- AC-NEW-01 The Add artboard menu lists the four kinds with their descriptions; Template has the submenu described in `screens/AddArtboard.md`. `[U]`
+- AC-NEW-01 The Add artboard menu lists the four kinds and Browser (D48) with their descriptions; Template has the submenu described in `screens/AddArtboard.md`. `[U]`
 - AC-NEW-02 After choosing a kind, a placement ghost follows the pointer; Esc cancels and nothing is created. `[U]`
 - AC-NEW-03 Placing a Page creates a draft page titled "Untitled page" whose template is the theme's `blank` template, or else its `page-no-title` template, when the theme has one; placing a Pattern creates a draft synced pattern titled "Untitled pattern". `[U]`
 - AC-NEW-04 Placing a Template or Template part creates no post until it is saved from Review, where it is listed as "New". `[U]`

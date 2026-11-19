@@ -19,10 +19,15 @@ import { store as boardStore } from '../board-store';
 import { useLayoutAutosave } from '../board-store/use-layout-autosave';
 import { createViewport } from '../viewport';
 import { ArtboardEditor } from '../artboard-editor';
-import { ArtboardError, ArtboardFrame, ArtboardMedia } from '../artboard-frame';
+import {
+    ArtboardBrowser,
+    ArtboardError,
+    ArtboardFrame,
+    ArtboardMedia,
+} from '../artboard-frame';
 import { ArtboardPreview, ArtboardPreviewOnce } from '../artboard-preview';
 import { ArtboardSnapshot, createSnapshotStore } from '../artboard-snapshot';
-import { useTiers } from '../tier-scheduler';
+import { isNearView, useTiers } from '../tier-scheduler';
 import { InserterPanel } from '../inserter/inserter-panel';
 import { useInserterActions } from '../inserter/use-inserter-actions';
 import { useInserterData } from '../inserter/use-inserter-data';
@@ -64,7 +69,7 @@ import { useEntityInfo } from './use-entity-info';
 import { NEW_ARTBOARD_HEIGHT, usePlacement } from './use-placement';
 import { removalInfo, useRemoval } from './use-removal';
 
-const { boardId, boardsUrl, userId, theme } = window.wfdConfig;
+const { boardId, boardsUrl, userId, theme, homeUrl } = window.wfdConfig;
 bootEditor();
 
 const VIEWPORT_KEY = `wfd/viewport/${ userId }/${ boardId }`;
@@ -207,9 +212,11 @@ export function App() {
         selectedNoteId,
         editingNoteId,
         isNoteToolArmed,
+        siteVersion,
     } = useSelect( ( select ) => {
         const board = select( boardStore );
         return {
+            siteVersion: board.getSiteVersion(),
             notes: board.getNotes(),
             selectedNoteId: board.getSelectedNoteId(),
             editingNoteId: board.getEditingNoteId(),
@@ -247,7 +254,15 @@ export function App() {
         setNoteHeight,
         startNoteEdit,
         endNoteEdit,
+        setBrowserPath,
     } = useDispatch( boardStore );
+    // Reloads asked for each browser (D48), by id.
+    const [ reloads, setReloads ] = useState( {} );
+    const reload = ( id ) =>
+        setReloads( ( current ) => ( {
+            ...current,
+            [ id ]: ( current[ id ] ?? 0 ) + 1,
+        } ) );
 
     // Hidden panels (D32): kept for the session only.
     const [ isLeftHidden, setLeftHidden ] = useState( false );
@@ -426,8 +441,12 @@ export function App() {
     const rects = useMemo(
         () =>
             layout
-                // Media objects are images, outside the tiers.
-                .filter( ( artboard ) => artboard.kind !== 'media' )
+                // Media objects are images and browsers are pages of the
+                // site, both outside the tiers.
+                .filter(
+                    ( artboard ) =>
+                        artboard.kind !== 'media' && artboard.kind !== 'browser'
+                )
                 .map( ( artboard ) => ( {
                     id: artboard.id,
                     ...rectOf( artboard, widthOf ),
@@ -520,12 +539,28 @@ export function App() {
     }
     const renderVersion = versionRef.current.value;
 
+    // A browser stops browsing when it is no longer selected (D38, D48), for
+    // example when the inserter places something.
+    const browsingId = artboards.find(
+        ( artboard ) => artboard.id === liveId && artboard.kind === 'browser'
+    )?.id;
+    const isBrowsingSelected = selectedIds.includes( browsingId );
+    const leaveEdit = editing.leaveEdit;
+    useEffect( () => {
+        if ( browsingId && ! isBrowsingSelected ) {
+            leaveEdit();
+        }
+    }, [ browsingId, isBrowsingSelected, leaveEdit ] );
+
     if ( ! isLoaded ) {
         return null;
     }
 
     const selected = artboards.find( ( a ) => a.id === selectedId );
     const live = artboards.find( ( a ) => a.id === liveId );
+    // A browser being browsed counts as in edit, but has no blocks (D48).
+    const isBrowsing = live?.kind === 'browser';
+    const liveEditor = isBrowsing ? null : live;
     const removing = artboards.find( ( a ) => a.id === removingId );
     let banner = null;
     if ( styles.preview?.banner ) {
@@ -569,7 +604,7 @@ export function App() {
                 onQueryChange={ setInserterQuery }
                 tab={ inserterTab }
                 onTabChange={ setInserterTab }
-                liveArtboardName={ live?.name ?? null }
+                liveArtboardName={ liveEditor?.name ?? null }
                 blocks={ inserterData.blocks }
                 patterns={ inserterData.patterns }
                 templates={ inserterData.templates }
@@ -578,7 +613,7 @@ export function App() {
                 { ...inserter.panelProps }
             />
         );
-    } else if ( live ) {
+    } else if ( liveEditor ) {
         left = isListViewOpen ? (
             <ListViewPanel onClose={ () => setListViewOpen( false ) } />
         ) : null;
@@ -633,7 +668,7 @@ export function App() {
     const isLeftShown = ! isLeftHidden && !! left;
     const showLeft = () => {
         setLeftHidden( false );
-        if ( live && ! isInserterOpen && ! isListViewOpen ) {
+        if ( liveEditor && ! isInserterOpen && ! isListViewOpen ) {
             setListViewOpen( true );
         }
     };
@@ -648,7 +683,7 @@ export function App() {
     };
 
     let right;
-    if ( live ) {
+    if ( liveEditor ) {
         right = (
             <EditingPanel
                 artboard={ live }
@@ -693,6 +728,8 @@ export function App() {
                 }
                 onEdit={ () => onEdit( selected.id ) }
                 onRemove={ () => setRemovingId( selected.id ) }
+                isBrowsing={ selected.id === liveId }
+                onReload={ () => reload( selected.id ) }
             />
         );
     } else {
@@ -723,7 +760,7 @@ export function App() {
                             } }
                             onBack={ editing.leaveEdit }
                             undo={
-                                live
+                                liveEditor
                                     ? {
                                           label: hasContentUndo
                                               ? contentTooltip(
@@ -747,7 +784,7 @@ export function App() {
                                       }
                             }
                             redo={
-                                live
+                                liveEditor
                                     ? {
                                           label: hasContentRedo
                                               ? contentTooltip(
@@ -770,8 +807,8 @@ export function App() {
                                           onClick: redoLayout,
                                       }
                             }
-                            isListViewOpen={ !! live && isListViewOpen }
-                            isListViewDisabled={ ! live }
+                            isListViewOpen={ !! liveEditor && isListViewOpen }
+                            isListViewDisabled={ ! liveEditor }
                             onToggleListView={ () => {
                                 if ( ! isListViewOpen ) {
                                     setLeftHidden( false );
@@ -918,9 +955,27 @@ export function App() {
                         >
                             { artboards.map( ( artboard ) => {
                                 const isMedia = artboard.kind === 'media';
-                                const tier = isMedia
+                                const isBrowser = artboard.kind === 'browser';
+                                let tier = isMedia
                                     ? 'media'
                                     : tiers.get( artboard.id ) || 'ghost';
+                                if ( isBrowser ) {
+                                    // Loaded whenever it is near the view
+                                    // (D48).
+                                    if ( artboard.id === liveId ) {
+                                        tier = 'live';
+                                    } else if (
+                                        isNearView(
+                                            rectOf( artboard, widthOf ),
+                                            settledViewport,
+                                            size
+                                        )
+                                    ) {
+                                        tier = 'browser';
+                                    } else {
+                                        tier = 'ghost';
+                                    }
+                                }
                                 const width = isMedia
                                     ? artboard.width
                                     : widthOf( artboard.device );
@@ -933,6 +988,28 @@ export function App() {
                                             record={ artboard.record }
                                         />
                                     );
+                                } else if ( isBrowser ) {
+                                    content =
+                                        tier === 'ghost' ? null : (
+                                            <ArtboardBrowser
+                                                path={ artboard.path }
+                                                homeUrl={ homeUrl }
+                                                isBrowsing={ tier === 'live' }
+                                                reloadToken={
+                                                    siteVersion +
+                                                    ( reloads[ artboard.id ] ??
+                                                        0 )
+                                                }
+                                                onNavigate={ ( path ) =>
+                                                    setBrowserPath(
+                                                        artboard.id,
+                                                        path
+                                                    )
+                                                }
+                                                onEscape={ editing.leaveEdit }
+                                                onWheel={ canvas.forwardWheel }
+                                            />
+                                        );
                                 } else if (
                                     tier === 'live' ||
                                     tier === 'warm'
@@ -1080,6 +1157,10 @@ export function App() {
                                                 device
                                             )
                                         }
+                                        onAddress={ ( path ) =>
+                                            setBrowserPath( artboard.id, path )
+                                        }
+                                        onReload={ () => reload( artboard.id ) }
                                     >
                                         { content }
                                     </ArtboardFrame>

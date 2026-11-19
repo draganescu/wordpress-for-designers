@@ -21,6 +21,28 @@ function intersects( a, b ) {
 }
 
 /**
+ * Whether a rectangle is within one viewport width or height of the visible
+ * area: the opposite of the Ghost rule. Browsers use it alone (D48).
+ *
+ * @param {Object} rect     The rectangle in board units.
+ * @param {Object} viewport The settled viewport.
+ * @param {Object} size     The canvas area size.
+ * @return {boolean} Whether it is near.
+ */
+export function isNearView( rect, viewport, size ) {
+    if ( ! size.width ) {
+        return false;
+    }
+    const visible = visibleRect( viewport, size );
+    return intersects( rect, {
+        x: visible.x - visible.width,
+        y: visible.y - visible.height,
+        width: visible.width * 3,
+        height: visible.height * 3,
+    } );
+}
+
+/**
  * @param {Object}  input
  * @param {Array}   input.rects       Artboard rectangles as { id, x, y, width, height }.
  * @param {Object}  input.viewport    The settled viewport.

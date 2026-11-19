@@ -289,6 +289,7 @@ export function useReview() {
     const save = useCallback( async () => {
         setIsSaving( true );
         const nextFailed = new Set();
+        let hasSaved = false;
         for ( const entry of entries ) {
             if ( unchecked.has( entry.key ) ) {
                 continue;
@@ -296,13 +297,18 @@ export function useReview() {
             try {
                 // One request per item.
                 await saveOne( entry );
+                hasSaved = true;
             } catch {
                 nextFailed.add( entry.key );
             }
         }
+        if ( hasSaved ) {
+            // Browsers show the saved site (D48).
+            board.bumpSiteVersion();
+        }
         setFailed( nextFailed );
         setIsSaving( false );
-    }, [ entries, unchecked, saveOne ] );
+    }, [ entries, unchecked, saveOne, board ] );
 
     const discardAll = useCallback( () => {
         for ( const entry of entries ) {

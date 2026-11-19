@@ -29,6 +29,8 @@ const NAMES = {
     pattern: __( 'Untitled pattern', 'wordpress-for-designers' ),
     template: __( 'Untitled template', 'wordpress-for-designers' ),
     'template-part': __( 'Untitled part', 'wordpress-for-designers' ),
+    // A browser is named by its address, and starts on the homepage (D48).
+    browser: '/',
 };
 
 function partBlock( part, tagName ) {
@@ -91,7 +93,7 @@ export function usePlacement( { theme, enterEdit } ) {
         };
     }, [] );
     const { saveEntityRecord, editEntityRecord } = useDispatch( coreStore );
-    const { addArtboard } = useDispatch( boardStore );
+    const { addArtboard, selectArtboard } = useDispatch( boardStore );
 
     const menu = useMemo( () => {
         const boardTemplates = onBoard.filter( ( a ) => a.kind === 'template' );
@@ -152,6 +154,20 @@ export function usePlacement( { theme, enterEdit } ) {
             }
             const chosen = placement;
             setPlacement( null );
+            if ( chosen.kind === 'browser' ) {
+                // Selected, not browsing (D48).
+                const browser = {
+                    id: window.crypto.randomUUID(),
+                    kind: 'browser',
+                    path: '/',
+                    device: 'desktop',
+                    x: Math.round( point.x ),
+                    y: Math.round( point.y ),
+                };
+                addArtboard( browser );
+                selectArtboard( browser.id );
+                return;
+            }
             const artboard = {
                 id: window.crypto.randomUUID(),
                 kind: chosen.kind,
@@ -284,6 +300,7 @@ export function usePlacement( { theme, enterEdit } ) {
             saveEntityRecord,
             editEntityRecord,
             addArtboard,
+            selectArtboard,
             enterEdit,
         ]
     );

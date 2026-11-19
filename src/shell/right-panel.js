@@ -144,7 +144,45 @@ export function ArtboardSettings( {
     onDeviceChange,
     onEdit,
     onRemove,
+    isBrowsing = false,
+    onReload,
 } ) {
+    if ( artboard.kind === 'browser' ) {
+        // A browser browses instead of editing, and reloads (D48).
+        return (
+            <div className="wfd-artboard-settings" data-wfd-panel="settings">
+                <EntityCard artboard={ artboard } info={ info } />
+                <DeviceControl
+                    device={ artboard.device }
+                    onChange={ onDeviceChange }
+                />
+                <Stack
+                    className="wfd-artboard-settings__actions"
+                    direction="row"
+                    gap="md"
+                    wrap="wrap"
+                >
+                    { ! isBrowsing && (
+                        <Button variant="solid" tone="brand" onClick={ onEdit }>
+                            { __( 'Browse', 'wordpress-for-designers' ) }
+                        </Button>
+                    ) }
+                    <Button variant="outline" tone="brand" onClick={ onReload }>
+                        { __( 'Reload', 'wordpress-for-designers' ) }
+                    </Button>
+                    <Button variant="outline" tone="brand" onClick={ onRemove }>
+                        { __( 'Remove from board', 'wordpress-for-designers' ) }
+                    </Button>
+                </Stack>
+                <WeakText className="wfd-artboard-settings__hint">
+                    { __(
+                        'Enter or double-click browses. Delete removes it from the board.',
+                        'wordpress-for-designers'
+                    ) }
+                </WeakText>
+            </div>
+        );
+    }
     if ( artboard.kind === 'media' ) {
         // A media object has no device and cannot be edited.
         return (

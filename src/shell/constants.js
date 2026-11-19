@@ -2,7 +2,7 @@
  * Kinds and devices (spec/data-model.md).
  */
 import { __ } from '@wordpress/i18n';
-import { page, layout, header, symbol, image } from '@wordpress/icons';
+import { page, layout, header, symbol, image, globe } from '@wordpress/icons';
 
 export const KIND_ORDER = [
     'page',
@@ -10,6 +10,7 @@ export const KIND_ORDER = [
     'template-part',
     'pattern',
     'media',
+    'browser',
 ];
 
 export const KINDS = {
@@ -45,7 +46,20 @@ export const KINDS = {
         icon: image,
         postType: 'attachment',
     },
+    // A window onto the site's front end (D48): it has a device and an
+    // address, and no entity.
+    browser: {
+        label: __( 'Browser', 'wordpress-for-designers' ),
+        group: __( 'Browsers', 'wordpress-for-designers' ),
+        icon: globe,
+        postType: null,
+    },
 };
+
+/**
+ * Height of a browser's window, in board units (D48).
+ */
+export const BROWSER_HEIGHT = 900;
 
 /**
  * Widest a media object is drawn on the board, in board units.
