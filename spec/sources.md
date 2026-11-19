@@ -71,5 +71,5 @@ The list below is generated from every `[N]` tag in the spec. Until the product 
 | 52 | `screens/README.md` | 80 | S6 / Tokens: Spacing group / heading-sm "Spacing"; one square per spacing preset with its px value under it / / Display only. `[N]` |
 | 53 | `screens/README.md` | 92 | E7 / Kind tab: live notice / `Notice`, caution tone, templates and parts only / "Templates have no draft. Saving this one puts it live on every {purpose} of the site." for templates; "Template parts have no draft. Saving this one puts it live everywhere it ... |
 | 54 | `screens/ResetDialog.md` | 7 | **Source.** [U]; hiding the checkbox is [N] |
-| 55 | `screens/Review.md` | 7 | **Source.** [U] [D:Review]; the discard confirmation, the five-line limit and the wording of block change lines are [N] |
+| 55 | `screens/Review.md` | 7 | **Source.** [U] [D:Review]; each item's "Discard" control and what it does are D48 [U] and are not in the image; that control's variant and place, the wording of the discard confirmations, the five-line limit and the wording of block change lines are [N] |
 | 56 | `screens/Selected.md` | 7 | **Source.** [U] [N] for this panel's content |

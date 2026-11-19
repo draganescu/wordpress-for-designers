@@ -4,7 +4,7 @@
 
 **State.** The Review drawer with three changed items.
 
-**Source.** [U] [D:Review]; the "Discard" control of each item is D48 and is not in the image; the discard confirmation, the five-line limit and the wording of block change lines are [N]
+**Source.** [U] [D:Review]; each item's "Discard" control and what it does are D48 [U] and are not in the image; that control's variant and place, the wording of the discard confirmations, the five-line limit and the wording of block change lines are [N]
 
 ## Regions used (defined in README.md)
 
