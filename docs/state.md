@@ -34,7 +34,8 @@ A "Designer" menu in wp-admin lists boards. A board opens full screen: a header,
 - **Selecting several.** Cmd/Ctrl + click in the artboard list or on the board adds an artboard to the selection or takes it out; Shift + click in the list selects a range (D41). Dragging from empty board draws a rectangle and selects every artboard it touches as it is dragged; with Cmd/Ctrl it adds to the selection, and in edit it first leaves edit (D43, in `src/shell/use-canvas-interactions.js`; OQ-29 lists the builder's choices). Several selected artboards move together, by drag or arrow keys, and Delete takes them all off the board with no dialog; the right panel shows Styles. The store keeps `selectedIds`; `getSelectedId` gives an id only when exactly one is selected.
 - **Keyboard shortcuts dialog.** A control floating at the bottom left of the canvas area, and Ctrl + Option + H on a Mac or Shift + Alt + H elsewhere, open a dialog listing the board's shortcuts (D42). It is in `src/shell/shortcuts-dialog.js`. Closing it puts focus back where it was, the caret of a block included. The control's shadow is a Sass variable of `@wordpress/base-styles`, because the design system has no elevation token (OQ-28).
 - **Tidy up.** A "Tidy up" control in the header, just before the zoom menu (H12), puts everything on the board in one row per kind, in left-panel order, starting at the top left of what was there, then fits all (D45). It is one undoable layout step named "tidy up", and is disabled while an artboard is in edit or with fewer than two items. The arrangement is in `src/shell/tidy.js`. Row spacing uses each artboard's last measured height, so a height not yet measured can leave a row gap uneven; labels are drawn at screen size, so at low zoom the labels of narrow artboards can run into the next one's.
-- **Browsers.** "Browser" in the Add artboard menu places a window onto the site's front end, the homepage first, at a device width and 900 board units tall (D55). Double-click, Enter or "Browse" starts browsing, which is the Live state: links work, the wheel scrolls the page, and the label holds an address field and Reload. The address is kept as `path` in the layout, outside the undo history. Dragging the window's bottom edge resizes it, from 200 units up, saved as `height` and undoable (D56); the page keeps its scroll position after browsing. A browser can show the board's unsaved changes (D57, the default) or the saved site: the board sends its unsaved changes to `wfd/v1/preview` (`src/shell/use-preview-push.js`) about a second after the last change, and pages asked for with a `wfd_preview` argument holding that user's nonce are rendered with them by `includes/preview.php`, through public filters only. The kept changes are one record per user, site and open board page, dropped an hour after the page last sent them and deleted on uninstall (OQ-38), so they could later move into a Customizer changeset for shared or scheduled previews. Browsers reload after Review saves anything. The window is `src/artboard-frame/browser.js`; it is same-origin, so the plugin reads the page's address, hides the WordPress toolbar with a style and listens for Esc and Cmd/Ctrl + wheel inside the page. Browsers are outside the tiers: near the view the page is loaded, far away it is a box. OQ-36 lists the builder's choices.
+- **Browsers.** "Browser" in the Add artboard menu places a window onto the site's front end, the homepage first, at a device width and 900 board units tall (D55). Double-click, Enter or "Browse" starts browsing, which counts as edit: links work, the wheel scrolls the page, and the label holds an address field and Reload. The store keeps the browser being browsed as `browsingId`, apart from the Live editor's `liveId`; `getEditId` gives either. The address is kept as `path` in the layout, outside the undo history. Dragging the window's bottom edge resizes it, from 200 units up, saved as `height` and undoable (D56; C4, C12 and C24 carry the owner's exceptions for it); the page keeps its scroll position after browsing. The window is `src/artboard-frame/browser.js`, drawn through `browser-artboard.js`. Its frame is sandboxed (scripts, forms and its own origin only), so a page cannot take the board elsewhere; it is same-origin, so the plugin reads the page's address, hides the WordPress toolbar with a style and listens for Esc and Cmd/Ctrl + wheel inside the page, from the moment each document exists. A page off the site, or one the board cannot read, is sent back once and then left. Browsers are outside the tiers: near the view the page is loaded, far away it is a box. OQ-36 lists the builder's choices.
+- **Previewing unsaved changes.** A browser shows the board's unsaved changes (D57, the default) or the saved site. The client side is one file, `src/artboard-frame/preview.js`: about a second after the last unsaved change it sends everything Review lists (the list is made once, in `src/review/entries.js`) to `wfd/v1/preview`, tries a failed send again after 2 seconds doubling up to a minute, and hands browsers the two functions that put the `wfd_preview` argument on a URL and take it off. The server side is `includes/preview.php`: the argument holds a nonce of the user and names the open board page; on a front-end request, never one to the REST API, that page's changes are put in place of the saved content through public filters only. Changes are kept in a user option of the site, one record per open board page, dropped an hour after the page last sent them; an open board sends them again every ten minutes, and uninstall deletes them (OQ-38). A page that arrives without the argument is asked for again with it, once. Browsers showing the saved site reload after Review saves anything. OQ-37 lists the builder's choices; OQ-39 names the constraints (C10, C13, C9) the owner has not yet ruled on.
 - **Notes.** "Add note" in the header arms the note tool; the next click on the board places a note there and puts the caret in it (D46). Notes are plain text in Yellow, Green, Blue or Pink, 240 board units wide, drawn above every artboard. They are selected, moved and multi-selected like artboards, Delete removes them with no dialog, double-click or Enter edits the text. They are listed under "Notes" in the left panel and saved in the board's layout (`notes`) by the same 2-second autosave, typing included; they never reach Review. The note itself and its right-panel settings are in `src/shell/notes.js`; the store keeps `notes`, `editingNoteId` and `isNoteToolArmed`. `getSelectedId` gives an artboard only; `getSelectedNoteId` gives a note.
 - **Dragging blocks.** A block that is not being edited moves when pressed anywhere, its text included, and dragged; a click puts the caret in it and dragging then selects text (D40). This is the behaviour of Gutenberg pull request 86911, added as a layer in `src/artboard-editor/drag-anywhere.js`; the top of that file says how to remove it once WordPress has the behaviour.
 - **Pages** are shown inside their template, which is locked. A page's template can be changed from the right panel.
@@ -62,7 +63,7 @@ spikes/                       Throwaway spike code and evidence
 
 Ignored by git: `node_modules/`, `build/`, `artifacts/`, `test-results/`, `playwright-report/`.
 
-### PHP (`includes/`, about 1,000 lines with the two root files)
+### PHP (`includes/`, about 1,300 lines with the two root files)
 
 | File | Holds |
 |---|---|
@@ -72,7 +73,7 @@ Ignored by git: `node_modules/`, `build/`, `artifacts/`, `test-results/`, `playw
 | `board-app.php` | The full-screen board page, without wp-admin chrome |
 | `bootstrap.php` | Editor settings, REST preload, block definitions and editor assets for the board page |
 | `lock.php` | `wfd/v1/lock/{id}`: take or refresh, take over, release |
-| `preview.php` | `wfd/v1/preview`, and the front-end swaps for the `wfd_preview` argument (D57) |
+| `preview.php` | The server side of the preview of unsaved changes (D57): `wfd/v1/preview`, the records it keeps, and the front-end swaps for the `wfd_preview` argument |
 
 ### JavaScript (`src/`, about 10,300 lines, plus 640 of SCSS)
 
@@ -81,10 +82,10 @@ Two entries: `boards` (the Boards list, `src/boards/`) and `board` (the app, `sr
 | Folder | Holds |
 |---|---|
 | `shell/` | The app: `app.js` connects everything; header, panels, dialogs, canvas; hooks for artboards, canvas pointer and key handling, editing, placement, removal. `style.scss` includes the rules that make editing work below 100% |
-| `board-store/` | The `wfd/board` data store: artboards, selection, Live and Warm ids, layout undo, autosave |
+| `board-store/` | The `wfd/board` data store: artboards, selection, Live, browsing and Warm ids, layout undo, autosave |
 | `viewport/` | Pan and zoom outside React: one transform and `--wfd-zoom` per animation frame, React told on settle |
 | `tier-scheduler/` | Tier of each artboard; Previews mounted nearest first through a priority queue |
-| `artboard-frame/` | One artboard: position, label, outline, error state, media image |
+| `artboard-frame/` | One artboard: position, label, outline, error state, media image; a browser's page (`browser.js`, `browser-artboard.js`); `preview.js`, the removable client side of the preview of unsaved changes (D57) |
 | `artboard-preview/` | The Preview tier; finding a page's template |
 | `artboard-editor/` | The Live editor; `coalesce.js` groups typing into undo steps; `drag-anywhere.js` is the removable drag-from-anywhere layer (D40) |
 | `artboard-snapshot/` | The frozen copy of a Preview |
@@ -92,7 +93,7 @@ Two entries: `boards` (the Boards list, `src/boards/`) and `board` (the app, `sr
 | `inserter/` | The inserter panel, its data and actions |
 | `styles/` | The Styles panel and global styles handling |
 | `usage-index/` | Where tokens and blocks are used |
-| `review/` | The Review drawer, change lines, saving |
+| `review/` | The Review drawer, change lines, saving; `entries.js` lists the unsaved changes for Review and for the preview |
 | `lock/` | Client side of the post lock |
 | `adapter/` | `private.js` is empty. `experimental.js` is the only place experimental WordPress exports are imported |
 | `static/` | Every screen with fixed data and no behaviour, shown with `&wfd-screen=Name` in a test build |
@@ -166,6 +167,9 @@ git push --follow-tags
 | Height of a new artboard before it is measured | 900 px | `src/shell/use-placement.js` |
 | Viewport height that `vh` units resolve against in an artboard | 900 px | `src/artboard-frame/viewport-units.js` |
 | Widest media object | 1440 px | `src/shell/constants.js` |
+| Lowest browser window | 200 board units | `src/shell/constants.js`, `includes/post-type.php` |
+| Unsaved changes kept for a preview | 1 hour after the board page last sent them; sent again every 10 minutes | `includes/preview.php`, `src/artboard-frame/preview.js` |
+| Wait before unsaved changes are sent | 1 s; after a failed send 2 s doubling to 60 s | `src/artboard-frame/preview.js` |
 | Note width | 240 board units | `src/shell/notes.js` |
 | Images listed in the Media tab | 50 most recent | `src/inserter/use-inserter-data.js` |
 
