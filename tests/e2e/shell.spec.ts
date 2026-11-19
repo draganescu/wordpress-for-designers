@@ -67,7 +67,7 @@ test.describe( 'SHELL', () => {
         ] );
     } );
 
-    test( 'AC-SHELL-02 Header controls are in the order H1 to H5, H10, H6, H7, H8, H11, H9, H5 disabled and H6 absent when nothing is in edit', async ( {
+    test( 'AC-SHELL-02 Header controls are in the order H1 to H5, H10, H6, H7, H12, H8, H11, H9, H5 disabled and H6 absent when nothing is in edit', async ( {
         page,
     } ) => {
         const controls = page.locator(
@@ -90,6 +90,7 @@ test.describe( 'SHELL', () => {
             'H5',
             'H10',
             'H7',
+            'H12',
             'H8',
             'H11',
             'H9',

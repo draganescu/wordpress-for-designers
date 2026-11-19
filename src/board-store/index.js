@@ -225,10 +225,11 @@ const actions = {
     /**
      * Moves several artboards as one step of the history.
      *
-     * @param {Array} moves The moves, as { id, x, y }.
+     * @param {Array}  moves  The moves, as { id, x, y }.
+     * @param {string} [name] The name of the step in the history.
      */
-    moveArtboards: ( moves ) =>
-        change( 'move', ( artboards ) => {
+    moveArtboards: ( moves, name = 'move' ) =>
+        change( name, ( artboards ) => {
             const byId = new Map( moves.map( ( move ) => [ move.id, move ] ) );
             const isMoved = ( a ) =>
                 byId.has( a.id ) &&

@@ -4,12 +4,12 @@ As of 2026-11-19. This describes what exists; `spec/` says what should exist. Fo
 
 ## Summary
 
-The plugin is built through Milestone 12 of `spec/build-order.md`, plus the decisions taken afterwards (D32 to D44).
+The plugin is built through Milestone 12 of `spec/build-order.md`, plus the decisions taken afterwards (D32 to D45).
 
 | Check | Result |
 |---|---|
-| Acceptance criteria in `spec/acceptance.md` | 119 |
-| End-to-end tests, one per criterion | 119. 114 passed in the last full run; AC-KEY-04 and AC-KEY-05 (D42) are written and have not been run yet; AC-CANVAS-06 (D43) passes. AC-CANVAS-03 fails since D42: its empty-board point is under the Keyboard shortcuts control |
+| Acceptance criteria in `spec/acceptance.md` | 120 |
+| End-to-end tests, one per criterion | 120. Not run as a whole since D44 and D45 landed. AC-CANVAS-07 (D45) passed before its rebase onto D43 and D44. AC-CANVAS-03 fails since D42: its empty-board point is under the Keyboard shortcuts control. AC-PERF-03 failed on the port-8890 environment before D45 as well. AC-KEY-04 and AC-KEY-05 (D42) are written and have not been run |
 | `npm run lint` | Exits 0, no disabled lines |
 | Open questions waiting for the product owner | 25 (`spec/open-questions.md`) |
 | Browsers the suite runs in | Chromium only |
@@ -32,6 +32,7 @@ A "Designer" menu in wp-admin lists boards. A board opens full screen: a header,
 - **Editing.** Double-click or Enter edits an artboard at the board's zoom, from 30% up. Below 30% the zoom first fits the artboard's width. The block toolbar sits in the header, the list view in the left panel, the inspector in the right panel. Esc, the back button, a click on empty board, a click on another artboard, or zooming out below 30% ends edit.
 - **Selecting several.** Cmd/Ctrl + click in the artboard list or on the board adds an artboard to the selection or takes it out; Shift + click in the list selects a range (D41). Dragging from empty board draws a rectangle and selects every artboard it touches as it is dragged; with Cmd/Ctrl it adds to the selection, and in edit it first leaves edit (D43, in `src/shell/use-canvas-interactions.js`; OQ-29 lists the builder's choices). Several selected artboards move together, by drag or arrow keys, and Delete takes them all off the board with no dialog; the right panel shows Styles. The store keeps `selectedIds`; `getSelectedId` gives an id only when exactly one is selected.
 - **Keyboard shortcuts dialog.** A control floating at the bottom left of the canvas area, and Ctrl + Option + H on a Mac or Shift + Alt + H elsewhere, open a dialog listing the board's shortcuts (D42). It is in `src/shell/shortcuts-dialog.js`. Closing it puts focus back where it was, the caret of a block included. The control's shadow is a Sass variable of `@wordpress/base-styles`, because the design system has no elevation token (OQ-28).
+- **Tidy up.** A "Tidy up" control in the header, just before the zoom menu (H12), puts everything on the board in one row per kind, in left-panel order, starting at the top left of what was there, then fits all (D45). It is one undoable layout step named "tidy up", and is disabled while an artboard is in edit or with fewer than two items. The arrangement is in `src/shell/tidy.js`. Row spacing uses each artboard's last measured height, so a height not yet measured can leave a row gap uneven; labels are drawn at screen size, so at low zoom the labels of narrow artboards can run into the next one's.
 - **Dragging blocks.** A block that is not being edited moves when pressed anywhere, its text included, and dragged; a click puts the caret in it and dragging then selects text (D40). This is the behaviour of Gutenberg pull request 86911, added as a layer in `src/artboard-editor/drag-anywhere.js`; the top of that file says how to remove it once WordPress has the behaviour.
 - **Pages** are shown inside their template, which is locked. A page's template can be changed from the right panel.
 - **Creating.** The Add artboard menu places a new page, pattern, template or template part. Pages and patterns are created as drafts at once; templates and parts exist only in the session until saved.

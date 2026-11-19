@@ -220,6 +220,95 @@ test.describe( 'CANVAS', () => {
         await expect( mobile ).toHaveClass( /is-selected/ );
     } );
 
+    test( 'AC-CANVAS-07 Tidy up puts the board in one row per kind, in left-panel order, as one undoable step', async ( {
+        page,
+    } ) => {
+        const ids = fixture.layout.artboards.map( ( a ) => a.id );
+        const kindOf = new Map(
+            fixture.layout.artboards.map( ( a ) => [ a.id, a.kind ] )
+        );
+        const boxes = () =>
+            page.evaluate( ( list ) => {
+                const out: Record<
+                    string,
+                    { left: number; top: number; width: number; height: number }
+                > = {};
+                list.forEach( ( id ) => {
+                    const el = document.querySelector(
+                        `[data-wfd-artboard="${ id }"]`
+                    ) as HTMLElement;
+                    out[ id ] = {
+                        left: parseFloat( el.style.left ),
+                        top: parseFloat( el.style.top ),
+                        width: el.offsetWidth,
+                        height: el.offsetHeight,
+                    };
+                } );
+                return out;
+            }, ids );
+        // Names load asynchronously; left-panel order needs them.
+        await expect(
+            page.locator( '[data-wfd-row] .wfd-row__name', {
+                hasText: 'Index',
+            } )
+        ).toBeVisible();
+        const order = await page
+            .locator( '[data-wfd-row]' )
+            .evaluateAll( ( rows ) =>
+                rows.map( ( row ) => row.getAttribute( 'data-wfd-row' )! )
+            );
+        const before = await boxes();
+        const beforeText = JSON.stringify( before );
+
+        const tidy = page.locator( '[data-wfd-control="H12"]' );
+        await expect( tidy ).toHaveAccessibleName( 'Tidy up' );
+        await tidy.click();
+        await expect
+            .poll( async () => JSON.stringify( await boxes() ) )
+            .not.toBe( beforeText );
+        const after = await boxes();
+
+        const kinds = [ 'page', 'template', 'template-part', 'pattern' ];
+        let rowBottom = -Infinity;
+        for ( const kind of kinds ) {
+            const row = order.filter( ( id ) => kindOf.get( id ) === kind );
+            expect( row.length ).toBeGreaterThan( 0 );
+            // One row, top-aligned, below the row before it.
+            const top = after[ row[ 0 ] ].top;
+            expect( top ).toBeGreaterThan( rowBottom );
+            row.forEach( ( id ) => expect( after[ id ].top ).toBe( top ) );
+            // Side by side in left-panel order, not overlapping.
+            for ( let i = 1; i < row.length; i++ ) {
+                const prev = after[ row[ i - 1 ] ];
+                expect( after[ row[ i ] ].left ).toBeGreaterThanOrEqual(
+                    prev.left + prev.width
+                );
+            }
+            rowBottom = Math.max(
+                ...row.map( ( id ) => after[ id ].top + after[ id ].height )
+            );
+        }
+
+        // One step: Undo names it and puts everything back.
+        const undo = page.locator( '[data-wfd-control="H3"]' );
+        await expect( undo ).toHaveAccessibleName(
+            'Undo tidy up, on the board'
+        );
+        await undo.click();
+        await expect
+            .poll( async () => {
+                const now = await boxes();
+                return ids.map( ( id ) => [ now[ id ].left, now[ id ].top ] );
+            } )
+            .toEqual(
+                ids.map( ( id ) => [ before[ id ].left, before[ id ].top ] )
+            );
+
+        // Disabled while an artboard is in edit.
+        await enterEdit( page, artboardOf( fixture, 'page' ).id );
+        await expect( tidy ).toBeDisabled();
+    } );
+
     const zoomAtPointerAndPan = async ( page: Page, x: number, y: number ) => {
         const canvas = page.locator( '[data-wfd-region="canvas"]' );
         const box = ( await canvas.boundingBox() )!;
