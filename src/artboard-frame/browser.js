@@ -12,31 +12,13 @@ const PAGE_CSS =
     '#wpadminbar { display: none !important; } html { margin-top: 0 !important; }';
 
 /**
- * The query argument that asks for a page with the board's unsaved changes
- * (D57). Its value is a nonce the server gives.
- */
-const PREVIEW_ARG = 'wfd_preview';
-
-/**
- * A URL with or without the preview argument.
+ * A URL as it is: what a browser does to the URLs it asks for and shows
+ * unless it is told otherwise.
  *
- * @param {string}      href    The URL.
- * @param {string|null} preview The argument's value, or null for none.
+ * @param {string} href The URL.
  * @return {string} The URL.
  */
-function withPreview( href, preview ) {
-    const url = new URL( href );
-    if ( ( url.searchParams.get( PREVIEW_ARG ) ?? null ) === preview ) {
-        // Left exactly as it is.
-        return href;
-    }
-    if ( preview ) {
-        url.searchParams.set( PREVIEW_ARG, preview );
-    } else {
-        url.searchParams.delete( PREVIEW_ARG );
-    }
-    return url.href;
-}
+const asItIs = ( href ) => href;
 
 /**
  * The address of a URL relative to the site's home, or null when the URL is
@@ -50,8 +32,7 @@ export function addressOf( href, homeUrl ) {
     let url;
     let home;
     try {
-        // The preview argument is not part of the address.
-        url = new URL( withPreview( href, null ) );
+        url = new URL( href );
         home = new URL( homeUrl );
     } catch {
         return null;
@@ -82,14 +63,12 @@ export function normalizeAddress( typed ) {
 /**
  * The URL of an address on the site.
  *
- * @param {string}      path    The address, starting with a slash.
- * @param {string}      homeUrl The site's home URL, ending with a slash.
- * @param {string|null} preview The preview argument's value, to ask for
- *                              unsaved changes (D57).
+ * @param {string} path    The address, starting with a slash.
+ * @param {string} homeUrl The site's home URL, ending with a slash.
  * @return {string} The URL.
  */
-export function urlOf( path, homeUrl, preview = null ) {
-    return withPreview( homeUrl + path.slice( 1 ), preview );
+export function urlOf( path, homeUrl ) {
+    return homeUrl + path.slice( 1 );
 }
 
 /**
@@ -126,15 +105,15 @@ function createPageListeners( iframeRef, latest ) {
         doc.addEventListener(
             'click',
             ( event ) => {
-                const { homeUrl, preview } = latest.current;
+                const { homeUrl, decorateUrl } = latest.current;
                 // A link to another site does nothing.
                 const link = event.target.closest?.( 'a[href]' );
                 if ( link && addressOf( link.href, homeUrl ) === null ) {
                     event.preventDefault();
-                } else if ( link && preview ) {
-                    // A link followed keeps showing unsaved changes, with
+                } else if ( link ) {
+                    // A link is followed as every page is asked for, with
                     // no second request.
-                    link.href = withPreview( link.href, preview );
+                    link.href = decorateUrl( link.href );
                 }
             },
             true
@@ -198,23 +177,26 @@ function createPageListeners( iframeRef, latest ) {
 }
 
 /**
- * @param {Object}   props
- * @param {string}   props.path        The address to show.
- * @param {string}   props.homeUrl     The site's home URL.
- * @param {boolean}  props.isBrowsing  Whether the page takes input.
- * @param {string}   props.preview     The preview argument's value when it
- *                                     shows unsaved changes (D57).
- * @param {number}   props.reloadToken Reloads the page when it changes.
- * @param {Function} props.onNavigate  Called with the address the page is on.
- * @param {Function} props.onEscape    Called when Esc is pressed in the page.
- * @param {Function} props.onWheel     Gets Cmd/Ctrl + wheel events, with the
- *                                     iframe, to zoom the board.
+ * @param {Object}                   props
+ * @param {string}                   props.path        The address to show.
+ * @param {string}                   props.homeUrl     The site's home URL.
+ * @param {boolean}                  props.isBrowsing  Whether the page takes input.
+ * @param {(href: string) => string} props.decorateUrl Gives the URL a page is
+ *                                                     asked for with, from its plain URL.
+ * @param {(href: string) => string} props.plainUrl    Gives the URL an address
+ *                                                     shows, from the one a page came with.
+ * @param {number}                   props.reloadToken Reloads the page when it changes.
+ * @param {Function}                 props.onNavigate  Called with the address the page is on.
+ * @param {Function}                 props.onEscape    Called when Esc is pressed in the page.
+ * @param {Function}                 props.onWheel     Gets Cmd/Ctrl + wheel events, with the
+ *                                                     iframe, to zoom the board.
  */
 export function ArtboardBrowser( {
     path,
     homeUrl,
     isBrowsing,
-    preview = null,
+    decorateUrl = asItIs,
+    plainUrl = asItIs,
     reloadToken,
     onNavigate,
     onEscape,
@@ -224,14 +206,14 @@ export function ArtboardBrowser( {
     // The address the page is on, as last loaded.
     const current = useRef( null );
     const [ isLoaded, setLoaded ] = useState( false );
-    const [ src ] = useState( () => urlOf( path, homeUrl, preview ) );
+    const [ src ] = useState( () => decorateUrl( urlOf( path, homeUrl ) ) );
     // Where the page was scrolled to before a reload.
     const scrollBack = useRef( null );
     // Whether the page has been sent back once from a page that is off the
     // site or cannot be read.
     const hasGoneBack = useRef( false );
-    // The address asked for again because it came without the preview
-    // argument, so that it is asked for again only once.
+    // The address asked for again because its page came with another URL
+    // than it is asked for with, so that it is asked for again only once.
     const askedAgain = useRef( null );
     const latest = useRef( {} );
     latest.current = {
@@ -239,7 +221,8 @@ export function ArtboardBrowser( {
         onEscape,
         onWheel,
         homeUrl,
-        preview,
+        decorateUrl,
+        plainUrl,
         path,
     };
     const [ listeners ] = useState( () =>
@@ -261,10 +244,10 @@ export function ArtboardBrowser( {
         asked.current = path;
         try {
             frame.contentWindow.location.assign(
-                urlOf( path, homeUrl, latest.current.preview )
+                latest.current.decorateUrl( urlOf( path, homeUrl ) )
             );
         } catch {
-            frame.src = urlOf( path, homeUrl, latest.current.preview );
+            frame.src = latest.current.decorateUrl( urlOf( path, homeUrl ) );
         }
     }, [ path, homeUrl ] );
 
@@ -281,7 +264,7 @@ export function ArtboardBrowser( {
             // A reload keeps the page where it was scrolled to.
             scrollBack.current = { x: view.scrollX, y: view.scrollY };
             const href = view.location.href;
-            const wanted = withPreview( href, latest.current.preview );
+            const wanted = latest.current.decorateUrl( href );
             if ( wanted === href ) {
                 view.location.reload();
             } else {
@@ -290,10 +273,11 @@ export function ArtboardBrowser( {
             listeners.awaitDocument();
         } catch {
             // The page cannot be read: its address is asked for again.
-            frame.src = urlOf(
-                current.current ?? latest.current.path,
-                latest.current.homeUrl,
-                latest.current.preview
+            frame.src = latest.current.decorateUrl(
+                urlOf(
+                    current.current ?? latest.current.path,
+                    latest.current.homeUrl
+                )
             );
         }
     }, [ reloadToken, listeners ] );
@@ -311,7 +295,7 @@ export function ArtboardBrowser( {
     function onLoad() {
         listeners.stop();
         const frame = iframeRef.current;
-        const { homeUrl: home, preview: value } = latest.current;
+        const { homeUrl: home, decorateUrl: decorate } = latest.current;
         let doc;
         let href;
         try {
@@ -320,7 +304,9 @@ export function ArtboardBrowser( {
         } catch {
             doc = null;
         }
-        const address = doc ? addressOf( href, home ) : null;
+        const address = doc
+            ? addressOf( latest.current.plainUrl( href ), home )
+            : null;
         if ( address === null ) {
             // Off the site, or a page that cannot be read: back to the page
             // it was on, once. If that fails too it stays on what loaded,
@@ -330,17 +316,16 @@ export function ArtboardBrowser( {
                 return;
             }
             hasGoneBack.current = true;
-            frame.src = urlOf( current.current ?? '/', home, value );
+            frame.src = decorate( urlOf( current.current ?? '/', home ) );
             listeners.awaitDocument();
             return;
         }
         hasGoneBack.current = false;
         listeners.prepare( doc );
-        const wanted = withPreview( href, value );
+        const wanted = decorate( href );
         if ( wanted !== href && askedAgain.current !== address ) {
-            // The page came without the preview argument, or with an old
-            // one (a form, a redirect, a script): it is asked for again
-            // with it, once.
+            // The page came with another URL than it is asked for with (a
+            // form, a redirect, a script): it is asked for again, once.
             askedAgain.current = address;
             frame.contentWindow.location.replace( wanted );
             return;

@@ -34,6 +34,21 @@ function wfd_preview_value( $session = null ) {
 }
 
 /**
+ * What the board page is given to preview with: the argument's name, its
+ * first value and the route its changes are sent to
+ * (src/artboard-frame/preview.js).
+ *
+ * @return array
+ */
+function wfd_preview_config() {
+    return array(
+        'arg'   => WFD_PREVIEW,
+        'value' => wfd_preview_value(),
+        'path'  => '/wfd/v1/preview',
+    );
+}
+
+/**
  * The session a preview value names.
  *
  * @param mixed $value The value.

@@ -39,11 +39,6 @@ const DEFAULT_STATE = {
     siteVersion: 0,
     // How many times Reload was pressed for each browser, by id.
     browserReloads: {},
-    // Goes up each time the unsaved changes have been sent for browsers to
-    // preview (D57); 0 until the first send.
-    previewVersion: 0,
-    // What the preview argument must hold: a nonce of this user.
-    previewValue: null,
 };
 
 /**
@@ -427,25 +422,6 @@ const actions = {
                 : artboards
         ),
     /**
-     * Keeps what the preview argument must hold, and tells browsers showing
-     * unsaved changes when changes have been sent.
-     *
-     * @param {string}  value  What the preview argument must hold from now on.
-     * @param {boolean} isSent Whether changes have been sent.
-     */
-    setPreview:
-        ( value, isSent ) =>
-        ( { select, dispatch } ) => {
-            dispatch( {
-                type: 'PATCH',
-                patch: {
-                    previewVersion:
-                        select.getPreviewVersion() + ( isSent ? 1 : 0 ),
-                    previewValue: value,
-                },
-            } );
-        },
-    /**
      * Reloads one browser's page.
      *
      * @param {string} id The browser.
@@ -635,8 +611,6 @@ const selectors = {
     getSiteVersion: ( state ) => state.siteVersion,
     getAllBrowserReloads: ( state ) => state.browserReloads,
     getBrowserReloads: ( state, id ) => state.browserReloads[ id ] ?? 0,
-    getPreviewVersion: ( state ) => state.previewVersion,
-    getPreviewValue: ( state ) => state.previewValue,
     getUndoName: ( state ) => state.past[ state.past.length - 1 ]?.name ?? null,
     getRedoName: ( state ) =>
         state.future[ state.future.length - 1 ]?.name ?? null,

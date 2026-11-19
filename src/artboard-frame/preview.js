@@ -1,9 +1,20 @@
 /**
- * Sends the board's unsaved changes to the preview route while any browser
- * shows unsaved changes (D57), about one second after the last change.
+ * The client side of the preview of unsaved changes (D57), all of it: the
+ * hook that sends the board's unsaved changes to the preview route about one
+ * second after the last change, while any browser shows them, and the two
+ * functions a browser needs to ask for its pages with them. Nothing else in
+ * the app knows the preview argument, its value or the route; they come from
+ * includes/preview.php, the server side. When WordPress can show unsaved
+ * edits on the front end by itself, these two files go.
  */
 import apiFetch from '@wordpress/api-fetch';
-import { useEffect } from '@wordpress/element';
+import {
+    useCallback,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+} from '@wordpress/element';
 import { useRegistry } from '@wordpress/data';
 import { store as coreStore } from '@wordpress/core-data';
 import { serialize } from '@wordpress/blocks';
@@ -18,6 +29,28 @@ const RESEND_AFTER = 10 * 60 * 1000;
 // A send that failed is tried again after 2 seconds, then 4, 8 and so on,
 // up to a minute.
 const LONGEST_RETRY = 60 * 1000;
+
+/**
+ * A URL with the preview argument holding a value, or without the argument.
+ * A URL that is already so is given back exactly as it is.
+ *
+ * @param {string}      href  The URL.
+ * @param {string}      arg   The argument's name.
+ * @param {string|null} value The argument's value, or null for none.
+ * @return {string} The URL.
+ */
+function withArg( href, arg, value ) {
+    const url = new URL( href );
+    if ( ( url.searchParams.get( arg ) ?? null ) === value ) {
+        return href;
+    }
+    if ( value ) {
+        url.searchParams.set( arg, value );
+    } else {
+        url.searchParams.delete( arg );
+    }
+    return url.href;
+}
 
 function textOf( value ) {
     return typeof value === 'string' ? value : ( value?.raw ?? '' );
@@ -38,7 +71,7 @@ function contentOf( record ) {
  * @param {Object} registry The data registry.
  * @return {Object} `posts`, `templates`, `styles` and `site`.
  */
-export function previewChanges( registry ) {
+function previewChanges( registry ) {
     const core = registry.select( coreStore );
     const changes = { posts: {}, templates: {}, styles: null, site: null };
     for ( const entry of changedEntries( registry.select ) ) {
@@ -90,8 +123,32 @@ export function previewChanges( registry ) {
     return changes;
 }
 
-export function usePreviewPush() {
+/**
+ * Sends the unsaved changes, and says how a browser asks for them. Used once,
+ * by the app.
+ *
+ * @return {Object} `version`: 0 until the first send has been answered or has
+ *                  failed, then one more each time browsers showing unsaved
+ *                  changes should reload; `decorateUrl( href )`: the URL that
+ *                  asks for a page with the unsaved changes; `plainUrl( href )`:
+ *                  that URL as an address shows it.
+ */
+export function usePreview() {
     const registry = useRegistry();
+    const { arg, value: firstValue, path } = window.wfdConfig.preview;
+    // What the preview argument holds: a nonce of this user and the name of
+    // this board page. The server gives a new one with each answer.
+    const value = useRef( firstValue );
+    const [ version, setVersion ] = useState( 0 );
+    const decorateUrl = useCallback(
+        ( href ) => withArg( href, arg, value.current ),
+        [ arg ]
+    );
+    const plainUrl = useCallback(
+        ( href ) => withArg( href, arg, null ),
+        [ arg ]
+    );
+
     useEffect( () => {
         let timer = null;
         let sent = null;
@@ -99,8 +156,6 @@ export function usePreviewPush() {
         let isSending = false;
         let failures = 0;
         let retryAt = 0;
-        // What the preview argument holds; it names this board page.
-        let value = window.wfdConfig.preview;
         // What the last look at the stores saw. The changes are put together
         // again only when one of these is different.
         let isWanted = false;
@@ -137,19 +192,20 @@ export function usePreviewPush() {
             isSending = true;
             try {
                 const { preview, held } = await apiFetch( {
-                    path: '/wfd/v1/preview',
+                    path,
                     method: 'POST',
-                    data: { ...JSON.parse( json ), preview: value },
+                    data: { ...JSON.parse( json ), preview: value.current },
                 } );
-                value = preview;
+                value.current = preview;
                 sentAt = Date.now();
                 failures = 0;
                 retryAt = 0;
                 // Browsers reload when the changes are new, or the server
                 // had stopped keeping them.
-                const isSent = json !== sent || ! held;
+                if ( json !== sent || ! held ) {
+                    setVersion( ( current ) => current + 1 );
+                }
                 sent = json;
-                registry.dispatch( boardStore ).setPreview( preview, isSent );
             } catch {
                 failures++;
                 retryAt =
@@ -158,7 +214,7 @@ export function usePreviewPush() {
                 if ( sent === null && failures === 1 ) {
                     // Browsers waiting for the first send load the site as
                     // it is saved rather than wait for ever.
-                    registry.dispatch( boardStore ).setPreview( value, true );
+                    setVersion( 1 );
                 }
                 sendIn( 0 );
             }
@@ -205,5 +261,10 @@ export function usePreviewPush() {
             clearTimeout( timer );
             clearInterval( resend );
         };
-    }, [ registry ] );
+    }, [ registry, path ] );
+
+    return useMemo(
+        () => ( { version, decorateUrl, plainUrl } ),
+        [ version, decorateUrl, plainUrl ]
+    );
 }

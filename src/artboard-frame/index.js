@@ -21,6 +21,7 @@ import { countRender } from '../shell/test-hooks';
 import { normalizeAddress } from './browser';
 
 export { BrowserArtboard, browserTier } from './browser-artboard';
+export { usePreview } from './preview';
 
 /**
  * The frame element of the artboard a component is rendered in.

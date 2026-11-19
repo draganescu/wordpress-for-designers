@@ -34,6 +34,7 @@ export function browserTier( artboard, { browsingId, rect, viewport, size } ) {
  * @param {Object}                 props.artboard   The browser.
  * @param {boolean}                props.isBrowsing Whether it is browsed.
  * @param {string}                 props.homeUrl    The site's home URL.
+ * @param {Object}                 props.preview    What `usePreview` gives.
  * @param {(event: Event) => void} props.onEscape   Ends browsing.
  * @param {(event: Event) => void} props.onWheel    Zooms the board.
  */
@@ -41,16 +42,15 @@ export function BrowserArtboard( {
     artboard,
     isBrowsing,
     homeUrl,
+    preview,
     onEscape,
     onWheel,
 } ) {
-    const { siteVersion, previewVersion, previewValue, reloads } = useSelect(
+    const { siteVersion, reloads } = useSelect(
         ( select ) => {
             const board = select( boardStore );
             return {
                 siteVersion: board.getSiteVersion(),
-                previewVersion: board.getPreviewVersion(),
-                previewValue: board.getPreviewValue(),
                 reloads: board.getBrowserReloads( artboard.id ),
             };
         },
@@ -58,7 +58,7 @@ export function BrowserArtboard( {
     );
     const { updateArtboard } = useDispatch( boardStore );
     const isPreview = artboard.shows === 'unsaved';
-    if ( isPreview && ! previewVersion ) {
+    if ( isPreview && ! preview.version ) {
         // Unsaved changes are shown once they have been sent (D57).
         return <Skeleton className="wfd-artboard__skeleton" />;
     }
@@ -69,11 +69,12 @@ export function BrowserArtboard( {
             path={ artboard.path }
             homeUrl={ homeUrl }
             isBrowsing={ isBrowsing }
-            preview={ isPreview ? previewValue : null }
+            decorateUrl={ isPreview ? preview.decorateUrl : undefined }
+            plainUrl={ isPreview ? preview.plainUrl : undefined }
             // It reloads when what it shows has changed on the server, and
             // when Reload is pressed.
             reloadToken={
-                ( isPreview ? previewVersion : siteVersion ) + reloads
+                ( isPreview ? preview.version : siteVersion ) + reloads
             }
             onNavigate={ ( path ) => updateArtboard( artboard.id, { path } ) }
             onEscape={ onEscape }

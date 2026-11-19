@@ -17,7 +17,6 @@ import { useResizeObserver } from '@wordpress/compose';
 import { Skeleton, useEnableWpCompatOverlaySlot } from '@wordpress/ui';
 import { store as boardStore } from '../board-store';
 import { useLayoutAutosave } from '../board-store/use-layout-autosave';
-import { usePreviewPush } from './use-preview-push';
 import { createViewport } from '../viewport';
 import { ArtboardEditor } from '../artboard-editor';
 import {
@@ -26,6 +25,7 @@ import {
     ArtboardMedia,
     BrowserArtboard,
     browserTier,
+    usePreview,
 } from '../artboard-frame';
 import { ArtboardPreview, ArtboardPreviewOnce } from '../artboard-preview';
 import { ArtboardSnapshot, createSnapshotStore } from '../artboard-snapshot';
@@ -183,7 +183,7 @@ export function App() {
     useEnableWpCompatOverlaySlot();
     const isLoaded = useBoard();
     useLayoutAutosave();
-    usePreviewPush();
+    const preview = usePreview();
     const viewportRef = useRef();
     if ( ! viewportRef.current ) {
         viewportRef.current = createViewport();
@@ -979,6 +979,7 @@ export function App() {
                                             artboard={ artboard }
                                             isBrowsing={ tier === 'live' }
                                             homeUrl={ homeUrl }
+                                            preview={ preview }
                                             onEscape={ editing.leaveEdit }
                                             onWheel={ canvas.forwardWheel }
                                         />
