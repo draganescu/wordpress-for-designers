@@ -37,7 +37,7 @@ A "Designer" menu in wp-admin lists boards. A board opens full screen: a header,
 - **Styles.** With nothing selected the right panel edits global styles: tokens with use counts, per-block styles, revisions, variations. A change repaints every artboard from one style compile.
 - **Review.** Nothing reaches the site until "Review changes" is used. It lists each changed item and saves the checked ones. Artboard positions save on their own, two seconds after a change.
 - **Locks.** Editing a page or pattern takes WordPress's post lock through the plugin's own route and dialog.
-- **Panels.** Both side panels can be hidden from the header or with Cmd/Ctrl + \.
+- **Panels.** Both side panels can be hidden from the header or with Cmd/Ctrl + \. Resting the pointer on the left or right edge of the canvas area brings a hidden panel back.
 
 ## Layout of the repository
 

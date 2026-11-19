@@ -425,4 +425,39 @@ test.describe( 'SHELL', () => {
         await expect( left ).toBeVisible();
         await expect( right ).toBeVisible();
     } );
+
+    test( 'AC-SHELL-08 With both panels hidden, resting the pointer on the left edge of the canvas area shows the left panel and on the right edge shows the right panel', async ( {
+        page,
+    } ) => {
+        const left = page.locator( '[data-wfd-region="left"]' );
+        const right = page.locator( '[data-wfd-region="right"]' );
+        const canvas = page.locator( '[data-wfd-region="canvas"]' );
+
+        await canvas.focus();
+        await page.keyboard.press( 'ControlOrMeta+Backslash' );
+        await expect( left ).toHaveCount( 0 );
+        await expect( right ).toHaveCount( 0 );
+
+        // The middle of the canvas area shows nothing.
+        const box = ( await canvas.boundingBox() )!;
+        const middleY = box.y + box.height / 2;
+        await page.mouse.move( box.x + box.width / 2, middleY );
+        await page.waitForTimeout( 400 );
+        await expect( left ).toHaveCount( 0 );
+        await expect( right ).toHaveCount( 0 );
+
+        // The left edge shows the left panel only.
+        await page.mouse.move( box.x + 2, middleY );
+        await expect( left ).toBeVisible();
+        await expect( right ).toHaveCount( 0 );
+        await expect(
+            page.locator( '[data-wfd-control="H10"]' )
+        ).toHaveAccessibleName( 'Hide left panel' );
+
+        // The right edge shows the right panel.
+        const wide = ( await canvas.boundingBox() )!;
+        await page.mouse.move( wide.x + wide.width - 2, middleY );
+        await expect( right ).toBeVisible();
+        await expect( left ).toBeVisible();
+    } );
 } );

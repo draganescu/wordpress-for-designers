@@ -693,6 +693,8 @@ export function App() {
                         />
                     }
                     left={ isLeftHidden ? null : left }
+                    onRevealLeft={ showLeft }
+                    onRevealRight={ () => setRightHidden( false ) }
                     canvas={
                         <Canvas
                             ref={ areaRef }

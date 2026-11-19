@@ -128,6 +128,23 @@ html.wp-toolbar:has(.wfd-board-page) {
     overflow: hidden;
 }
 
+// Resting the pointer here shows the panel hidden on that side (D32).
+.wfd-reveal-edge {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    z-index: 3;
+    width: var(--wpds-dimension-padding-sm);
+
+    &.is-left {
+        inset-inline-start: 0;
+    }
+
+    &.is-right {
+        inset-inline-end: 0;
+    }
+}
+
 .wfd-artboards-panel__empty {
     display: block;
     padding: 0 var(--wpds-dimension-padding-lg);

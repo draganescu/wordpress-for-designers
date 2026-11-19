@@ -74,6 +74,7 @@ Hiding the panels (D32): `[U]`
 - Turning the inserter toggle or the list view toggle on shows the left panel if it was hidden.
 - A hidden right panel stays hidden when the selection changes or an artboard enters or leaves edit.
 - Cmd/Ctrl + \ hides both panels when either is shown, and shows both when neither is.
+- Resting the pointer on the left or right edge of the canvas area shows the panel that is not shown on that side, exactly as its header toggle would. A pointer that crosses the edge with a button held does not.
 - Nothing about this is stored. Both panels are shown each time a board opens.
 
 ## Data streams

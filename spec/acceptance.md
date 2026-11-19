@@ -28,6 +28,7 @@ Unless a criterion says otherwise, the fixture in `architecture.md` is loaded an
 - AC-SHELL-05 The left and right panel toggles each hide and show their panel, their labels and pressed state follow, and the canvas area takes the freed room. `[U]`
 - AC-SHELL-06 Cmd/Ctrl + \ hides both panels when either is shown and shows both when neither is, on the board and while an artboard is in edit. `[U]`
 - AC-SHELL-07 Turning the inserter or list view toggle on shows a hidden left panel; a hidden right panel stays hidden through selection and edit; after a reload both panels are shown. `[U]`
+- AC-SHELL-08 With both panels hidden, resting the pointer on the left edge of the canvas area shows the left panel and on the right edge shows the right panel. `[U]`
 
 ## CANVAS
 
