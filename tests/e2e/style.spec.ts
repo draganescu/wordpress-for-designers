@@ -243,7 +243,7 @@ test.describe( 'STYLE', () => {
             'Each block opens the same styles panel the Site Editor uses.'
         );
         const rows = panel.getByRole( 'tabpanel' ).locator( '.wfd-row' );
-        expect( await rows.count() ).toBeGreaterThan( 30 );
+        await expect.poll( () => rows.count() ).toBeGreaterThan( 30 );
         const row = ( title: string ) =>
             rows.filter( {
                 has: page.locator( '.wfd-row__name', {
@@ -500,7 +500,7 @@ test.describe( 'STYLE', () => {
         } );
         await menu.click();
         const items = page.getByRole( 'menuitemradio' );
-        expect( await items.count() ).toBeGreaterThan( 2 );
+        await expect.poll( () => items.count() ).toBeGreaterThan( 2 );
         await expect( items.filter( { hasText: 'Evening' } ) ).toHaveCount( 1 );
         await items.filter( { hasText: 'Evening' } ).click();
         await expect(

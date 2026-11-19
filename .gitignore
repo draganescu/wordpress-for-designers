@@ -1,5 +1,6 @@
 node_modules/
 build/
+dist/
 artifacts/
 test-results/
 playwright-report/

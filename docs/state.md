@@ -9,8 +9,9 @@ The plugin is built through Milestone 12 of `spec/build-order.md`, plus the deci
 | Check | Result |
 |---|---|
 | Acceptance criteria in `spec/acceptance.md` | 125 |
-| End-to-end tests, one per criterion | 125. AC-NOTE-01 to AC-NOTE-05 (D46) pass; see the merge commit for what was run after merging. Not run as a whole since D44 and D45 landed. AC-CANVAS-07 (D45) passed before its rebase onto D43 and D44. AC-CANVAS-03 fails since D42: its empty-board point is under the Keyboard shortcuts control. AC-PERF-03 failed on the port-8890 environment before D45 as well. AC-KEY-04 and AC-KEY-05 (D42) are written and have not been run |
+| End-to-end tests, one per criterion | 125. On 2026-11-19 the whole suite was run three times: all pass after two fixes to the tests. AC-CANVAS-03 used an empty-board point that D42's Keyboard shortcuts control now covers; AC-STYLE-07 (and three like it in `ins.spec.ts` and `style.spec.ts`) counted menu rows once instead of waiting for them, and failed one run in three. AC-PERF-03 still fails on a port-8890 environment from a worktree (see working-notes.md) |
 | `npm run lint` | Exits 0, no disabled lines |
+| CI | `.github/workflows/tests.yml` runs lint, build and the suite (Chromium, wp-env) on every pull request; CI retries a failed test twice and reports a pass on retry as flaky |
 | Open questions waiting for the product owner | 26 (`spec/open-questions.md`) |
 | Browsers the suite runs in | Chromium only |
 | WordPress it was built and tested on | 7.2-RC2, Twenty Twenty-Five, PHP 8.2, no Gutenberg plugin |
@@ -129,6 +130,25 @@ npm run lint
 - The site is http://localhost:8888, user `admin`, password `password` (wp-env's defaults).
 - The suite needs the test helper plugin active and wipes the site's content on every test. See "The test helper plugin" in [working-notes.md](working-notes.md).
 - At the time of writing wp-env is running as a demo: the fixture is seeded as "Fixture board", two images are in the media library, and the test helper plugin is switched off.
+
+## Releasing it
+
+A release is a version tag. Pushing `v1.2.3` runs `.github/workflows/release.yml`, which lints, builds, and attaches `wordpress-for-designers.zip` to a GitHub release of that name with generated notes. A tag with a hyphen (`v1.2.3-beta.1`) makes a pre-release.
+
+The version is kept in three places: `package.json`, the plugin header and `WFD_VERSION`. `npm version` changes all three (its `version` script runs `tools/sync-version.mjs`), commits and makes the tag. The workflow stops before building if the tag and the three do not match.
+
+```bash
+npm version minor -m "Release %s"
+```
+
+```bash
+git push --follow-tags
+```
+
+- The zip holds one folder, `wordpress-for-designers/`, with the plugin file, `uninstall.php`, `includes/` and `build/`. `tools/package.sh` has that list; the playground workflow uses it too.
+- `npm run build` then `npm run package` makes the same zip locally in `dist/`.
+- The newest release's zip is always at `https://github.com/draganescu/wordpress-for-designers/releases/latest/download/wordpress-for-designers.zip`.
+- The workflow does not run the end-to-end suite and does not check that the tag is on `master`.
 
 ## Numbers that are built in
 

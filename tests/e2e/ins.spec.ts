@@ -117,11 +117,14 @@ test.describe( 'INS', () => {
 
         // One group per block category, each with its count.
         const groups = blocks.locator( 'section, [data-wfd-group]' );
-        const headings = await blocks.getByRole( 'heading' ).allInnerTexts();
-        expect( headings.map( ( h ) => h.toLowerCase() ) ).toEqual(
-            expect.arrayContaining( [ 'text', 'media', 'design' ] )
-        );
-        expect( await groups.count() ).toBeGreaterThan( 2 );
+        await expect
+            .poll( async () =>
+                ( await blocks.getByRole( 'heading' ).allInnerTexts() ).map(
+                    ( h ) => h.toLowerCase()
+                )
+            )
+            .toEqual( expect.arrayContaining( [ 'text', 'media', 'design' ] ) );
+        await expect.poll( () => groups.count() ).toBeGreaterThan( 2 );
         const firstCount = Number(
             await blocks
                 .locator( '.wfd-group-heading__suffix' )
@@ -651,6 +654,6 @@ test.describe( 'INS', () => {
         await expect( rows ).toHaveCount( 0 );
 
         await search.fill( '' );
-        expect( await rows.count() ).toBeGreaterThan( 10 );
+        await expect.poll( () => rows.count() ).toBeGreaterThan( 10 );
     } );
 } );

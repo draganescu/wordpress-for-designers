@@ -309,6 +309,21 @@ test.describe( 'CANVAS', () => {
         await expect( tidy ).toBeDisabled();
     } );
 
+    // A point of the canvas area with nothing over it: no artboard, and no
+    // control floating over the board.
+    const emptyBoardPoint = ( page: Page ) =>
+        page.locator( '[data-wfd-region="canvas"]' ).evaluate( ( area ) => {
+            const box = area.getBoundingClientRect();
+            for ( let y = box.bottom - 16; y > box.top; y -= 24 ) {
+                for ( let x = box.left + 16; x < box.right; x += 24 ) {
+                    if ( document.elementFromPoint( x, y ) === area ) {
+                        return { x, y };
+                    }
+                }
+            }
+            throw new Error( 'No empty board in view' );
+        } );
+
     const zoomAtPointerAndPan = async ( page: Page, x: number, y: number ) => {
         const canvas = page.locator( '[data-wfd-region="canvas"]' );
         const box = ( await canvas.boundingBox() )!;
@@ -355,19 +370,7 @@ test.describe( 'CANVAS', () => {
         type Point = { x: number; y: number };
         const frameOf = ( id: string ) =>
             page.locator( `[data-wfd-artboard="${ id }"]` );
-        // A point of the canvas area with nothing over it.
-        const emptyPoint = (): Promise< Point > =>
-            canvas.evaluate( ( area ) => {
-                const box = area.getBoundingClientRect();
-                for ( let y = box.bottom - 16; y > box.top; y -= 24 ) {
-                    for ( let x = box.left + 16; x < box.right; x += 24 ) {
-                        if ( document.elementFromPoint( x, y ) === area ) {
-                            return { x, y };
-                        }
-                    }
-                }
-                throw new Error( 'No empty board in view' );
-            } );
+        const emptyPoint = (): Promise< Point > => emptyBoardPoint( page );
         // A point inside an artboard's frame that is in view.
         const pointIn = async ( id: string ): Promise< Point > => {
             const c = ( await canvas.boundingBox() )!;
@@ -499,7 +502,8 @@ test.describe( 'CANVAS', () => {
         const canvas = page.locator( '[data-wfd-region="canvas"]' );
         const box = ( await canvas.boundingBox() )!;
         // Over empty board.
-        await zoomAtPointerAndPan( page, box.x + 20, box.y + box.height - 20 );
+        const empty = await emptyBoardPoint( page );
+        await zoomAtPointerAndPan( page, empty.x, empty.y );
         // Over an artboard.
         const frame = ( await frameBox(
             page.locator(
