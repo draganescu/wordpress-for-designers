@@ -47,7 +47,7 @@ Media objects (D34): `[U]`
 | L1 | Panel heading | `Text` heading-md | "Artboards" | |
 | L2 | Add artboard | `IconButton`, `plus`, opens a `Menu` | Label "Add artboard" | See the "New artboard 1" screen. |
 | L3 | Group heading | `Text` heading-sm with a count at the right | "Pages", "Templates", "Template parts", "Patterns", "Media" | A group with no artboards is not shown. `[N]` |
-| L4 | Artboard row | `wpc.ItemGroup` / `Item` row: kind icon (`page`, `layout`, `header`, `symbol`), name, device at the right | Device words "Desktop", "Tablet", "Mobile" | Click selects the artboard and scrolls it into view. Double-click or Enter edits it. Selected row uses the brand surface. |
+| L4 | Artboard row | `wpc.ItemGroup` / `Item` row: kind icon (`page`, `layout`, `header`, `symbol`), name, device at the right | Device words "Desktop", "Tablet", "Mobile" | Click selects the artboard and scrolls it into view. Cmd/Ctrl + click adds the row to the selection or takes it out; Shift + click selects every row from the one clicked last to this one (D41). Double-click or Enter edits it. Every selected row uses the brand surface. |
 
 Rows are ordered by name within a group, then Desktop, Tablet, Mobile. `[N]`
 
@@ -74,8 +74,8 @@ Rows are ordered by name within a group, then Desktop, Tablet, Mobile. `[N]`
 |---|---|---|---|---|
 | A1 | Artboard label | `Text` body-sm above the artboard's top-left corner | "{Name} · {Kind} · {Device}"; for a media object "{Name} · Media" | Not interactive, except on the Live artboard (A2). |
 | A2 | Live artboard label | `Text` in brand colour, "{Name} · {Kind}", followed by a `Menu` trigger showing the device | Menu items "Desktop", "Tablet", "Mobile"; trigger label "Artboard device" | Choosing a device changes this artboard's device. |
-| A3 | Artboard | The tier content at the device width, scaled by the zoom | | Click selects; drag moves; double-click edits. |
-| A4 | Selection outline | 2 px brand stroke around the selected or Live artboard | | |
+| A3 | Artboard | The tier content at the device width, scaled by the zoom | | Click selects; Cmd/Ctrl + click adds it to the selection or takes it out when no artboard is in edit (D41); drag moves it, and with several selected moves them all; double-click edits. |
+| A4 | Selection outline | 2 px brand stroke around each selected artboard and the Live artboard | | |
 
 The canvas background is the weak neutral surface. Dragging an artboard moves it freely; there is no snapping or grid. `[N]`
 

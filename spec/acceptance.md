@@ -29,6 +29,7 @@ Unless a criterion says otherwise, the fixture in `architecture.md` is loaded an
 - AC-SHELL-06 Cmd/Ctrl + \ hides both panels when either is shown and shows both when neither is, on the board and while an artboard is in edit. `[U]`
 - AC-SHELL-07 Turning the inserter or list view toggle on shows a hidden left panel; a hidden right panel stays hidden through selection and edit; after a reload both panels are shown. `[U]`
 - AC-SHELL-08 With both panels hidden, resting the pointer on the left edge of the canvas area shows the left panel and on the right edge shows the right panel. `[U]`
+- AC-SHELL-09 In the artboard list, Cmd/Ctrl + click adds a row to the selection and a second one takes it out; Shift + click selects every row from the one clicked last to the one clicked, in list order; a plain click selects one row again. Each selected row has its artboard outlined on the board. `[U]`
 
 ## CANVAS
 
@@ -36,6 +37,7 @@ Unless a criterion says otherwise, the fixture in `architecture.md` is loaded an
 - AC-CANVAS-02 Click selects one artboard; clicking empty board clears selection; dragging an artboard moves it and the move is undoable. `[B1]` `[U]`
 - AC-CANVAS-03 Cmd/Ctrl + wheel zooms around the pointer; Space + drag pans; both work with the pointer over an artboard, including the Live one. `[B8]` `[U]`
 - AC-CANVAS-04 The H8 menu items change zoom as named; "Fit all" shows every artboard. `[N]`
+- AC-CANVAS-05 Cmd/Ctrl + click on an artboard adds it to the selection and a second one takes it out; with several selected the right panel shows Styles, and dragging one of them or pressing an arrow key moves them all as one undoable step; while an artboard is in edit, Cmd/Ctrl + click on another artboard leaves edit and selects only that one. `[U]`
 
 ## KEY
 
@@ -113,6 +115,7 @@ Unless a criterion says otherwise, the fixture in `architecture.md` is loaded an
 - AC-DEL-02 With the box checked, a page goes to the trash, a user pattern is deleted, a user-made template is deleted. `[U]`
 - AC-DEL-03 For a theme template with changes, the box offers reset; checking it restores the theme's version. `[U]`
 - AC-DEL-04 Removing with the box unchecked is undoable as a layout change. `[U]`
+- AC-DEL-05 Delete with several artboards selected opens no dialog, takes them all off the board, leaves their entities, and one undo brings them all back. `[U]`
 
 ## INS
 
@@ -134,7 +137,7 @@ Unless a criterion says otherwise, the fixture in `architecture.md` is loaded an
 
 ## STYLE
 
-- AC-STYLE-01 Styles is shown only in the right panel and only when nothing is selected. `[U]`
+- AC-STYLE-01 Styles is shown only in the right panel and only when no artboard, or more than one, is selected (D41). `[U]`
 - AC-STYLE-02 Changing a colour token repaints every Preview and Live artboard without saving, and adds Styles to Review. `[B7]`
 - AC-STYLE-03 One style change triggers exactly one style generation (counter exposed in test builds), whatever the number of artboards. `[B7]`
 - AC-STYLE-04 Blocks tab lists blocks, shows change counts, and opens the stock styles panel for a block. `[B7]`

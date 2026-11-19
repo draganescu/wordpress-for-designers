@@ -106,11 +106,11 @@ Outside an artboard in edit: `[U]`
 | Cmd/Ctrl + wheel, Cmd/Ctrl + `+` / `-` | Zoom (always) |
 | Shift + 1 | Fit all artboards (always) |
 | Cmd/Ctrl + \ | Hide or show both side panels (always) |
-| Shift + 2 | Fit the selected artboard |
+| Shift + 2 | Fit the selected artboards |
 | Tab / Shift + Tab | Move selection to the next or previous artboard in left-panel order |
-| Enter | Edit the selected artboard |
-| Arrow keys | Nudge the selected artboard by 1 unit; with Shift, 10 units |
-| Delete / Backspace | Remove the selected artboard (opens the confirmation) |
+| Enter | Edit the selected artboard; nothing with several selected |
+| Arrow keys | Nudge the selected artboards by 1 unit; with Shift, 10 units |
+| Delete / Backspace | Remove the selected artboard (opens the confirmation); with several selected, take them all off the board with no confirmation (D41) |
 | Cmd/Ctrl + Z, Cmd/Ctrl + Shift + Z | Undo, redo layout |
 | Esc | Clear selection |
 
