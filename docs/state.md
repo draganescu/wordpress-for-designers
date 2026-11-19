@@ -4,12 +4,12 @@ As of 2026-11-19. This describes what exists; `spec/` says what should exist. Fo
 
 ## Summary
 
-The plugin is built through Milestone 12 of `spec/build-order.md`, plus the decisions taken afterwards (D32 to D42).
+The plugin is built through Milestone 12 of `spec/build-order.md`, plus the decisions taken afterwards (D32 to D43).
 
 | Check | Result |
 |---|---|
-| Acceptance criteria in `spec/acceptance.md` | 116 |
-| End-to-end tests, one per criterion | 116. AC-PERF-03 fails only when run from a git worktree (see working-notes.md) |
+| Acceptance criteria in `spec/acceptance.md` | 118 |
+| End-to-end tests, one per criterion | 116; AC-KEY-04 and AC-KEY-05 (D42) have no test yet. AC-PERF-03 fails only when run from a git worktree (see working-notes.md) |
 | `npm run lint` | Exits 0, no disabled lines |
 | Open questions waiting for the product owner | 23 (`spec/open-questions.md`) |
 | Browsers the suite runs in | Chromium only |
@@ -152,7 +152,7 @@ Each of these is recorded in the spec; this is the short list to read first.
 - **Snapshots during gestures.** The spec asks for Snapshots during any pan or zoom; Previews stay mounted instead, because swapping them would break the no-render rule (OQ-19).
 - **Drag from anywhere.** C6 has one stated addition, D40; OQ-26 lists how the layer differs from the pull request.
 - **Accessibility scan.** It covers the plugin's document, not the artboard iframes (OQ-17).
-- **Added after Milestone 12:** showing all of an artboard's content outside edit (D42), hiding the side panels (D32), the Blocks tab hidden outside edit (D33), media objects (D34), the page template select (D35), the new-page template (D36), leaving edit on deselect (D38), inserter rows that act the same clicked or dragged (D39), dragging blocks from anywhere (D40).
+- **Added after Milestone 12:** showing all of an artboard's content outside edit (D43), hiding the side panels (D32), the Blocks tab hidden outside edit (D33), media objects (D34), the page template select (D35), the new-page template (D36), leaving edit on deselect (D38), inserter rows that act the same clicked or dragged (D39), dragging blocks from anywhere (D40).
 
 ## Open questions
 

@@ -106,6 +106,7 @@ Outside an artboard in edit: `[U]`
 | Cmd/Ctrl + wheel, Cmd/Ctrl + `+` / `-` | Zoom (always) |
 | Shift + 1 | Fit all artboards (always) |
 | Cmd/Ctrl + \ | Hide or show both side panels (always) |
+| Ctrl + Option + H on a Mac, Shift + Alt + H elsewhere | Open or close the keyboard shortcuts dialog (always) (D42) |
 | Shift + 2 | Fit the selected artboards |
 | Tab / Shift + Tab | Move selection to the next or previous artboard in left-panel order |
 | Enter | Edit the selected artboard; nothing with several selected |
