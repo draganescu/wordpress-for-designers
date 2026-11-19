@@ -411,10 +411,13 @@ export function useStylesPanel( { styles, serverSettings, usesOf } ) {
         ];
     }, [ revisions, hasEdits ] );
 
+    // What the menu says the styles are (D52): exactly a variation, the
+    // theme's own (no user styles at all) or, failing both, custom.
     const activeVariation =
         variations.find( ( variation ) =>
             areGlobalStylesEqual( user, variation )
         )?.title ?? null;
+    const isCustom = ! activeVariation && countLeaves( user ) > 0;
 
     const blockStylesFor = ( name ) => (
         <GlobalStylesUI
@@ -471,7 +474,13 @@ export function useStylesPanel( { styles, serverSettings, usesOf } ) {
         panelProps: {
             variations,
             activeVariation,
+            isCustom,
             onPickVariation: ( title ) => {
+                if ( title === null ) {
+                    // "Default": the theme's own styles.
+                    update( { settings: {}, styles: {} } );
+                    return;
+                }
                 const variation = variations.find(
                     ( item ) => item.title === title
                 );

@@ -37,22 +37,39 @@ import {
 
 const NO_COLORS = [];
 
+// Values of the menu's items: the theme's own styles, and a variation by its
+// title.
+const DEFAULT_ITEM = 'default';
+const VARIATION_ITEM = 'variation:';
+
 /**
- * S2: the variation menu.
+ * S2: the variation menu (decision D52).
  *
  * @param {Object}      props
  * @param {Array}       props.variations      Theme style variations.
- * @param {string|null} props.activeVariation Title of the active variation.
- * @param {Function}    props.onPickVariation Called with a variation title.
+ * @param {string|null} props.activeVariation Title of the variation the styles are exactly.
+ * @param {boolean}     props.isCustom        Whether the styles are neither a variation nor the theme's own.
+ * @param {Function}    props.onPickVariation Called with a variation title, or null for the theme's own styles.
  */
-function VariationMenu( { variations, activeVariation, onPickVariation } ) {
-    const label = activeVariation
-        ? sprintf(
-              /* translators: %s: name of a theme style variation. */
-              __( 'Variation: %s', 'wordpress-for-designers' ),
-              activeVariation
-          )
-        : __( 'Variation: Default', 'wordpress-for-designers' );
+function VariationMenu( {
+    variations,
+    activeVariation,
+    isCustom,
+    onPickVariation,
+} ) {
+    let label = __( 'Variation: Default', 'wordpress-for-designers' );
+    let value = DEFAULT_ITEM;
+    if ( activeVariation ) {
+        label = sprintf(
+            /* translators: %s: name of a theme style variation. */
+            __( 'Variation: %s', 'wordpress-for-designers' ),
+            activeVariation
+        );
+        value = VARIATION_ITEM + activeVariation;
+    } else if ( isCustom ) {
+        label = __( 'Variation: Custom', 'wordpress-for-designers' );
+        value = '';
+    }
 
     return (
         <Menu.Root>
@@ -64,13 +81,24 @@ function VariationMenu( { variations, activeVariation, onPickVariation } ) {
             </Menu.Trigger>
             <Menu.Popup>
                 <Menu.RadioGroup
-                    value={ activeVariation ?? '' }
-                    onValueChange={ ( title ) => onPickVariation?.( title ) }
+                    value={ value }
+                    onValueChange={ ( next ) =>
+                        onPickVariation?.(
+                            next === DEFAULT_ITEM
+                                ? null
+                                : next.slice( VARIATION_ITEM.length )
+                        )
+                    }
                 >
+                    <Menu.RadioItem value={ DEFAULT_ITEM } closeOnClick>
+                        <Menu.ItemLabel>
+                            { __( 'Default', 'wordpress-for-designers' ) }
+                        </Menu.ItemLabel>
+                    </Menu.RadioItem>
                     { variations.map( ( { title } ) => (
                         <Menu.RadioItem
                             key={ title }
-                            value={ title }
+                            value={ VARIATION_ITEM + title }
                             closeOnClick
                         >
                             <Menu.ItemLabel>{ title }</Menu.ItemLabel>
@@ -656,8 +684,9 @@ function HistoryTab( {
  *
  * @param {Object}      props
  * @param {Array}       props.variations         [{ title }]; S2 is hidden when empty.
- * @param {string|null} props.activeVariation    Title, or null for the default.
- * @param {Function}    props.onPickVariation    Called with a title.
+ * @param {string|null} props.activeVariation    Title of the variation the styles are exactly, or null.
+ * @param {boolean}     props.isCustom           Whether the styles are neither a variation nor the theme's own.
+ * @param {Function}    props.onPickVariation    Called with a title, or null for the theme's own styles.
  * @param {string}      props.tab                'tokens', 'blocks' or 'history'.
  * @param {Function}    props.onTabChange        Called with a tab.
  * @param {Array}       props.colors             [{ slug, name, color, uses }].
@@ -686,6 +715,7 @@ function HistoryTab( {
 export function StylesPanel( {
     variations = [],
     activeVariation = null,
+    isCustom = false,
     onPickVariation,
     tab = 'tokens',
     onTabChange,
@@ -722,6 +752,7 @@ export function StylesPanel( {
                     <VariationMenu
                         variations={ variations }
                         activeVariation={ activeVariation }
+                        isCustom={ isCustom }
                         onPickVariation={ onPickVariation }
                     />
                 ) }

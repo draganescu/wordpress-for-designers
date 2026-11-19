@@ -499,6 +499,7 @@ test.describe( 'STYLE', () => {
         // The theme's whole variations only: its colour-only and type-only
         // presets are not variations.
         await expect( items ).toHaveText( [
+            'Default',
             'Evening',
             'Noon',
             'Dusk',
@@ -773,5 +774,70 @@ test.describe( 'STYLE', () => {
         await expect(
             page.getByRole( 'dialog', { name: 'Review changes' } )
         ).toContainText( 'Styles' );
+    } );
+
+    test( "AC-STYLE-10 The variation menu reads Default for the theme's own styles, the name for exactly a variation and Custom after any further change; its Default item returns to the theme's styles", async ( {
+        page,
+    } ) => {
+        await setViewport( page, { x: 40, y: 40, zoom: 0.25 } );
+        const panel = right( page );
+        const trigger = panel.getByRole( 'button', { name: /^Variation:/ } );
+        const items = page.getByRole( 'menuitemradio' );
+        const pick = async ( name: string ) => {
+            await trigger.click();
+            await items
+                .filter( { hasText: new RegExp( `^${ name }$` ) } )
+                .click();
+        };
+        const index = artboardOf( fixture, 'template' );
+        const background = () =>
+            styleIn( page, index.id, 'body', 'backgroundColor' );
+        await expect.poll( background ).toBe( 'rgb(255, 255, 255)' );
+
+        // The theme's own styles.
+        await expect( trigger ).toHaveText( 'Variation: Default' );
+        await trigger.click();
+        await expect( items.first() ).toHaveText( 'Default' );
+        await expect( items.first() ).toHaveAttribute( 'aria-checked', 'true' );
+        await page.keyboard.press( 'Escape' );
+
+        // Exactly a variation.
+        await pick( 'Sunrise' );
+        await expect( trigger ).toHaveText( 'Variation: Sunrise' );
+        await expect.poll( background ).not.toBe( 'rgb(255, 255, 255)' );
+        await trigger.click();
+        await expect(
+            items.filter( { hasText: /^Sunrise$/ } )
+        ).toHaveAttribute( 'aria-checked', 'true' );
+        await page.keyboard.press( 'Escape' );
+
+        // A variation with another typeset is neither.
+        await panel
+            .getByRole( 'button', { name: 'Edit Typography', exact: true } )
+            .click();
+        await panel
+            .getByRole( 'button', { name: 'Beiruti & Literata', exact: true } )
+            .click();
+        await expect( trigger ).toHaveText( 'Variation: Custom' );
+        await trigger.click();
+        await expect( items.first() ).toBeVisible();
+        await expect(
+            page.locator( '[role="menuitemradio"][aria-checked="true"]' )
+        ).toHaveCount( 0 );
+
+        // "Default" returns to the theme's own styles.
+        await items.filter( { hasText: /^Default$/ } ).click();
+        await expect( trigger ).toHaveText( 'Variation: Default' );
+        await expect.poll( background ).toBe( 'rgb(255, 255, 255)' );
+        await expect( page.locator( '[data-wfd-control="H9"]' ) ).toHaveText(
+            'Review changes'
+        );
+
+        // The theme's styles with one colour changed are custom too.
+        await panel
+            .getByRole( 'button', { name: 'Back', exact: true } )
+            .click();
+        await setColor( page, 'Accent 1', '#112233' );
+        await expect( trigger ).toHaveText( 'Variation: Custom' );
     } );
 } );
