@@ -3,7 +3,8 @@
  * and moving artboards, and the keyboard map of spec/architecture.md.
  *
  * Pan, zoom and artboard drags change the DOM directly; the store hears about
- * them when they end (constraint C22).
+ * them when they end (constraint C22). The selection rectangle (D43) is drawn
+ * the same way; the store hears when the set of selected artboards changes.
  */
 import { useEffect, useRef } from '@wordpress/element';
 import { useRegistry } from '@wordpress/data';
@@ -231,7 +232,18 @@ export function useCanvasInteractions( {
             }
             const element = frameOf( event.target );
             if ( ! element ) {
-                gesture = { type: 'empty' };
+                gesture = {
+                    type: 'empty',
+                    // Only a press on the board itself can become a selection
+                    // rectangle, not one on a banner or a floating control.
+                    canSelect: event.target === area,
+                    add: event.metaKey || event.ctrlKey,
+                    startX: event.clientX,
+                    startY: event.clientY,
+                };
+                if ( gesture.canSelect ) {
+                    area.setPointerCapture( event.pointerId );
+                }
                 return;
             }
             const id = element.dataset.wfdArtboard;
@@ -299,6 +311,68 @@ export function useCanvasInteractions( {
             area.setPointerCapture( event.pointerId );
         }
 
+        const toBoard = ( { x, y } ) => {
+            const view = viewport.get();
+            return {
+                x: ( x - view.x ) / view.zoom,
+                y: ( y - view.y ) / view.zoom,
+            };
+        };
+
+        // The selection rectangle (D43). It is kept in board units, so it
+        // stays put on the board if the board is scrolled during the drag.
+        function startMarquee() {
+            const isEditing = !! board().getLiveId();
+            const before = board().getSelectedIds();
+            if ( isEditing ) {
+                // Deselecting ends edit.
+                latest.current.onLeaveEdit();
+            }
+            const box = area.getBoundingClientRect();
+            gesture.type = 'marquee';
+            gesture.element = area.querySelector( '[data-wfd-marquee]' );
+            gesture.origin = toBoard( {
+                x: gesture.startX - box.left,
+                y: gesture.startY - box.top,
+            } );
+            gesture.before = before;
+            gesture.kept =
+                gesture.add && ! isEditing ? board().getSelectedIds() : [];
+            area.focus( { preventScroll: true } );
+        }
+
+        function updateMarquee( event ) {
+            const { origin, kept, element } = gesture;
+            const end = toBoard( point( event ) );
+            const left = Math.min( origin.x, end.x );
+            const top = Math.min( origin.y, end.y );
+            const right = Math.max( origin.x, end.x );
+            const bottom = Math.max( origin.y, end.y );
+            if ( element ) {
+                element.style.left = left + 'px';
+                element.style.top = top + 'px';
+                element.style.width = right - left + 'px';
+                element.style.height = bottom - top + 'px';
+                element.hidden = false;
+            }
+            const touched = board()
+                .getArtboards()
+                .filter( ( artboard ) => {
+                    if ( kept.includes( artboard.id ) ) {
+                        return false;
+                    }
+                    const rect = rectOf( artboard, latest.current.widthOf );
+                    return (
+                        rect.x < right &&
+                        rect.x + rect.width > left &&
+                        rect.y < bottom &&
+                        rect.y + rect.height > top
+                    );
+                } )
+                .map( ( artboard ) => artboard.id );
+            actions().selectArtboards( [ ...kept, ...touched ] );
+        }
+
         function onPointerMove( event ) {
             if ( ! gesture ) {
                 return;
@@ -312,11 +386,25 @@ export function useCanvasInteractions( {
                 gesture.y = event.clientY;
                 return;
             }
+            const dx = event.clientX - gesture.startX;
+            const dy = event.clientY - gesture.startY;
+            if ( gesture.type === 'empty' || gesture.type === 'marquee' ) {
+                if (
+                    gesture.type === 'empty' &&
+                    ( ! gesture.canSelect ||
+                        Math.hypot( dx, dy ) < DRAG_THRESHOLD )
+                ) {
+                    return;
+                }
+                if ( gesture.type === 'empty' ) {
+                    startMarquee();
+                }
+                updateMarquee( event );
+                return;
+            }
             if ( gesture.type !== 'press' && gesture.type !== 'drag' ) {
                 return;
             }
-            const dx = event.clientX - gesture.startX;
-            const dy = event.clientY - gesture.startY;
             if (
                 gesture.type === 'press' &&
                 Math.hypot( dx, dy ) < DRAG_THRESHOLD
@@ -343,6 +431,12 @@ export function useCanvasInteractions( {
                 area.releasePointerCapture( event.pointerId );
             }
             if ( ! ended ) {
+                return;
+            }
+            if ( ended.type === 'marquee' ) {
+                if ( ended.element ) {
+                    ended.element.hidden = true;
+                }
                 return;
             }
             if ( ended.type === 'drag' ) {
@@ -404,6 +498,18 @@ export function useCanvasInteractions( {
         }
 
         function onKeyDown( event ) {
+            if ( gesture?.type === 'marquee' && event.key === 'Escape' ) {
+                // Esc cancels the selection rectangle: the selection goes
+                // back to what it was and the rest of the drag does nothing.
+                if ( gesture.element ) {
+                    gesture.element.hidden = true;
+                }
+                actions().selectArtboards( gesture.before );
+                gesture = { type: 'cancelled' };
+                event.preventDefault();
+                event.stopPropagation();
+                return;
+            }
             if ( event.target !== area ) {
                 return;
             }

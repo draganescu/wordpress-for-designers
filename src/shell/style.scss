@@ -327,6 +327,14 @@ html.wp-toolbar:has(.wfd-board-page) {
     outline: calc(var(--wpds-border-width-sm) / var(--wfd-zoom)) dashed var(--wpds-color-stroke-interactive-brand);
 }
 
+// The selection rectangle drawn while dragging from empty board (D43).
+.wfd-marquee {
+    position: absolute;
+    pointer-events: none;
+    background: var(--wpds-color-background-surface-brand);
+    outline: calc(var(--wpds-border-width-xs) / var(--wfd-zoom)) solid var(--wpds-color-stroke-interactive-brand);
+}
+
 .wfd-placement__hint {
     flex: none;
     width: calc(100% * var(--wfd-zoom));
