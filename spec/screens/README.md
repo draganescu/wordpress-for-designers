@@ -88,7 +88,7 @@ Rows are ordered by name within a group, then Desktop, Tablet, Mobile. `[N]`
 | A3 | Artboard | The tier content at the device width, scaled by the zoom | | Click selects; Cmd/Ctrl + click adds it to the selection or takes it out when no artboard is in edit (D41); drag moves it, and with several selected moves them all; double-click edits. |
 | A4 | Selection outline | 2 px brand stroke around each selected artboard and the Live artboard | | |
 | A5 | Keyboard shortcuts | `IconButton`, `keyboard`, on a neutral surface with a subtle shadow, floating over the board at the bottom left of the canvas area | Label "Keyboard shortcuts" | Opens the keyboard shortcuts dialog (D42, `ShortcutsDialog.md`). It stays in its corner while the board pans and zooms, and is there in every state of the board, an artboard in edit included. |
-| A6 | Selection rectangle | A rectangle from where the drag started to the pointer, with a 1 px brand stroke and the brand surface as its fill | | Shown only while dragging from empty board (D43). Every artboard and media object it touches is selected, as it is dragged. Cmd/Ctrl + drag adds to the selection. Esc cancels the drag and puts the selection back as it was. |
+| A6 | Selection rectangle | A rectangle from where the drag started to the pointer, with a 1 px brand stroke and no fill (D47) | | Shown only while dragging from empty board (D43). Every artboard and media object it touches is selected, as it is dragged. Cmd/Ctrl + drag adds to the selection. Esc cancels the drag and puts the selection back as it was. |
 
 The canvas background is the weak neutral surface. Dragging an artboard moves it freely; there is no snapping or grid. `[N]` Dragging from empty board selects with a rectangle (A6, D43). `[U]`
 
