@@ -8,22 +8,12 @@ import { useDispatch, useRegistry, useSelect } from '@wordpress/data';
 import { store as coreStore } from '@wordpress/core-data';
 import { parse, serialize } from '@wordpress/blocks';
 import { getGlobalStylesChanges } from '@wordpress/global-styles-engine';
-import { getDirtyEntityRecords } from '../adapter/experimental';
 import { store as boardStore } from '../board-store';
-import { KINDS } from '../shell/constants';
 import { recordName } from '../shell/use-artboards';
 import { countTemplatesUsing } from '../shell/use-entity-info';
 import { changeLines } from './diff';
+import { changedEntries, rawContent } from './entries';
 
-const TYPES = {
-    'root/globalStyles': 'styles',
-    'root/site': 'site',
-    'postType/page': 'page',
-    'postType/wp_block': 'pattern',
-    'postType/wp_template': 'template',
-    'postType/wp_template_part': 'template-part',
-    'postType/wp_navigation': 'navigation',
-};
 const KIND_OF_TYPE = {
     page: 'page',
     pattern: 'pattern',
@@ -40,11 +30,6 @@ const STATUS = {
 };
 const ALL = { per_page: -1 };
 
-function rawContent( record ) {
-    const content = record?.content;
-    return typeof content === 'string' ? content : ( content?.raw ?? '' );
-}
-
 function editedBlocks( record ) {
     if ( Array.isArray( record?.blocks ) ) {
         return record.blocks;
@@ -55,8 +40,6 @@ function editedBlocks( record ) {
     );
 }
 
-const keyOf = ( kind, name, id ) => `${ kind }/${ name }/${ id }`;
-
 export function useReview() {
     const registry = useRegistry();
     const [ unchecked, setUnchecked ] = useState( () => new Set() );
@@ -64,59 +47,7 @@ export function useReview() {
     const [ isSaving, setIsSaving ] = useState( false );
     const [ isOpen, setIsOpen ] = useState( false );
 
-    const entries = useSelect( ( select ) => {
-        const core = select( coreStore );
-        const artboards = select( boardStore ).getArtboards();
-        const list = [];
-        for ( const dirty of getDirtyEntityRecords( select ) ?? [] ) {
-            const type = TYPES[ `${ dirty.kind }/${ dirty.name }` ];
-            if ( ! type ) {
-                continue;
-            }
-            list.push( {
-                key: keyOf( dirty.kind, dirty.name, dirty.key ),
-                kind: dirty.kind,
-                name: dirty.name,
-                id: dirty.key,
-                type,
-                title: dirty.title,
-                saved: core.getEntityRecord(
-                    dirty.kind,
-                    dirty.name,
-                    dirty.key
-                ),
-                edited: core.getEditedEntityRecord(
-                    dirty.kind,
-                    dirty.name,
-                    dirty.key
-                ),
-            } );
-        }
-        // New templates and parts have edits but no saved record.
-        for ( const artboard of artboards ) {
-            if ( ! artboard.draft ) {
-                continue;
-            }
-            const postType = KINDS[ artboard.kind ].postType;
-            list.push( {
-                key: keyOf( 'postType', postType, artboard.entityId ),
-                kind: 'postType',
-                name: postType,
-                id: artboard.entityId,
-                type: artboard.kind,
-                title: artboard.draft.title,
-                isNew: true,
-                artboardId: artboard.id,
-                saved: null,
-                edited: core.getEditedEntityRecord(
-                    'postType',
-                    postType,
-                    artboard.entityId
-                ),
-            } );
-        }
-        return list;
-    }, [] );
+    const entries = useSelect( changedEntries, [] );
 
     const { templates, artboards } = useSelect(
         ( select ) => ( {

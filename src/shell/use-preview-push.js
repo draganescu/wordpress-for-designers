@@ -9,6 +9,7 @@ import { store as coreStore } from '@wordpress/core-data';
 import { serialize } from '@wordpress/blocks';
 import { store as boardStore } from '../board-store';
 import { getDirtyEntityRecords } from '../adapter/experimental';
+import { changedEntries, rawContent } from '../review/entries';
 
 const DELAY = 1000;
 // The server keeps what a board page sent for an hour after its last send
@@ -17,99 +18,73 @@ const RESEND_AFTER = 10 * 60 * 1000;
 // A send that failed is tried again after 2 seconds, then 4, 8 and so on,
 // up to a minute.
 const LONGEST_RETRY = 60 * 1000;
-const POST_TYPES = [ 'page', 'post', 'wp_block', 'wp_navigation' ];
-const TEMPLATE_TYPES = [ 'wp_template', 'wp_template_part' ];
 
 function textOf( value ) {
-    if ( typeof value === 'string' ) {
-        return value;
-    }
-    return value?.raw ?? '';
+    return typeof value === 'string' ? value : ( value?.raw ?? '' );
 }
 
 function contentOf( record ) {
-    if ( typeof record?.content === 'function' ) {
+    if ( typeof record.content === 'function' ) {
         return record.content( record );
     }
-    if ( Array.isArray( record?.blocks ) ) {
-        return serialize( record.blocks );
-    }
-    return textOf( record?.content );
+    return Array.isArray( record.blocks )
+        ? serialize( record.blocks )
+        : rawContent( record );
 }
 
 /**
- * Every unsaved change Review would list, in the preview route's shape.
+ * Every unsaved change Review lists, in the preview route's shape.
  *
  * @param {Object} registry The data registry.
  * @return {Object} `posts`, `templates`, `styles` and `site`.
  */
 export function previewChanges( registry ) {
-    const select = registry.select;
-    const core = select( coreStore );
+    const core = registry.select( coreStore );
     const changes = { posts: {}, templates: {}, styles: null, site: null };
-    const addTemplate = ( postType, id, record ) => {
-        changes.templates[ id ] = {
-            postType,
-            slug: record.slug ?? String( id ).split( '//' )[ 1 ],
-            title: textOf( record.title ),
-            content: contentOf( record ),
-            area: record.area ?? '',
-        };
-    };
-    for ( const dirty of getDirtyEntityRecords( select ) ?? [] ) {
-        const record = core.getEditedEntityRecord(
-            dirty.kind,
-            dirty.name,
-            dirty.key
-        );
+    for ( const entry of changedEntries( registry.select ) ) {
+        const record = entry.edited;
         if ( ! record ) {
             continue;
         }
-        const edits =
-            core.getEntityRecordEdits( dirty.kind, dirty.name, dirty.key ) ??
-            {};
-        if ( dirty.kind === 'postType' && POST_TYPES.includes( dirty.name ) ) {
-            const post = {
-                title: textOf( record.title ),
-                content: contentOf( record ),
-            };
-            if ( 'template' in edits ) {
-                post.template = record.template ?? '';
-            }
-            changes.posts[ dirty.key ] = post;
-        } else if (
-            dirty.kind === 'postType' &&
-            TEMPLATE_TYPES.includes( dirty.name )
-        ) {
-            addTemplate( dirty.name, dirty.key, record );
-        } else if ( dirty.kind === 'root' && dirty.name === 'globalStyles' ) {
-            changes.styles = {
-                styles: record.styles ?? {},
-                settings: record.settings ?? {},
-            };
-        } else if ( dirty.kind === 'root' && dirty.name === 'site' ) {
-            changes.site = {};
-            for ( const field of [ 'title', 'description', 'site_logo' ] ) {
-                if ( field in edits ) {
-                    changes.site[ field ] = record[ field ];
+        const edits = entry.isNew
+            ? {}
+            : ( core.getEntityRecordEdits( entry.kind, entry.name, entry.id ) ??
+              {} );
+        switch ( entry.type ) {
+            case 'page':
+            case 'pattern':
+            case 'navigation':
+                changes.posts[ entry.id ] = {
+                    title: textOf( record.title ),
+                    content: contentOf( record ),
+                    ...( 'template' in edits && {
+                        template: record.template ?? '',
+                    } ),
+                };
+                break;
+            case 'template':
+            case 'template-part':
+                changes.templates[ entry.id ] = {
+                    postType: entry.name,
+                    slug: record.slug ?? String( entry.id ).split( '//' )[ 1 ],
+                    title: textOf( record.title ),
+                    content: contentOf( record ),
+                    area: record.area ?? '',
+                };
+                break;
+            case 'styles':
+                changes.styles = {
+                    styles: record.styles ?? {},
+                    settings: record.settings ?? {},
+                };
+                break;
+            case 'site':
+                changes.site = {};
+                for ( const field of [ 'title', 'description', 'site_logo' ] ) {
+                    if ( field in edits ) {
+                        changes.site[ field ] = record[ field ];
+                    }
                 }
-            }
-        }
-    }
-    // New templates and parts, not saved yet.
-    for ( const artboard of select( boardStore ).getArtboards() ) {
-        if ( artboard.draft ) {
-            const record = core.getEditedEntityRecord(
-                'postType',
-                artboard.draft.postType,
-                artboard.entityId
-            );
-            if ( record ) {
-                addTemplate( artboard.draft.postType, artboard.entityId, {
-                    ...record,
-                    slug: artboard.draft.slug,
-                } );
-            }
         }
     }
     return changes;
