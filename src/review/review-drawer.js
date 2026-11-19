@@ -29,11 +29,11 @@ import {
  * One changed item: checkbox, name, second line, its own "Discard" (D48)
  * and change lines.
  *
- * @param {Object}                        props
- * @param {Object}                        props.item      The item.
- * @param {() => void}                    props.onToggle  Called when the checkbox changes.
- * @param {(button: HTMLElement) => void} props.onDiscard Called with the "Discard" button when it is used.
- * @param {boolean}                       props.isSaving  Whether a save is in flight.
+ * @param {Object}     props
+ * @param {Object}     props.item      The item.
+ * @param {() => void} props.onToggle  Called when the checkbox changes.
+ * @param {() => void} props.onDiscard Called when "Discard" is used.
+ * @param {boolean}    props.isSaving  Whether a save is in flight.
  */
 function ReviewItem( { item, onToggle, onDiscard, isSaving } ) {
     const lines = item.lines ?? [];
@@ -60,9 +60,7 @@ function ReviewItem( { item, onToggle, onDiscard, isSaving } ) {
                         tone="neutral"
                         size="compact"
                         disabled={ isSaving }
-                        onClick={ ( event ) =>
-                            onDiscard( event.currentTarget )
-                        }
+                        onClick={ onDiscard }
                     >
                         { __( 'Discard', 'wordpress-for-designers' ) }
                     </Button>
@@ -138,10 +136,11 @@ export function ReviewDrawer( {
 
     // One confirmation serves every item's "Discard" (D48). It lives here,
     // not in the item, because the item is gone once it is discarded: focus
-    // then goes to the close button instead of being lost.
+    // then goes to the close button instead of being lost, and back to the
+    // item's button after Cancel. Only removing an unsaved new template or
+    // part cannot be undone, and only then does the confirmation say so.
     const [ pending, setPending ] = useState( null );
     const [ isConfirming, setIsConfirming ] = useState( false );
-    const discardButton = useRef( null );
     const closeButton = useRef( null );
 
     return (
@@ -192,8 +191,7 @@ export function ReviewDrawer( {
                                     onToggle={ () =>
                                         onToggleItem?.( item.key )
                                     }
-                                    onDiscard={ ( button ) => {
-                                        discardButton.current = button;
+                                    onDiscard={ () => {
                                         setPending( item );
                                         setIsConfirming( true );
                                     } }
@@ -209,12 +207,16 @@ export function ReviewDrawer( {
                     onConfirm={ () => onDiscardItem?.( pending.key ) }
                 >
                     <AlertDialog.Popup
-                        intent="irreversible"
+                        intent={ pending?.isNew ? 'irreversible' : 'default' }
                         title={ discardTitle( pending?.name ?? '' ) }
-                        description={ __(
-                            "This can't be undone.",
-                            'wordpress-for-designers'
-                        ) }
+                        description={
+                            pending?.isNew
+                                ? __(
+                                      "This can't be undone.",
+                                      'wordpress-for-designers'
+                                  )
+                                : undefined
+                        }
                         cancelButtonText={ __(
                             'Cancel',
                             'wordpress-for-designers'
@@ -224,8 +226,8 @@ export function ReviewDrawer( {
                             'wordpress-for-designers'
                         ) }
                         finalFocus={ () =>
-                            discardButton.current?.isConnected
-                                ? discardButton.current
+                            items.some( ( item ) => item.key === pending?.key )
+                                ? true
                                 : closeButton.current
                         }
                     />
