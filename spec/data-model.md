@@ -123,7 +123,7 @@ When the entity is deleted, trashed or reset, every other artboard on any board 
 
 ## Previewing unsaved changes (D57)
 
-The board's unsaved changes are kept on the server for the browser's preview, per user, apart from the site's content: one record per user, replaced on every send and removed when nothing is unsaved. It is never published, never shown to anyone else and never reaches Review. A front-end page requested by a user with `edit_theme_options` with the argument `wfd_preview`, holding a nonce the server gave that user, is rendered with those changes in place of the saved content; for anyone else, with any other value, and on a request to the REST API, the argument does nothing. `[U]` for the behaviour, `[N]` for how the record is stored
+The board's unsaved changes are kept on the server for the browser's preview, per user and site, apart from the site's content: one record for each open board page, replaced each time that page sends, removed when it has nothing unsaved, and no longer used an hour after it last sent. An open board with unsaved changes sends them again every ten minutes, so they stay kept while it is open. Uninstalling the plugin deletes every record. It is never published, never shown to anyone else and never reaches Review. A front-end page requested by a user with `edit_theme_options` with the argument `wfd_preview`, holding a nonce the server gave that user, is rendered with those changes in place of the saved content; for anyone else, with any other value, and on a request to the REST API, the argument does nothing. `[U]` for the behaviour, `[N]` for how the record is stored
 
 ## Saving
 

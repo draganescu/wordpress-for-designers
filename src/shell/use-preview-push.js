@@ -11,6 +11,9 @@ import { store as boardStore } from '../board-store';
 import { getDirtyEntityRecords } from '../adapter/experimental';
 
 const DELAY = 1000;
+// The server keeps what a board page sent for an hour after its last send
+// (includes/preview.php); unsaved changes are sent again well inside that.
+const RESEND_AFTER = 10 * 60 * 1000;
 const POST_TYPES = [ 'page', 'post', 'wp_block', 'wp_navigation' ];
 const TEMPLATE_TYPES = [ 'wp_template', 'wp_template_part' ];
 
@@ -114,7 +117,10 @@ export function usePreviewPush() {
     useEffect( () => {
         let timer = null;
         let sent = null;
+        let sentAt = 0;
         let isSending = false;
+        // What the preview argument holds; it names this board page.
+        let value = window.wfdConfig.preview;
         const board = () => registry.select( boardStore );
         const isWanted = () =>
             board()
@@ -133,19 +139,32 @@ export function usePreviewPush() {
                 timer = setTimeout( send, DELAY );
                 return;
             }
-            const json = JSON.stringify( previewChanges( registry ) );
-            if ( json === sent ) {
+            const changes = previewChanges( registry );
+            const json = JSON.stringify( changes );
+            const isEmpty =
+                ! Object.keys( changes.posts ).length &&
+                ! Object.keys( changes.templates ).length &&
+                ! changes.styles &&
+                ! changes.site;
+            // The same changes are sent again only to keep them kept.
+            const isDue = ! isEmpty && Date.now() - sentAt > RESEND_AFTER;
+            if ( json === sent && ! isDue ) {
                 return;
             }
             isSending = true;
             try {
-                const { preview } = await apiFetch( {
+                const { preview, held } = await apiFetch( {
                     path: '/wfd/v1/preview',
                     method: 'POST',
-                    data: JSON.parse( json ),
+                    data: { ...JSON.parse( json ), preview: value },
                 } );
+                value = preview;
+                sentAt = Date.now();
+                // Browsers reload when the changes are new, or the server
+                // had stopped keeping them.
+                const isSent = json !== sent || ! held;
                 sent = json;
-                registry.dispatch( boardStore ).bumpPreviewVersion( preview );
+                registry.dispatch( boardStore ).setPreview( preview, isSent );
             } catch {
                 // Tried again with the next change.
             }
@@ -156,8 +175,7 @@ export function usePreviewPush() {
                 return;
             }
             if ( sent === null && ! timer ) {
-                // The first send is at once: what was kept before belongs to
-                // an earlier session.
+                // The first send is at once, so the browsers can load.
                 timer = setTimeout( send, 0 );
                 return;
             }
@@ -166,9 +184,15 @@ export function usePreviewPush() {
         };
         schedule();
         const unsubscribe = registry.subscribe( schedule );
+        const resend = setInterval( () => {
+            if ( ! timer ) {
+                send();
+            }
+        }, RESEND_AFTER );
         return () => {
             unsubscribe();
             clearTimeout( timer );
+            clearInterval( resend );
         };
     }, [ registry ] );
 }

@@ -1,8 +1,9 @@
 <?php
 /**
- * The preview layer (D57): the board's unsaved changes, kept per user, put in
- * place of the saved content on front-end pages asked for with a wfd_preview
- * argument that holds a nonce of that user.
+ * The preview layer (D57): the unsaved changes of each open board page, kept
+ * per user and site, put in place of the saved content on front-end pages
+ * asked for with a wfd_preview argument that holds a nonce of that user and
+ * names the board page.
  *
  * @package WordPressForDesigners
  */
@@ -13,12 +14,48 @@ define( 'WFD_PREVIEW_META', 'wfd_preview' );
 define( 'WFD_PREVIEW_ARG', 'wfd_preview' );
 
 /**
- * The value the preview argument must have for the current user.
+ * How long a board page's changes are kept after it last sent them. An open
+ * board sends them again well inside this time (OQ-38).
+ */
+define( 'WFD_PREVIEW_LIFETIME', HOUR_IN_SECONDS );
+
+/**
+ * The value the preview argument must have for the current user: a nonce,
+ * a dot, and the session, a UUID that names one open board page.
  *
+ * @param string|null $session The session, or null to start one.
  * @return string
  */
-function wfd_preview_value() {
-    return wp_create_nonce( WFD_PREVIEW_ARG );
+function wfd_preview_value( $session = null ) {
+    return wp_create_nonce( WFD_PREVIEW_ARG ) . '.' . ( $session ?? wp_generate_uuid4() );
+}
+
+/**
+ * The session a preview value names.
+ *
+ * @param mixed $value The value.
+ * @return string|null Null when the value names none.
+ */
+function wfd_preview_session( $value ) {
+    $parts = is_string( $value ) ? explode( '.', $value, 2 ) : array();
+    return isset( $parts[1] ) && wp_is_uuid( $parts[1], 4 ) ? $parts[1] : null;
+}
+
+/**
+ * The changes kept for a user on this site, by session, without the ones
+ * whose time has passed.
+ *
+ * @param int $user_id The user.
+ * @return array Each with `time` and `changes`.
+ */
+function wfd_preview_records( $user_id ) {
+    $records = get_user_option( WFD_PREVIEW_META, $user_id );
+    return array_filter(
+        is_array( $records ) ? $records : array(),
+        function ( $record ) {
+            return is_array( $record ) && isset( $record['time'], $record['changes'] ) && time() - $record['time'] < WFD_PREVIEW_LIFETIME;
+        }
+    );
 }
 
 /**
@@ -54,14 +91,18 @@ function wfd_preview_text( $value ) {
 }
 
 /**
- * Keeps the board's unsaved changes for the current user, or removes them
+ * Keeps a board page's unsaved changes for the current user, or removes them
  * when there are none.
  *
  * @param WP_REST_Request $request The request.
- * @return WP_REST_Response
+ * @return WP_REST_Response|WP_Error
  */
 function wfd_preview_keep( $request ) {
     $user_id = get_current_user_id();
+    $session = wfd_preview_session( $request['preview'] );
+    if ( null === $session ) {
+        return new WP_Error( 'wfd_preview_session', __( 'The preview value names no session.', 'wordpress-for-designers' ), array( 'status' => 400 ) );
+    }
     $changes = array(
         'posts'     => array(),
         'templates' => array(),
@@ -124,24 +165,37 @@ function wfd_preview_keep( $request ) {
     }
 
     $is_empty = ! $changes['posts'] && ! $changes['templates'] && null === $changes['styles'] && ! $changes['site'];
-    if ( $is_empty ) {
-        delete_user_meta( $user_id, WFD_PREVIEW_META );
+    $records  = wfd_preview_records( $user_id );
+    // Whether this session's changes were kept until now. When a board page
+    // sends the same changes again and they were not, their time had passed
+    // or another page's send was written over them.
+    $was_held = isset( $records[ $session ] );
+    unset( $records[ $session ] );
+    if ( ! $is_empty ) {
+        $records[ $session ] = array(
+            'time'    => time(),
+            'changes' => $changes,
+        );
+    }
+    if ( $records ) {
+        update_user_option( $user_id, WFD_PREVIEW_META, wp_slash( $records ) );
     } else {
-        update_user_meta( $user_id, WFD_PREVIEW_META, wp_slash( wp_json_encode( $changes ) ) );
+        delete_user_option( $user_id, WFD_PREVIEW_META );
     }
     return rest_ensure_response(
         array(
             'kept'    => ! $is_empty,
+            'held'    => $was_held,
             // A nonce lasts a day at most; the board takes a new one with each send.
-            'preview' => wfd_preview_value(),
+            'preview' => wfd_preview_value( $session ),
         )
     );
 }
 
 /**
  * The kept changes for this request, or null when it is not a preview: a
- * front-end request, never one to the REST API, whose preview argument is a
- * nonce of a user who may open the plugin.
+ * front-end request, never one to the REST API, whose preview argument holds
+ * a nonce of a user who may open the plugin and names a session of theirs.
  *
  * @param WP $wp The request, parsed.
  * @return array|null
@@ -150,12 +204,13 @@ function wfd_preview_changes( $wp ) {
     if ( is_admin() || ! empty( $wp->query_vars['rest_route'] ) || ! isset( $_GET[ WFD_PREVIEW_ARG ] ) ) {
         return null;
     }
-    $nonce = sanitize_text_field( wp_unslash( $_GET[ WFD_PREVIEW_ARG ] ) );
-    if ( ! wp_verify_nonce( $nonce, WFD_PREVIEW_ARG ) || ! current_user_can( WFD_CAPABILITY ) ) {
+    $value   = sanitize_text_field( wp_unslash( $_GET[ WFD_PREVIEW_ARG ] ) );
+    $session = wfd_preview_session( $value );
+    if ( null === $session || ! wp_verify_nonce( strtok( $value, '.' ), WFD_PREVIEW_ARG ) || ! current_user_can( WFD_CAPABILITY ) ) {
         return null;
     }
-    $stored = json_decode( (string) get_user_meta( get_current_user_id(), WFD_PREVIEW_META, true ), true );
-    return is_array( $stored ) ? $stored : null;
+    $records = wfd_preview_records( get_current_user_id() );
+    return $records[ $session ]['changes'] ?? null;
 }
 
 /**

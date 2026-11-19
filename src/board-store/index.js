@@ -446,17 +446,20 @@ const actions = {
             } );
         },
     /**
-     * Tells browsers showing unsaved changes that they have been sent.
+     * Keeps what the preview argument must hold, and tells browsers showing
+     * unsaved changes when changes have been sent.
      *
-     * @param {string} value What the preview argument must hold from now on.
+     * @param {string}  value  What the preview argument must hold from now on.
+     * @param {boolean} isSent Whether changes have been sent.
      */
-    bumpPreviewVersion:
-        ( value ) =>
+    setPreview:
+        ( value, isSent ) =>
         ( { select, dispatch } ) => {
             dispatch( {
                 type: 'PATCH',
                 patch: {
-                    previewVersion: select.getPreviewVersion() + 1,
+                    previewVersion:
+                        select.getPreviewVersion() + ( isSent ? 1 : 0 ),
                     previewValue: value,
                 },
             } );
