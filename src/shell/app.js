@@ -944,6 +944,7 @@ export function App() {
                                             isActive={ tier === 'live' }
                                             onHeight={ onHeight }
                                             onWheel={ canvas.forwardWheel }
+                                            onTouch={ canvas.forwardTouch }
                                             onKeyDownCapture={
                                                 editing.noteKeyDown
                                             }

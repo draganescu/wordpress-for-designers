@@ -296,3 +296,118 @@ export function artboardOf(
         ( a ) => a.kind === kind && a.device === device
     )[ nth ];
 }
+
+export type Point = { x: number; y: number };
+
+/**
+ * Fingers on a touch screen, for a page opened with `hasTouch`. Each call
+ * names where every finger that is down is, in page pixels.
+ *
+ * @param page The page.
+ */
+export async function fingers( page: Page ) {
+    const session = await page.context().newCDPSession( page );
+    const send = (
+        type: 'touchStart' | 'touchMove' | 'touchEnd',
+        points: Point[]
+    ) =>
+        session.send( 'Input.dispatchTouchEvent', {
+            type,
+            touchPoints: points.map( ( { x, y }, id ) => ( { x, y, id } ) ),
+        } );
+    const api = {
+        down: ( ...points: Point[] ) => send( 'touchStart', points ),
+        move: ( ...points: Point[] ) => send( 'touchMove', points ),
+        up: () => send( 'touchEnd', [] ),
+        async tap( point: Point ) {
+            await api.down( point );
+            await api.up();
+        },
+        /**
+         * Moves the fingers that are down in a straight line, in steps.
+         *
+         * @param from  Where they are.
+         * @param to    Where they end.
+         * @param steps The number of moves.
+         */
+        async glide( from: Point[], to: Point[], steps = 6 ) {
+            for ( let i = 1; i <= steps; i++ ) {
+                await api.move(
+                    ...from.map( ( point, n ) => ( {
+                        x: point.x + ( ( to[ n ].x - point.x ) * i ) / steps,
+                        y: point.y + ( ( to[ n ].y - point.y ) * i ) / steps,
+                    } ) )
+                );
+            }
+        },
+    };
+    return api;
+}
+
+/**
+ * The points of a 10 px grid over the canvas area that are on empty board, or
+ * on the frame of one artboard.
+ *
+ * @param page The page.
+ * @param id   The artboard, or null for empty board.
+ */
+function gridOn( page: Page, id: string | null ): Promise< Point[] > {
+    return page
+        .locator( '[data-wfd-region="canvas"]' )
+        .evaluate( ( area, artboardId ) => {
+            const box = area.getBoundingClientRect();
+            const found: { x: number; y: number }[] = [];
+            for ( let y = box.top + 20; y < box.bottom - 20; y += 10 ) {
+                for ( let x = box.left + 20; x < box.right - 20; x += 10 ) {
+                    const element = document.elementFromPoint( x, y );
+                    const isOn = artboardId
+                        ? !! element?.closest(
+                              `[data-wfd-artboard="${ artboardId }"] .wfd-artboard__frame`
+                          )
+                        : element === area;
+                    if ( isOn ) {
+                        found.push( { x, y } );
+                    }
+                }
+            }
+            return found;
+        }, id );
+}
+
+/**
+ * A point of the canvas area on the frame of an artboard, away from its
+ * edges where it can be.
+ *
+ * @param page The page.
+ * @param id   The artboard.
+ */
+export async function pointOn( page: Page, id: string ): Promise< Point > {
+    const found = await gridOn( page, id );
+    if ( ! found.length ) {
+        throw new Error( 'The artboard is not in view' );
+    }
+    return found[ Math.floor( found.length / 2 ) ];
+}
+
+/**
+ * Two points of the canvas area, 100 to 220 px apart, that are both on empty
+ * board or both on the frame of one artboard.
+ *
+ * @param page The page.
+ * @param id   The artboard, or null for empty board.
+ */
+export async function pointsOn(
+    page: Page,
+    id: string | null
+): Promise< [ Point, Point ] > {
+    const found = await gridOn( page, id );
+    for ( const a of found ) {
+        for ( const b of found ) {
+            const distance = Math.hypot( b.x - a.x, b.y - a.y );
+            if ( b.x >= a.x && distance >= 100 && distance <= 220 ) {
+                return [ a, b ];
+            }
+        }
+    }
+    throw new Error( 'No two such points in view' );
+}

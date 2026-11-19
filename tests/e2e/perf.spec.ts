@@ -7,6 +7,9 @@ import {
     enterEdit,
     editorFrame,
     artboardOf,
+    fingers,
+    pointsOn,
+    type Point,
 } from './utils';
 
 test.describe( 'PERF', () => {
@@ -224,5 +227,83 @@ test.describe( 'PERF', () => {
             )
         ).toHaveLength( 1 );
         expect( ( await counters( page ) ).renders ).toBeGreaterThan( 0 );
+    } );
+
+    test.describe( 'by touch', () => {
+        test.use( { hasTouch: true, viewport: { width: 1180, height: 820 } } );
+
+        test( 'AC-PERF-04 A two-finger pan or pinch commits no React render and changes the canvas transform at most once per animation frame', async ( {
+            page,
+            requestUtils,
+        } ) => {
+            const fixture = await resetFixture( requestUtils );
+            await openBoard( page, fixture.boardId );
+            await setViewport( page, { x: 20, y: 20, zoom: 0.25 } );
+            await page.waitForTimeout( 1500 );
+            const touch = await fingers( page );
+            const [ a, b ] = await pointsOn( page, null );
+
+            // Counts animation frames next to the app's own counters.
+            await page.evaluate( () => {
+                const state = ( ( window as any ).wfdFrames = { count: 0 } );
+                const tick = () => {
+                    state.count++;
+                    window.requestAnimationFrame( tick );
+                };
+                window.requestAnimationFrame( tick );
+            } );
+            const read = () =>
+                page.evaluate( () => {
+                    const hooks = ( window as any ).wfdTest;
+                    return {
+                        renders: hooks.counters.renders as number,
+                        updates: hooks.viewport.counters.updates as number,
+                        frames: ( window as any ).wfdFrames.count as number,
+                        transform: (
+                            document.querySelector(
+                                '.wfd-canvas__surface'
+                            ) as HTMLElement
+                         ).style.transform,
+                    };
+                } );
+            // Three moves at a time, faster than the frames.
+            const run = async ( at: ( step: number ) => [ Point, Point ] ) => {
+                await touch.down( a );
+                await touch.down( a, b );
+                const before = await read();
+                for ( let i = 1; i <= 30; i += 3 ) {
+                    await Promise.all(
+                        [ i, i + 1, i + 2 ].map( ( step ) =>
+                            touch.move( ...at( step ) )
+                        )
+                    );
+                }
+                const after = await read();
+                await touch.up();
+                return { before, after };
+            };
+
+            const pan = await run( ( step ) => [
+                { x: a.x + step * 2, y: a.y - step },
+                { x: b.x + step * 2, y: b.y - step },
+            ] );
+            const pinch = await run( ( step ) => [
+                { x: a.x - step, y: a.y },
+                { x: b.x + step, y: b.y },
+            ] );
+            for ( const { before, after } of [ pan, pinch ] ) {
+                expect( after.renders - before.renders ).toBe( 0 );
+                expect( after.transform ).not.toBe( before.transform );
+                expect( after.updates ).toBeGreaterThan( before.updates );
+                expect( after.updates - before.updates ).toBeLessThanOrEqual(
+                    after.frames - before.frames + 1
+                );
+            }
+            // React hears about the gesture once it settles.
+            const rendersAtEnd = ( await read() ).renders;
+            await expect
+                .poll( async () => ( await read() ).renders )
+                .toBeGreaterThan( rendersAtEnd );
+        } );
     } );
 } );

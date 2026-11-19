@@ -129,6 +129,9 @@ What to do differently:
 - **A new template or part has no saved record.** It lives as edits on an id that does not exist yet. `startResolution` and `finishResolution` are called on that id so core-data does not request it and get a 404.
 - **Key events from the canvas iframe arrive late.** WordPress re-dispatches them on the iframe element after the editor has handled them. Whether a popover was open has to be recorded at capture time, inside the canvas document as well as the top one, or Esc cannot tell "close the popover" from "leave edit".
 - **Pointer capture retargets `dblclick`** to the capturing element. The canvas uses `elementFromPoint` to find what was double-clicked. For the same reason a button inside an artboard (Retry) needs the canvas to skip capture on it.
+- **WordPress copies a canvas document's `pointerdown` onto its iframe element.** The copy bubbles through the board with the same pointer id and type, and no `pointerup` ever follows it. Anything that counts pointers must skip events that are not trusted (`event.isTrusted`), or a finger in the Live artboard is counted twice and never leaves (D50).
+- **`touch-action: none` on the canvas area also holds inside the artboard iframes** in Chromium, so the fingers' pointer events keep coming there. A non-passive `touchmove` listener prevents the default as well while two fingers are down, for browsers where it might not.
+- **Chromium sends no `dblclick` for a double tap** with emulated touches. The board finds a double tap from its two taps.
 - **`wp-polyfill`** must be enqueued in the parent page, or every artboard iframe requests it again (AC-PERF-03).
 - **`defaultTemplateTypes`** in the editor settings is an object keyed by slug, not an array.
 - **Theme patterns have no `source` field.**
@@ -163,6 +166,7 @@ What to do differently:
 - Dragging is done with real `page.mouse` moves in several steps; one jump does not start a drag.
 - After typing `/` for the slash inserter, type slowly and wait for the option before pressing Enter.
 - Click an artboard in the part of its frame that is inside the canvas area. Helpers compute that point.
+- **Touch.** A describe block with `test.use( { hasTouch: true, viewport: { width: 1180, height: 820 } } )` and the `fingers` helper of `utils.ts`, which sends real touches through CDP (`Input.dispatchTouchEvent`); synthetic `PointerEvent`s are not trusted and the board ignores them. A pinch outside the canvas area does zoom the page in this emulation (`visualViewport.scale` becomes 2), which is what makes the "page did not zoom" check mean something. Artboards are measured much shorter than the heights in the fixture (Hero is about 200 units tall), so take points from `pointOn` and `pointsOn`, not from the fixture's numbers.
 
 ## Paths taken
 

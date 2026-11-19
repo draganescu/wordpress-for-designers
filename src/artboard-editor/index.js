@@ -48,21 +48,29 @@ const CONTENT_BLOCKS = [
 const CANVAS_STYLES = [
     { css: 'body{display:flow-root;height:auto;overflow:hidden;}' },
 ];
+const TOUCH_POINTER_EVENTS = [
+    'pointerdown',
+    'pointermove',
+    'pointerup',
+    'pointercancel',
+];
 
 /**
  * Watches the canvas document from outside: measures the content and passes
- * wheel and key events on. Nothing of the plugin's is put inside the canvas
+ * wheel, touch and key events on. Nothing of the plugin's is put inside the canvas
  * (constraint C6).
  *
  * @param {Object}   options
  * @param {Function} options.onHeight         Reports the content height.
  * @param {Function} options.onWheel          Receives wheel events with the iframe.
+ * @param {Function} options.onTouch          Receives the pointer events of fingers, and
+ *                                            touch moves, with the iframe.
  * @param {Function} options.onKeyDownCapture Called before the editor handles a key.
  */
-function useCanvasProbe( { onHeight, onWheel, onKeyDownCapture } ) {
+function useCanvasProbe( { onHeight, onWheel, onTouch, onKeyDownCapture } ) {
     const frame = useContext( FrameElementContext );
     const latest = useRef( {} );
-    latest.current = { onHeight, onWheel, onKeyDownCapture };
+    latest.current = { onHeight, onWheel, onTouch, onKeyDownCapture };
     useEffect( () => {
         if ( ! frame ) {
             return;
@@ -96,12 +104,47 @@ function useCanvasProbe( { onHeight, onWheel, onKeyDownCapture } ) {
             const wheel = ( event ) =>
                 latest.current.onWheel?.( event, iframe );
             const keyDown = () => latest.current.onKeyDownCapture?.();
+            // Fingers on the canvas: two of them move the board (D50), so
+            // the shell hears of every one. The editor still gets them all.
+            const fingers = new Set();
+            const touch = ( event ) => {
+                if ( event.pointerType !== 'touch' ) {
+                    return;
+                }
+                if ( event.type === 'pointerdown' ) {
+                    fingers.add( event.pointerId );
+                } else if ( event.type !== 'pointermove' ) {
+                    fingers.delete( event.pointerId );
+                }
+                latest.current.onTouch?.( event, iframe );
+            };
+            const touchMove = ( event ) =>
+                latest.current.onTouch?.( event, iframe );
             doc.addEventListener( 'wheel', wheel, { passive: false } );
             doc.addEventListener( 'keydown', keyDown, true );
+            TOUCH_POINTER_EVENTS.forEach( ( type ) =>
+                doc.addEventListener( type, touch, true )
+            );
+            doc.addEventListener( 'touchmove', touchMove, {
+                passive: false,
+                capture: true,
+            } );
             detach = () => {
                 observer.disconnect();
                 doc.removeEventListener( 'wheel', wheel );
                 doc.removeEventListener( 'keydown', keyDown, true );
+                TOUCH_POINTER_EVENTS.forEach( ( type ) =>
+                    doc.removeEventListener( type, touch, true )
+                );
+                doc.removeEventListener( 'touchmove', touchMove, true );
+                // A finger still down is not heard of again.
+                fingers.forEach( ( pointerId ) =>
+                    latest.current.onTouch?.(
+                        { type: 'pointercancel', pointerId },
+                        iframe
+                    )
+                );
+                fingers.clear();
             };
         };
         // The canvas document is filled in after the iframe loads.
@@ -244,6 +287,7 @@ function Editor( {
     isPage,
     onHeight,
     onWheel,
+    onTouch,
     onKeyDownCapture,
     bridgeRef,
     onSelection,
@@ -271,6 +315,7 @@ function Editor( {
             onHeight( value );
         },
         onWheel,
+        onTouch,
         onKeyDownCapture,
     } );
     const [ height, setHeight ] = useState( 0 );
@@ -366,6 +411,7 @@ function PageEditor( { artboard, ...props } ) {
  * @param {boolean}  props.isActive         True for the Live editor, false for a warm one.
  * @param {Function} props.onHeight         Reports the measured content height.
  * @param {Function} props.onWheel          Receives wheel events from the canvas document.
+ * @param {Function} props.onTouch          Receives touches from the canvas document.
  * @param {Function} props.onKeyDownCapture Called before the editor handles a key.
  * @param {Object}   props.bridgeRef        Receives the bridge to this editor.
  * @param {Function} props.onSelection      Called when the selected block changes.

@@ -5,6 +5,9 @@
  * Pan, zoom and artboard drags change the DOM directly; the store hears about
  * them when they end (constraint C22). The selection rectangle (D43) is drawn
  * the same way; the store hears when the set of selected artboards changes.
+ *
+ * Fingers (D50): one finger is the pointer, two or more pan the board and
+ * pinch it, through the same viewport.
  */
 import { useEffect, useRef } from '@wordpress/element';
 import { useRegistry } from '@wordpress/data';
@@ -14,6 +17,11 @@ import { isShortcutsDialogEvent } from './shortcuts-dialog';
 import { noteRect } from './notes';
 
 const DRAG_THRESHOLD = 3;
+// A finger is less steady than a mouse.
+const TOUCH_DRAG_THRESHOLD = 10;
+// Two taps this close in time (ms) and place (px) are a double tap.
+const DOUBLE_TAP_DELAY = 400;
+const DOUBLE_TAP_DISTANCE = 30;
 const ZOOM_STEP = 1.25;
 const WHEEL_ZOOM_RATE = 0.01;
 
@@ -224,22 +232,212 @@ export function useCanvasInteractions( {
         function onWheel( event ) {
             wheel( event, point( event ) );
         }
-        // Wheel events inside artboard iframes are forwarded here.
-        api.current.forwardWheel = ( event, frame ) => {
+        // A point of an artboard iframe's document, in canvas area pixels.
+        const framePoint = ( event, frame ) => {
             const box = area.getBoundingClientRect();
             const frameBox = frame.getBoundingClientRect();
             const scale = frameBox.width / frame.offsetWidth || 1;
-            wheel( event, {
+            return {
                 x: frameBox.left + event.clientX * scale - box.left,
                 y: frameBox.top + event.clientY * scale - box.top,
+            };
+        };
+        // Wheel events inside artboard iframes are forwarded here.
+        api.current.forwardWheel = ( event, frame ) => {
+            wheel( event, framePoint( event, frame ) );
+        };
+
+        // Fingers on the canvas area, in canvas area pixels. The ones inside
+        // the Live artboard's document are forwarded here and counted with
+        // the rest.
+        const touches = new Map();
+        // Where the fingers were at the last update of a gesture of two or
+        // more. It stays set until the last finger lifts, so that the
+        // fingers of that gesture never act as a pointer.
+        let pinch = null;
+        let lastPointerType = '';
+        let lastTap = null;
+
+        // The middle of the fingers and their mean distance from it.
+        function measure() {
+            let x = 0;
+            let y = 0;
+            touches.forEach( ( at ) => {
+                x += at.x / touches.size;
+                y += at.y / touches.size;
             } );
+            let spread = 0;
+            touches.forEach( ( at ) => {
+                spread += Math.hypot( at.x - x, at.y - y ) / touches.size;
+            } );
+            return { x, y, spread };
+        }
+
+        // A second finger ends what the first one was doing as if it had
+        // not started: nothing is selected, moved or left by it.
+        function cancelOneFinger() {
+            const cancelled = gesture;
+            lastTap = null;
+            if ( ! cancelled?.isTouch ) {
+                return;
+            }
+            gesture = null;
+            area.classList.remove( 'is-panning' );
+            if ( cancelled.type === 'drag' ) {
+                cancelled.items.forEach( ( item ) => {
+                    item.element.style.left = item.originX + 'px';
+                    item.element.style.top = item.originY + 'px';
+                } );
+                actions().selectArtboards( cancelled.selectionBefore );
+            } else if ( cancelled.type === 'marquee' ) {
+                if ( cancelled.element ) {
+                    cancelled.element.hidden = true;
+                }
+                actions().selectArtboards( cancelled.before );
+            }
+        }
+
+        /**
+         * Follows one finger. Two or more pan the board by the movement of
+         * their middle and zoom it about that middle by the change of their
+         * spread.
+         *
+         * @param {string}  key     The finger: its document and pointer id.
+         * @param {string}  type    The pointer event type.
+         * @param {Object}  at      Where it is, in canvas area pixels.
+         * @param {boolean} isFirst Whether it is the first finger down in
+         *                          its document.
+         * @return {boolean} Whether the finger is part of such a gesture.
+         */
+        function trackTouch( key, type, at, isFirst ) {
+            const wasPinching = !! pinch;
+            if ( type === 'pointerdown' ) {
+                if ( isFirst ) {
+                    // Any other finger of that document lifted unheard.
+                    const prefix = key.slice( 0, key.indexOf( ':' ) + 1 );
+                    [ ...touches.keys() ].forEach( ( finger ) => {
+                        if ( finger.startsWith( prefix ) ) {
+                            touches.delete( finger );
+                        }
+                    } );
+                    if ( ! touches.size ) {
+                        pinch = null;
+                    }
+                }
+                touches.set( key, at );
+                if ( touches.size > 1 ) {
+                    cancelOneFinger();
+                    pinch = measure();
+                    // What is under a finger can go while the board moves
+                    // (an artboard changes tier); the fingers stay with
+                    // the board.
+                    touches.forEach( ( where, finger ) => {
+                        if ( finger.startsWith( 'board:' ) ) {
+                            capture( Number( finger.slice( 6 ) ) );
+                        }
+                    } );
+                }
+            } else if ( type === 'pointermove' ) {
+                if ( ! touches.has( key ) ) {
+                    return wasPinching;
+                }
+                touches.set( key, at );
+                if ( pinch && touches.size > 1 ) {
+                    const next = measure();
+                    viewport.panBy( next.x - pinch.x, next.y - pinch.y );
+                    if ( pinch.spread > 1 && next.spread > 1 ) {
+                        viewport.zoomTo(
+                            ( viewport.get().zoom * next.spread ) /
+                                pinch.spread,
+                            next
+                        );
+                    }
+                    pinch = next;
+                }
+            } else {
+                touches.delete( key );
+                if ( ! touches.size ) {
+                    pinch = null;
+                } else if ( pinch && touches.size > 1 ) {
+                    pinch = measure();
+                }
+            }
+            return wasPinching || !! pinch;
+        }
+
+        // Before anything under the finger hears of it.
+        function onTouchPointer( event ) {
+            if ( event.type === 'pointerdown' ) {
+                lastPointerType = event.pointerType;
+            }
+            // WordPress dispatches copies of the pointer events of a
+            // canvas document on its iframe; those fingers are forwarded.
+            if ( event.pointerType !== 'touch' || ! event.isTrusted ) {
+                return;
+            }
+            const isPinching = trackTouch(
+                'board:' + event.pointerId,
+                event.type,
+                point( event ),
+                event.isPrimary
+            );
+            if ( isPinching ) {
+                event.stopPropagation();
+            }
+        }
+        // The browser must not take two fingers for itself, here or in an
+        // artboard's document.
+        function onTouchMove( event ) {
+            if ( pinch && event.cancelable ) {
+                event.preventDefault();
+            }
+        }
+        // Touches inside the Live artboard's document are forwarded here.
+        api.current.forwardTouch = ( event, frame ) => {
+            if ( event.type === 'touchmove' ) {
+                onTouchMove( event );
+                return;
+            }
+            trackTouch(
+                'frame:' + event.pointerId,
+                event.type,
+                event.type === 'pointerdown' || event.type === 'pointermove'
+                    ? framePoint( event, frame )
+                    : null,
+                event.isPrimary
+            );
         };
 
         function onPointerDown( event ) {
+            if ( event.pointerType !== 'touch' || ! event.isTrusted ) {
+                press( event );
+            } else if ( ! pinch ) {
+                // A finger may be the first of two, so what it pressed is
+                // acted on only once it moves or lifts.
+                gesture = {
+                    type: 'touch',
+                    isTouch: true,
+                    down: event,
+                    startX: event.clientX,
+                    startY: event.clientY,
+                };
+            }
+        }
+
+        // A finger that has already lifted cannot be captured.
+        function capture( pointerId ) {
+            try {
+                area.setPointerCapture( pointerId );
+            } catch {
+                // Nothing to capture.
+            }
+        }
+
+        function press( event ) {
             if ( event.button === 1 || ( event.button === 0 && isSpaceDown ) ) {
                 event.preventDefault();
                 gesture = { type: 'pan', x: event.clientX, y: event.clientY };
-                area.setPointerCapture( event.pointerId );
+                capture( event.pointerId );
                 area.classList.add( 'is-panning' );
                 return;
             }
@@ -258,7 +456,7 @@ export function useCanvasInteractions( {
                     startY: event.clientY,
                 };
                 if ( gesture.canSelect ) {
-                    area.setPointerCapture( event.pointerId );
+                    capture( event.pointerId );
                 }
                 return;
             }
@@ -327,7 +525,7 @@ export function useCanvasInteractions( {
                 startX: event.clientX,
                 startY: event.clientY,
             };
-            area.setPointerCapture( event.pointerId );
+            capture( event.pointerId );
         }
 
         const toBoard = ( { x, y } ) => {
@@ -393,8 +591,29 @@ export function useCanvasInteractions( {
         }
 
         function onPointerMove( event ) {
-            if ( ! gesture ) {
+            if ( ! gesture || ( pinch && event.pointerType === 'touch' ) ) {
                 return;
+            }
+            if ( gesture.type === 'touch' ) {
+                const { down } = gesture;
+                if (
+                    event.pointerId !== down.pointerId ||
+                    Math.hypot(
+                        event.clientX - down.clientX,
+                        event.clientY - down.clientY
+                    ) < TOUCH_DRAG_THRESHOLD
+                ) {
+                    return;
+                }
+                // The finger drags: it pressed where it landed.
+                const selectionBefore = board().getSelectedIds();
+                gesture = null;
+                press( down );
+                if ( ! gesture ) {
+                    return;
+                }
+                gesture.isTouch = true;
+                gesture.selectionBefore = selectionBefore;
             }
             if ( gesture.type === 'pan' ) {
                 viewport.panBy(
@@ -443,29 +662,40 @@ export function useCanvasInteractions( {
         }
 
         function onPointerUp( event ) {
+            let isTap = false;
+            if ( gesture?.type === 'touch' ) {
+                const { down } = gesture;
+                if ( event.pointerId !== down.pointerId ) {
+                    return;
+                }
+                gesture = null;
+                if ( event.type === 'pointercancel' ) {
+                    return;
+                }
+                // The finger lifted where it landed: a tap is a click.
+                press( down );
+                isTap = true;
+            }
             const ended = gesture;
             gesture = null;
             area.classList.remove( 'is-panning' );
             if ( area.hasPointerCapture?.( event.pointerId ) ) {
                 area.releasePointerCapture( event.pointerId );
             }
-            if ( ! ended ) {
-                return;
-            }
-            if ( ended.type === 'marquee' ) {
+            if ( ended?.type === 'marquee' ) {
                 if ( ended.element ) {
                     ended.element.hidden = true;
                 }
                 return;
             }
-            if ( ended.type === 'drag' ) {
+            if ( ended?.type === 'drag' ) {
                 actions().moveArtboards(
                     ended.items.map( ( { id, x, y } ) => ( { id, x, y } ) )
                 );
-            } else if ( ended.type === 'press' && ended.isOneOfMany ) {
+            } else if ( ended?.type === 'press' && ended.isOneOfMany ) {
                 actions().selectArtboard( ended.id );
             } else if (
-                ended.type === 'empty' &&
+                ended?.type === 'empty' &&
                 ! frameOf( event.target ) &&
                 ! event.target.closest(
                     '.wfd-canvas__banner, .wfd-canvas__empty'
@@ -478,9 +708,38 @@ export function useCanvasInteractions( {
                 actions().clearSelection();
                 area.focus( { preventScroll: true } );
             }
+            if ( isTap ) {
+                // Two taps in the same place are a double-click. Browsers
+                // do not agree on sending one for fingers.
+                const isDouble =
+                    lastTap &&
+                    event.timeStamp - lastTap.time < DOUBLE_TAP_DELAY &&
+                    Math.hypot(
+                        event.clientX - lastTap.x,
+                        event.clientY - lastTap.y
+                    ) < DOUBLE_TAP_DISTANCE;
+                lastTap = isDouble
+                    ? null
+                    : {
+                          time: event.timeStamp,
+                          x: event.clientX,
+                          y: event.clientY,
+                      };
+                if ( isDouble ) {
+                    open( event );
+                }
+            }
         }
 
         function onDoubleClick( event ) {
+            // A double tap is found from its taps, above.
+            if ( lastPointerType !== 'touch' ) {
+                open( event );
+            }
+        }
+
+        // Edits what was double-clicked or double-tapped.
+        function open( event ) {
             // Pointer capture retargets the event to the canvas area, so
             // look at what is under the pointer.
             const target =
@@ -671,6 +930,16 @@ export function useCanvasInteractions( {
             }
         }
 
+        const touchTypes = [
+            'pointerdown',
+            'pointermove',
+            'pointerup',
+            'pointercancel',
+        ];
+        touchTypes.forEach( ( type ) =>
+            area.addEventListener( type, onTouchPointer, true )
+        );
+        area.addEventListener( 'touchmove', onTouchMove, { passive: false } );
         area.addEventListener( 'wheel', onWheel, { passive: false } );
         area.addEventListener( 'pointerdown', onPointerDown );
         area.addEventListener( 'pointermove', onPointerMove );
@@ -681,6 +950,10 @@ export function useCanvasInteractions( {
         area.addEventListener( 'keyup', onKeyUp );
         doc.addEventListener( 'keydown', onDocumentKeyDown );
         return () => {
+            touchTypes.forEach( ( type ) =>
+                area.removeEventListener( type, onTouchPointer, true )
+            );
+            area.removeEventListener( 'touchmove', onTouchMove );
             area.removeEventListener( 'wheel', onWheel );
             area.removeEventListener( 'pointerdown', onPointerDown );
             area.removeEventListener( 'pointermove', onPointerMove );
