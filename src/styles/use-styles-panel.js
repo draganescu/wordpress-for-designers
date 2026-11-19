@@ -251,23 +251,33 @@ export function useStylesPanel( { styles, serverSettings, usesOf } ) {
             areGlobalStylesEqual( user, variation )
         )?.title ?? null;
 
-    const blockStylesFor = ( name ) => (
-        <GlobalStylesUI
-            value={ user }
-            baseValue={ base }
-            onChange={ update }
-            path={ '/blocks/' + encodeURIComponent( name ) }
-            onPathChange={ ( next ) => {
-                // The stock block screen has its own back control; leaving
-                // the block's screens returns to the plugin's block list.
-                if ( ! next.startsWith( '/blocks/' ) ) {
-                    setOpenBlock( null );
+    // The stock styles screens of one block. `onLeave` is called when the
+    // stock navigation leaves them, as the block screen's own Back control
+    // does.
+    const blockStylesFor = ( name, onLeave ) => {
+        const path = '/blocks/' + encodeURIComponent( name );
+        return (
+            <GlobalStylesUI
+                value={ user }
+                baseValue={ base }
+                onChange={ update }
+                path={ path }
+                onPathChange={
+                    onLeave &&
+                    ( ( next ) => {
+                        if (
+                            next !== path &&
+                            ! next.startsWith( path + '/' )
+                        ) {
+                            onLeave();
+                        }
+                    } )
                 }
-            } }
-            serverCSS={ serverSettings.styles }
-            serverSettings={ serverSettings }
-        />
-    );
+                serverCSS={ serverSettings.styles }
+                serverSettings={ serverSettings }
+            />
+        );
+    };
 
     return {
         blockStylesFor,
@@ -335,7 +345,8 @@ export function useStylesPanel( { styles, serverSettings, usesOf } ) {
             blocks,
             openBlock,
             onOpenBlock: setOpenBlock,
-            renderBlockStyles: blockStylesFor,
+            renderBlockStyles: ( name ) =>
+                blockStylesFor( name, () => setOpenBlock( null ) ),
             historyRows,
             selectedHistoryId: preview?.id ?? null,
             onSelectHistory: ( id ) => {
