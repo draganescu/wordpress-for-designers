@@ -4,7 +4,7 @@
 import { useSelect } from '@wordpress/data';
 import { store as coreStore } from '@wordpress/core-data';
 import { store as boardStore } from '../board-store';
-import { BROWSER_HEIGHT, KINDS } from './constants';
+import { KINDS } from './constants';
 
 /**
  * The display name of an entity record.
@@ -35,7 +35,6 @@ export function useArtboards() {
                     // A browser has no entity: its name is its address.
                     return {
                         ...artboard,
-                        height: artboard.height ?? BROWSER_HEIGHT,
                         record: null,
                         name: artboard.path,
                         status: 'ready',

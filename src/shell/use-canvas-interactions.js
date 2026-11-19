@@ -12,7 +12,7 @@ import { store as boardStore } from '../board-store';
 import { orderedArtboards } from './artboards-panel';
 import { isShortcutsDialogEvent } from './shortcuts-dialog';
 import { noteRect } from './notes';
-import { BROWSER_HEIGHT, MIN_BROWSER_HEIGHT } from './constants';
+import { MIN_BROWSER_HEIGHT } from './constants';
 
 const DRAG_THRESHOLD = 3;
 const ZOOM_STEP = 1.25;
@@ -42,10 +42,7 @@ export function rectOf( artboard, widthOf ) {
             artboard.kind === 'media'
                 ? artboard.width
                 : widthOf( artboard.device ),
-        height:
-            artboard.kind === 'browser'
-                ? ( artboard.height ?? BROWSER_HEIGHT )
-                : artboard.height,
+        height: artboard.height,
     };
 }
 
@@ -282,8 +279,7 @@ export function useCanvasInteractions( {
                     type: 'resize',
                     id,
                     frame,
-                    originHeight:
-                        board().getArtboard( id ).height ?? BROWSER_HEIGHT,
+                    originHeight: board().getArtboard( id ).height,
                     height: null,
                     startY: event.clientY,
                 };

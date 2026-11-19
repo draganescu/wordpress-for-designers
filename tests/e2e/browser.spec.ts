@@ -183,9 +183,6 @@ test.describe( 'BROWSER', () => {
             'data-wfd-tier',
             'live'
         );
-        await page.waitForTimeout( 500 );
-        expect( await pageUrl( page ) ).toBe( before );
-
         // A drag moves it, by 100 board units at 50%.
         const from = { x: frame.x + 200, y: frame.y + 200 };
         await page.mouse.move( from.x, from.y );
@@ -198,6 +195,9 @@ test.describe( 'BROWSER', () => {
                 timeout: 6000,
             } )
             .toMatchObject( { x: AT.x + 100, y: AT.y + 100 } );
+        // The layout was saved two seconds after the drag; by now the link
+        // would have been followed.
+        expect( await pageUrl( page ) ).toBe( before );
 
         await page.keyboard.press( 'Delete' );
         const dialog = page.getByRole( 'alertdialog' );
@@ -310,12 +310,13 @@ test.describe( 'BROWSER', () => {
         await page.keyboard.press( 'End' );
         await page.keyboard.type( ' Updated' );
         await page.getByRole( 'button', { name: 'Back to the board' } ).click();
-        await page.waitForTimeout( 500 );
-        await expect( shown ).toHaveText( 'About paragraph.' );
-
         await page.locator( '[data-wfd-control="H9"]' ).click();
         const drawer = page.getByRole( 'dialog', { name: 'Review changes' } );
-        await drawer.getByRole( 'button', { name: 'Save 1 change' } ).click();
+        const save = drawer.getByRole( 'button', { name: 'Save 1 change' } );
+        await expect( save ).toBeVisible();
+        // Review lists the change and the browser still shows the saved page.
+        await expect( shown ).toHaveText( 'About paragraph.' );
+        await save.click();
         await expect(
             page$( page ).locator( 'p', {
                 hasText: 'About paragraph. Updated',
@@ -491,7 +492,10 @@ test.describe( 'BROWSER', () => {
             'data-wfd-tier',
             'live'
         );
-        await page.waitForTimeout( 300 );
+        // The page takes no input again.
+        await expect(
+            browser( page ).locator( 'iframe.wfd-browser' )
+        ).toHaveAttribute( 'inert', '' );
         expect( await scrollY() ).toBe( scrolled );
     } );
 

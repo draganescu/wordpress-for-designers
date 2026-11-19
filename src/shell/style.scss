@@ -345,6 +345,7 @@ html.wp-toolbar:has(.wfd-board-page) {
 
 .wfd-entity-card,
 .wfd-device-control,
+.wfd-shows-control,
 .wfd-template-control,
 .wfd-scope-switch,
 .wfd-artboard-settings__actions,
@@ -563,19 +564,20 @@ html.wp-toolbar:has(.wfd-board-page) {
     margin-top: var(--wpds-dimension-gap-lg);
 }
 
-// A browser's window (D55): the page at the device width, 900 board units
-// tall. Outside browsing it takes no input.
+// A browser's window (D55): the page at the device width, as tall as the
+// window (D56). Outside browsing the frame is inert and takes no input.
 .wfd-browser {
     display: block;
     width: 100%;
     height: 100%;
     border: 0;
     background: var(--wpds-color-background-surface-neutral);
-    pointer-events: none;
 }
 
-.wfd-canvas:not(.is-pan-ready, .is-panning) .wfd-artboard[data-wfd-tier="live"] .wfd-browser {
-    pointer-events: auto;
+// While it is browsed, the pointer is the board's when the board pans.
+.wfd-canvas.is-pan-ready .wfd-browser,
+.wfd-canvas.is-panning .wfd-browser {
+    pointer-events: none;
 }
 
 .wfd-artboard__address {

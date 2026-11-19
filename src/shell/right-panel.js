@@ -157,7 +157,7 @@ export function ArtboardSettings( {
                     device={ artboard.device }
                     onChange={ onDeviceChange }
                 />
-                <div className="wfd-device-control">
+                <div className="wfd-shows-control">
                     <ToggleGroupControl
                         __next40pxDefaultSize
                         isBlock

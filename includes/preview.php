@@ -10,8 +10,11 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'WFD_PREVIEW_META', 'wfd_preview' );
-define( 'WFD_PREVIEW_ARG', 'wfd_preview' );
+/**
+ * The name of the query argument, of the user option the changes are kept
+ * in, and of the nonce.
+ */
+define( 'WFD_PREVIEW', 'wfd_preview' );
 
 /**
  * How long a board page's changes are kept after it last sent them. An open
@@ -27,7 +30,7 @@ define( 'WFD_PREVIEW_LIFETIME', HOUR_IN_SECONDS );
  * @return string
  */
 function wfd_preview_value( $session = null ) {
-    return wp_create_nonce( WFD_PREVIEW_ARG ) . '.' . ( $session ?? wp_generate_uuid4() );
+    return wp_create_nonce( WFD_PREVIEW ) . '.' . ( $session ?? wp_generate_uuid4() );
 }
 
 /**
@@ -49,7 +52,7 @@ function wfd_preview_session( $value ) {
  * @return array Each with `time` and `changes`.
  */
 function wfd_preview_records( $user_id ) {
-    $records = get_user_option( WFD_PREVIEW_META, $user_id );
+    $records = get_user_option( WFD_PREVIEW, $user_id );
     return array_filter(
         is_array( $records ) ? $records : array(),
         function ( $record ) {
@@ -237,9 +240,9 @@ function wfd_preview_keep( $request ) {
         );
     }
     if ( $records ) {
-        update_user_option( $user_id, WFD_PREVIEW_META, wp_slash( $records ) );
+        update_user_option( $user_id, WFD_PREVIEW, wp_slash( $records ) );
     } else {
-        delete_user_option( $user_id, WFD_PREVIEW_META );
+        delete_user_option( $user_id, WFD_PREVIEW );
     }
     return rest_ensure_response(
         array(
@@ -260,12 +263,12 @@ function wfd_preview_keep( $request ) {
  * @return array|null
  */
 function wfd_preview_changes( $wp ) {
-    if ( is_admin() || ! empty( $wp->query_vars['rest_route'] ) || ! isset( $_GET[ WFD_PREVIEW_ARG ] ) ) {
+    if ( is_admin() || ! empty( $wp->query_vars['rest_route'] ) || ! isset( $_GET[ WFD_PREVIEW ] ) ) {
         return null;
     }
-    $value   = sanitize_text_field( wp_unslash( $_GET[ WFD_PREVIEW_ARG ] ) );
+    $value   = sanitize_text_field( wp_unslash( $_GET[ WFD_PREVIEW ] ) );
     $session = wfd_preview_session( $value );
-    if ( null === $session || ! wp_verify_nonce( strtok( $value, '.' ), WFD_PREVIEW_ARG ) || ! current_user_can( WFD_CAPABILITY ) ) {
+    if ( null === $session || ! wp_verify_nonce( strtok( $value, '.' ), WFD_PREVIEW ) || ! current_user_can( WFD_CAPABILITY ) ) {
         return null;
     }
     $records = wfd_preview_records( get_current_user_id() );

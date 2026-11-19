@@ -57,11 +57,6 @@ export const KINDS = {
 };
 
 /**
- * Height of a new browser's window, in board units (D55).
- */
-export const BROWSER_HEIGHT = 900;
-
-/**
  * Lowest a browser's window can be resized to, in board units (D56).
  */
 export const MIN_BROWSER_HEIGHT = 200;
