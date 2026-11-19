@@ -590,9 +590,7 @@ test.describe( 'STYLE', () => {
         for ( const [ entry, title ] of entries ) {
             await expect( entry ).toHaveText( /^(Edit|Background|Shadows)$/ );
             await entry.click();
-            const stock = panel.locator(
-                '.global-styles-ui-sidebar__navigator-provider'
-            );
+            const stock = panel.locator( '.wfd-styles__screen' );
             await expect( stock ).toBeVisible();
             await expect(
                 stock
@@ -748,9 +746,7 @@ test.describe( 'STYLE', () => {
         } );
         await expect( row ).not.toContainText( 'change' );
         await row.click();
-        const stock = panel.locator(
-            '.global-styles-ui-sidebar__navigator-provider'
-        );
+        const stock = panel.locator( '.wfd-styles__block-styles' );
         await expect(
             stock.getByRole( 'heading', { name: 'All headings' } ).first()
         ).toBeVisible();

@@ -13,25 +13,15 @@ import {
     getStyle,
     setSetting,
 } from '@wordpress/global-styles-engine';
-import {
-    GlobalStylesUI,
-    useGlobalStylesRevisions,
-} from '@wordpress/global-styles-ui';
-import {
-    button,
-    caption,
-    formInput,
-    formSelect,
-    heading,
-    headingLevel1,
-    headingLevel2,
-    headingLevel3,
-    headingLevel4,
-    headingLevel5,
-    headingLevel6,
-    link,
-} from '@wordpress/icons';
+import { useGlobalStylesRevisions } from '@wordpress/global-styles-ui';
 import { getCurrentThemeGlobalStylesVariations } from '../adapter/experimental';
+import {
+    StockScreen,
+    blockPath,
+    elementGroups,
+    isPartialVariation,
+    siteScreens,
+} from './stock-screens';
 
 const STYLE_SUPPORTS = [
     'color',
@@ -42,84 +32,6 @@ const STYLE_SUPPORTS = [
     'border',
 ];
 const NONE = [];
-// An element's row in the Blocks tab is named with this before its name.
-const ELEMENT = 'elements/';
-
-/**
- * The elements WordPress styles for the whole site, in the groups, order,
- * titles and icons of its own "Blocks & Elements" list (decision D53).
- *
- * @return {Array} Groups as { title, elements: [ { name, title, icon } ] }.
- */
-function elementGroups() {
-    const item = ( name, title, icon ) => ( { name, title, icon } );
-    return [
-        {
-            title: __( 'Elements', 'wordpress-for-designers' ),
-            elements: [
-                item( 'link', __( 'Link', 'wordpress-for-designers' ), link ),
-                item(
-                    'caption',
-                    __( 'Caption', 'wordpress-for-designers' ),
-                    caption
-                ),
-                item(
-                    'cite',
-                    __( 'Citation', 'wordpress-for-designers' ),
-                    caption
-                ),
-            ],
-        },
-        {
-            title: __( 'Headings', 'wordpress-for-designers' ),
-            elements: [
-                item(
-                    'heading',
-                    __( 'All headings', 'wordpress-for-designers' ),
-                    heading
-                ),
-                ...[
-                    headingLevel1,
-                    headingLevel2,
-                    headingLevel3,
-                    headingLevel4,
-                    headingLevel5,
-                    headingLevel6,
-                ].map( ( icon, index ) =>
-                    item(
-                        'h' + ( index + 1 ),
-                        sprintf(
-                            /* translators: %d: heading level, 1 to 6. */
-                            __( 'Heading %d', 'wordpress-for-designers' ),
-                            index + 1
-                        ),
-                        icon
-                    )
-                ),
-            ],
-        },
-        {
-            title: __( 'Form controls', 'wordpress-for-designers' ),
-            elements: [
-                item(
-                    'textInput',
-                    __( 'Form input', 'wordpress-for-designers' ),
-                    formInput
-                ),
-                item(
-                    'select',
-                    __( 'Form select', 'wordpress-for-designers' ),
-                    formSelect
-                ),
-                item(
-                    'button',
-                    __( 'Form button', 'wordpress-for-designers' ),
-                    button
-                ),
-            ],
-        },
-    ];
-}
 
 function list( value ) {
     return Array.isArray( value ) ? value : NONE;
@@ -152,48 +64,6 @@ function countLeaves( value ) {
     return Object.values( value ).reduce(
         ( total, item ) => total + countLeaves( item ),
         0
-    );
-}
-
-/**
- * The part of a styles object that sits under one of the given keys, at any
- * depth.
- *
- * @param {Object} value Settings and styles.
- * @param {Array}  keys  The keys to keep.
- * @return {Object} What is under those keys, in place.
- */
-function onlyUnder( value, keys ) {
-    const kept = {};
-    Object.keys( value ?? {} ).forEach( ( key ) => {
-        if ( keys.includes( key ) ) {
-            kept[ key ] = value[ key ];
-        } else if ( value[ key ] && typeof value[ key ] === 'object' ) {
-            const inner = onlyUnder( value[ key ], keys );
-            if ( Object.keys( inner ).length ) {
-                kept[ key ] = inner;
-            }
-        }
-    } );
-    return kept;
-}
-
-/**
- * Whether a theme variation is a preset of one kind only, colours or type,
- * which WordPress lists as a palette or a typeset and not as a style
- * variation.
- *
- * @param {Object} variation A variation from the theme.
- * @return {boolean} True for a colour-only or type-only preset.
- */
-function isPartial( variation ) {
-    const whole = {
-        settings: variation.settings ?? {},
-        styles: variation.styles ?? {},
-    };
-    const size = countLeaves( whole );
-    return [ [ 'color' ], [ 'typography', 'spacing' ] ].some(
-        ( keys ) => countLeaves( onlyUnder( whole, keys ) ) === size
     );
 }
 
@@ -240,8 +110,8 @@ export function useStylesPanel( { styles, serverSettings, usesOf } ) {
         styles;
     const [ tab, setTab ] = useState( 'tokens' );
     const [ blockQuery, setBlockQuery ] = useState( '' );
+    // The stock screens open in the Blocks and Tokens tabs, as their paths.
     const [ openBlock, setOpenBlock ] = useState( null );
-    // The stock styles screen open in the Tokens tab, as its path (D52).
     const [ openScreen, setOpenScreen ] = useState( null );
     const allVariations = useSelect(
         ( select ) => getCurrentThemeGlobalStylesVariations( select ) ?? NONE,
@@ -257,7 +127,7 @@ export function useStylesPanel( { styles, serverSettings, usesOf } ) {
         return allVariations.filter( ( variation ) => {
             if (
                 variation.blockTypes ||
-                isPartial( variation ) ||
+                isPartialVariation( variation ) ||
                 seen.has( variation.title )
             ) {
                 return false;
@@ -325,51 +195,47 @@ export function useStylesPanel( { styles, serverSettings, usesOf } ) {
         [ merged ]
     );
 
-    const blocks = useMemo( () => {
+    // The rows of the Blocks tab in their groups, the elements' first (D53).
+    // A row is known by the path of its stock screen.
+    const blockGroups = useMemo( () => {
         const needle = blockQuery.trim().toLowerCase();
-        // The elements first, found by title, name or group title.
-        const elements = elementGroups().flatMap( ( group ) =>
-            group.elements
-                .filter(
-                    ( element ) =>
-                        ! needle ||
-                        [ element.title, element.name, group.title ]
-                            .join( ' ' )
-                            .toLowerCase()
-                            .includes( needle )
+        const matches = ( ...texts ) =>
+            ! needle || texts.join( ' ' ).toLowerCase().includes( needle );
+        const groups = elementGroups().map( ( group ) => ( {
+            title: group.title,
+            // An element is found by title, name or group title.
+            rows: group.elements
+                .filter( ( element ) =>
+                    matches( element.title, element.name, group.title )
                 )
-                .map( ( element ) => ( {
-                    name: ELEMENT + element.name,
-                    title: element.title,
-                    icon: element.icon,
-                    group: group.title,
-                    changes: countLeaves(
-                        user.styles?.elements?.[ element.name ]
-                    ),
-                } ) )
-        );
-        const types = getBlockTypes()
-            .filter(
-                ( type ) =>
-                    type.supports &&
-                    Object.keys( type.supports ).some( ( key ) =>
-                        STYLE_SUPPORTS.some( ( support ) =>
-                            key.toLowerCase().endsWith( support )
-                        )
-                    )
-            )
-            .filter(
-                ( type ) =>
-                    ! needle || type.title.toLowerCase().includes( needle )
-            )
-            .map( ( type ) => ( {
-                name: type.name,
-                title: type.title,
-                icon: type.icon,
-                group: __( 'Blocks', 'wordpress-for-designers' ),
-                changes: countLeaves( user.styles?.blocks?.[ type.name ] ),
-            } ) );
-        return [ ...elements, ...types ];
+                .map( ( { name, path, title, icon } ) => ( {
+                    path,
+                    title,
+                    icon,
+                    changes: countLeaves( user.styles?.elements?.[ name ] ),
+                } ) ),
+        } ) );
+        groups.push( {
+            title: __( 'Blocks', 'wordpress-for-designers' ),
+            rows: getBlockTypes()
+                .filter(
+                    ( type ) =>
+                        type.supports &&
+                        Object.keys( type.supports ).some( ( key ) =>
+                            STYLE_SUPPORTS.some( ( support ) =>
+                                key.toLowerCase().endsWith( support )
+                            )
+                        ) &&
+                        matches( type.title )
+                )
+                .map( ( type ) => ( {
+                    path: blockPath( type.name ),
+                    title: type.title,
+                    icon: type.icon,
+                    changes: countLeaves( user.styles?.blocks?.[ type.name ] ),
+                } ) ),
+        } );
+        return groups.filter( ( group ) => group.rows.length );
     }, [ blockQuery, user ] );
 
     const historyRows = useMemo( () => {
@@ -413,61 +279,31 @@ export function useStylesPanel( { styles, serverSettings, usesOf } ) {
 
     // What the menu says the styles are (D54): exactly a variation, the
     // theme's own (no user styles at all) or, failing both, custom.
-    const activeVariation =
-        variations.find( ( variation ) =>
-            areGlobalStylesEqual( user, variation )
-        )?.title ?? null;
-    const isCustom = ! activeVariation && countLeaves( user ) > 0;
+    const { activeVariation, isCustom } = useMemo( () => {
+        const title =
+            variations.find( ( variation ) =>
+                areGlobalStylesEqual( user, variation )
+            )?.title ?? null;
+        return {
+            activeVariation: title,
+            isCustom: ! title && countLeaves( user ) > 0,
+        };
+    }, [ user, variations ] );
 
-    const blockStylesFor = ( name ) => (
-        <GlobalStylesUI
-            value={ user }
-            baseValue={ base }
-            onChange={ update }
-            path={ '/blocks/' + encodeURIComponent( name ) }
-            serverCSS={ serverSettings.styles }
-            serverSettings={ serverSettings }
-        />
-    );
-
-    // An element's stock screen (D53). Leaving it returns to the list.
-    const elementStylesFor = ( element ) => (
-        <GlobalStylesUI
-            value={ user }
-            baseValue={ base }
-            onChange={ update }
-            path={ '/blocks/' + ELEMENT + element }
-            onPathChange={ ( next ) => {
-                if ( ! next.startsWith( '/blocks/' + ELEMENT ) ) {
-                    setOpenBlock( null );
-                }
-            } }
-            serverCSS={ serverSettings.styles }
-            serverSettings={ serverSettings }
-        />
-    );
-    // The stock screen has its own Back control; leaving the screen and the
-    // ones under it returns to the tokens.
-    const screenFor = ( path ) => (
-        <GlobalStylesUI
-            value={ user }
-            baseValue={ base }
-            onChange={ update }
+    // A stock screen has its own Back control: `onLeave` is called when it
+    // goes back past the screen.
+    const stockScreen = ( path, onLeave ) => (
+        <StockScreen
             path={ path }
-            onPathChange={ ( next ) => {
-                if ( ! next.startsWith( path ) ) {
-                    setOpenScreen( null );
-                }
-            } }
-            serverCSS={ serverSettings.styles }
+            onLeave={ onLeave }
+            value={ user }
+            baseValue={ base }
+            onChange={ update }
             serverSettings={ serverSettings }
         />
     );
-    // The stock styles menu lists Background only when the theme allows a
-    // background image.
-    const hasBackground =
-        !! getSetting( merged, 'background.backgroundImage' ) ||
-        !! getSetting( merged, 'background.backgroundSize' );
+    const blockStylesFor = ( name, onLeave ) =>
+        stockScreen( blockPath( name ), onLeave );
 
     return {
         blockStylesFor,
@@ -496,10 +332,11 @@ export function useStylesPanel( { styles, serverSettings, usesOf } ) {
             colors,
             typography,
             spacing,
-            hasBackground,
+            screens: siteScreens( merged ),
             openScreen,
             onOpenScreen: setOpenScreen,
-            renderScreen: screenFor,
+            renderScreen: ( path ) =>
+                stockScreen( path, () => setOpenScreen( null ) ),
             onChangeColor: ( slug, value ) => {
                 const token = colors.find( ( color ) => color.slug === slug );
                 if ( ! token ) {
@@ -542,13 +379,11 @@ export function useStylesPanel( { styles, serverSettings, usesOf } ) {
             },
             blockQuery,
             onBlockQueryChange: setBlockQuery,
-            blocks,
+            blockGroups,
             openBlock,
             onOpenBlock: setOpenBlock,
-            renderBlockStyles: ( name ) =>
-                name.startsWith( ELEMENT )
-                    ? elementStylesFor( name.slice( ELEMENT.length ) )
-                    : blockStylesFor( name ),
+            renderBlockStyles: ( path ) =>
+                stockScreen( path, () => setOpenBlock( null ) ),
             historyRows,
             selectedHistoryId: preview?.id ?? null,
             onSelectHistory: ( id ) => {

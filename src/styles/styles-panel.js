@@ -1,7 +1,8 @@
 /**
  * The Styles panel (spec/screens/README.md, region "Right panel, Styles",
- * S1 to S6, and the Blocks and History tabs). Presentational: props in,
- * callbacks out.
+ * S1 to S8, and the Blocks and History tabs). Presentational: props in,
+ * callbacks out. The stock styles screens are rendered for it, and it is
+ * given their paths (src/styles/stock-screens.js).
  */
 import { useId, useState } from '@wordpress/element';
 import { __, _n, sprintf, isRTL } from '@wordpress/i18n';
@@ -218,7 +219,7 @@ function EditGroup( { headingId, onClick } ) {
  * @param {Array}       props.colors        Colour tokens.
  * @param {Array}       props.typography    Typography tokens.
  * @param {Array}       props.spacing       Spacing presets.
- * @param {boolean}     props.hasBackground Whether the theme allows a site background.
+ * @param {Object}      props.screens       Paths of the stock screens: colors, typography, layout, shadows and, when the theme allows a site background, background.
  * @param {Object|null} props.selectedToken { type, slug } or null.
  * @param {Function}    props.onSelectToken Called with a token or null.
  * @param {Function}    props.onChangeColor Called with ( slug, color ).
@@ -231,7 +232,7 @@ function TokensTab( {
     colors,
     typography,
     spacing,
-    hasBackground,
+    screens,
     selectedToken,
     onSelectToken,
     onChangeColor,
@@ -271,7 +272,7 @@ function TokensTab( {
                     action={
                         <EditGroup
                             headingId={ headingId + 'colors' }
-                            onClick={ () => open( '/colors' ) }
+                            onClick={ () => open( screens.colors ) }
                         />
                     }
                 >
@@ -339,7 +340,7 @@ function TokensTab( {
                     action={
                         <EditGroup
                             headingId={ headingId + 'typography' }
-                            onClick={ () => open( '/typography' ) }
+                            onClick={ () => open( screens.typography ) }
                         />
                     }
                 >
@@ -399,7 +400,7 @@ function TokensTab( {
                     action={
                         <EditGroup
                             headingId={ headingId + 'spacing' }
-                            onClick={ () => open( '/layout' ) }
+                            onClick={ () => open( screens.layout ) }
                         />
                     }
                 >
@@ -431,7 +432,7 @@ function TokensTab( {
             </section>
             <section className="wfd-styles__section">
                 <RowGroup>
-                    { hasBackground && (
+                    { screens.background && (
                         <Row
                             icon={ background }
                             name={ __(
@@ -439,14 +440,14 @@ function TokensTab( {
                                 'wordpress-for-designers'
                             ) }
                             suffix={ chevron }
-                            onClick={ () => open( '/background' ) }
+                            onClick={ () => open( screens.background ) }
                         />
                     ) }
                     <Row
                         icon={ shadow }
                         name={ __( 'Shadows', 'wordpress-for-designers' ) }
                         suffix={ chevron }
-                        onClick={ () => open( '/shadows' ) }
+                        onClick={ () => open( screens.shadows ) }
                     />
                 </RowGroup>
             </section>
@@ -461,21 +462,23 @@ function TokensTab( {
  * @param {Object}      props
  * @param {string}      props.blockQuery         The search text.
  * @param {Function}    props.onBlockQueryChange Called with the search text.
- * @param {Array}       props.blocks             { name, title, icon, changes, group }, elements first.
- * @param {string|null} props.openBlock          Name of the open block.
- * @param {Function}    props.onOpenBlock        Called with a name or null.
- * @param {Function}    props.renderBlockStyles  Renders the open block's styles.
+ * @param {Array}       props.blockGroups        [{ title, rows: [{ path, title, icon, changes }] }], the elements' groups first (D53).
+ * @param {string|null} props.openBlock          Path of the open row's stock screen.
+ * @param {Function}    props.onOpenBlock        Called with a path or null.
+ * @param {Function}    props.renderBlockStyles  Renders the stock screen at a path.
  */
 function BlocksTab( {
     blockQuery,
     onBlockQueryChange,
-    blocks,
+    blockGroups,
     openBlock,
     onOpenBlock,
     renderBlockStyles,
 } ) {
     if ( openBlock ) {
-        const open = blocks.find( ( { name } ) => name === openBlock );
+        const open = blockGroups
+            .flatMap( ( group ) => group.rows )
+            .find( ( { path } ) => path === openBlock );
         return (
             <div className="wfd-styles__block">
                 <div className="wfd-styles__block-back">
@@ -487,7 +490,7 @@ function BlocksTab( {
                         <Button.Icon
                             icon={ isRTL() ? chevronRight : chevronLeft }
                         />
-                        { open?.title ?? openBlock }
+                        { open?.title }
                     </Button>
                 </div>
                 <div className="wfd-styles__block-styles">
@@ -496,18 +499,6 @@ function BlocksTab( {
             </div>
         );
     }
-
-    // Rows under one heading per group: the elements' groups, then Blocks
-    // (D53).
-    const groups = [];
-    blocks.forEach( ( block ) => {
-        const last = groups[ groups.length - 1 ];
-        if ( last && last.title === block.group ) {
-            last.rows.push( block );
-        } else {
-            groups.push( { title: block.group, rows: [ block ] } );
-        }
-    } );
 
     return (
         <>
@@ -522,16 +513,14 @@ function BlocksTab( {
                     onChange={ onBlockQueryChange }
                 />
             </div>
-            { groups.map( ( group ) => (
-                <section key={ group.title ?? '' }>
-                    { group.title && (
-                        <GroupHeading>{ group.title }</GroupHeading>
-                    ) }
+            { blockGroups.map( ( group ) => (
+                <section key={ group.title }>
+                    <GroupHeading>{ group.title }</GroupHeading>
                     <RowGroup>
                         { group.rows.map(
-                            ( { name, title, icon, changes } ) => (
+                            ( { path, title, icon, changes } ) => (
                                 <Row
-                                    key={ name }
+                                    key={ path }
                                     icon={ <BlockIcon icon={ icon } /> }
                                     name={ title }
                                     suffix={
@@ -559,7 +548,7 @@ function BlocksTab( {
                                             />
                                         </span>
                                     }
-                                    onClick={ () => onOpenBlock?.( name ) }
+                                    onClick={ () => onOpenBlock?.( path ) }
                                 />
                             )
                         ) }
@@ -692,7 +681,7 @@ function HistoryTab( {
  * @param {Array}       props.colors             [{ slug, name, color, uses }].
  * @param {Array}       props.typography         [{ slug, name, family, size, lineHeight, uses, fontFamilyCss }].
  * @param {Array}       props.spacing            [{ slug, px }].
- * @param {boolean}     props.hasBackground      Whether the theme allows a site background.
+ * @param {Object}      props.screens            Paths of the stock screens for site-wide styles.
  * @param {string|null} props.openScreen         Path of the stock screen open in Tokens.
  * @param {Function}    props.onOpenScreen       Called with a stock screen's path.
  * @param {Function}    props.renderScreen       Renders the open stock screen.
@@ -702,10 +691,10 @@ function HistoryTab( {
  * @param {Function}    props.onAddColor         Called by "Add color".
  * @param {string}      props.blockQuery         Search text of the Blocks tab.
  * @param {Function}    props.onBlockQueryChange Called with the search text.
- * @param {Array}       props.blocks             [{ name, title, icon, changes }].
- * @param {string|null} props.openBlock          Name of the open block.
- * @param {Function}    props.onOpenBlock        Called with a name or null.
- * @param {Function}    props.renderBlockStyles  Renders the open block's styles.
+ * @param {Array}       props.blockGroups        [{ title, rows: [{ path, title, icon, changes }] }].
+ * @param {string|null} props.openBlock          Path of the open row's stock screen.
+ * @param {Function}    props.onOpenBlock        Called with a path or null.
+ * @param {Function}    props.renderBlockStyles  Renders the stock screen at a path.
  * @param {Array}       props.historyRows        [{ id, kind, date, author, changes }].
  * @param {*}           props.selectedHistoryId  Id of the previewed row.
  * @param {Function}    props.onSelectHistory    Called with a row id.
@@ -722,7 +711,7 @@ export function StylesPanel( {
     colors = [],
     typography = [],
     spacing = [],
-    hasBackground = true,
+    screens = {},
     openScreen = null,
     onOpenScreen,
     renderScreen,
@@ -732,7 +721,7 @@ export function StylesPanel( {
     onAddColor,
     blockQuery = '',
     onBlockQueryChange,
-    blocks = [],
+    blockGroups = [],
     openBlock = null,
     onOpenBlock,
     renderBlockStyles,
@@ -777,7 +766,7 @@ export function StylesPanel( {
                         colors={ colors }
                         typography={ typography }
                         spacing={ spacing }
-                        hasBackground={ hasBackground }
+                        screens={ screens }
                         openScreen={ openScreen }
                         onOpenScreen={ onOpenScreen }
                         renderScreen={ renderScreen }
@@ -791,7 +780,7 @@ export function StylesPanel( {
                     <BlocksTab
                         blockQuery={ blockQuery }
                         onBlockQueryChange={ onBlockQueryChange }
-                        blocks={ blocks }
+                        blockGroups={ blockGroups }
                         openBlock={ openBlock }
                         onOpenBlock={ onOpenBlock }
                         renderBlockStyles={ renderBlockStyles }
