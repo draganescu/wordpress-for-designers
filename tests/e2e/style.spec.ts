@@ -269,16 +269,29 @@ test.describe( 'STYLE', () => {
         await expect( stock.getByText( 'Typography' ).first() ).toBeVisible();
         await expect( stock.getByText( 'Color' ).first() ).toBeVisible();
         await expect( rows ).toHaveCount( 0 );
-        // One heading only: the stock screen's, with its back control.
+        // The block's title and the back control are shown once: the stock
+        // screen's.
+        const heading = ( name: string ) =>
+            panel.getByRole( 'heading', { name, exact: true } );
+        const back = panel.getByRole( 'button', { name: 'Back', exact: true } );
+        await expect( heading( 'Button' ) ).toHaveCount( 1 );
         await expect(
-            panel.getByRole( 'button', { name: 'Back', exact: true } )
+            panel.getByText( 'Button', { exact: true } )
         ).toHaveCount( 1 );
-        await expect(
-            panel.getByRole( 'button', { name: 'Button', exact: true } )
-        ).toHaveCount( 0 );
+        await expect( back ).toHaveCount( 1 );
+
+        // Back on a style variation's screen returns to the block, and on the
+        // block's screen to the list.
         await stock
-            .getByRole( 'button', { name: 'Back', exact: true } )
+            .getByRole( 'button', { name: 'Outline', exact: true } )
             .click();
+        await expect( heading( 'Outline' ) ).toHaveCount( 1 );
+        await expect( heading( 'Button' ) ).toHaveCount( 0 );
+        await back.click();
+        await expect( heading( 'Button' ) ).toHaveCount( 1 );
+        await expect( heading( 'Outline' ) ).toHaveCount( 0 );
+        await expect( rows ).toHaveCount( 0 );
+        await back.click();
         await expect( stock ).toHaveCount( 0 );
         await expect( rows.first() ).toBeVisible();
     } );
