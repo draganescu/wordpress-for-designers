@@ -499,6 +499,16 @@ function wfd_preview_hooks( $wp ) {
         );
         // Styles read earlier in the request are read again.
         wp_clean_theme_json_cache();
+        // WordPress keeps the block styles it compiles in a transient, for
+        // every visitor. A preview leaves there what it found, so that the
+        // next visitor's request does not have to compile and write it again.
+        add_filter(
+            'pre_set_transient_wp_styles_for_blocks',
+            function ( $compiled ) {
+                $found = get_transient( 'wp_styles_for_blocks' );
+                return false === $found ? $compiled : $found;
+            }
+        );
     }
 
     // The site's title, tagline and logo.
