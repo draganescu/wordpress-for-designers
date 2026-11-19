@@ -323,11 +323,11 @@ html.wp-toolbar:has(.wfd-board-page) {
     justify-content: center;
     width: 100%;
     height: 100%;
-    background: var(--wpds-color-background-surface-brand);
     outline: calc(var(--wpds-border-width-sm) / var(--wfd-zoom)) dashed var(--wpds-color-stroke-interactive-brand);
 }
 
-// The selection rectangle drawn while dragging from empty board (D43).
+// The selection rectangle drawn while dragging from empty board (D43):
+// a stroke only, with no fill (D47).
 .wfd-marquee {
     position: absolute;
     pointer-events: none;
