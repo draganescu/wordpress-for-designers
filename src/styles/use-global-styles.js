@@ -29,7 +29,7 @@ import { counters } from '../shell/test-hooks';
 
 const EMPTY = { settings: {}, styles: {} };
 // How long the styles have to stay unchanged before frozen copies are
-// renewed from them (decision D49): a dragged control changes them on every
+// renewed from them (decision D51): a dragged control changes them on every
 // animation frame.
 const SETTLE = 300;
 

@@ -522,7 +522,7 @@ test.describe( 'STYLE', () => {
         );
 
         // A frozen copy takes a variation too, without becoming a Preview
-        // (D49).
+        // (D51).
         await setZoom( page, 0.15 );
         const frame = page.locator( `[data-wfd-artboard="${ index.id }"]` );
         await expect( frame ).toHaveAttribute( 'data-wfd-tier', 'snapshot' );

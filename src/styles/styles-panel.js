@@ -43,7 +43,7 @@ const DEFAULT_ITEM = 'default';
 const VARIATION_ITEM = 'variation:';
 
 /**
- * S2: the variation menu (decision D52).
+ * S2: the variation menu (decision D54).
  *
  * @param {Object}      props
  * @param {Array}       props.variations      Theme style variations.
@@ -498,7 +498,7 @@ function BlocksTab( {
     }
 
     // Rows under one heading per group: the elements' groups, then Blocks
-    // (D51).
+    // (D53).
     const groups = [];
     blocks.forEach( ( block ) => {
         const last = groups[ groups.length - 1 ];

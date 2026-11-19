@@ -47,7 +47,7 @@ const ELEMENT = 'elements/';
 
 /**
  * The elements WordPress styles for the whole site, in the groups, order,
- * titles and icons of its own "Blocks & Elements" list (decision D51).
+ * titles and icons of its own "Blocks & Elements" list (decision D53).
  *
  * @return {Array} Groups as { title, elements: [ { name, title, icon } ] }.
  */
@@ -241,7 +241,7 @@ export function useStylesPanel( { styles, serverSettings, usesOf } ) {
     const [ tab, setTab ] = useState( 'tokens' );
     const [ blockQuery, setBlockQuery ] = useState( '' );
     const [ openBlock, setOpenBlock ] = useState( null );
-    // The stock styles screen open in the Tokens tab, as its path (D50).
+    // The stock styles screen open in the Tokens tab, as its path (D52).
     const [ openScreen, setOpenScreen ] = useState( null );
     const allVariations = useSelect(
         ( select ) => getCurrentThemeGlobalStylesVariations( select ) ?? NONE,
@@ -411,7 +411,7 @@ export function useStylesPanel( { styles, serverSettings, usesOf } ) {
         ];
     }, [ revisions, hasEdits ] );
 
-    // What the menu says the styles are (D52): exactly a variation, the
+    // What the menu says the styles are (D54): exactly a variation, the
     // theme's own (no user styles at all) or, failing both, custom.
     const activeVariation =
         variations.find( ( variation ) =>
@@ -430,7 +430,7 @@ export function useStylesPanel( { styles, serverSettings, usesOf } ) {
         />
     );
 
-    // An element's stock screen (D51). Leaving it returns to the list.
+    // An element's stock screen (D53). Leaving it returns to the list.
     const elementStylesFor = ( element ) => (
         <GlobalStylesUI
             value={ user }

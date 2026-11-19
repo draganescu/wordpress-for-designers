@@ -451,7 +451,7 @@ export function App() {
         .map( ( artboard ) => artboard.id )
         .join( ' ' );
     // A frozen copy made with an older stylesheet than the settled one does
-    // not count: the artboard is rendered once more to renew it (D49).
+    // not count: the artboard is rendered once more to renew it (D51).
     const settledStyles = styles.settledVersion;
     const hasCopy = useCallback(
         ( id ) =>
@@ -934,7 +934,7 @@ export function App() {
                                     updateArtboard( artboard.id, { height } );
                                 // The one render of a Snapshot artboard
                                 // that has no frozen copy, or whose copy
-                                // was made with older styles (D49).
+                                // was made with older styles (D51).
                                 const once = tier === 'snapshot' &&
                                     source === artboard.id &&
                                     ! hasCopy( artboard.id ) && (

@@ -650,7 +650,7 @@ test.describe( 'TIER', () => {
         await expect( page.locator( '[data-wfd-control="H9"]' ) ).toHaveText(
             'Review 1 change'
         );
-        // Its frozen copy is renewed in place (D49).
+        // Its frozen copy is renewed in place (D51).
         await expect
             .poll(
                 () =>
