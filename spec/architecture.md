@@ -117,6 +117,8 @@ Outside an artboard in edit: `[U]`
 
 While an artboard is in edit, a click on empty board leaves edit and clears the selection, and a click on another artboard leaves edit and selects it (D38). `[U]`
 
+A drag from empty board selects the artboards its rectangle touches; with Cmd/Ctrl it adds them to the selection. While an artboard is in edit the drag first leaves edit. Esc during the drag cancels it and puts the selection back as it was (D43). Like an artboard drag, the rectangle is drawn by changing the DOM directly; the store hears only when the set of selected artboards changes. `[U]`
+
 Inside an artboard in edit, the block editor's own shortcuts apply unchanged. Esc, pressed when the editor itself has nothing left to dismiss, leaves edit and keeps the artboard selected. Cmd/Ctrl + Z undoes content. `[U]` `[B1]`
 
 Delete and Backspace do the same with focus on a row of the left panel's artboard list. `[U]`

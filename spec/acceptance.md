@@ -38,6 +38,7 @@ Unless a criterion says otherwise, the fixture in `architecture.md` is loaded an
 - AC-CANVAS-03 Cmd/Ctrl + wheel zooms around the pointer; Space + drag pans; both work with the pointer over an artboard, including the Live one. `[B8]` `[U]`
 - AC-CANVAS-04 The H8 menu items change zoom as named; "Fit all" shows every artboard. `[N]`
 - AC-CANVAS-05 Cmd/Ctrl + click on an artboard adds it to the selection and a second one takes it out; with several selected the right panel shows Styles, and dragging one of them or pressing an arrow key moves them all as one undoable step; while an artboard is in edit, Cmd/Ctrl + click on another artboard leaves edit and selects only that one. `[U]`
+- AC-CANVAS-06 Dragging from empty board draws a rectangle and selects every artboard it touches while it is dragged, and one it no longer touches is deselected; Cmd/Ctrl + drag adds to the selection; Esc during the drag removes the rectangle and puts the selection back as it was; while an artboard is in edit the drag leaves edit and selects. `[U]`
 
 ## KEY
 
