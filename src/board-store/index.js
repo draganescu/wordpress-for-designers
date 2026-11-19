@@ -337,8 +337,9 @@ const actions = {
             } );
         },
     /**
-     * Updates artboards outside the history: measured heights, and an
-     * artboard's entity once a new template or part has been saved.
+     * Updates artboards outside the history: measured heights, an
+     * artboard's entity once a new template or part has been saved, and the
+     * address a browser is on and what it shows (D55, D57).
      *
      * @param {string} id    The artboard.
      * @param {Object} patch Fields to change.
@@ -385,31 +386,6 @@ const actions = {
         },
 
     /**
-     * Keeps the address a browser is on, outside the history (D55).
-     *
-     * @param {string} id   The browser.
-     * @param {string} path The address, relative to the site's home.
-     */
-    setBrowserPath:
-        ( id, path ) =>
-        ( { select, dispatch } ) => {
-            const artboards = select.getArtboards();
-            const browser = artboards.find( ( a ) => a.id === id );
-            if (
-                ! browser ||
-                browser.kind !== 'browser' ||
-                browser.path === path
-            ) {
-                return;
-            }
-            dispatch( {
-                type: 'LAYOUT_SILENT',
-                artboards: artboards.map( ( a ) =>
-                    a.id === id ? { ...a, path } : a
-                ),
-            } );
-        },
-    /**
      * Changes a browser's window height, as one step of the history (D56).
      *
      * @param {string} id     The browser.
@@ -423,28 +399,6 @@ const actions = {
                   )
                 : artboards
         ),
-    /**
-     * Chooses what a browser shows, outside the history (D57).
-     *
-     * @param {string} id    The browser.
-     * @param {string} shows 'unsaved' or 'saved'.
-     */
-    setBrowserShows:
-        ( id, shows ) =>
-        ( { select, dispatch } ) => {
-            const artboards = select.getArtboards();
-            if (
-                ! artboards.some( ( a ) => a.id === id && a.shows !== shows )
-            ) {
-                return;
-            }
-            dispatch( {
-                type: 'LAYOUT_SILENT',
-                artboards: artboards.map( ( a ) =>
-                    a.id === id ? { ...a, shows } : a
-                ),
-            } );
-        },
     /**
      * Keeps what the preview argument must hold, and tells browsers showing
      * unsaved changes when changes have been sent.

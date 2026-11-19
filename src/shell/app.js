@@ -262,8 +262,6 @@ export function App() {
         setNoteHeight,
         startNoteEdit,
         endNoteEdit,
-        setBrowserPath,
-        setBrowserShows,
     } = useDispatch( boardStore );
     // Reloads asked for each browser (D55), by id.
     const [ reloads, setReloads ] = useState( {} );
@@ -740,7 +738,7 @@ export function App() {
                 isBrowsing={ selected.id === liveId }
                 onReload={ () => reload( selected.id ) }
                 onShowsChange={ ( shows ) =>
-                    setBrowserShows( selected.id, shows )
+                    updateArtboard( selected.id, { shows } )
                 }
             />
         );
@@ -1027,9 +1025,9 @@ export function App() {
                                                         0 )
                                                 }
                                                 onNavigate={ ( path ) =>
-                                                    setBrowserPath(
+                                                    updateArtboard(
                                                         artboard.id,
-                                                        path
+                                                        { path }
                                                     )
                                                 }
                                                 onEscape={ editing.leaveEdit }
@@ -1184,7 +1182,9 @@ export function App() {
                                             )
                                         }
                                         onAddress={ ( path ) =>
-                                            setBrowserPath( artboard.id, path )
+                                            updateArtboard( artboard.id, {
+                                                path,
+                                            } )
                                         }
                                         onReload={ () => reload( artboard.id ) }
                                     >
