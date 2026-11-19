@@ -42,7 +42,8 @@ const DEFAULT_STATE = {
 };
 
 /**
- * Restores an earlier artboard list, keeping the heights measured since.
+ * Restores an earlier list of artboards or of notes, keeping the heights
+ * measured since.
  *
  * @param {Array} snapshot The earlier list.
  * @param {Array} current  The current list.
@@ -50,12 +51,12 @@ const DEFAULT_STATE = {
  */
 function restore( snapshot, current ) {
     const heights = new Map( current.map( ( a ) => [ a.id, a.height ] ) );
-    return snapshot.map( ( artboard ) =>
+    return snapshot.map( ( item ) =>
         // A height set by hand is part of the history (D56); a measured
-        // one stays as it is now.
-        ! KINDS[ artboard.kind ].isResized && heights.has( artboard.id )
-            ? { ...artboard, height: heights.get( artboard.id ) }
-            : artboard
+        // one stays as it is now. A note has no kind and is measured.
+        ! KINDS[ item.kind ]?.isResized && heights.has( item.id )
+            ? { ...item, height: heights.get( item.id ) }
+            : item
     );
 }
 
