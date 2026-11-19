@@ -373,15 +373,16 @@ function wfd_preview_hooks( $wp ) {
         }
     );
 
-    // Global styles.
+    // Global styles: the kept ones in place of the saved ones, in the
+    // schema version the saved ones are read in.
     if ( is_array( $changes['styles'] ?? null ) ) {
         $styles = $changes['styles'];
         add_filter(
             'wp_theme_json_data_user',
-            function () use ( $styles ) {
+            function ( $saved ) use ( $styles ) {
                 return new WP_Theme_JSON_Data(
                     array(
-                        'version'  => WP_Theme_JSON::LATEST_SCHEMA,
+                        'version'  => $saved->get_data()['version'],
                         'styles'   => $styles['styles'],
                         'settings' => $styles['settings'],
                     ),
@@ -390,11 +391,7 @@ function wfd_preview_hooks( $wp ) {
             }
         );
         // Styles read earlier in the request are read again.
-        if ( function_exists( 'wp_clean_theme_json_cache' ) ) {
-            wp_clean_theme_json_cache();
-        } else {
-            WP_Theme_JSON_Resolver::clean_cached_data();
-        }
+        wp_clean_theme_json_cache();
     }
 
     // The site's title, tagline and logo.
