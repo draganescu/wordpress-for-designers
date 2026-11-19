@@ -75,7 +75,7 @@ test.describe( 'STYLE', () => {
         await openBoard( page, fixture.boardId );
     } );
 
-    test( 'AC-STYLE-01 Styles is shown only in the right panel and only when nothing is selected', async ( {
+    test( 'AC-STYLE-01 Styles is shown only in the right panel and only when no artboard, or more than one, is selected', async ( {
         page,
     } ) => {
         const heading = page.getByRole( 'heading', {

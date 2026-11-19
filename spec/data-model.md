@@ -98,6 +98,8 @@ Pressing Delete on a selected artboard, or "Remove from board", opens a confirma
 
 A media object has no checkbox: removing it only takes it off the board. `[U]`
 
+Pressing Delete with several artboards selected opens no confirmation: every selected artboard leaves the board and no entity is changed (D41). `[U]`
+
 When the entity is deleted, trashed or reset, every other artboard on any board that references it is handled on next load: a missing entity removes the artboard from that board. `[N]`
 
 ## Saving

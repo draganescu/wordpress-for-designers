@@ -48,9 +48,10 @@ export function orderedArtboards( artboards ) {
 
 export function ArtboardsPanel( {
     artboards,
-    selectedId,
+    selectedIds,
     onSelect,
     onEdit,
+    onRemove,
     addMenu,
 } ) {
     const groups = groupArtboards( artboards );
@@ -76,11 +77,30 @@ export function ArtboardsPanel( {
                                 icon={ KINDS[ artboard.kind ].icon }
                                 name={ artboard.name }
                                 suffix={ DEVICES[ artboard.device ]?.label }
-                                isSelected={ artboard.id === selectedId }
+                                isSelected={ selectedIds.includes(
+                                    artboard.id
+                                ) }
                                 data-wfd-row={ artboard.id }
-                                onClick={ () => onSelect( artboard.id ) }
+                                onMouseDown={ ( event ) => {
+                                    // Shift + click selects a range of rows,
+                                    // not the text between them.
+                                    if ( event.shiftKey ) {
+                                        event.preventDefault();
+                                    }
+                                } }
+                                onClick={ ( event ) =>
+                                    onSelect( artboard.id, event )
+                                }
                                 onDoubleClick={ () => onEdit( artboard.id ) }
                                 onKeyDown={ ( event ) => {
+                                    if (
+                                        event.key === 'Delete' ||
+                                        event.key === 'Backspace'
+                                    ) {
+                                        event.preventDefault();
+                                        onRemove();
+                                        return;
+                                    }
                                     // A media object cannot be edited: the
                                     // key is left to the row's own click.
                                     if (

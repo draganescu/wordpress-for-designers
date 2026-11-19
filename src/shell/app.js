@@ -33,7 +33,11 @@ import { ReviewDrawer } from '../review/review-drawer';
 import { useReview } from '../review/use-review';
 import { brandColor, highlightCss, useUsageIndex } from '../usage-index';
 import { AddArtboardMenu } from './add-artboard-menu';
-import { ArtboardsPanel, ListViewPanel } from './artboards-panel';
+import {
+    ArtboardsPanel,
+    ListViewPanel,
+    orderedArtboards,
+} from './artboards-panel';
 import {
     Canvas,
     EmptyBoard,
@@ -180,6 +184,8 @@ export function App() {
     const {
         title,
         selectedId,
+        selectedIds,
+        anchorId,
         liveId,
         isInserterOpen,
         isListViewOpen,
@@ -192,6 +198,8 @@ export function App() {
         return {
             title: board.getTitle(),
             selectedId: board.getSelectedId(),
+            selectedIds: board.getSelectedIds(),
+            anchorId: board.getSelectionAnchorId(),
             liveId: board.getLiveId(),
             isInserterOpen: board.isInserterOpen(),
             isListViewOpen: board.isListViewOpen(),
@@ -203,6 +211,8 @@ export function App() {
     }, [] );
     const {
         selectArtboard,
+        selectArtboards,
+        toggleArtboardSelection,
         setInserterOpen,
         setListViewOpen,
         setViewport,
@@ -257,6 +267,7 @@ export function App() {
         onEdit,
         onLeaveEdit: editing.leaveEdit,
         onTogglePanels: () => togglePanels.current?.(),
+        onRemoveMany: ( ids ) => removeMany( ids ),
         isReady: isLoaded,
     } );
 
@@ -345,6 +356,20 @@ export function App() {
         .filter( ( artboard ) => artboard.status === 'missing' )
         .map( ( artboard ) => artboard.id )
         .join( ',' );
+    // Several artboards leave the board at once, with no dialog and no
+    // change to the site. One never saved is dropped with its edits, as
+    // when it is removed alone.
+    const removeMany = ( ids ) => {
+        const leaving = artboards.filter( ( a ) => ids.includes( a.id ) );
+        leaving
+            .filter( ( a ) => a.draft )
+            .forEach( ( a ) => remove( a, false ) );
+        removeArtboards(
+            leaving.filter( ( a ) => ! a.draft ).map( ( a ) => a.id ),
+            { undoable: true }
+        );
+    };
+
     useEffect( () => {
         if ( missingIds ) {
             removeArtboards( missingIds.split( ',' ) );
@@ -530,12 +555,41 @@ export function App() {
         left = (
             <ArtboardsPanel
                 artboards={ artboards }
-                selectedId={ selectedId }
-                onSelect={ ( id ) => {
-                    selectArtboard( id );
-                    canvas.reveal( id );
+                selectedIds={ selectedIds }
+                onSelect={ ( id, event ) => {
+                    const ordered = orderedArtboards( artboards ).map(
+                        ( artboard ) => artboard.id
+                    );
+                    const from = ordered.indexOf( anchorId );
+                    if ( event?.shiftKey && from !== -1 ) {
+                        // Shift + click selects from the row clicked last
+                        // to this one.
+                        const to = ordered.indexOf( id );
+                        selectArtboards(
+                            ordered.slice(
+                                Math.min( from, to ),
+                                Math.max( from, to ) + 1
+                            )
+                        );
+                    } else if ( event?.metaKey || event?.ctrlKey ) {
+                        toggleArtboardSelection( id );
+                    } else {
+                        selectArtboard( id );
+                        canvas.reveal( id );
+                    }
                 } }
                 onEdit={ onEdit }
+                onRemove={ () => {
+                    // Delete on a row acts on the selection, as on the
+                    // board.
+                    if ( selectedIds.length === 1 ) {
+                        setRemovingId( selectedIds[ 0 ] );
+                    } else if ( selectedIds.length > 1 ) {
+                        removeMany( selectedIds );
+                        // The focused row may be gone.
+                        focusBoard();
+                    }
+                } }
                 addMenu={ addMenu }
             />
         );
@@ -687,7 +741,7 @@ export function App() {
                             }
                             zoomPercent={ Math.round( zoom * 100 ) }
                             onZoom={ canvas.zoom }
-                            canFitSelection={ !! selected }
+                            canFitSelection={ selectedIds.length > 0 }
                             reviewCount={ review.count }
                             onReview={ review.open }
                         />
@@ -922,9 +976,9 @@ export function App() {
                                         artboard={ artboard }
                                         width={ width }
                                         tier={ tier }
-                                        isSelected={
-                                            artboard.id === selectedId
-                                        }
+                                        isSelected={ selectedIds.includes(
+                                            artboard.id
+                                        ) }
                                         uses={ located?.perArtboard.get(
                                             artboard.id
                                         ) }

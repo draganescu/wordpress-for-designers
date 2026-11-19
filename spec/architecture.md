@@ -106,17 +106,19 @@ Outside an artboard in edit: `[U]`
 | Cmd/Ctrl + wheel, Cmd/Ctrl + `+` / `-` | Zoom (always) |
 | Shift + 1 | Fit all artboards (always) |
 | Cmd/Ctrl + \ | Hide or show both side panels (always) |
-| Shift + 2 | Fit the selected artboard |
+| Shift + 2 | Fit the selected artboards |
 | Tab / Shift + Tab | Move selection to the next or previous artboard in left-panel order |
-| Enter | Edit the selected artboard |
-| Arrow keys | Nudge the selected artboard by 1 unit; with Shift, 10 units |
-| Delete / Backspace | Remove the selected artboard (opens the confirmation) |
+| Enter | Edit the selected artboard; nothing with several selected |
+| Arrow keys | Nudge the selected artboards by 1 unit; with Shift, 10 units |
+| Delete / Backspace | Remove the selected artboard (opens the confirmation); with several selected, take them all off the board with no confirmation (D41) |
 | Cmd/Ctrl + Z, Cmd/Ctrl + Shift + Z | Undo, redo layout |
 | Esc | Clear selection |
 
 While an artboard is in edit, a click on empty board leaves edit and clears the selection, and a click on another artboard leaves edit and selects it (D38). `[U]`
 
 Inside an artboard in edit, the block editor's own shortcuts apply unchanged. Esc, pressed when the editor itself has nothing left to dismiss, leaves edit and keeps the artboard selected. Cmd/Ctrl + Z undoes content. `[U]` `[B1]`
+
+Delete and Backspace do the same with focus on a row of the left panel's artboard list. `[U]`
 
 Tab order and the Shift + arrow step are `[N]`.
 

@@ -284,4 +284,74 @@ test.describe( 'DEL', () => {
         await page.keyboard.press( 'ControlOrMeta+z' );
         await expect( restored ).toHaveCount( 1 );
     } );
+
+    test( 'AC-DEL-05 Delete with several selected opens no dialog, removes them all, leaves the entities, and one undo restores them', async ( {
+        page,
+        requestUtils,
+    } ) => {
+        const hero = artboardOf( fixture, 'pattern' );
+        const sign = artboardOf( fixture, 'pattern', 'desktop', 1 );
+        await page.locator( `[data-wfd-row="${ hero.id }"]` ).click();
+        await page
+            .locator( `[data-wfd-row="${ sign.id }"]` )
+            .click( { modifiers: [ 'ControlOrMeta' ] } );
+        await expect( page.locator( '.wfd-artboard.is-selected' ) ).toHaveCount(
+            2
+        );
+        await page.locator( '[data-wfd-region="canvas"]' ).focus();
+        await page.keyboard.press( 'Delete' );
+        await expect( page.locator( '[data-wfd-artboard]' ) ).toHaveCount( 7 );
+        await expect( page.getByRole( 'alertdialog' ) ).toHaveCount( 0 );
+        for ( const artboard of [ hero, sign ] ) {
+            await expect(
+                page.locator( `[data-wfd-artboard="${ artboard.id }"]` )
+            ).toHaveCount( 0 );
+            const block = ( await requestUtils.rest( {
+                path: `/wp/v2/blocks/${ artboard.entityId }`,
+            } ) ) as { status: string };
+            expect( block.status ).toBe( 'publish' );
+        }
+        const undo = page.locator( '[data-wfd-control="H3"]' );
+        await expect( undo ).toHaveAccessibleName(
+            'Undo remove artboard, on the board'
+        );
+        await undo.click();
+        await expect( page.locator( '[data-wfd-artboard]' ) ).toHaveCount( 9 );
+        for ( const artboard of [ hero, sign ] ) {
+            await expect(
+                page.locator( `[data-wfd-artboard="${ artboard.id }"]` )
+            ).toHaveCount( 1 );
+        }
+    } );
+
+    test( 'AC-DEL-06 Delete with focus on a list row acts on the selection: the dialog for one, no dialog for several', async ( {
+        page,
+    } ) => {
+        const hero = artboardOf( fixture, 'pattern' );
+        const sign = artboardOf( fixture, 'pattern', 'desktop', 1 );
+        const heroRow = page.locator( `[data-wfd-row="${ hero.id }"]` );
+        const signRow = page.locator( `[data-wfd-row="${ sign.id }"]` );
+        const dialog = page.getByRole( 'alertdialog' );
+
+        // One selected: the click leaves the focus on the row.
+        await heroRow.click();
+        await expect( heroRow ).toBeFocused();
+        await page.keyboard.press( 'Delete' );
+        await expect( dialog ).toContainText( 'Remove Hero from this board?' );
+        await dialog.getByRole( 'button', { name: 'Cancel' } ).click();
+        await expect( dialog ).toHaveCount( 0 );
+        await expect( page.locator( '[data-wfd-artboard]' ) ).toHaveCount( 9 );
+
+        // Several selected: they all go, with no dialog.
+        await heroRow.click();
+        await signRow.click( { modifiers: [ 'ControlOrMeta' ] } );
+        await expect( signRow ).toBeFocused();
+        await page.keyboard.press( 'Backspace' );
+        await expect( page.locator( '[data-wfd-artboard]' ) ).toHaveCount( 7 );
+        await expect( dialog ).toHaveCount( 0 );
+        await expect( heroRow ).toHaveCount( 0 );
+        await expect( signRow ).toHaveCount( 0 );
+        await page.locator( '[data-wfd-control="H3"]' ).click();
+        await expect( page.locator( '[data-wfd-artboard]' ) ).toHaveCount( 9 );
+    } );
 } );
