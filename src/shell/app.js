@@ -47,6 +47,7 @@ import {
 } from './canvas';
 import { KINDS } from './constants';
 import { LockDialog, RemoveDialog } from './dialogs';
+import { ShortcutsButton, ShortcutsDialog } from './shortcuts-dialog';
 import { Header } from './header';
 import { artboardLabel, liveLabel } from './labels';
 import { ArtboardSettings, EditingPanel } from './right-panel';
@@ -227,6 +228,7 @@ export function App() {
     const [ isLeftHidden, setLeftHidden ] = useState( false );
     const [ isRightHidden, setRightHidden ] = useState( false );
     const togglePanels = useRef( null );
+    const [ isShortcutsOpen, setShortcutsOpen ] = useState( false );
     const [ inserterQuery, setInserterQuery ] = useState( '' );
     const [ inserterTab, setInserterTab ] = useState( 'blocks' );
     const [ selectedToken, setSelectedToken ] = useState( null );
@@ -267,6 +269,7 @@ export function App() {
         onEdit,
         onLeaveEdit: editing.leaveEdit,
         onTogglePanels: () => togglePanels.current?.(),
+        onToggleShortcuts: () => setShortcutsOpen( ( isOpen ) => ! isOpen ),
         onRemoveMany: ( ids ) => removeMany( ids ),
         isReady: isLoaded,
     } );
@@ -1007,8 +1010,21 @@ export function App() {
                         </Canvas>
                     }
                     right={ isRightHidden ? null : right }
+                    corner={
+                        <ShortcutsButton
+                            onClick={ () => setShortcutsOpen( true ) }
+                        />
+                    }
                     overlays={
                         <>
+                            { isShortcutsOpen && (
+                                <ShortcutsDialog
+                                    ownerDocument={
+                                        areaRef.current.ownerDocument
+                                    }
+                                    onClose={ () => setShortcutsOpen( false ) }
+                                />
+                            ) }
                             <ReviewDrawer { ...review.drawerProps } />
                             { editing.lockDialog && (
                                 <LockDialog

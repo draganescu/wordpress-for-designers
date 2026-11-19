@@ -50,6 +50,7 @@ function RevealEdge( { side, onReveal } ) {
  * @param {Element}  props.left          The left panel content, or null when closed.
  * @param {Element}  props.canvas        The canvas region.
  * @param {Element}  props.right         The right panel content, or null when hidden.
+ * @param {Element}  props.corner        What floats at the bottom left of the canvas area.
  * @param {Element}  props.overlays      Drawers and dialogs.
  * @param {Function} props.onRevealLeft  Shows the left panel.
  * @param {Function} props.onRevealRight Shows the right panel.
@@ -59,6 +60,7 @@ export function Shell( {
     left,
     canvas,
     right,
+    corner,
     overlays,
     onRevealLeft,
     onRevealRight,
@@ -81,6 +83,7 @@ export function Shell( {
                 ) }
                 <div className="wfd-main">
                     { canvas }
+                    { corner }
                     { ! left && (
                         <RevealEdge side="left" onReveal={ onRevealLeft } />
                     ) }

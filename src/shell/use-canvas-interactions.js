@@ -9,6 +9,7 @@ import { useEffect, useRef } from '@wordpress/element';
 import { useRegistry } from '@wordpress/data';
 import { store as boardStore } from '../board-store';
 import { orderedArtboards } from './artboards-panel';
+import { isShortcutsDialogEvent } from './shortcuts-dialog';
 
 const DRAG_THRESHOLD = 3;
 const ZOOM_STEP = 1.25;
@@ -44,16 +45,18 @@ export function rectOf( artboard, widthOf ) {
 
 /**
  * @param {Object}   options
- * @param {Object}   options.areaRef        Ref of the canvas area element.
- * @param {Object}   options.viewport       The viewport.
- * @param {Function} options.widthOf        Gives the render width of a device.
- * @param {Function} options.getNames       Gives artboards with their names.
- * @param {Function} options.onEdit         Enters edit on an artboard.
- * @param {Function} options.onLeaveEdit    Leaves edit.
- * @param {Function} options.onTogglePanels Hides or shows both side panels.
- * @param {Function} options.onRemoveMany   Takes several artboards off the
- *                                          board.
- * @param {boolean}  options.isReady        Whether the board has loaded.
+ * @param {Object}   options.areaRef           Ref of the canvas area element.
+ * @param {Object}   options.viewport          The viewport.
+ * @param {Function} options.widthOf           Gives the render width of a device.
+ * @param {Function} options.getNames          Gives artboards with their names.
+ * @param {Function} options.onEdit            Enters edit on an artboard.
+ * @param {Function} options.onLeaveEdit       Leaves edit.
+ * @param {Function} options.onTogglePanels    Hides or shows both side panels.
+ * @param {Function} options.onToggleShortcuts Opens or closes the keyboard
+ *                                             shortcuts dialog.
+ * @param {Function} options.onRemoveMany      Takes several artboards off the
+ *                                             board.
+ * @param {boolean}  options.isReady           Whether the board has loaded.
  * @return {Object} Functions for the header's zoom menu.
  */
 export function useCanvasInteractions( {
@@ -64,6 +67,7 @@ export function useCanvasInteractions( {
     onEdit,
     onLeaveEdit,
     onTogglePanels,
+    onToggleShortcuts,
     onRemoveMany,
     isReady,
 } ) {
@@ -75,6 +79,7 @@ export function useCanvasInteractions( {
         onEdit,
         onLeaveEdit,
         onTogglePanels,
+        onToggleShortcuts,
         onRemoveMany,
     };
 
@@ -509,6 +514,9 @@ export function useCanvasInteractions( {
             } else if ( mod && event.code === 'Backslash' ) {
                 event.preventDefault();
                 latest.current.onTogglePanels?.();
+            } else if ( isShortcutsDialogEvent( event ) ) {
+                event.preventDefault();
+                latest.current.onToggleShortcuts?.();
             } else if (
                 event.code === 'Digit1' &&
                 event.shiftKey &&
