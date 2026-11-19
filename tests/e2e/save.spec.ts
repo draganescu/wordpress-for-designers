@@ -489,4 +489,99 @@ test.describe( 'SAVE', () => {
         ).toHaveCount( 0 );
         expect( await warned() ).toBe( false );
     } );
+
+    test( 'AC-SAVE-08 Discard on one item, after confirmation, reverts that record alone, or removes that unsaved new template or part; the other items stay changed', async ( {
+        page,
+        requestUtils,
+    } ) => {
+        const header = artboardOf( fixture, 'template-part' );
+        await editText( page, header.id, 'Fixture header text', ' doomed' );
+        await changeStyles( page );
+        await page.locator( '[data-wfd-control="L2"]' ).click();
+        await page
+            .getByRole( 'menuitem', { name: 'Template part', exact: true } )
+            .click();
+        const canvas = ( await page
+            .locator( '[data-wfd-region="canvas"]' )
+            .boundingBox() )!;
+        await page.mouse.move( canvas.x + 280, canvas.y + 600 );
+        await page.mouse.move( canvas.x + 300, canvas.y + 620, { steps: 2 } );
+        await page.mouse.down();
+        await page.mouse.up();
+        await expect( page.locator( '[data-wfd-artboard]' ) ).toHaveCount( 10 );
+        await page.getByRole( 'button', { name: 'Back to the board' } ).click();
+        await expect( review( page ) ).toHaveText( 'Review 3 changes' );
+
+        await review( page ).click();
+        const panel = drawer( page );
+        const items = panel.locator( '.wfd-review__item' );
+        const discard = ( name: string ) =>
+            card( page, name ).getByRole( 'button', {
+                name: 'Discard',
+                exact: true,
+            } );
+        await expect(
+            panel.getByRole( 'button', { name: 'Discard', exact: true } )
+        ).toHaveCount( 3 );
+
+        // The Header, unchecked first: the checkbox makes no difference.
+        await card( page, 'Header' ).getByRole( 'checkbox' ).uncheck();
+        await discard( 'Header' ).click();
+        const confirm = page.getByRole( 'alertdialog' );
+        await expect( confirm ).toContainText( 'Discard changes to Header?' );
+        await expect( confirm ).toContainText( "This can't be undone." );
+        await expect( confirm.getByRole( 'button' ) ).toHaveText( [
+            'Cancel',
+            'Discard',
+        ] );
+        // Cancel keeps everything.
+        await confirm.getByRole( 'button', { name: 'Cancel' } ).click();
+        await expect( items ).toHaveCount( 3 );
+        await expect( discard( 'Header' ) ).toBeFocused();
+
+        await discard( 'Header' ).click();
+        await confirm.getByRole( 'button', { name: 'Discard' } ).click();
+        await expect( confirm ).toHaveCount( 0 );
+        await expect( items ).toHaveCount( 2 );
+        // The item is gone, so focus stays in the drawer, on its close button.
+        await expect(
+            panel.getByRole( 'button', { name: 'Close' } )
+        ).toBeFocused();
+        await expect( card( page, 'Header' ) ).toHaveCount( 0 );
+        await expect( card( page, 'Styles' ) ).toHaveCount( 1 );
+        await expect(
+            panel.getByRole( 'button', { name: 'Save 2 changes' } )
+        ).toBeVisible();
+
+        // The new part leaves the board.
+        await discard( 'Untitled part' ).click();
+        await expect( confirm ).toContainText(
+            'Discard changes to Untitled part?'
+        );
+        await confirm.getByRole( 'button', { name: 'Discard' } ).click();
+        await expect( items ).toHaveCount( 1 );
+        await expect( card( page, 'Styles' ) ).toHaveCount( 1 );
+        await expect( page.locator( '[data-wfd-artboard]' ) ).toHaveCount( 9 );
+
+        await panel.getByRole( 'button', { name: 'Keep editing' } ).click();
+        await expect( review( page ) ).toHaveText( 'Review 1 change' );
+        // The styles change is still there.
+        await expect(
+            page
+                .locator( '[data-wfd-region="right"]' )
+                .getByRole( 'button', { name: 'Variation: Evening' } )
+        ).toBeVisible();
+        // The Header shows its saved text again.
+        await enterEdit( page, header.id );
+        await expect(
+            editorFrame( page, header.id ).locator( 'p', {
+                hasText: 'Fixture header text',
+            } )
+        ).toHaveText( 'Fixture header text' );
+        const saved = await requestUtils.rest< { content: { raw: string } } >( {
+            path: `/wp/v2/template-parts/${ fixture.theme }//header`,
+            params: { context: 'edit' },
+        } );
+        expect( saved.content.raw ).not.toContain( 'doomed' );
+    } );
 } );

@@ -144,3 +144,17 @@ export function saveErrorMessage( name ) {
         name
     );
 }
+
+/**
+ * The title of the confirmation for discarding one item (D48).
+ *
+ * @param {string} name The item name.
+ * @return {string} The title.
+ */
+export function discardTitle( name ) {
+    return sprintf(
+        /* translators: %s: name of the item whose changes are discarded. */
+        __( 'Discard changes to %s?', 'wordpress-for-designers' ),
+        name
+    );
+}

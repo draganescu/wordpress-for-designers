@@ -4,15 +4,15 @@ As of 2026-11-19. This describes what exists; `spec/` says what should exist. Fo
 
 ## Summary
 
-The plugin is built through Milestone 12 of `spec/build-order.md`, plus the decisions taken afterwards (D32 to D46).
+The plugin is built through Milestone 12 of `spec/build-order.md`, plus the decisions taken afterwards (D32 to D48).
 
 | Check | Result |
 |---|---|
-| Acceptance criteria in `spec/acceptance.md` | 125 |
-| End-to-end tests, one per criterion | 125. On 2026-11-19 the whole suite was run three times: all pass after two fixes to the tests. AC-CANVAS-03 used an empty-board point that D42's Keyboard shortcuts control now covers; AC-STYLE-07 (and three like it in `ins.spec.ts` and `style.spec.ts`) counted menu rows once instead of waiting for them, and failed one run in three. AC-PERF-03 still fails on a port-8890 environment from a worktree (see working-notes.md) |
+| Acceptance criteria in `spec/acceptance.md` | 126 |
+| End-to-end tests, one per criterion | 126. AC-SAVE-08 (D48) was added after the last whole-suite run and was run with `save`, `state` and `a11y` only. On 2026-11-19 the whole suite of 125 was run three times: all pass after two fixes to the tests. AC-CANVAS-03 used an empty-board point that D42's Keyboard shortcuts control now covers; AC-STYLE-07 (and three like it in `ins.spec.ts` and `style.spec.ts`) counted menu rows once instead of waiting for them, and failed one run in three. AC-PERF-03 still fails on a port-8890 environment from a worktree (see working-notes.md) |
 | `npm run lint` | Exits 0, no disabled lines |
 | CI | `.github/workflows/tests.yml` runs lint, build and the suite (Chromium, wp-env) on every pull request; CI retries a failed test twice and reports a pass on retry as flaky |
-| Open questions waiting for the product owner | 26 (`spec/open-questions.md`) |
+| Open questions waiting for the product owner | 27 (`spec/open-questions.md`) |
 | Browsers the suite runs in | Chromium only |
 | WordPress it was built and tested on | 7.2-RC2, Twenty Twenty-Five, PHP 8.2, no Gutenberg plugin |
 
@@ -40,7 +40,7 @@ A "Designer" menu in wp-admin lists boards. A board opens full screen: a header,
 - **Creating.** The Add artboard menu places a new page, pattern, template or template part. Pages and patterns are created as drafts at once; templates and parts exist only in the session until saved.
 - **Inserter.** Blocks, Patterns, Templates and Media tabs. A row does the same thing clicked or dragged (D39). With an artboard in edit, a pattern, template part or image goes into its content: at the insertion point on a click, where it is dropped on a drag. With none in edit, a pattern, template, part or image goes onto the board: at the drop point on a drag, in the middle of the view and clear of other artboards on a click. The Blocks tab is shown only while an artboard is in edit.
 - **Styles.** With nothing selected the right panel edits global styles: tokens with use counts, per-block styles, revisions, variations. A change repaints every artboard from one style compile.
-- **Review.** Nothing reaches the site until "Review changes" is used. It lists each changed item and saves the checked ones. Artboard positions save on their own, two seconds after a change.
+- **Review.** Nothing reaches the site until "Review changes" is used. It lists each changed item and saves the checked ones. "Discard all" reverts everything; each item's own "Discard" reverts that item alone, after a confirmation that names it (D48, OQ-32). Artboard positions save on their own, two seconds after a change.
 - **Locks.** Editing a page or pattern takes WordPress's post lock through the plugin's own route and dialog.
 - **Panels.** Both side panels can be hidden from the header or with Cmd/Ctrl + \. Resting the pointer on the left or right edge of the canvas area brings a hidden panel back.
 
@@ -176,11 +176,11 @@ Each of these is recorded in the spec; this is the short list to read first.
 - **Snapshots during gestures.** The spec asks for Snapshots during any pan or zoom; Previews stay mounted instead, because swapping them would break the no-render rule (OQ-19).
 - **Drag from anywhere.** C6 has one stated addition, D40; OQ-26 lists how the layer differs from the pull request.
 - **Accessibility scan.** It covers the plugin's document, not the artboard iframes (OQ-17).
-- **Added after Milestone 12:** showing all of an artboard's content outside edit (D44), hiding the side panels (D32), the Blocks tab hidden outside edit (D33), media objects (D34), the page template select (D35), the new-page template (D36), leaving edit on deselect (D38), inserter rows that act the same clicked or dragged (D39), dragging blocks from anywhere (D40), notes on the board (D46).
+- **Added after Milestone 12:** showing all of an artboard's content outside edit (D44), hiding the side panels (D32), the Blocks tab hidden outside edit (D33), media objects (D34), the page template select (D35), the new-page template (D36), leaving edit on deselect (D38), inserter rows that act the same clicked or dragged (D39), dragging blocks from anywhere (D40), notes on the board (D46), discarding one change from Review (D48).
 
 ## Open questions
 
-Twenty-five entries are open, OQ-4, OQ-6 to OQ-10 and OQ-12 to OQ-30. The missing numbers were decided by the product owner and removed from the file. None leaves something unbuilt; each records a choice made where the spec was silent or could not be met as written. Grouped:
+Twenty-seven entries are open, OQ-4, OQ-6 to OQ-10 and OQ-12 to OQ-32. The missing numbers were decided by the product owner and removed from the file. None leaves something unbuilt; each records a choice made where the spec was silent or could not be met as written. Grouped:
 
 | About | Entries |
 |---|---|
@@ -189,7 +189,7 @@ Twenty-five entries are open, OQ-4, OQ-6 to OQ-10 and OQ-12 to OQ-30. The missin
 | The allowlist | OQ-14, OQ-17, OQ-20 |
 | Limits inside WordPress | OQ-13, OQ-21 |
 | Two spec statements that conflict | OQ-12, OQ-18, OQ-19 |
-| Builder's choices to confirm | OQ-6, OQ-23, OQ-24, OQ-25, OQ-26, OQ-27, OQ-28, OQ-29, OQ-30, OQ-31 |
+| Builder's choices to confirm | OQ-6, OQ-23, OQ-24, OQ-25, OQ-26, OQ-27, OQ-28, OQ-29, OQ-30, OQ-31, OQ-32 |
 | Build order | OQ-10 |
 
 ## Sensible next steps

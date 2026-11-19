@@ -3,6 +3,7 @@
  * decision D24). Presentational: the host supplies the items and callbacks.
  */
 import { __ } from '@wordpress/i18n';
+import { useRef, useState } from '@wordpress/element';
 import { CheckboxControl } from '@wordpress/components';
 import {
     AlertDialog,
@@ -17,6 +18,7 @@ import {
 import { WeakText } from '../shell/primitives';
 import {
     artboardsLine,
+    discardTitle,
     moreLine,
     saveErrorMessage,
     saveLabel,
@@ -24,25 +26,47 @@ import {
 } from './format';
 
 /**
- * One changed item: checkbox, name, second line and change lines.
+ * One changed item: checkbox, name, second line, its own "Discard" (D48)
+ * and change lines.
  *
- * @param {Object}     props
- * @param {Object}     props.item     The item.
- * @param {() => void} props.onToggle Called when the checkbox changes.
+ * @param {Object}                        props
+ * @param {Object}                        props.item      The item.
+ * @param {() => void}                    props.onToggle  Called when the checkbox changes.
+ * @param {(button: HTMLElement) => void} props.onDiscard Called with the "Discard" button when it is used.
+ * @param {boolean}                       props.isSaving  Whether a save is in flight.
  */
-function ReviewItem( { item, onToggle } ) {
+function ReviewItem( { item, onToggle, onDiscard, isSaving } ) {
     const lines = item.lines ?? [];
     const hasMore = item.moreCount > 0;
     const hasArtboards = item.artboardCount !== undefined;
     return (
         <Card.Root className="wfd-review__item">
             <Card.Header>
-                <CheckboxControl
-                    label={ item.name }
-                    help={ secondLine( item ) }
-                    checked={ item.isChecked }
-                    onChange={ onToggle }
-                />
+                <Stack
+                    direction="row"
+                    align="flex-start"
+                    justify="space-between"
+                    gap="md"
+                >
+                    <CheckboxControl
+                        label={ item.name }
+                        help={ secondLine( item ) }
+                        checked={ item.isChecked }
+                        onChange={ onToggle }
+                    />
+                    <Button
+                        className="wfd-review__discard"
+                        variant="minimal"
+                        tone="neutral"
+                        size="compact"
+                        disabled={ isSaving }
+                        onClick={ ( event ) =>
+                            onDiscard( event.currentTarget )
+                        }
+                    >
+                        { __( 'Discard', 'wordpress-for-designers' ) }
+                    </Button>
+                </Stack>
             </Card.Header>
             <Card.Content>
                 <Stack direction="column" gap="md">
@@ -89,19 +113,21 @@ function ReviewItem( { item, onToggle } ) {
  * The Review drawer.
  *
  * @param {Object}                props
- * @param {boolean}               props.isOpen       Whether the drawer is open.
- * @param {() => void}            props.onClose      Called by "Keep editing" and close.
- * @param {Object[]}              props.items        The changed items.
- * @param {(key: string) => void} props.onToggleItem Called with an item key.
- * @param {() => void}            props.onSave       Called by the primary button.
- * @param {() => void}            props.onDiscardAll Called after the discard confirmation.
- * @param {boolean}               props.isSaving     Whether a save is in flight.
+ * @param {boolean}               props.isOpen        Whether the drawer is open.
+ * @param {() => void}            props.onClose       Called by "Keep editing" and close.
+ * @param {Object[]}              props.items         The changed items.
+ * @param {(key: string) => void} props.onToggleItem  Called with an item key.
+ * @param {(key: string) => void} props.onDiscardItem Called with an item key after that item's discard confirmation.
+ * @param {() => void}            props.onSave        Called by the primary button.
+ * @param {() => void}            props.onDiscardAll  Called after the discard confirmation.
+ * @param {boolean}               props.isSaving      Whether a save is in flight.
  */
 export function ReviewDrawer( {
     isOpen,
     onClose,
     items = [],
     onToggleItem,
+    onDiscardItem,
     onSave,
     onDiscardAll,
     isSaving = false,
@@ -109,6 +135,14 @@ export function ReviewDrawer( {
     const isEmpty = items.length === 0;
     const checkedCount = items.filter( ( item ) => item.isChecked ).length;
     const hasFailed = items.some( ( item ) => item.hasError );
+
+    // One confirmation serves every item's "Discard" (D48). It lives here,
+    // not in the item, because the item is gone once it is discarded: focus
+    // then goes to the close button instead of being lost.
+    const [ pending, setPending ] = useState( null );
+    const [ isConfirming, setIsConfirming ] = useState( false );
+    const discardButton = useRef( null );
+    const closeButton = useRef( null );
 
     return (
         <Drawer.Root
@@ -125,7 +159,7 @@ export function ReviewDrawer( {
                     <Drawer.Title>
                         { __( 'Review changes', 'wordpress-for-designers' ) }
                     </Drawer.Title>
-                    <Drawer.CloseIconButton />
+                    <Drawer.CloseIconButton ref={ closeButton } />
                 </Drawer.Header>
                 <Drawer.Content>
                     { isEmpty ? (
@@ -158,11 +192,44 @@ export function ReviewDrawer( {
                                     onToggle={ () =>
                                         onToggleItem?.( item.key )
                                     }
+                                    onDiscard={ ( button ) => {
+                                        discardButton.current = button;
+                                        setPending( item );
+                                        setIsConfirming( true );
+                                    } }
+                                    isSaving={ isSaving }
                                 />
                             ) ) }
                         </Stack>
                     ) }
                 </Drawer.Content>
+                <AlertDialog.Root
+                    open={ isConfirming }
+                    onOpenChange={ setIsConfirming }
+                    onConfirm={ () => onDiscardItem?.( pending.key ) }
+                >
+                    <AlertDialog.Popup
+                        intent="irreversible"
+                        title={ discardTitle( pending?.name ?? '' ) }
+                        description={ __(
+                            "This can't be undone.",
+                            'wordpress-for-designers'
+                        ) }
+                        cancelButtonText={ __(
+                            'Cancel',
+                            'wordpress-for-designers'
+                        ) }
+                        confirmButtonText={ __(
+                            'Discard',
+                            'wordpress-for-designers'
+                        ) }
+                        finalFocus={ () =>
+                            discardButton.current?.isConnected
+                                ? discardButton.current
+                                : closeButton.current
+                        }
+                    />
+                </AlertDialog.Root>
                 { ! isEmpty && (
                     <Drawer.Footer>
                         <AlertDialog.Root onConfirm={ onDiscardAll }>

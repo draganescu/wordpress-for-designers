@@ -319,6 +319,34 @@ export function useReview() {
         setUnchecked( new Set() );
     }, [ entries, clearEdits, board ] );
 
+    // One item on its own (D48).
+    const discardOne = useCallback(
+        ( key ) => {
+            const entry = entries.find(
+                ( candidate ) => candidate.key === key
+            );
+            if ( ! entry ) {
+                return;
+            }
+            clearEdits( entry );
+            // An unsaved new template or part leaves the board.
+            if ( entry.isNew ) {
+                board.removeArtboards( [ entry.artboardId ] );
+            }
+            const without = ( current ) => {
+                if ( ! current.has( key ) ) {
+                    return current;
+                }
+                const next = new Set( current );
+                next.delete( key );
+                return next;
+            };
+            setFailed( without );
+            setUnchecked( without );
+        },
+        [ entries, clearEdits, board ]
+    );
+
     const toggle = useCallback( ( key ) => {
         setUnchecked( ( current ) => {
             const next = new Set( current );
@@ -358,6 +386,7 @@ export function useReview() {
             onClose: () => setIsOpen( false ),
             items,
             onToggleItem: toggle,
+            onDiscardItem: discardOne,
             onSave: save,
             onDiscardAll: discardAll,
             isSaving,
