@@ -45,11 +45,12 @@ export function useLayoutAutosave() {
             pending.current = null;
             return;
         }
-        // A height measured while a save is waiting does not put it off.
+        // A height measured while a save is waiting does not put it off,
+        // even when the save is overdue because the page was busy.
         const now = Date.now();
         const delay =
-            pending.current && placement === wasPlaced && due.current > now
-                ? due.current - now
+            pending.current && placement === wasPlaced
+                ? Math.max( 0, due.current - now )
                 : DELAY;
         due.current = now + delay;
         const save = () => {

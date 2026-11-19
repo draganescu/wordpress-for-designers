@@ -4,14 +4,14 @@ As of 2026-11-19. This describes what exists; `spec/` says what should exist. Fo
 
 ## Summary
 
-The plugin is built through Milestone 12 of `spec/build-order.md`, plus the decisions taken afterwards (D32 to D39).
+The plugin is built through Milestone 12 of `spec/build-order.md`, plus the decisions taken afterwards (D32 to D40).
 
 | Check | Result |
 |---|---|
-| Acceptance criteria in `spec/acceptance.md` | 108 |
-| End-to-end tests, one per criterion | 108, all passing in the last full run |
+| Acceptance criteria in `spec/acceptance.md` | 109 |
+| End-to-end tests, one per criterion | 109, all passing in the last full run |
 | `npm run lint` | Exits 0, no disabled lines |
-| Open questions waiting for the product owner | 21 (`spec/open-questions.md`) |
+| Open questions waiting for the product owner | 22 (`spec/open-questions.md`) |
 | Browsers the suite runs in | Chromium only |
 | WordPress it was built and tested on | 7.2-RC2, Twenty Twenty-Five, PHP 8.2, no Gutenberg plugin |
 
@@ -19,16 +19,16 @@ Not done or not verified:
 
 - **Nothing is pushed.** The repository has no remote. Everything is committed on `master`: the spec as received, six decision commits, the plugin (`0a5f318`) and the spike material.
 - **Clean activation** was checked on the wp-env site with the test helper plugin and test theme also installed, not on a clean WordPress 7.2 final. No PHP messages and no console errors appeared on the Plugins, Boards and board screens.
-- **`spec/shell-check.md`** (the comparison of each screen with its image) was done at Milestone 2. It has not been redone since, so it does not cover D32 to D38.
+- **`spec/shell-check.md`** (the comparison of each screen with its image) was done at Milestone 2. It has not been redone since, so it does not cover D32 to D40.
 - **Firefox and WebKit** were used only in the second spike, on the recipe for editing below 100%, not on the app as built.
-- **`spikes/`** still holds the throwaway code and evidence of both spikes. The second spike's screenshots and logs (about 90 MB, under `spikes/zoom-edit/`) are on disk but not committed.
+- **`spikes/`** still holds the throwaway code and evidence of both spikes. The second spike's screenshots and logs were not kept; its scripts, results and notes were.
 
 ## What the plugin does now
 
 A "Designer" menu in wp-admin lists boards. A board opens full screen: a header, a left panel, an infinite canvas and a right panel.
 
 - **Canvas.** Pan and zoom from 2% to 400%. Each artboard shows one page, template, template part or pattern at a device width (Desktop 1440, Tablet 780, Mobile 360 with default breakpoints). Images from the media library can also sit on the board as media objects.
-- **Tiers.** An artboard far from view is an outline (Ghost). In view it is a read-only render (Preview), at most 12 at once. Below 20% zoom, or beyond the 12, it is a frozen copy (Snapshot). One artboard at a time is the real block editor (Live); the two edited before it stay mounted (Warm).
+- **Tiers.** An artboard far from view is an outline (Ghost). In view it is a read-only render (Preview), at most 12 at once. Below 20% zoom, or beyond the 12, it is a frozen copy (Snapshot); an artboard that was never rendered is rendered once to make that copy. One artboard at a time is the real block editor (Live); the two edited before it stay mounted (Warm).
 - **Editing.** Double-click or Enter edits an artboard at the board's zoom, from 30% up. Below 30% the zoom first fits the artboard's width. The block toolbar sits in the header, the list view in the left panel, the inspector in the right panel. Esc, the back button, a click on empty board, a click on another artboard, or zooming out below 30% ends edit.
 - **Dragging blocks.** A block that is not being edited moves when pressed anywhere, its text included, and dragged; a click puts the caret in it and dragging then selects text (D40). This is the behaviour of Gutenberg pull request 86911, added as a layer in `src/artboard-editor/drag-anywhere.js`; the top of that file says how to remove it once WordPress has the behaviour.
 - **Pages** are shown inside their template, which is locked. A page's template can be changed from the right panel.
@@ -150,7 +150,7 @@ Each of these is recorded in the spec; this is the short list to read first.
 - **Snapshots during gestures.** The spec asks for Snapshots during any pan or zoom; Previews stay mounted instead, because swapping them would break the no-render rule (OQ-19).
 - **Drag from anywhere.** C6 has one stated addition, D40; OQ-26 lists how the layer differs from the pull request.
 - **Accessibility scan.** It covers the plugin's document, not the artboard iframes (OQ-17).
-- **Added after Milestone 12:** hiding the side panels (D32), the Blocks tab hidden outside edit (D33), media objects (D34), the page template select (D35), the new-page template (D36), leaving edit on deselect (D38).
+- **Added after Milestone 12:** hiding the side panels (D32), the Blocks tab hidden outside edit (D33), media objects (D34), the page template select (D35), the new-page template (D36), leaving edit on deselect (D38), inserter rows that act the same clicked or dragged (D39), dragging blocks from anywhere (D40).
 
 ## Open questions
 
@@ -174,4 +174,4 @@ These are suggestions, not decisions.
 2. Activate on a clean WordPress 7.2 final with only a block theme, and confirm there are no PHP notices or console errors.
 3. Run the suite in Firefox and WebKit, at least AC-EDIT-09.
 4. Redo `spec/shell-check.md` against the screens as they are now.
-5. Decide what to do with `spikes/`, including its uncommitted screenshots.
+5. Decide what to do with `spikes/`.
