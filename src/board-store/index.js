@@ -11,7 +11,10 @@ const DEFAULT_STATE = {
     title: '',
     isLoaded: false,
     artboards: [],
-    selectedId: null,
+    // Every selected artboard, in the order they were selected.
+    selectedIds: [],
+    // Where a Shift range in the artboard list starts.
+    anchorId: null,
     liveId: null,
     warmIds: [],
     isInserterOpen: false,
@@ -41,7 +44,10 @@ function restore( snapshot, current ) {
 function keepSelection( state, artboards ) {
     const exists = ( id ) => artboards.some( ( a ) => a.id === id );
     return {
-        selectedId: exists( state.selectedId ) ? state.selectedId : null,
+        selectedIds: state.selectedIds.every( exists )
+            ? state.selectedIds
+            : state.selectedIds.filter( exists ),
+        anchorId: exists( state.anchorId ) ? state.anchorId : null,
         liveId: exists( state.liveId ) ? state.liveId : null,
         warmIds: state.warmIds.filter( exists ),
     };
@@ -57,10 +63,18 @@ function reducer( state = DEFAULT_STATE, action ) {
                 artboards: action.artboards,
                 isLoaded: true,
             };
-        case 'SELECT':
-            return state.selectedId === action.id
+        case 'SELECT': {
+            const { ids } = action;
+            const anchorId =
+                action.anchorId === undefined
+                    ? state.anchorId
+                    : action.anchorId;
+            return anchorId === state.anchorId &&
+                ids.length === state.selectedIds.length &&
+                ids.every( ( id, index ) => id === state.selectedIds[ index ] )
                 ? state
-                : { ...state, selectedId: action.id };
+                : { ...state, selectedIds: ids, anchorId };
+        }
         case 'SET_INSERTER_OPEN':
             return { ...state, isInserterOpen: action.isOpen };
         case 'SET_LIST_VIEW_OPEN':
@@ -135,7 +149,8 @@ function reducer( state = DEFAULT_STATE, action ) {
                 ...state,
                 liveId: action.id,
                 warmIds,
-                selectedId: action.id ?? state.selectedId,
+                selectedIds: action.id ? [ action.id ] : state.selectedIds,
+                anchorId: action.id ?? state.anchorId,
                 isListViewOpen: action.id ? true : state.isListViewOpen,
             };
         }
@@ -161,8 +176,35 @@ const actions = {
         title,
         artboards,
     } ),
-    selectArtboard: ( id ) => ( { type: 'SELECT', id } ),
-    clearSelection: () => ( { type: 'SELECT', id: null } ),
+    selectArtboard: ( id ) => ( {
+        type: 'SELECT',
+        ids: id ? [ id ] : [],
+        anchorId: id ?? null,
+    } ),
+    clearSelection: () => ( { type: 'SELECT', ids: [], anchorId: null } ),
+    /**
+     * Adds an artboard to the selection, or takes it out when it is there.
+     *
+     * @param {string} id The artboard.
+     */
+    toggleArtboardSelection:
+        ( id ) =>
+        ( { select, dispatch } ) => {
+            const ids = select.getSelectedIds();
+            dispatch( {
+                type: 'SELECT',
+                ids: ids.includes( id )
+                    ? ids.filter( ( other ) => other !== id )
+                    : [ ...ids, id ],
+                anchorId: id,
+            } );
+        },
+    /**
+     * Selects several artboards and leaves the start of a range where it is.
+     *
+     * @param {string[]} ids The artboards.
+     */
+    selectArtboards: ( ids ) => ( { type: 'SELECT', ids } ),
     setInserterOpen: ( isOpen ) => ( { type: 'SET_INSERTER_OPEN', isOpen } ),
     setListViewOpen: ( isOpen ) => ( { type: 'SET_LIST_VIEW_OPEN', isOpen } ),
     setViewport: ( viewport ) => ( { type: 'SET_VIEWPORT', viewport } ),
@@ -178,6 +220,26 @@ const actions = {
             }
             return artboards.map( ( a ) =>
                 a.id === id ? { ...a, x, y } : a
+            );
+        } ),
+    /**
+     * Moves several artboards as one step of the history.
+     *
+     * @param {Array} moves The moves, as { id, x, y }.
+     */
+    moveArtboards: ( moves ) =>
+        change( 'move', ( artboards ) => {
+            const byId = new Map( moves.map( ( move ) => [ move.id, move ] ) );
+            const isMoved = ( a ) =>
+                byId.has( a.id ) &&
+                ( byId.get( a.id ).x !== a.x || byId.get( a.id ).y !== a.y );
+            if ( ! artboards.some( isMoved ) ) {
+                return artboards;
+            }
+            return artboards.map( ( a ) =>
+                isMoved( a )
+                    ? { ...a, x: byId.get( a.id ).x, y: byId.get( a.id ).y }
+                    : a
             );
         } ),
     setArtboardDevice: ( id, device ) =>
@@ -232,10 +294,11 @@ const actions = {
             } );
         },
     removeArtboards:
-        ( ids ) =>
+        ( ids, { undoable = false } = {} ) =>
         ( { select, dispatch } ) => {
             dispatch( {
-                type: 'LAYOUT_SILENT',
+                type: undoable ? 'LAYOUT' : 'LAYOUT_SILENT',
+                name: 'remove',
                 artboards: select
                     .getArtboards()
                     .filter( ( a ) => ! ids.includes( a.id ) ),
@@ -252,7 +315,11 @@ const selectors = {
     getArtboards: ( state ) => state.artboards,
     getArtboard: ( state, id ) =>
         state.artboards.find( ( artboard ) => artboard.id === id ) || null,
-    getSelectedId: ( state ) => state.selectedId,
+    // The selected artboard when exactly one is selected.
+    getSelectedId: ( state ) =>
+        state.selectedIds.length === 1 ? state.selectedIds[ 0 ] : null,
+    getSelectedIds: ( state ) => state.selectedIds,
+    getSelectionAnchorId: ( state ) => state.anchorId,
     getLiveId: ( state ) => state.liveId,
     getWarmIds: ( state ) => state.warmIds,
     isInserterOpen: ( state ) => state.isInserterOpen,

@@ -51,6 +51,8 @@ export function rectOf( artboard, widthOf ) {
  * @param {Function} options.onEdit         Enters edit on an artboard.
  * @param {Function} options.onLeaveEdit    Leaves edit.
  * @param {Function} options.onTogglePanels Hides or shows both side panels.
+ * @param {Function} options.onRemoveMany   Takes several artboards off the
+ *                                          board.
  * @param {boolean}  options.isReady        Whether the board has loaded.
  * @return {Object} Functions for the header's zoom menu.
  */
@@ -62,6 +64,7 @@ export function useCanvasInteractions( {
     onEdit,
     onLeaveEdit,
     onTogglePanels,
+    onRemoveMany,
     isReady,
 } ) {
     const registry = useRegistry();
@@ -72,6 +75,7 @@ export function useCanvasInteractions( {
         onEdit,
         onLeaveEdit,
         onTogglePanels,
+        onRemoveMany,
     };
 
     const api = useRef( null );
@@ -87,9 +91,12 @@ export function useCanvasInteractions( {
                 viewport.fit( rects( board().getArtboards() ), options );
             },
             fitSelection( options ) {
-                const selected = board().getArtboard( board().getSelectedId() );
-                if ( selected ) {
-                    viewport.fit( rects( [ selected ] ), options );
+                const ids = board().getSelectedIds();
+                const selected = board()
+                    .getArtboards()
+                    .filter( ( artboard ) => ids.includes( artboard.id ) );
+                if ( selected.length ) {
+                    viewport.fit( rects( selected ), options );
                 }
             },
             zoom( id ) {
@@ -235,23 +242,54 @@ export function useCanvasInteractions( {
             if ( ! event.target.closest( '.wfd-artboard__frame' ) ) {
                 return;
             }
-            actions().selectArtboard( id );
+            if ( ! liveId && ( event.metaKey || event.ctrlKey ) ) {
+                // Cmd/Ctrl + click adds the artboard to the selection or
+                // takes it out.
+                actions().toggleArtboardSelection( id );
+                area.focus( { preventScroll: true } );
+                return;
+            }
+            // A press on one of several selected artboards keeps them all,
+            // so that a drag moves them; without a drag it selects this one.
+            const selectedIds = board().getSelectedIds();
+            const isOneOfMany =
+                selectedIds.length > 1 && selectedIds.includes( id );
+            if ( ! isOneOfMany ) {
+                actions().selectArtboard( id );
+            }
             if ( event.target.closest( 'button' ) ) {
                 // A control inside the artboard (Retry) takes its own click.
                 return;
             }
             area.focus( { preventScroll: true } );
-            const artboard = board().getArtboard( id );
+            const movedIds = isOneOfMany ? selectedIds : [ id ];
+            const items = [];
+            area.querySelectorAll( '[data-wfd-artboard]' ).forEach(
+                ( node ) => {
+                    const artboard = movedIds.includes(
+                        node.dataset.wfdArtboard
+                    )
+                        ? board().getArtboard( node.dataset.wfdArtboard )
+                        : null;
+                    if ( artboard ) {
+                        items.push( {
+                            id: artboard.id,
+                            element: node,
+                            originX: artboard.x,
+                            originY: artboard.y,
+                            x: artboard.x,
+                            y: artboard.y,
+                        } );
+                    }
+                }
+            );
             gesture = {
                 type: 'press',
                 id,
-                element,
+                isOneOfMany,
+                items,
                 startX: event.clientX,
                 startY: event.clientY,
-                originX: artboard.x,
-                originY: artboard.y,
-                x: artboard.x,
-                y: artboard.y,
             };
             area.setPointerCapture( event.pointerId );
         }
@@ -282,10 +320,14 @@ export function useCanvasInteractions( {
             }
             gesture.type = 'drag';
             const { zoom } = viewport.get();
-            gesture.x = Math.round( gesture.originX + dx / zoom );
-            gesture.y = Math.round( gesture.originY + dy / zoom );
-            gesture.element.style.left = gesture.x + 'px';
-            gesture.element.style.top = gesture.y + 'px';
+            const moveX = Math.round( dx / zoom );
+            const moveY = Math.round( dy / zoom );
+            gesture.items.forEach( ( item ) => {
+                item.x = item.originX + moveX;
+                item.y = item.originY + moveY;
+                item.element.style.left = item.x + 'px';
+                item.element.style.top = item.y + 'px';
+            } );
         }
 
         function onPointerUp( event ) {
@@ -299,7 +341,11 @@ export function useCanvasInteractions( {
                 return;
             }
             if ( ended.type === 'drag' ) {
-                actions().moveArtboard( ended.id, ended.x, ended.y );
+                actions().moveArtboards(
+                    ended.items.map( ( { id, x, y } ) => ( { id, x, y } ) )
+                );
+            } else if ( ended.type === 'press' && ended.isOneOfMany ) {
+                actions().selectArtboard( ended.id );
             } else if (
                 ended.type === 'empty' &&
                 ! frameOf( event.target ) &&
@@ -395,48 +441,51 @@ export function useCanvasInteractions( {
                 api.current.fitSelection( { immediate: true } );
                 return done();
             }
-            const selectedId = board().getSelectedId();
-            const selected = board().getArtboard( selectedId );
-            if ( ! selected ) {
+            const selectedIds = board().getSelectedIds();
+            if ( ! selectedIds.length ) {
                 return;
             }
+            const selectedId = board().getSelectedId();
             const step = event.shiftKey ? 10 : 1;
+            const nudge = ( dx, dy ) => {
+                actions().moveArtboards(
+                    board()
+                        .getArtboards()
+                        .filter( ( artboard ) =>
+                            selectedIds.includes( artboard.id )
+                        )
+                        .map( ( { id, x, y } ) => ( {
+                            id,
+                            x: x + dx,
+                            y: y + dy,
+                        } ) )
+                );
+                return done();
+            };
             switch ( event.key ) {
                 case 'Enter':
-                    latest.current.onEdit( selectedId );
-                    return done();
+                    // Only one artboard can be in edit.
+                    if ( selectedId ) {
+                        latest.current.onEdit( selectedId );
+                        done();
+                    }
+                    return;
                 case 'Delete':
                 case 'Backspace':
-                    actions().setRemovingId( selectedId );
+                    if ( selectedId ) {
+                        actions().setRemovingId( selectedId );
+                    } else {
+                        latest.current.onRemoveMany( selectedIds );
+                    }
                     return done();
                 case 'ArrowLeft':
-                    actions().moveArtboard(
-                        selectedId,
-                        selected.x - step,
-                        selected.y
-                    );
-                    return done();
+                    return nudge( -step, 0 );
                 case 'ArrowRight':
-                    actions().moveArtboard(
-                        selectedId,
-                        selected.x + step,
-                        selected.y
-                    );
-                    return done();
+                    return nudge( step, 0 );
                 case 'ArrowUp':
-                    actions().moveArtboard(
-                        selectedId,
-                        selected.x,
-                        selected.y - step
-                    );
-                    return done();
+                    return nudge( 0, -step );
                 case 'ArrowDown':
-                    actions().moveArtboard(
-                        selectedId,
-                        selected.x,
-                        selected.y + step
-                    );
-                    return done();
+                    return nudge( 0, step );
             }
         }
 

@@ -460,4 +460,64 @@ test.describe( 'SHELL', () => {
         await expect( right ).toBeVisible();
         await expect( left ).toBeVisible();
     } );
+
+    test( 'AC-SHELL-09 In the artboard list Cmd/Ctrl + click toggles a row and Shift + click selects a range', async ( {
+        page,
+    } ) => {
+        const rows = page.locator(
+            '[data-wfd-panel="artboards"] [data-wfd-row]'
+        );
+        await expect( rows ).toHaveCount( 9 );
+        const selectedRows = page.locator(
+            '[data-wfd-panel="artboards"] [data-wfd-row].is-selected'
+        );
+        const outlined = page.locator( '.wfd-artboard.is-selected' );
+        const idOf = ( index: number ) =>
+            rows.nth( index ).getAttribute( 'data-wfd-row' );
+        const selectedIds = () =>
+            selectedRows.evaluateAll( ( nodes ) =>
+                nodes.map( ( node ) => node.getAttribute( 'data-wfd-row' ) )
+            );
+
+        await rows.nth( 1 ).click();
+        await expect( selectedRows ).toHaveCount( 1 );
+        await rows.nth( 4 ).click( { modifiers: [ 'ControlOrMeta' ] } );
+        expect( await selectedIds() ).toEqual( [
+            await idOf( 1 ),
+            await idOf( 4 ),
+        ] );
+        await expect( outlined ).toHaveCount( 2 );
+        for ( const index of [ 1, 4 ] ) {
+            await expect(
+                page.locator( `[data-wfd-artboard="${ await idOf( index ) }"]` )
+            ).toHaveClass( /is-selected/ );
+        }
+        // A second Cmd/Ctrl + click takes the row out.
+        await rows.nth( 4 ).click( { modifiers: [ 'ControlOrMeta' ] } );
+        expect( await selectedIds() ).toEqual( [ await idOf( 1 ) ] );
+
+        // Shift + click: every row from the one clicked last to this one,
+        // across groups.
+        await rows.nth( 1 ).click();
+        await rows.nth( 5 ).click( { modifiers: [ 'Shift' ] } );
+        expect( await selectedIds() ).toEqual( [
+            await idOf( 1 ),
+            await idOf( 2 ),
+            await idOf( 3 ),
+            await idOf( 4 ),
+            await idOf( 5 ),
+        ] );
+        await expect( outlined ).toHaveCount( 5 );
+        // The range still starts from the same row, upwards too.
+        await rows.nth( 0 ).click( { modifiers: [ 'Shift' ] } );
+        expect( await selectedIds() ).toEqual( [
+            await idOf( 0 ),
+            await idOf( 1 ),
+        ] );
+
+        // A plain click selects one row again.
+        await rows.nth( 7 ).click();
+        expect( await selectedIds() ).toEqual( [ await idOf( 7 ) ] );
+        await expect( outlined ).toHaveCount( 1 );
+    } );
 } );

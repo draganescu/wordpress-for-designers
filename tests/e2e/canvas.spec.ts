@@ -111,6 +111,115 @@ test.describe( 'CANVAS', () => {
             .toBe( after.left );
     } );
 
+    test( 'AC-CANVAS-05 Cmd/Ctrl + click adds an artboard to the selection or takes it out; several move together as one undoable step', async ( {
+        page,
+    } ) => {
+        const hero = page.locator(
+            `[data-wfd-artboard="${ fixture.layout.artboards[ 3 ].id }"]`
+        );
+        const about = page.locator(
+            `[data-wfd-artboard="${ fixture.layout.artboards[ 5 ].id }"]`
+        );
+        const selected = page.locator( '.wfd-artboard.is-selected' );
+        const right = page.locator( '[data-wfd-region="right"]' );
+        const position = ( el: HTMLElement ) => ( {
+            left: parseFloat( el.style.left ),
+            top: parseFloat( el.style.top ),
+        } );
+        const modClick = async ( artboard: typeof hero ) => {
+            const box = ( await frameBox( artboard ) )!;
+            await page.keyboard.down( 'ControlOrMeta' );
+            await page.mouse.click(
+                box.x + Math.min( 20, box.width / 2 ),
+                box.y + Math.min( 20, box.height / 2 )
+            );
+            await page.keyboard.up( 'ControlOrMeta' );
+        };
+
+        await hero.locator( '.wfd-artboard__frame' ).click();
+        await expect( right.locator( '.wfd-styles' ) ).toHaveCount( 0 );
+        await modClick( about );
+        await expect( selected ).toHaveCount( 2 );
+        await expect( hero ).toHaveClass( /is-selected/ );
+        await expect( about ).toHaveClass( /is-selected/ );
+        // Several selected: the right panel shows Styles.
+        await expect( right.locator( '.wfd-styles' ) ).toHaveCount( 1 );
+        // A second Cmd/Ctrl + click takes it out again.
+        await modClick( about );
+        await expect( selected ).toHaveCount( 1 );
+        await expect( hero ).toHaveClass( /is-selected/ );
+        await modClick( about );
+        await expect( selected ).toHaveCount( 2 );
+
+        // Dragging one of them moves both.
+        const { zoom } = await viewportOf( page );
+        const heroBefore = await hero.evaluate( position );
+        const aboutBefore = await about.evaluate( position );
+        const frame = ( await frameBox( hero ) )!;
+        await page.mouse.move( frame.x + 20, frame.y + 20 );
+        await page.mouse.down();
+        await page.mouse.move( frame.x + 50, frame.y + 40, { steps: 4 } );
+        await page.mouse.move( frame.x + 80, frame.y + 60, { steps: 4 } );
+        await page.mouse.up();
+        const heroAfter = await hero.evaluate( position );
+        const aboutAfter = await about.evaluate( position );
+        expect( heroAfter.left ).toBeCloseTo( heroBefore.left + 60 / zoom, -1 );
+        expect( heroAfter.top ).toBeCloseTo( heroBefore.top + 40 / zoom, -1 );
+        expect( aboutAfter.left - aboutBefore.left ).toBe(
+            heroAfter.left - heroBefore.left
+        );
+        expect( aboutAfter.top - aboutBefore.top ).toBe(
+            heroAfter.top - heroBefore.top
+        );
+        await expect( selected ).toHaveCount( 2 );
+
+        // An arrow key nudges both.
+        await page.keyboard.press( 'ArrowRight' );
+        await expect
+            .poll( () => hero.evaluate( position ) )
+            .toEqual( {
+                left: heroAfter.left + 1,
+                top: heroAfter.top,
+            } );
+        await expect
+            .poll( () => about.evaluate( position ) )
+            .toEqual( {
+                left: aboutAfter.left + 1,
+                top: aboutAfter.top,
+            } );
+
+        // Each move is one step: two undos put both back.
+        const undo = page.locator( '[data-wfd-control="H3"]' );
+        await undo.click();
+        await expect
+            .poll( () => about.evaluate( position ) )
+            .toEqual( aboutAfter );
+        await undo.click();
+        await expect
+            .poll( () => hero.evaluate( position ) )
+            .toEqual( heroBefore );
+        await expect
+            .poll( () => about.evaluate( position ) )
+            .toEqual( aboutBefore );
+
+        // In edit the modifier changes nothing: the click leaves edit and
+        // selects that artboard alone.
+        const header = artboardOf( fixture, 'template-part' );
+        // Entering edit fits the Header; its Mobile artboard is in view.
+        const mobile = page.locator(
+            `[data-wfd-artboard="${
+                artboardOf( fixture, 'template-part', 'mobile' ).id
+            }"]`
+        );
+        await enterEdit( page, header.id );
+        await modClick( mobile );
+        await expect( page.locator( '[data-wfd-tier="live"]' ) ).toHaveCount(
+            0
+        );
+        await expect( selected ).toHaveCount( 1 );
+        await expect( mobile ).toHaveClass( /is-selected/ );
+    } );
+
     const zoomAtPointerAndPan = async ( page: Page, x: number, y: number ) => {
         const canvas = page.locator( '[data-wfd-region="canvas"]' );
         const box = ( await canvas.boundingBox() )!;

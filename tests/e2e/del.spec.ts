@@ -284,4 +284,43 @@ test.describe( 'DEL', () => {
         await page.keyboard.press( 'ControlOrMeta+z' );
         await expect( restored ).toHaveCount( 1 );
     } );
+
+    test( 'AC-DEL-05 Delete with several selected opens no dialog, removes them all, leaves the entities, and one undo restores them', async ( {
+        page,
+        requestUtils,
+    } ) => {
+        const hero = artboardOf( fixture, 'pattern' );
+        const sign = artboardOf( fixture, 'pattern', 'desktop', 1 );
+        await page.locator( `[data-wfd-row="${ hero.id }"]` ).click();
+        await page
+            .locator( `[data-wfd-row="${ sign.id }"]` )
+            .click( { modifiers: [ 'ControlOrMeta' ] } );
+        await expect( page.locator( '.wfd-artboard.is-selected' ) ).toHaveCount(
+            2
+        );
+        await page.locator( '[data-wfd-region="canvas"]' ).focus();
+        await page.keyboard.press( 'Delete' );
+        await expect( page.locator( '[data-wfd-artboard]' ) ).toHaveCount( 7 );
+        await expect( page.getByRole( 'alertdialog' ) ).toHaveCount( 0 );
+        for ( const artboard of [ hero, sign ] ) {
+            await expect(
+                page.locator( `[data-wfd-artboard="${ artboard.id }"]` )
+            ).toHaveCount( 0 );
+            const block = ( await requestUtils.rest( {
+                path: `/wp/v2/blocks/${ artboard.entityId }`,
+            } ) ) as { status: string };
+            expect( block.status ).toBe( 'publish' );
+        }
+        const undo = page.locator( '[data-wfd-control="H3"]' );
+        await expect( undo ).toHaveAccessibleName(
+            'Undo remove artboard, on the board'
+        );
+        await undo.click();
+        await expect( page.locator( '[data-wfd-artboard]' ) ).toHaveCount( 9 );
+        for ( const artboard of [ hero, sign ] ) {
+            await expect(
+                page.locator( `[data-wfd-artboard="${ artboard.id }"]` )
+            ).toHaveCount( 1 );
+        }
+    } );
 } );
