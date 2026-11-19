@@ -23,7 +23,7 @@ Part names in this file are fixed. Use them for the top-level folders under `src
 | `viewport` | Pan and zoom state kept outside React. Writes one CSS transform on the canvas surface per animation frame and notifies React only when a gesture settles. | `[B4]` `[B6]` |
 | `tier-scheduler` | Decides each artboard's tier from visibility and zoom, and mounts through a `@wordpress/priority-queue` queue. | `[B4]` `[B5]` `[V]` |
 | `artboard-frame` | One per artboard: position, label, selection outline, tier content. | `[B4]` |
-| `artboard-editor` | The Live editor: `BlockEditorProvider` on the entity via `useEntityBlockEditor`, `BlockCanvas`, `BlockTools`, keyboard shortcuts. Fills the chrome slots. | `[B4]` `[V]` |
+| `artboard-editor` | The Live editor: `BlockEditorProvider` on the entity via `useEntityBlockEditor`, `BlockCanvas`, `BlockTools`, keyboard shortcuts. Fills the chrome slots. Also holds the drag-from-anywhere layer (D40) in one file, `drag-anywhere.js`, used from two lines of the editor so that it can be deleted. | `[B4]` `[V]` |
 | `artboard-preview` | Read-only blocks through `BlockPreview` in an iframe at the device width. | `[B5]` `[V]` |
 | `artboard-snapshot` | A frozen copy of the last Preview render with no React root and no store subscription, behind one interface so a bitmap version can replace it. | `[B5]` `[B8]` |
 | `chrome-slots` | Slots in the shell for block toolbar, inspector, list view. Only the Live editor fills them. | `[B4]` `[B6]` |
