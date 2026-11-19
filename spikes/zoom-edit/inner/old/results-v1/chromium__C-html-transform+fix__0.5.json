@@ -1,0 +1,231 @@
+{
+ "browser": "chromium",
+ "mode": "C-html-transform",
+ "fix": true,
+ "zoom": 0.5,
+ "checks": {
+  "2-hit-typing": {
+   "pass": true,
+   "evidence": {
+    "paragraphOnScreen": {
+     "x": 320,
+     "y": 300,
+     "w": 32.2,
+     "h": 9.8
+    },
+    "clickedParagraphAt": [
+     336.1,
+     304.9
+    ],
+    "selectedType": "core/paragraph",
+    "paragraphSelected": true,
+    "caretInParagraph": true,
+    "textAfterTyping": "WrittZqen by",
+    "neighbourClickAt": [
+     374.1,
+     304.9
+    ],
+    "neighbourClickSelected": "core/post-author-name",
+    "neighbourOnScreen": {
+     "x": 353.6,
+     "y": 300,
+     "w": 41,
+     "h": 9.8
+    }
+   }
+  },
+  "1-toolbar": {
+   "pass": true,
+   "evidence": {
+    "total": 2,
+    "inH6": 2,
+    "rect": [
+     269,
+     7,
+     277,
+     46
+    ],
+    "layoutH": 46,
+    "h6": [
+     269,
+     7,
+     277,
+     46
+    ],
+    "innerToolbars": 0
+   }
+  },
+  "3-link-popover": {
+   "pass": true,
+   "evidence": {
+    "selText": "Written",
+    "selectionOnScreen": {
+     "x": 320,
+     "y": 300,
+     "w": 23.4,
+     "h": 9.5
+    },
+    "popover": {
+     "x": 281.3,
+     "y": 317.4,
+     "w": 350,
+     "h": 74,
+     "layoutW": 350,
+     "layoutH": 74,
+     "scale": 1,
+     "topmost": true,
+     "inFrame": true,
+     "onScreen": true
+    },
+    "gapBelowSelection": 7.9,
+    "popoverSpansSelectionCentre": true
+   }
+  },
+  "6-toolbar-menu": {
+   "pass": true,
+   "evidence": {
+    "button": {
+     "x": 530.8,
+     "y": 6,
+     "w": 36,
+     "h": 48
+    },
+    "menu": {
+     "x": 510,
+     "y": 67,
+     "w": 251.9,
+     "h": 161,
+     "layoutW": 252,
+     "layoutH": 161,
+     "scale": 1,
+     "topmost": true,
+     "inFrame": false,
+     "onScreen": true
+    },
+    "gapBelowButton": 13,
+    "overlapX": true
+   }
+  },
+  "5-add-block-button": {
+   "pass": false,
+   "evidence": {
+    "error": "could not select the post title"
+   }
+  },
+  "4-slash-inserter": {
+   "pass": false,
+   "evidence": {
+    "error": "Cannot read properties of null (reading 'boundingBox')"
+   }
+  },
+  "10-image": {
+   "pass": false,
+   "evidence": {
+    "error": "locator.boundingBox: Timeout 6000ms exceeded."
+   }
+  },
+  "8-selection": {
+   "pass": false,
+   "evidence": {
+    "singleSelected": false,
+    "selectedOutlineInCanvas": {
+     "id": "064308ed-9e28-483b-86ff-838b724afdea",
+     "outline": "none 3px rgb(17, 17, 17)",
+     "shadow": "none"
+    },
+    "multiSelectedCount": 0,
+    "multiIsTheTwoClicked": false,
+    "firstOnScreen": {
+     "x": 320,
+     "y": 250,
+     "w": 322.5,
+     "h": 22.3
+    },
+    "secondOnScreen": {
+     "x": 320,
+     "y": 281.9,
+     "w": 322.5,
+     "h": 215
+    }
+   }
+  },
+  "7-inbetween": {
+   "pass": null,
+   "evidence": {
+    "gapOnScreen": {
+     "top": 272.3,
+     "bottom": 281.9,
+     "left": 320,
+     "width": 322.5
+    },
+    "hoveredAt": [
+     481.3,
+     277.1
+    ],
+    "indicator": null,
+    "note": "no in-between inserter appeared on hover"
+   }
+  },
+  "9-drop-indicator": {
+   "pass": true,
+   "evidence": {
+    "synthetic": true,
+    "pointerOnScreen": [
+     427.5,
+     283.9
+    ],
+    "dispatchedOn": "svg in core/post-featured-image",
+    "gapOnScreen": {
+     "top": 272.3,
+     "bottom": 281.9,
+     "left": 320,
+     "width": 322.5
+    },
+    "indicator": {
+     "x": 320.3,
+     "y": 274.7,
+     "w": 322.5,
+     "h": 4,
+     "layoutW": 323,
+     "layoutH": 4,
+     "scale": 0.998,
+     "topmost": true,
+     "inFrame": true,
+     "onScreen": true
+    },
+    "dropZone": null
+   }
+  }
+ },
+ "notes": [
+  "blocked board autosave POST"
+ ],
+ "layout": {
+  "innerWidth": 720,
+  "clientWidth": 720,
+  "dpr": 1,
+  "mqMin1440": false,
+  "mqMin782": false,
+  "mqMin600": true,
+  "rootOffsetWidth": 1440,
+  "rootRectWidth": 720,
+  "p1OffsetWidth": 645,
+  "p1RectWidth": 322.5,
+  "vw100": "720/360",
+  "titleScreen": {
+   "x": 320,
+   "y": 43.5,
+   "w": 322.5,
+   "h": 22.3
+  },
+  "iframeScreen": {
+   "x": -238.7,
+   "y": -20.6,
+   "w": 720,
+   "h": 1792.5
+  }
+ },
+ "errors": [
+  "Failed to load resource: net::ERR_FAILED"
+ ]
+}

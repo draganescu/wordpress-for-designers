@@ -1,0 +1,194 @@
+{
+ "browser": "chromium",
+ "mode": "B",
+ "fix": true,
+ "zoom": 0.5,
+ "checks": {
+  "2-hit-typing": {
+   "pass": false,
+   "evidence": {
+    "paragraphOnScreen": {
+     "x": 220.3,
+     "y": 241.6,
+     "w": 32.2,
+     "h": 9.8
+    },
+    "clickedParagraphAt": [
+     236.4,
+     246.5
+    ],
+    "selectedType": null,
+    "paragraphSelected": false,
+    "caretInParagraph": false,
+    "textAfterTyping": "",
+    "neighbourClickAt": [
+     274.4,
+     246.5
+    ],
+    "neighbourClickSelected": null,
+    "neighbourOnScreen": {
+     "x": 253.9,
+     "y": 241.6,
+     "w": 41,
+     "h": 9.8
+    }
+   }
+  },
+  "1-toolbar": {
+   "pass": false,
+   "evidence": {
+    "total": 0,
+    "inH6": 0,
+    "rect": null,
+    "layoutH": null,
+    "h6": [
+     272,
+     30,
+     0,
+     0
+    ],
+    "innerToolbars": 0
+   }
+  },
+  "3-link-popover": {
+   "pass": false,
+   "evidence": {
+    "selText": "",
+    "popover": null
+   }
+  },
+  "6-toolbar-menu": {
+   "pass": false,
+   "evidence": {
+    "error": "locator.boundingBox: Timeout 6000ms exceeded."
+   }
+  },
+  "5-add-block-button": {
+   "pass": false,
+   "evidence": {
+    "error": "Cannot read properties of null (reading 'ox')"
+   }
+  },
+  "4-slash-inserter": {
+   "pass": false,
+   "evidence": {
+    "error": "Cannot read properties of null (reading 'evaluate')"
+   }
+  },
+  "10-image": {
+   "pass": false,
+   "evidence": {
+    "error": "locator.evaluate: Timeout 6000ms exceeded."
+   }
+  },
+  "8-selection": {
+   "pass": false,
+   "evidence": {
+    "error": "Cannot read properties of null (reading 'ox')"
+   }
+  },
+  "7-inbetween": {
+   "pass": false,
+   "evidence": {
+    "error": "Cannot read properties of null (reading 'ox')"
+   }
+  },
+  "9-drop-indicator": {
+   "pass": false,
+   "evidence": {
+    "error": "Cannot read properties of null (reading 'ox')"
+   }
+  }
+ },
+ "notes": [
+  "paint map unavailable for paragraph (painted box null); event map used",
+  "blocked board autosave POST",
+  "paint map unavailable for post-title (painted box null); event map used"
+ ],
+ "maps": [
+  {
+   "for": "paragraph",
+   "at": {
+    "x": 320,
+    "y": 300
+   },
+   "paintScaleMismatch": null,
+   "innerRect": {
+    "x": 397.5,
+    "y": 693.2,
+    "w": 64.5,
+    "h": 19.6
+   },
+   "paintedBox": null,
+   "paint": {
+    "scale": [
+     0.5,
+     0.5
+    ],
+    "origin": [
+     21.5,
+     -105
+    ]
+   },
+   "event": {
+    "scale": [
+     0.5,
+     0.5
+    ],
+    "origin": [
+     21.5,
+     -105
+    ]
+   },
+   "hitOffsetOnScreen": [
+    0,
+    0
+   ]
+  },
+  {
+   "for": "post-title",
+   "at": {
+    "x": 320,
+    "y": 250
+   },
+   "paintScaleMismatch": null,
+   "innerRect": {
+    "x": 397.5,
+    "y": 170.8,
+    "w": 645,
+    "h": 54
+   },
+   "paintedBox": null,
+   "paint": null,
+   "event": null
+  }
+ ],
+ "layout": {
+  "innerWidth": 1440,
+  "clientWidth": 1440,
+  "dpr": 1,
+  "mqMin1440": true,
+  "mqMin782": true,
+  "mqMin600": true,
+  "rootOffsetWidth": 1440,
+  "rootRectWidth": 1440,
+  "p1OffsetWidth": 645,
+  "p1RectWidth": 645,
+  "vw100": "1440/1440",
+  "titleScreen": {
+   "x": 220.3,
+   "y": -19.6,
+   "w": 322.5,
+   "h": 27
+  },
+  "iframeScreen": {
+   "x": 21.4,
+   "y": -105.1,
+   "w": 720,
+   "h": 1792.5
+  }
+ },
+ "errors": [
+  "Failed to load resource: net::ERR_FAILED"
+ ]
+}

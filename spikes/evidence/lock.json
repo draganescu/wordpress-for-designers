@@ -1,0 +1,77 @@
+{
+  "steps": [
+    {
+      "name": "admin takes a free lock",
+      "response": {
+        "held": true
+      },
+      "holderAfter": "1",
+      "pass": true
+    },
+    {
+      "name": "admin refreshes",
+      "response": {
+        "held": true
+      },
+      "holderAfter": "1",
+      "pass": true
+    },
+    {
+      "name": "second is told who holds it",
+      "response": {
+        "held": false,
+        "user": {
+          "id": 1,
+          "name": "admin"
+        }
+      },
+      "holderAfter": "1",
+      "pass": true
+    },
+    {
+      "name": "second takes over",
+      "response": {
+        "held": true
+      },
+      "holderAfter": "2",
+      "pass": true
+    },
+    {
+      "name": "admin refresh detects the takeover",
+      "response": {
+        "held": false,
+        "user": {
+          "id": 2,
+          "name": "second"
+        }
+      },
+      "holderAfter": "2",
+      "pass": true
+    },
+    {
+      "name": "admin cannot release second's lock",
+      "response": {
+        "released": false
+      },
+      "holderAfter": "2",
+      "pass": true
+    },
+    {
+      "name": "second releases",
+      "response": {
+        "released": true
+      },
+      "holderAfter": "",
+      "pass": true
+    },
+    {
+      "name": "admin takes it again",
+      "response": {
+        "held": true
+      },
+      "holderAfter": "1",
+      "pass": true
+    }
+  ],
+  "pass": true
+}

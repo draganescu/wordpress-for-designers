@@ -1,0 +1,34 @@
+{
+  "entitiesSavedStates": {
+    "panelText": "Cancel Save Are you ready to save? There is 1 site change waiting to be saved. Pages The following has been modified. Spike title edited",
+    "listsThePage": true,
+    "savedTitle": "Spike title edited",
+    "stillDirty": false,
+    "consoleErrors": [],
+    "pass": true
+  },
+  "postLockedModalAllowlistOnly": {
+    "serverSaysLockedBy": 2,
+    "modalShown": 0,
+    "editorState": {
+      "currentPostId": null,
+      "isPostLocked": false,
+      "postLockUtils": null
+    },
+    "consoleErrors": [],
+    "pass": false
+  },
+  "postLockedModalWithEditorStoreActions": {
+    "modalShown": 1,
+    "links": [
+      "preview↗ -> http://localhost:8888/spike-page/?preview=true",
+      "Take over -> post.php?get-post-lock=1&lockKey=true&post=4&action=edit&_wpnonce=x",
+      "Exit editor -> edit.php?post_type=page"
+    ],
+    "consoleErrors": []
+  },
+  "lockTakenWhenFree": {
+    "editLockMeta": "",
+    "pass": false
+  }
+}

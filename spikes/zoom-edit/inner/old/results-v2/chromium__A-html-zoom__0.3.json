@@ -1,0 +1,462 @@
+{
+ "browser": "chromium",
+ "mode": "A-html-zoom",
+ "fix": false,
+ "zoom": 0.3,
+ "checks": {
+  "2-hit-typing": {
+   "pass": true,
+   "evidence": {
+    "paragraphOnScreen": {
+     "x": 320,
+     "y": 300,
+     "w": 19.3,
+     "h": 5.9
+    },
+    "clickedParagraphAt": [
+     329.7,
+     302.9
+    ],
+    "selectedType": "core/paragraph",
+    "paragraphSelected": true,
+    "caretInParagraph": true,
+    "textAfterTyping": "WrittZqen by",
+    "neighbourClickAt": [
+     352.5,
+     302.9
+    ],
+    "neighbourClickSelected": "core/post-author-name",
+    "neighbourOnScreen": {
+     "x": 340.2,
+     "y": 300,
+     "w": 24.6,
+     "h": 5.9
+    }
+   }
+  },
+  "1-toolbar": {
+   "pass": true,
+   "evidence": {
+    "total": 2,
+    "inH6": 2,
+    "rect": [
+     269,
+     7,
+     277,
+     46
+    ],
+    "layoutH": 46,
+    "h6": [
+     269,
+     7,
+     277,
+     46
+    ],
+    "innerToolbars": 0
+   }
+  },
+  "3-link-popover": {
+   "pass": true,
+   "evidence": {
+    "selText": "Written",
+    "selectionOnScreen": {
+     "x": 320,
+     "y": 300,
+     "w": 14.1,
+     "h": 5
+    },
+    "popover": {
+     "x": 280.8,
+     "y": 312.5,
+     "w": 350,
+     "h": 74,
+     "layoutW": 350,
+     "layoutH": 74,
+     "scale": 1,
+     "topmost": true,
+     "inFrame": true,
+     "onScreen": true
+    },
+    "gapBelowSelection": 7.5,
+    "popoverSpansSelectionCentre": true
+   }
+  },
+  "6-toolbar-menu": {
+   "pass": true,
+   "evidence": {
+    "button": {
+     "x": 530.8,
+     "y": 6,
+     "w": 36,
+     "h": 48
+    },
+    "menu": {
+     "x": 510,
+     "y": 67,
+     "w": 251.9,
+     "h": 161,
+     "layoutW": 252,
+     "layoutH": 161,
+     "scale": 1,
+     "topmost": true,
+     "inFrame": false,
+     "onScreen": true
+    },
+    "gapBelowButton": 13,
+    "overlapX": true
+   }
+  },
+  "5-add-block-button": {
+   "pass": false,
+   "evidence": {
+    "emptyParagraph": {
+     "x": 320,
+     "y": 267.9,
+     "w": 193.5,
+     "h": 7.7
+    },
+    "button": {
+     "x": 940.8,
+     "y": 267.5,
+     "w": 24,
+     "h": 24,
+     "layoutW": 24,
+     "layoutH": 24,
+     "scale": 1,
+     "topmost": true,
+     "inFrame": true,
+     "onScreen": true
+    },
+    "coverContainer": {
+     "x": 319.8,
+     "y": 267.5,
+     "w": 645,
+     "h": 26,
+     "layoutW": 645,
+     "layoutH": 26,
+     "scale": 1,
+     "topmost": true,
+     "inFrame": true,
+     "onScreen": true
+    },
+    "rightEdgeDelta": 451.3,
+    "centreYDelta": 7.8,
+    "clickOpensQuickInserter": false,
+    "quickInserter": null
+   }
+  },
+  "4-slash-inserter": {
+   "pass": true,
+   "evidence": {
+    "caretParagraph": {
+     "x": 320,
+     "y": 267.9,
+     "w": 193.5,
+     "h": 7.7
+    },
+    "popover": {
+     "x": 322,
+     "y": 282,
+     "w": 200,
+     "h": 376,
+     "layoutW": 200,
+     "layoutH": 376,
+     "scale": 1,
+     "topmost": true,
+     "inFrame": false,
+     "onScreen": true
+    },
+    "leftDeltaFromCaret": 2,
+    "gapBelowLine": 6.4
+   }
+  },
+  "10-image": {
+   "pass": false,
+   "evidence": {
+    "placeholder": {
+     "x": 320,
+     "y": 267.9,
+     "w": 193.5,
+     "h": 48.2
+    },
+    "insertFromUrlButton": {
+     "x": 327.2,
+     "y": 296.8,
+     "w": 39.1,
+     "h": 12
+    },
+    "urlPopover": {
+     "x": 189,
+     "y": 308,
+     "w": 316,
+     "h": 56,
+     "layoutW": 316,
+     "layoutH": 56,
+     "scale": 1,
+     "topmost": true,
+     "inFrame": false,
+     "onScreen": true
+    },
+    "urlPopoverGapBelowButton": -0.8,
+    "image": {
+     "x": 320,
+     "y": 267.9,
+     "w": 82.2,
+     "h": 18.9
+    },
+    "handles": {
+     "right": {
+      "x": 398.7,
+      "y": 267.9,
+      "w": 6.9,
+      "h": 18.9
+     },
+     "bottom": {
+      "x": 320,
+      "y": 283.3,
+      "w": 82.2,
+      "h": 6.9
+     }
+    },
+    "dragRightHandleBy": 40,
+    "imageWidthChangeOnScreen": 12,
+    "placeholderClickable": true,
+    "urlPopoverPlaced": true,
+    "handlesOnEdges": true,
+    "resizeTracksPointer": false
+   }
+  },
+  "8-selection": {
+   "pass": true,
+   "evidence": {
+    "singleSelected": true,
+    "selectedOutlineInCanvas": {
+     "id": "740cc5d2-7d8e-470b-a269-9a89fac2666f",
+     "outline": "solid 3.33333px rgb(56, 88, 233)",
+     "shadow": "rgba(255, 255, 255, 0.7) 0px 0px 0px 2.5px inset"
+    },
+    "multiSelectedCount": 2,
+    "multiIsTheTwoClicked": true,
+    "firstOnScreen": {
+     "x": 320,
+     "y": 250,
+     "w": 193.5,
+     "h": 12.1
+    },
+    "secondOnScreen": {
+     "x": 320,
+     "y": 267.9,
+     "w": 193.5,
+     "h": 21.6
+    }
+   }
+  },
+  "7-inbetween": {
+   "pass": true,
+   "evidence": {
+    "gapOnScreen": {
+     "top": 262.1,
+     "bottom": 267.9,
+     "left": 320,
+     "width": 193.5
+    },
+    "indicator": {
+     "x": 319.8,
+     "y": 262.4,
+     "w": 193.5,
+     "h": 4,
+     "layoutW": 194,
+     "layoutH": 4,
+     "scale": 0.997,
+     "topmost": false,
+     "inFrame": true,
+     "onScreen": true
+    },
+    "plusButton": {
+     "x": 404.5,
+     "y": 252.4,
+     "w": 24,
+     "h": 24,
+     "layoutW": 24,
+     "layoutH": 24,
+     "scale": 1,
+     "topmost": true,
+     "inFrame": true,
+     "onScreen": true
+    },
+    "popover": {
+     "x": 319.8,
+     "y": 261.5,
+     "w": 193.5,
+     "h": 5.8,
+     "layoutW": 194,
+     "layoutH": 6,
+     "scale": 0.997,
+     "topmost": true,
+     "inFrame": true,
+     "onScreen": true
+    }
+   }
+  },
+  "9-drop-indicator": {
+   "pass": false,
+   "evidence": {
+    "synthetic": true,
+    "pointerOnScreen": [
+     384.5,
+     269.4
+    ],
+    "dispatchedOn": "IMG in core/image",
+    "gapOnScreen": {
+     "top": 262.1,
+     "bottom": 267.9,
+     "left": 320,
+     "width": 193.5
+    },
+    "indicator": {
+     "x": 200.8,
+     "y": 238.5,
+     "w": 432,
+     "h": 4,
+     "layoutW": 432,
+     "layoutH": 4,
+     "scale": 1,
+     "topmost": false,
+     "inFrame": true,
+     "onScreen": true
+    },
+    "dropZone": null
+   }
+  }
+ },
+ "notes": [
+  "blocked board autosave POST",
+  "blocked board autosave POST",
+  "blocked board autosave POST",
+  "blocked board autosave POST"
+ ],
+ "maps": [
+  {
+   "for": "paragraph",
+   "at": {
+    "x": 320,
+    "y": 300
+   },
+   "paintScaleMismatch": null,
+   "innerRect": {
+    "x": 119.3,
+    "y": 178.5,
+    "w": 19.3,
+    "h": 5.9
+   },
+   "paintedBox": {
+    "x": 320,
+    "y": 300,
+    "width": 19,
+    "height": 5,
+    "clipped": false
+   },
+   "paint": {
+    "scale": [
+     1,
+     1
+    ],
+    "origin": [
+     200.8,
+     121.5
+    ]
+   },
+   "event": {
+    "scale": [
+     1,
+     1
+    ],
+    "origin": [
+     201,
+     122
+    ]
+   },
+   "hitOffsetOnScreen": [
+    -0.2,
+    -0.5
+   ]
+  },
+  {
+   "for": "post-title",
+   "at": {
+    "x": 320,
+    "y": 250
+   },
+   "paintScaleMismatch": null,
+   "innerRect": {
+    "x": 119.3,
+    "y": 25.9,
+    "w": 193.5,
+    "h": 12.1
+   },
+   "paintedBox": {
+    "x": 320,
+    "y": 250,
+    "width": 193,
+    "height": 11,
+    "clipped": false
+   },
+   "paint": {
+    "scale": [
+     1,
+     1
+    ],
+    "origin": [
+     200.8,
+     224.1
+    ]
+   },
+   "event": {
+    "scale": [
+     1,
+     1
+    ],
+    "origin": [
+     201,
+     224
+    ]
+   },
+   "hitOffsetOnScreen": [
+    -0.2,
+    0.1
+   ]
+  }
+ ],
+ "layout": {
+  "innerWidth": 432,
+  "clientWidth": 432,
+  "dpr": 1,
+  "mqMin1440": false,
+  "mqMin782": false,
+  "mqMin600": false,
+  "rootOffsetWidth": 1440,
+  "rootRectWidth": 432,
+  "p1OffsetWidth": 645,
+  "p1RectWidth": 193.5,
+  "vw100": "432/130",
+  "titleScreen": {
+   "x": 320,
+   "y": 147.4,
+   "w": 193.5,
+   "h": 12.1
+  },
+  "iframeScreen": {
+   "x": 200.8,
+   "y": 121.5,
+   "w": 432,
+   "h": 1075.5
+  }
+ },
+ "quickInserter": null,
+ "errors": [
+  "Failed to load resource: net::ERR_FAILED",
+  "Failed to load resource: net::ERR_FAILED",
+  "Failed to load resource: net::ERR_FAILED",
+  "Failed to load resource: net::ERR_FAILED"
+ ]
+}

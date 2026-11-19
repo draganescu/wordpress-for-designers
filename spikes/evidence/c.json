@@ -1,0 +1,32 @@
+{
+  "sizes": {
+    "preview": {
+      "w": 720,
+      "h": 277
+    },
+    "snapshot": {
+      "w": 720,
+      "h": 277
+    }
+  },
+  "previewVsSnapshot": {
+    "sameSize": true,
+    "pixels": 199440,
+    "differing": 0
+  },
+  "inert": {
+    "hostIsReactOwned": true,
+    "nodes": 112,
+    "nodesWithReactKeys": 0,
+    "scripts": 0,
+    "sandbox": "allow-same-origin"
+  },
+  "snapshotBeforeVsAfterEdit": {
+    "sameSize": true,
+    "pixels": 199440,
+    "differing": 0
+  },
+  "snapshotStillOld": true,
+  "consoleErrors": [],
+  "pass": true
+}

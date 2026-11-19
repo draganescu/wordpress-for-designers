@@ -1,0 +1,367 @@
+{
+ "browser": "chromium",
+ "mode": "A-surface-zoom",
+ "fix": false,
+ "zoom": 0.3,
+ "checks": {
+  "2-hit-typing": {
+   "pass": true,
+   "evidence": {
+    "paragraphOnScreen": {
+     "x": 341,
+     "y": 295,
+     "w": 19.3,
+     "h": 5.9
+    },
+    "clickedParagraphAt": [
+     350.7,
+     297.9
+    ],
+    "selectedType": "core/paragraph",
+    "paragraphSelected": true,
+    "caretInParagraph": true,
+    "textAfterTyping": "Written bZqy",
+    "neighbourClickAt": [
+     373.5,
+     297.9
+    ],
+    "neighbourClickSelected": "core/post-author-name",
+    "neighbourOnScreen": {
+     "x": 361.2,
+     "y": 295,
+     "w": 24.6,
+     "h": 5.9
+    }
+   }
+  },
+  "1-toolbar": {
+   "pass": true,
+   "evidence": {
+    "total": 2,
+    "inH6": 2,
+    "rect": [
+     269,
+     7,
+     277,
+     46
+    ],
+    "layoutH": 46,
+    "h6": [
+     269,
+     7,
+     277,
+     46
+    ],
+    "innerToolbars": 0
+   }
+  },
+  "3-link-popover": {
+   "pass": false,
+   "evidence": {
+    "selText": " ",
+    "selectionOnScreen": {
+     "x": 341,
+     "y": 295,
+     "w": 14.1,
+     "h": 5
+    },
+    "popover": {
+     "x": 198.7,
+     "y": 241.9,
+     "w": 105,
+     "h": 22.2,
+     "layoutW": 350,
+     "layoutH": 74,
+     "scale": 0.3,
+     "topmost": false,
+     "inFrame": true,
+     "onScreen": true
+    },
+    "gapBelowSelection": -58.1,
+    "popoverSpansSelectionCentre": false
+   }
+  },
+  "6-toolbar-menu": {
+   "pass": true,
+   "evidence": {
+    "button": {
+     "x": 530.8,
+     "y": 6,
+     "w": 36,
+     "h": 48
+    },
+    "menu": {
+     "x": 510,
+     "y": 67,
+     "w": 251.9,
+     "h": 161,
+     "layoutW": 252,
+     "layoutH": 161,
+     "scale": 1,
+     "topmost": true,
+     "inFrame": false,
+     "onScreen": true
+    },
+    "gapBelowButton": 13,
+    "overlapX": true
+   }
+  },
+  "5-add-block-button": {
+   "pass": false,
+   "evidence": {
+    "emptyParagraph": {
+     "x": 323,
+     "y": 246,
+     "w": 193.5,
+     "h": 9.2
+    },
+    "button": {
+     "x": 467.2,
+     "y": 136.3,
+     "w": 7.2,
+     "h": 7.2,
+     "layoutW": 24,
+     "layoutH": 24,
+     "scale": 0.299,
+     "topmost": true,
+     "inFrame": true,
+     "onScreen": true
+    },
+    "coverContainer": {
+     "x": 280.9,
+     "y": 136.3,
+     "w": 193.5,
+     "h": 9.3,
+     "layoutW": 645,
+     "layoutH": 31,
+     "scale": 0.3,
+     "topmost": true,
+     "inFrame": true,
+     "onScreen": true
+    },
+    "rightEdgeDelta": -42.1,
+    "centreYDelta": -110.7,
+    "clickOpensQuickInserter": false,
+    "quickInserter": null
+   }
+  },
+  "4-slash-inserter": {
+   "pass": false,
+   "evidence": {
+    "paragraph": {
+     "x": 323,
+     "y": 246,
+     "w": 193.5,
+     "h": 9.2
+    },
+    "popover": null
+   }
+  },
+  "10-image": {
+   "pass": false,
+   "evidence": {
+    "error": "locator.evaluate: Timeout 6000ms exceeded."
+   }
+  },
+  "8-selection": {
+   "pass": true,
+   "evidence": {
+    "singleSelected": true,
+    "selectedOutlineInCanvas": {
+     "id": "63fecb41-059f-47c5-b706-59abf7167fe9",
+     "outline": "solid 3.33333px rgb(56, 88, 233)",
+     "shadow": "rgba(255, 255, 255, 0.7) 0px 0px 0px 2.5px inset"
+    },
+    "multiSelectedCount": 2,
+    "multiIsTheTwoClicked": true,
+    "firstOnScreen": {
+     "x": 323,
+     "y": 224,
+     "w": 193.5,
+     "h": 16.2
+    },
+    "secondOnScreen": {
+     "x": 323,
+     "y": 246,
+     "w": 193.5,
+     "h": 9.2
+    }
+   }
+  },
+  "7-inbetween": {
+   "pass": null,
+   "evidence": {
+    "gapOnScreen": {
+     "top": 240.2,
+     "bottom": 246,
+     "left": 323,
+     "width": 193.5
+    },
+    "hoveredAt": [
+     419.8,
+     243.1
+    ],
+    "indicator": null,
+    "note": "no in-between inserter appeared on hover"
+   }
+  },
+  "9-drop-indicator": {
+   "pass": false,
+   "evidence": {
+    "synthetic": true,
+    "pointerOnScreen": [
+     387.5,
+     247.5
+    ],
+    "dispatchedOn": "P in core/paragraph",
+    "gapOnScreen": {
+     "top": 240.2,
+     "bottom": 246,
+     "left": 323,
+     "width": 193.5
+    },
+    "indicator": null,
+    "dropZone": {
+     "x": 180.1,
+     "y": 127.3,
+     "w": 0,
+     "h": 0,
+     "layoutW": 0,
+     "layoutH": 0,
+     "scale": null,
+     "topmost": false,
+     "inFrame": true,
+     "onScreen": true
+    }
+   }
+  }
+ },
+ "notes": [
+  "blocked board autosave POST",
+  "blocked board autosave POST",
+  "blocked board autosave POST"
+ ],
+ "maps": [
+  {
+   "for": "paragraph",
+   "at": {
+    "x": 320,
+    "y": 300
+   },
+   "paintScaleMismatch": null,
+   "innerRect": {
+    "x": 397.5,
+    "y": 693.1,
+    "w": 64.5,
+    "h": 19.6
+   },
+   "paintedBox": {
+    "x": 341,
+    "y": 295,
+    "width": 19,
+    "height": 6,
+    "clipped": false
+   },
+   "paint": {
+    "scale": [
+     0.3,
+     0.3
+    ],
+    "origin": [
+     221.8,
+     87.1
+    ]
+   },
+   "event": {
+    "scale": [
+     0.3,
+     0.3
+    ],
+    "origin": [
+     214.9,
+     88.8
+    ]
+   },
+   "hitOffsetOnScreen": [
+    6.9,
+    -1.7
+   ]
+  },
+  {
+   "for": "post-title",
+   "at": {
+    "x": 320,
+    "y": 250
+   },
+   "paintScaleMismatch": null,
+   "innerRect": {
+    "x": 397.5,
+    "y": 170.7,
+    "w": 645,
+    "h": 54
+   },
+   "paintedBox": {
+    "x": 323,
+    "y": 224,
+    "width": 194,
+    "height": 15,
+    "clipped": false
+   },
+   "paint": {
+    "scale": [
+     0.3,
+     0.3
+    ],
+    "origin": [
+     203.8,
+     172.8
+    ]
+   },
+   "event": {
+    "scale": [
+     0.3,
+     0.3
+    ],
+    "origin": [
+     203.2,
+     180.4
+    ]
+   },
+   "hitOffsetOnScreen": [
+    0.6,
+    -7.6
+   ]
+  }
+ ],
+ "layout": {
+  "innerWidth": 1440,
+  "clientWidth": 1440,
+  "dpr": 0.30000001192092896,
+  "mqMin1440": true,
+  "mqMin782": true,
+  "mqMin600": true,
+  "rootOffsetWidth": 1440,
+  "rootRectWidth": 1440,
+  "p1OffsetWidth": 645,
+  "p1RectWidth": 645,
+  "vw100": "1440/1440",
+  "titleScreen": {
+   "x": 341,
+   "y": 138.3,
+   "w": 193.5,
+   "h": 16.2
+  },
+  "iframeScreen": {
+   "x": 214.9,
+   "y": 88.6,
+   "w": 432,
+   "h": 1084.2
+  }
+ },
+ "quickInserter": null,
+ "errors": [
+  "Failed to load resource: net::ERR_FAILED",
+  "Failed to load resource: net::ERR_FAILED",
+  "Failed to load resource: net::ERR_FAILED"
+ ]
+}

@@ -1,0 +1,93 @@
+[
+  {
+    "zoom": 100,
+    "checks": {
+      "toolbar": {
+        "count": 1,
+        "inHeader": 1,
+        "inPopover": 0,
+        "pass": true
+      },
+      "typing": {
+        "text": "First paragraph with some text to select and link. TYPED",
+        "pass": true
+      },
+      "linkPopover": {
+        "anchor": {
+          "left": 283.5,
+          "top": 292.5625,
+          "right": 1723.5,
+          "bottom": 323.359375
+        },
+        "pop": {
+          "left": 379.5,
+          "top": 330.25,
+          "right": 729.5,
+          "bottom": 404.25
+        },
+        "gapBelowAnchor": 6.890625,
+        "gapAboveAnchor": -111.6875,
+        "fullSize": true,
+        "pass": true
+      },
+      "slashPopover": {
+        "anchor": {
+          "left": 283.5,
+          "top": 675.828125,
+          "right": 1723.5,
+          "bottom": 706.625
+        },
+        "pop": {
+          "left": 292,
+          "top": 292,
+          "right": 492,
+          "bottom": 668
+        },
+        "gapBelowAnchor": -414.625,
+        "gapAboveAnchor": 7.828125,
+        "leftOffset": 8.5,
+        "pass": true
+      },
+      "sideInserter": {
+        "anchor": {
+          "left": 283.5,
+          "top": 675.828125,
+          "right": 1723.5,
+          "bottom": 706.625
+        },
+        "pop": {
+          "left": 1699.5,
+          "top": 676.25,
+          "right": 1723.5,
+          "bottom": 700.25
+        },
+        "buttonSize": 24,
+        "pass": true
+      },
+      "optionsMenu": {
+        "btn": {
+          "left": 479,
+          "top": 31,
+          "right": 515,
+          "bottom": 79
+        },
+        "pop": {
+          "left": 479,
+          "top": 92,
+          "right": 731.125,
+          "bottom": 545
+        },
+        "pass": true
+      }
+    },
+    "iframe": {
+      "left": 283.5,
+      "top": 174.25,
+      "width": 1440,
+      "height": 900,
+      "offsetWidth": 1440
+    },
+    "consoleErrors": [],
+    "pass": true
+  }
+]

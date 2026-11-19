@@ -1,0 +1,12 @@
+import { open, findArtboardId, enterEdit, DIR } from './lib.mjs';
+import { recipeCss } from './recipe.mjs';
+const z = 0.3;
+const { browser, page } = await open();
+const id = await findArtboardId( page );
+await enterEdit( page, id );
+await page.addStyleTag( { content: recipeCss( { z, variant: 'transform' } ) } );
+await page.locator( '.block-editor-list-view-leaf' ).filter( { hasText: 'Group' } ).first().locator( 'a,button' ).first().click();
+await page.waitForTimeout( 500 );
+console.log( JSON.stringify( await page.evaluate( ( id ) => { const d = document.querySelector( `[data-wfd-artboard="${ id }"] iframe` ).contentDocument; const el = d.querySelector( '.is-selected' ); const v = d.defaultView; const a = v.getComputedStyle( el, '::after' ), s = v.getComputedStyle( el ); return { type: el.getAttribute( 'data-type' ), after: { outline: a.outline, boxShadow: a.boxShadow, content: a.content }, self: { outline: s.outline, boxShadow: s.boxShadow }, zoomOutVar: s.getPropertyValue( '--wp-block-editor-iframe-zoom-out-scale' ), focusVar: s.getPropertyValue( '--wp-admin-border-width-focus' ) }; }, id ) ) );
+await page.screenshot( { path: DIR + '/shots/outline-0.3-group-selected.png', clip: { x: 290, y: 95, width: 470, height: 400 } } );
+await browser.close();

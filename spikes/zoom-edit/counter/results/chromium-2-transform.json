@@ -1,0 +1,395 @@
+{
+ "browser": "chromium",
+ "z": 2,
+ "variant": "transform",
+ "frameVisible": true,
+ "checks": {
+  "c2_hit_typing": {
+   "heading": {
+    "screenRect": {
+     "x": 1099,
+     "y": 306.6,
+     "w": 1290,
+     "h": 108
+    },
+    "caretInBlock": false,
+    "before": "Blog",
+    "after": "Blog",
+    "selected": []
+   },
+   "grid": {
+    ".wp-block-heading[data-type=\"core/heading\"]": "0/0",
+    "[data-type=\"core/post-title\"]": "0/0",
+    "[data-type=\"core/post-date\"]": "0/0",
+    "[data-type=\"core/template-part\"] p": "0/0"
+   },
+   "headerClickSelects": [],
+   "pass": false
+  },
+  "c1_toolbar": {
+   "count": 0,
+   "inHeader": 0,
+   "inIframe": 0,
+   "floating": 0,
+   "rect": null,
+   "pass": false
+  },
+  "c6_toolbar_menu": {
+   "button": {
+    "x": 414,
+    "y": 6,
+    "w": 36,
+    "h": 48
+   },
+   "menu": {
+    "x": 414,
+    "y": 67,
+    "w": 252.1,
+    "h": 485
+   },
+   "uiScale": 1.0004960317460319,
+   "hittable": [
+    true,
+    true,
+    true
+   ],
+   "addBeforeMadeParagraph": true,
+   "gapBelow": 13,
+   "hOverlap": true,
+   "pass": true
+  },
+  "c4_slash": {
+   "paragraph": {
+    "x": 304,
+    "y": 210.6,
+    "w": 2880,
+    "h": 61.6
+   },
+   "caret": {
+    "x": 320.2,
+    "y": 210.6,
+    "w": 0,
+    "h": 60
+   },
+   "popover": {
+    "x": 320,
+    "y": 279,
+    "w": 200,
+    "h": 376
+   },
+   "uiScale": 1,
+   "items": 9,
+   "hittable": [
+    true,
+    true,
+    true
+   ],
+   "gapBelow": 8.4,
+   "gapAbove": -444.4,
+   "dx": -0.2,
+   "onScreen": true,
+   "pass": true
+  },
+  "c5_add_block_button": {
+   "viewportWidenedTo": 3604,
+   "paragraph": {
+    "x": 304,
+    "y": 210.6,
+    "w": 2880,
+    "h": 61.6
+   },
+   "paragraphLayout": [
+    1440,
+    31
+   ],
+   "cover": {
+    "x": 304,
+    "y": 211,
+    "w": 2880,
+    "h": 62
+   },
+   "coverStyle": "position: absolute; width: 1440px; height: 31px;",
+   "button": {
+    "x": 3160,
+    "y": 211,
+    "w": 24,
+    "h": 24
+   },
+   "hittable": [
+    true,
+    true,
+    true
+   ],
+   "rightDx": 0,
+   "topDy": 0.4,
+   "coverDw": 0,
+   "coverDh": 0.4,
+   "sizeOk": true,
+   "placedPass": true,
+   "quickInserter": {
+    "rect": {
+     "x": 3160,
+     "y": 248,
+     "w": 350,
+     "h": 293
+    },
+    "uiScale": 1,
+    "hittable": [
+     true,
+     true,
+     true
+    ],
+    "gapBelowButton": 13,
+    "gapAboveButton": -330,
+    "gapLeftOfButton": -350,
+    "hOverlap": true
+   },
+   "quickPass": true,
+   "pass": true
+  },
+  "setup_paragraphs": {
+   "texts": [
+    "Second paragraph words",
+    "Third paragraph words"
+   ],
+   "pass": true
+  },
+  "c3_link_popover": {
+   "selectedText": "Second",
+   "selection": {
+    "x": 304,
+    "y": 210.6,
+    "w": 151.1,
+    "h": 60
+   },
+   "popover": {
+    "x": 281,
+    "y": 279,
+    "w": 350,
+    "h": 74
+   },
+   "uiScale": 1,
+   "hittable": [
+    true,
+    true,
+    true
+   ],
+   "insideArtboardDom": true,
+   "gapBelow": 8.4,
+   "gapAbove": -142.4,
+   "hOverlap": true,
+   "onScreen": true,
+   "pass": true
+  },
+  "c8_selection": {
+   "single": {
+    "ids": [
+     "core/paragraph:Second parag"
+    ],
+    "isSelected": true,
+    "afterOutline": "3px none",
+    "afterBoxShadow": "none",
+    "focusVar": "2px"
+   },
+   "multi": [
+    "#block-e3eaa319-98c4-40ef-b7e4-bd2c3e500e40",
+    "#block-dbcf25ae-5ef0-460c-8e99-01e7e329218b"
+   ],
+   "expected": [
+    "#block-e3eaa319-98c4-40ef-b7e4-bd2c3e500e40",
+    "#block-dbcf25ae-5ef0-460c-8e99-01e7e329218b"
+   ],
+   "pass": true
+  },
+  "c7_inbetween": {
+   "present": true,
+   "gap": {
+    "x": 304,
+    "y": 272.2,
+    "w": 2880,
+    "h": 44
+   },
+   "container": {
+    "x": 304,
+    "y": 272,
+    "w": 2880,
+    "h": 0
+   },
+   "indicator": {
+    "x": 304,
+    "y": 292,
+    "w": 2880,
+    "h": 4
+   },
+   "button": {
+    "x": 1732,
+    "y": 282,
+    "w": 24,
+    "h": 24
+   },
+   "buttonUiScale": 1,
+   "dx": 0,
+   "dw": 0,
+   "dyCenter": -0.2,
+   "pass": true,
+   "buttonDyCenter": -0.2
+  },
+  "c9_drag_indicator": {
+   "listRows": [
+    "HeaderBlock ",
+    "ParagraphBlo",
+    "ParagraphBlo",
+    "GroupBlock 4",
+    "FooterBlock "
+   ],
+   "pointer": {
+    "x": 900,
+    "y": 218.6
+   },
+   "prevBlock": "core/template-part",
+   "prevRect": {
+    "x": 304,
+    "y": 105,
+    "w": 2880,
+    "h": 61.6
+   },
+   "p1Rect": {
+    "x": 304,
+    "y": 210.6,
+    "w": 2880,
+    "h": 61.6
+   },
+   "indicator": {
+    "x": 304,
+    "y": 187,
+    "w": 2880,
+    "h": 4
+   },
+   "dropZone": null,
+   "popovers": [
+    "block-editor-block-popover block-editor-block-popover__inbetween"
+   ],
+   "orderAfterCancel": [
+    "template-part",
+    "paragraph",
+    "paragraph",
+    "group",
+    "template-part"
+   ],
+   "gapOnScreen": [
+    166.6,
+    210.6
+   ],
+   "indicatorCenterY": 189,
+   "dyFromGapCenter": 0.4,
+   "dyFromPointer": -29.6,
+   "dx": 0,
+   "dw": 0,
+   "pass": true
+  },
+  "c10_image": {
+   "placeholder": {
+    "x": 304,
+    "y": 421.8,
+    "w": 2880,
+    "h": 320
+   },
+   "buttons": [
+    "Insert from URL@{\"x\":352,\"y\":613.8,\"w\":251.2,\"h\":80}"
+   ],
+   "placeholderButtonClickOpensUrlForm": true,
+   "urlButton": {
+    "x": 352,
+    "y": 613.8,
+    "w": 251.2,
+    "h": 80
+   },
+   "urlPopover": {
+    "rect": {
+     "x": 320,
+     "y": 694,
+     "w": 316,
+     "h": 56
+    },
+    "uiScale": 1,
+    "hittable": [
+     true,
+     true,
+     true
+    ],
+    "gapBelowButton": 0.2,
+    "gapAboveButton": -136.2,
+    "hOverlap": true
+   },
+   "imageScreen": {
+    "x": 304,
+    "y": 421.8,
+    "w": 548,
+    "h": 126
+   },
+   "imageLayout": {
+    "x": 0,
+    "y": 158.4,
+    "w": 274,
+    "h": 63
+   },
+   "selected": true,
+   "handlesInTopDocument": 0,
+   "handles": [
+    {
+     "cls": "handle side-handle handle-right",
+     "dxFromRightEdge": 0,
+     "dyFromBottomEdge": -31.5,
+     "screen": {
+      "x": 829,
+      "y": 421.8,
+      "w": 46,
+      "h": 126
+     }
+    },
+    {
+     "cls": "handle side-handle handle-bottom",
+     "dxFromRightEdge": -137,
+     "dyFromBottomEdge": 0,
+     "screen": {
+      "x": 304,
+      "y": 524.8,
+      "w": 548,
+      "h": 46
+     }
+    }
+   ],
+   "resizeDrag": {
+    "draggedScreenPx": -30,
+    "layoutWidthBefore": 274,
+    "layoutWidthAfter": 259,
+    "screenWidthBefore": 548,
+    "screenWidthAfter": 518,
+    "screenDelta": -30,
+    "followsPointer": true
+   },
+   "pass": true
+  }
+ },
+ "geometry": {
+  "frame": {
+   "x": 304,
+   "y": 105,
+   "width": 2880,
+   "height": 3454
+  },
+  "iframe": {
+   "x": 304,
+   "y": 105,
+   "width": 2880,
+   "height": 3454
+  },
+  "iframeLayout": [
+   1440,
+   1727
+  ],
+  "innerWidth": 1440,
+  "scale": 2
+ },
+ "consoleErrors": []
+}

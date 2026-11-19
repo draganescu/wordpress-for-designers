@@ -1,0 +1,169 @@
+{
+ "browser": "chromium",
+ "mode": "A-iframe-zoom",
+ "fix": false,
+ "zoom": 0.5,
+ "checks": {
+  "2-hit-typing": {
+   "pass": false,
+   "evidence": {
+    "paragraphOnScreen": {
+     "x": -9.7,
+     "y": -207.3,
+     "w": 64.5,
+     "h": 19.6
+    },
+    "clickedParagraphAt": [
+     22.5,
+     -197.5
+    ],
+    "selectedType": null,
+    "paragraphSelected": false,
+    "caretInParagraph": false,
+    "textAfterTyping": "",
+    "neighbourClickAt": [
+     98.5,
+     -197.5
+    ],
+    "neighbourClickSelected": null,
+    "neighbourOnScreen": {
+     "x": 57.5,
+     "y": -207.3,
+     "w": 82.1,
+     "h": 19.6
+    }
+   }
+  },
+  "1-toolbar": {
+   "pass": false,
+   "evidence": {
+    "total": 0,
+    "inH6": 0,
+    "rect": null,
+    "layoutH": null,
+    "h6": [
+     272,
+     30,
+     0,
+     0
+    ],
+    "innerToolbars": 0
+   }
+  },
+  "3-link-popover": {
+   "pass": false,
+   "evidence": {
+    "selText": "",
+    "popover": null
+   }
+  },
+  "6-toolbar-menu": {
+   "pass": false,
+   "evidence": {
+    "error": "locator.boundingBox: Timeout 6000ms exceeded."
+   }
+  },
+  "5-add-block-button": {
+   "pass": false,
+   "evidence": {
+    "error": "could not select the post title"
+   }
+  },
+  "4-slash-inserter": {
+   "pass": false,
+   "evidence": {
+    "error": "Cannot read properties of null (reading 'boundingBox')"
+   }
+  },
+  "10-image": {
+   "pass": false,
+   "evidence": {
+    "error": "locator.boundingBox: Timeout 6000ms exceeded."
+   }
+  },
+  "8-selection": {
+   "pass": false,
+   "evidence": {
+    "error": "locator.evaluate: TypeError: Failed to execute 'getComputedStyle' on 'Window': parameter 1 is not of type 'Element'."
+   }
+  },
+  "7-inbetween": {
+   "pass": null,
+   "evidence": {
+    "gapOnScreen": {
+     "top": 269,
+     "bottom": 288.2,
+     "left": -9.7,
+     "width": 645
+    },
+    "hoveredAt": [
+     312.8,
+     278.6
+    ],
+    "indicator": null,
+    "note": "no in-between inserter appeared on hover"
+   }
+  },
+  "9-drop-indicator": {
+   "pass": false,
+   "evidence": {
+    "synthetic": true,
+    "pointerOnScreen": [
+     205.3,
+     290.2
+    ],
+    "dispatchedOn": "svg in core/post-featured-image",
+    "gapOnScreen": {
+     "top": 269,
+     "bottom": 288.2,
+     "left": -9.7,
+     "width": 645
+    },
+    "indicator": {
+     "x": -4.6,
+     "y": 136.9,
+     "w": 322.5,
+     "h": 4,
+     "layoutW": 323,
+     "layoutH": 4,
+     "scale": 0.998,
+     "topmost": false,
+     "inFrame": true,
+     "onScreen": false
+    },
+    "dropZone": null
+   }
+  }
+ },
+ "notes": [
+  "blocked board autosave POST"
+ ],
+ "layout": {
+  "innerWidth": 1440,
+  "clientWidth": 1440,
+  "dpr": 0.5,
+  "mqMin1440": true,
+  "mqMin782": true,
+  "mqMin600": true,
+  "rootOffsetWidth": 1440,
+  "rootRectWidth": 1440,
+  "p1OffsetWidth": 645,
+  "p1RectWidth": 645,
+  "vw100": "1440/1440",
+  "titleScreen": {
+   "x": -9.7,
+   "y": -729.7,
+   "w": 645,
+   "h": 54
+  },
+  "iframeScreen": {
+   "x": -203.6,
+   "y": -450.2,
+   "w": 720,
+   "h": 1792.5
+  }
+ },
+ "errors": [
+  "Failed to load resource: net::ERR_FAILED"
+ ]
+}

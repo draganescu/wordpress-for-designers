@@ -1,0 +1,134 @@
+{
+ "browser": "chromium",
+ "z": 0.3,
+ "variant": "zoom",
+ "checks": {
+  "c11a_spacing_visualizer": {
+   "label": "PaddingVertical paddingHorizontal paddin",
+   "block": {
+    "x": 304,
+    "y": 135.2,
+    "w": 432,
+    "h": 336.2
+   },
+   "cover": {
+    "x": 304,
+    "y": 135,
+    "w": 432,
+    "h": 336.3
+   },
+   "visualizer": {
+    "x": 304,
+    "y": 135,
+    "w": 432,
+    "h": 336.3
+   },
+   "visStyle": "border-width: 0px 50px;",
+   "blockPadding": [
+    "0px",
+    "50px",
+    "0px",
+    "50px"
+   ],
+   "renderedInsideArtboard": false,
+   "coverVsBlock": {
+    "dx": 0,
+    "dy": -0.2,
+    "dw": 0,
+    "dh": 0.1
+   },
+   "pass": true
+  },
+  "c11b_cover_resizer": {
+   "block": {
+    "x": 304,
+    "y": 114.2,
+    "w": 432,
+    "h": 72
+   },
+   "cover": {
+    "x": 304,
+    "y": 114,
+    "w": 432,
+    "h": 72
+   },
+   "coverStyle": "position: absolute; width: 1440px; height: 240px;",
+   "resizableBox": {
+    "x": 304,
+    "y": 114,
+    "w": 432,
+    "h": 72
+   },
+   "handle": {
+    "x": 304,
+    "y": 182.5,
+    "w": 432,
+    "h": 6.9
+   },
+   "coverVsBlock": {
+    "dx": 0,
+    "dy": -0.2,
+    "dw": 0,
+    "dh": 0
+   },
+   "renderedInsideArtboard": true,
+   "handleCenterDyFromBlockBottom": -0.2,
+   "drag": {
+    "draggedScreenPx": 40,
+    "screenHeightBefore": 72,
+    "screenHeightAfter": 168.9,
+    "screenDelta": 96.9,
+    "followsPointer": false
+   },
+   "placementPass": true,
+   "pass": false
+  },
+  "c11c_grid_visualizer": {
+   "block": {
+    "x": 304,
+    "y": 283.1,
+    "w": 432,
+    "h": 12
+   },
+   "cover": {
+    "x": 304,
+    "y": 283,
+    "w": 432,
+    "h": 12
+   },
+   "grid": {
+    "x": 304,
+    "y": 283,
+    "w": 432,
+    "h": 12
+   },
+   "cells": 6,
+   "coverVsBlock": {
+    "dx": 0,
+    "dy": -0.1,
+    "dw": 0,
+    "dh": 0
+   },
+   "renderedInsideArtboard": true,
+   "pass": true
+  },
+  "c11d_drop_zone": {
+   "target": {
+    "x": 304,
+    "y": 283.1,
+    "w": 432,
+    "h": 12
+   },
+   "targetClass": "block-editor-block-list__block wp-block is-selected wp-block-group block-editor-",
+   "dropZone": null,
+   "cover": null,
+   "indicator": null,
+   "popovers": [
+    "block-editor-grid-visualizer is-dropping-allowed"
+   ],
+   "pass": false,
+   "note": "no drop-zone cover shown (an in-between indicator may be used instead)"
+  }
+ },
+ "consoleErrors": []
+}

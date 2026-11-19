@@ -1,0 +1,3533 @@
+{
+  "runs": {
+    "naive@100": {
+      "mode": "naive",
+      "zoom": 100,
+      "checks": {
+        "toolbar": {
+          "count": 1,
+          "inHeader": 1,
+          "inPopover": 0,
+          "selected": "core/paragraph",
+          "pass": true
+        },
+        "typing": {
+          "text": "First paragraph with some text to select and link. TYPED",
+          "pass": true
+        },
+        "linkPopover": {
+          "anchor": {
+            "left": 220,
+            "top": 239.3,
+            "right": 1660,
+            "bottom": 270.1
+          },
+          "pop": {
+            "left": 316,
+            "top": 277,
+            "right": 666,
+            "bottom": 351
+          },
+          "fullSize": true,
+          "pass": true
+        },
+        "slashPopover": {
+          "anchor": {
+            "left": 220,
+            "top": 622.6,
+            "right": 1660,
+            "bottom": 653.4
+          },
+          "pop": {
+            "left": 228,
+            "top": 239,
+            "right": 428,
+            "bottom": 615
+          },
+          "pass": true
+        },
+        "sideInserter": {
+          "anchor": {
+            "left": 220,
+            "top": 622.6,
+            "right": 1660,
+            "bottom": 653.4
+          },
+          "button": {
+            "left": 1636,
+            "top": 623,
+            "right": 1660,
+            "bottom": 647
+          },
+          "coverContainer": {
+            "left": 220,
+            "top": 623,
+            "right": 1660,
+            "bottom": 654
+          },
+          "buttonSize": 24,
+          "pass": true,
+          "clickOpensQuickInserter": true
+        },
+        "optionsMenu": {
+          "btn": {
+            "left": 479,
+            "top": 31,
+            "right": 515,
+            "bottom": 79
+          },
+          "pop": {
+            "left": 479,
+            "top": 92,
+            "right": 731.1,
+            "bottom": 545
+          },
+          "pass": true
+        },
+        "inbetweenInserter": {
+          "gap": {
+            "top": 207.2,
+            "bottom": 239.3,
+            "left": 180,
+            "right": 1620
+          },
+          "line": {
+            "left": 180,
+            "top": 221.1,
+            "right": 1620,
+            "bottom": 225.1
+          },
+          "button": {
+            "left": 888,
+            "top": 211.1,
+            "right": 912,
+            "bottom": 235.1
+          },
+          "pass": true
+        },
+        "gridVisualizer": {
+          "selected": "core/group",
+          "anchor": {
+            "left": 180,
+            "top": 675.4,
+            "right": 1620,
+            "bottom": 706.2
+          },
+          "cover": {
+            "left": 180,
+            "top": 675,
+            "right": 1620,
+            "bottom": 706
+          },
+          "pass": true
+        },
+        "gridItemResizer": {
+          "selected": "core/paragraph",
+          "anchor": {
+            "left": 180,
+            "top": 675.4,
+            "right": 890.4,
+            "bottom": 706.2
+          },
+          "cover": {
+            "left": 180,
+            "top": 675,
+            "right": 890,
+            "bottom": 706
+          },
+          "pass": true
+        },
+        "coverResizeBox": {
+          "selected": "core/cover",
+          "anchor": {
+            "left": 180,
+            "top": 700.2,
+            "right": 1620,
+            "bottom": 900.2
+          },
+          "cover": {
+            "left": 180,
+            "top": 700,
+            "right": 1620,
+            "bottom": 900
+          },
+          "handle": {
+            "left": 180,
+            "top": 888.5,
+            "right": 1620,
+            "bottom": 911.5
+          },
+          "pass": true
+        }
+      },
+      "unlock": {
+        "ok": true,
+        "error": null,
+        "zoomLevel": 100,
+        "isZoomOut": false
+      },
+      "iframe": {
+        "left": 220,
+        "top": 121,
+        "width": 1440,
+        "height": 900,
+        "offsetWidth": 1440
+      },
+      "htmlClass": "block-editor-iframe__html",
+      "consoleErrors": [],
+      "pass": true
+    },
+    "naive@50": {
+      "mode": "naive",
+      "zoom": 50,
+      "checks": {
+        "toolbar": {
+          "count": 1,
+          "inHeader": 1,
+          "inPopover": 0,
+          "selected": "core/paragraph",
+          "pass": true
+        },
+        "typing": {
+          "text": "First paragraph with some text to select and link. TYPED",
+          "pass": true
+        },
+        "linkPopover": {
+          "anchor": {
+            "left": 220,
+            "top": 180.2,
+            "right": 940,
+            "bottom": 195.6
+          },
+          "pop": {
+            "left": 181,
+            "top": 138.5,
+            "right": 356,
+            "bottom": 175.5
+          },
+          "fullSize": false,
+          "pass": false
+        },
+        "slashPopover": {
+          "anchor": {
+            "left": 220,
+            "top": 371.8,
+            "right": 940,
+            "bottom": 387.2
+          },
+          "pop": {
+            "left": 224,
+            "top": 395,
+            "right": 424,
+            "bottom": 771
+          },
+          "pass": true
+        },
+        "sideInserter": {
+          "anchor": {
+            "left": 220,
+            "top": 371.8,
+            "right": 940,
+            "bottom": 387.2
+          },
+          "button": {
+            "left": 889,
+            "top": 311.5,
+            "right": 901,
+            "bottom": 323.5
+          },
+          "coverContainer": {
+            "left": 181,
+            "top": 311.5,
+            "right": 901,
+            "bottom": 327
+          },
+          "buttonSize": 12,
+          "pass": false,
+          "clickOpensQuickInserter": true
+        },
+        "optionsMenu": {
+          "btn": {
+            "left": 479,
+            "top": 31,
+            "right": 515,
+            "bottom": 79
+          },
+          "pop": {
+            "left": 479,
+            "top": 92,
+            "right": 731.1,
+            "bottom": 545
+          },
+          "pass": true
+        },
+        "inbetweenInserter": {
+          "gap": {
+            "top": 164.1,
+            "bottom": 180.2,
+            "left": 220,
+            "right": 940
+          },
+          "line": {
+            "left": 110,
+            "top": 110.5,
+            "right": 830,
+            "bottom": 112.5
+          },
+          "button": {
+            "left": 464,
+            "top": 105.5,
+            "right": 476,
+            "bottom": 117.5
+          },
+          "pass": false
+        },
+        "gridVisualizer": {
+          "selected": "core/group",
+          "anchor": {
+            "left": 220,
+            "top": 398.2,
+            "right": 940,
+            "bottom": 413.6
+          },
+          "cover": {
+            "left": 110,
+            "top": 337.5,
+            "right": 830,
+            "bottom": 353
+          },
+          "pass": false
+        },
+        "gridItemResizer": {
+          "selected": "core/paragraph",
+          "anchor": {
+            "left": 220,
+            "top": 398.2,
+            "right": 575.2,
+            "bottom": 413.6
+          },
+          "cover": {
+            "left": 110,
+            "top": 337.5,
+            "right": 465,
+            "bottom": 353
+          },
+          "pass": false
+        },
+        "coverResizeBox": {
+          "selected": "core/cover",
+          "anchor": {
+            "left": 220,
+            "top": 413.6,
+            "right": 940,
+            "bottom": 513.6
+          },
+          "cover": {
+            "left": 110,
+            "top": 353,
+            "right": 830,
+            "bottom": 453
+          },
+          "handle": {
+            "left": 110,
+            "top": 447.3,
+            "right": 830,
+            "bottom": 458.8
+          },
+          "pass": false
+        }
+      },
+      "unlock": {
+        "ok": true,
+        "error": null,
+        "zoomLevel": 100,
+        "isZoomOut": false
+      },
+      "iframe": {
+        "left": 220,
+        "top": 121,
+        "width": 720,
+        "height": 450,
+        "offsetWidth": 1440
+      },
+      "htmlClass": "block-editor-iframe__html",
+      "consoleErrors": [],
+      "pass": false
+    },
+    "naive@75": {
+      "mode": "naive",
+      "zoom": 75,
+      "checks": {
+        "toolbar": {
+          "count": 1,
+          "inHeader": 1,
+          "inPopover": 0,
+          "selected": "core/paragraph",
+          "pass": true
+        },
+        "typing": {
+          "text": "First paragraph with some text to select and link. TYPED",
+          "pass": true
+        },
+        "linkPopover": {
+          "anchor": {
+            "left": 220,
+            "top": 209.7,
+            "right": 1300,
+            "bottom": 232.8
+          },
+          "pop": {
+            "left": 237.3,
+            "top": 208,
+            "right": 499.8,
+            "bottom": 263.5
+          },
+          "fullSize": false,
+          "pass": false
+        },
+        "slashPopover": {
+          "anchor": {
+            "left": 220,
+            "top": 497.2,
+            "right": 1300,
+            "bottom": 520.3
+          },
+          "pop": {
+            "left": 226,
+            "top": 113,
+            "right": 426,
+            "bottom": 489
+          },
+          "pass": true
+        },
+        "sideInserter": {
+          "anchor": {
+            "left": 220,
+            "top": 497.2,
+            "right": 1300,
+            "bottom": 520.3
+          },
+          "button": {
+            "left": 1243,
+            "top": 466.8,
+            "right": 1261,
+            "bottom": 484.8
+          },
+          "coverContainer": {
+            "left": 181,
+            "top": 466.8,
+            "right": 1261,
+            "bottom": 490
+          },
+          "buttonSize": 18,
+          "pass": false,
+          "clickOpensQuickInserter": true
+        },
+        "optionsMenu": {
+          "btn": {
+            "left": 479,
+            "top": 31,
+            "right": 515,
+            "bottom": 79
+          },
+          "pop": {
+            "left": 479,
+            "top": 92,
+            "right": 731.1,
+            "bottom": 545
+          },
+          "pass": true
+        },
+        "inbetweenInserter": {
+          "gap": {
+            "top": 185.6,
+            "bottom": 209.7,
+            "left": 220,
+            "right": 1300
+          },
+          "line": {
+            "left": 165.3,
+            "top": 166.1,
+            "right": 1245.3,
+            "bottom": 169.1
+          },
+          "button": {
+            "left": 696.3,
+            "top": 158.6,
+            "right": 714.3,
+            "bottom": 176.6
+          },
+          "pass": false
+        },
+        "gridVisualizer": {
+          "selected": "core/group",
+          "anchor": {
+            "left": 220,
+            "top": 536.8,
+            "right": 1300,
+            "bottom": 559.9
+          },
+          "cover": {
+            "left": 165.3,
+            "top": 506.5,
+            "right": 1245.3,
+            "bottom": 529.8
+          },
+          "pass": false
+        },
+        "gridItemResizer": {
+          "selected": "core/paragraph",
+          "anchor": {
+            "left": 220,
+            "top": 536.8,
+            "right": 752.8,
+            "bottom": 559.9
+          },
+          "cover": {
+            "left": 165.3,
+            "top": 506.5,
+            "right": 697.8,
+            "bottom": 529.8
+          },
+          "pass": false
+        },
+        "coverResizeBox": {
+          "selected": "core/cover",
+          "anchor": {
+            "left": 220,
+            "top": 559.9,
+            "right": 1300,
+            "bottom": 709.9
+          },
+          "cover": {
+            "left": 165.3,
+            "top": 529.8,
+            "right": 1245.3,
+            "bottom": 679.8
+          },
+          "handle": {
+            "left": 165.3,
+            "top": 671.1,
+            "right": 1245.3,
+            "bottom": 688.4
+          },
+          "pass": false
+        }
+      },
+      "unlock": {
+        "ok": true,
+        "error": null,
+        "zoomLevel": 100,
+        "isZoomOut": false
+      },
+      "iframe": {
+        "left": 220,
+        "top": 121,
+        "width": 1080,
+        "height": 675,
+        "offsetWidth": 1440
+      },
+      "htmlClass": "block-editor-iframe__html",
+      "consoleErrors": [],
+      "pass": false
+    },
+    "counter@50": {
+      "mode": "counter",
+      "zoom": 50,
+      "checks": {
+        "toolbar": {
+          "count": 1,
+          "inHeader": 1,
+          "inPopover": 0,
+          "selected": "core/paragraph",
+          "pass": true
+        },
+        "typing": {
+          "text": "First paragraph with some text to select and link. TYPED",
+          "pass": true
+        },
+        "linkPopover": {
+          "anchor": {
+            "left": 220,
+            "top": 180.2,
+            "right": 940,
+            "bottom": 195.6
+          },
+          "pop": {
+            "left": 181,
+            "top": 203,
+            "right": 531,
+            "bottom": 277
+          },
+          "fullSize": true,
+          "pass": true
+        },
+        "slashPopover": {
+          "anchor": {
+            "left": 220,
+            "top": 371.8,
+            "right": 940,
+            "bottom": 387.2
+          },
+          "pop": {
+            "left": 224,
+            "top": 395,
+            "right": 424,
+            "bottom": 771
+          },
+          "pass": true
+        },
+        "sideInserter": {
+          "anchor": {
+            "left": 220,
+            "top": 371.8,
+            "right": 940,
+            "bottom": 387.2
+          },
+          "button": {
+            "left": 1636,
+            "top": 372,
+            "right": 1660,
+            "bottom": 396
+          },
+          "coverContainer": {
+            "left": 220,
+            "top": 372,
+            "right": 1660,
+            "bottom": 403
+          },
+          "buttonSize": 24,
+          "pass": false,
+          "clickOpensQuickInserter": true
+        },
+        "optionsMenu": {
+          "btn": {
+            "left": 479,
+            "top": 31,
+            "right": 515,
+            "bottom": 79
+          },
+          "pop": {
+            "left": 479,
+            "top": 92,
+            "right": 731.1,
+            "bottom": 545
+          },
+          "pass": true
+        },
+        "inbetweenInserter": {
+          "gap": {
+            "top": 164.1,
+            "bottom": 180.2,
+            "left": 220,
+            "right": 940
+          },
+          "line": {
+            "left": 220,
+            "top": 170,
+            "right": 940,
+            "bottom": 174
+          },
+          "button": {
+            "left": 568,
+            "top": 160,
+            "right": 592,
+            "bottom": 184
+          },
+          "pass": true
+        },
+        "gridVisualizer": {
+          "selected": "core/group",
+          "anchor": {
+            "left": 220,
+            "top": 398.2,
+            "right": 940,
+            "bottom": 413.6
+          },
+          "cover": {
+            "left": 220,
+            "top": 398,
+            "right": 1660,
+            "bottom": 429
+          },
+          "pass": false
+        },
+        "gridItemResizer": {
+          "selected": "core/paragraph",
+          "anchor": {
+            "left": 220,
+            "top": 398.2,
+            "right": 575.2,
+            "bottom": 413.6
+          },
+          "cover": {
+            "left": 220,
+            "top": 398,
+            "right": 930,
+            "bottom": 429
+          },
+          "pass": false
+        },
+        "coverResizeBox": {
+          "selected": "core/cover",
+          "anchor": {
+            "left": 220,
+            "top": 413.6,
+            "right": 940,
+            "bottom": 513.6
+          },
+          "cover": {
+            "left": 220,
+            "top": 414,
+            "right": 1660,
+            "bottom": 614
+          },
+          "handle": {
+            "left": 220,
+            "top": 602.5,
+            "right": 1660,
+            "bottom": 625.5
+          },
+          "pass": false
+        }
+      },
+      "unlock": {
+        "ok": true,
+        "error": null,
+        "zoomLevel": 100,
+        "isZoomOut": false
+      },
+      "iframe": {
+        "left": 220,
+        "top": 121,
+        "width": 720,
+        "height": 450,
+        "offsetWidth": 1440
+      },
+      "htmlClass": "block-editor-iframe__html",
+      "consoleErrors": [],
+      "pass": false
+    },
+    "counter@75": {
+      "mode": "counter",
+      "zoom": 75,
+      "checks": {
+        "toolbar": {
+          "count": 1,
+          "inHeader": 1,
+          "inPopover": 0,
+          "selected": "core/paragraph",
+          "pass": true
+        },
+        "typing": {
+          "text": "First paragraph with some text to select and link. TYPED",
+          "pass": true
+        },
+        "linkPopover": {
+          "anchor": {
+            "left": 220,
+            "top": 209.7,
+            "right": 1300,
+            "bottom": 232.8
+          },
+          "pop": {
+            "left": 248,
+            "top": 240,
+            "right": 598,
+            "bottom": 314
+          },
+          "fullSize": true,
+          "pass": true
+        },
+        "slashPopover": {
+          "anchor": {
+            "left": 220,
+            "top": 497.2,
+            "right": 1300,
+            "bottom": 520.3
+          },
+          "pop": {
+            "left": 226,
+            "top": 113,
+            "right": 426,
+            "bottom": 489
+          },
+          "pass": true
+        },
+        "sideInserter": {
+          "anchor": {
+            "left": 220,
+            "top": 497.2,
+            "right": 1300,
+            "bottom": 520.3
+          },
+          "button": {
+            "left": 1636,
+            "top": 497,
+            "right": 1660,
+            "bottom": 521
+          },
+          "coverContainer": {
+            "left": 220,
+            "top": 497,
+            "right": 1660,
+            "bottom": 528
+          },
+          "buttonSize": 24,
+          "pass": false,
+          "clickOpensQuickInserter": true
+        },
+        "optionsMenu": {
+          "btn": {
+            "left": 479,
+            "top": 31,
+            "right": 515,
+            "bottom": 79
+          },
+          "pop": {
+            "left": 479,
+            "top": 92,
+            "right": 731.1,
+            "bottom": 545
+          },
+          "pass": true
+        },
+        "inbetweenInserter": {
+          "gap": {
+            "top": 185.6,
+            "bottom": 209.7,
+            "left": 220,
+            "right": 1300
+          },
+          "line": {
+            "left": 220,
+            "top": 196,
+            "right": 1300,
+            "bottom": 200
+          },
+          "button": {
+            "left": 748,
+            "top": 186,
+            "right": 772,
+            "bottom": 210
+          },
+          "pass": true
+        },
+        "gridVisualizer": {
+          "selected": "core/group",
+          "anchor": {
+            "left": 220,
+            "top": 536.8,
+            "right": 1300,
+            "bottom": 559.9
+          },
+          "cover": {
+            "left": 220,
+            "top": 537,
+            "right": 1660,
+            "bottom": 568
+          },
+          "pass": false
+        },
+        "gridItemResizer": {
+          "selected": "core/paragraph",
+          "anchor": {
+            "left": 220,
+            "top": 536.8,
+            "right": 752.8,
+            "bottom": 559.9
+          },
+          "cover": {
+            "left": 220,
+            "top": 537,
+            "right": 930,
+            "bottom": 568
+          },
+          "pass": false
+        },
+        "coverResizeBox": {
+          "selected": "core/cover",
+          "anchor": {
+            "left": 220,
+            "top": 559.9,
+            "right": 1300,
+            "bottom": 709.9
+          },
+          "cover": {
+            "left": 220,
+            "top": 560,
+            "right": 1660,
+            "bottom": 760
+          },
+          "handle": {
+            "left": 220,
+            "top": 748.5,
+            "right": 1660,
+            "bottom": 771.5
+          },
+          "pass": false
+        }
+      },
+      "unlock": {
+        "ok": true,
+        "error": null,
+        "zoomLevel": 100,
+        "isZoomOut": false
+      },
+      "iframe": {
+        "left": 220,
+        "top": 121,
+        "width": 1080,
+        "height": 675,
+        "offsetWidth": 1440
+      },
+      "htmlClass": "block-editor-iframe__html",
+      "consoleErrors": [],
+      "pass": false
+    },
+    "counter@100": {
+      "mode": "counter",
+      "zoom": 100,
+      "checks": {
+        "toolbar": {
+          "count": 1,
+          "inHeader": 1,
+          "inPopover": 0,
+          "selected": "core/paragraph",
+          "pass": true
+        },
+        "typing": {
+          "text": "First paragraph with some text to select and link. TYPED",
+          "pass": true
+        },
+        "linkPopover": {
+          "anchor": {
+            "left": 220,
+            "top": 239.3,
+            "right": 1660,
+            "bottom": 270.1
+          },
+          "pop": {
+            "left": 316,
+            "top": 277,
+            "right": 666,
+            "bottom": 351
+          },
+          "fullSize": true,
+          "pass": true
+        },
+        "slashPopover": {
+          "anchor": {
+            "left": 220,
+            "top": 622.6,
+            "right": 1660,
+            "bottom": 653.4
+          },
+          "pop": {
+            "left": 228,
+            "top": 239,
+            "right": 428,
+            "bottom": 615
+          },
+          "pass": true
+        },
+        "sideInserter": {
+          "anchor": {
+            "left": 220,
+            "top": 622.6,
+            "right": 1660,
+            "bottom": 653.4
+          },
+          "button": {
+            "left": 1636,
+            "top": 623,
+            "right": 1660,
+            "bottom": 647
+          },
+          "coverContainer": {
+            "left": 220,
+            "top": 623,
+            "right": 1660,
+            "bottom": 654
+          },
+          "buttonSize": 24,
+          "pass": true,
+          "clickOpensQuickInserter": true
+        },
+        "optionsMenu": {
+          "btn": {
+            "left": 479,
+            "top": 31,
+            "right": 515,
+            "bottom": 79
+          },
+          "pop": {
+            "left": 479,
+            "top": 92,
+            "right": 731.1,
+            "bottom": 545
+          },
+          "pass": true
+        },
+        "inbetweenInserter": {
+          "gap": {
+            "top": 207.2,
+            "bottom": 239.3,
+            "left": 180,
+            "right": 1620
+          },
+          "line": {
+            "left": 180,
+            "top": 221.1,
+            "right": 1620,
+            "bottom": 225.1
+          },
+          "button": {
+            "left": 888,
+            "top": 211.1,
+            "right": 912,
+            "bottom": 235.1
+          },
+          "pass": true
+        },
+        "gridVisualizer": {
+          "selected": "core/group",
+          "anchor": {
+            "left": 180,
+            "top": 675.4,
+            "right": 1620,
+            "bottom": 706.2
+          },
+          "cover": {
+            "left": 180,
+            "top": 675,
+            "right": 1620,
+            "bottom": 706
+          },
+          "pass": true
+        },
+        "gridItemResizer": {
+          "selected": "core/paragraph",
+          "anchor": {
+            "left": 180,
+            "top": 675.4,
+            "right": 890.4,
+            "bottom": 706.2
+          },
+          "cover": {
+            "left": 180,
+            "top": 675,
+            "right": 890,
+            "bottom": 706
+          },
+          "pass": true
+        },
+        "coverResizeBox": {
+          "selected": "core/cover",
+          "anchor": {
+            "left": 180,
+            "top": 700.2,
+            "right": 1620,
+            "bottom": 900.2
+          },
+          "cover": {
+            "left": 180,
+            "top": 700,
+            "right": 1620,
+            "bottom": 900
+          },
+          "handle": {
+            "left": 180,
+            "top": 888.5,
+            "right": 1620,
+            "bottom": 911.5
+          },
+          "pass": true
+        }
+      },
+      "unlock": {
+        "ok": true,
+        "error": null,
+        "zoomLevel": 100,
+        "isZoomOut": false
+      },
+      "iframe": {
+        "left": 220,
+        "top": 121,
+        "width": 1440,
+        "height": 900,
+        "offsetWidth": 1440
+      },
+      "htmlClass": "block-editor-iframe__html",
+      "consoleErrors": [],
+      "pass": true
+    },
+    "inner@50": {
+      "mode": "inner",
+      "zoom": 50,
+      "checks": {
+        "toolbar": {
+          "count": 1,
+          "inHeader": 1,
+          "inPopover": 0,
+          "selected": "core/paragraph",
+          "pass": true
+        },
+        "typing": {
+          "text": "First paragraph with some text to select and link. TYPED",
+          "pass": true
+        },
+        "linkPopover": {
+          "anchor": {
+            "left": 220,
+            "top": 180.2,
+            "right": 940,
+            "bottom": 195.6
+          },
+          "pop": {
+            "left": 181,
+            "top": 203,
+            "right": 531,
+            "bottom": 277
+          },
+          "fullSize": true,
+          "pass": true
+        },
+        "slashPopover": {
+          "anchor": {
+            "left": 220,
+            "top": 371.8,
+            "right": 940,
+            "bottom": 387.2
+          },
+          "pop": {
+            "left": 224,
+            "top": 395,
+            "right": 424,
+            "bottom": 771
+          },
+          "pass": true
+        },
+        "sideInserter": {
+          "anchor": {
+            "left": 220,
+            "top": 371.8,
+            "right": 940,
+            "bottom": 387.2
+          },
+          "button": {
+            "left": 1636,
+            "top": 372,
+            "right": 1660,
+            "bottom": 396
+          },
+          "coverContainer": {
+            "left": 220,
+            "top": 372,
+            "right": 1660,
+            "bottom": 403
+          },
+          "buttonSize": 24,
+          "pass": false,
+          "clickOpensQuickInserter": true
+        },
+        "optionsMenu": {
+          "btn": {
+            "left": 479,
+            "top": 31,
+            "right": 515,
+            "bottom": 79
+          },
+          "pop": {
+            "left": 479,
+            "top": 92,
+            "right": 731.1,
+            "bottom": 545
+          },
+          "pass": true
+        },
+        "inbetweenInserter": {
+          "gap": {
+            "top": 164.1,
+            "bottom": 180.2,
+            "left": 220,
+            "right": 940
+          },
+          "line": {
+            "left": 220,
+            "top": 170,
+            "right": 940,
+            "bottom": 174
+          },
+          "button": {
+            "left": 568,
+            "top": 160,
+            "right": 592,
+            "bottom": 184
+          },
+          "pass": true
+        },
+        "gridVisualizer": {
+          "selected": "core/group",
+          "anchor": {
+            "left": 220,
+            "top": 398.2,
+            "right": 940,
+            "bottom": 413.6
+          },
+          "cover": {
+            "left": 220,
+            "top": 398,
+            "right": 1660,
+            "bottom": 429
+          },
+          "pass": false
+        },
+        "gridItemResizer": {
+          "selected": "core/paragraph",
+          "anchor": {
+            "left": 220,
+            "top": 398.2,
+            "right": 575.2,
+            "bottom": 413.6
+          },
+          "cover": {
+            "left": 220,
+            "top": 398,
+            "right": 930,
+            "bottom": 429
+          },
+          "pass": false
+        },
+        "coverResizeBox": {
+          "selected": "core/cover",
+          "anchor": {
+            "left": 220,
+            "top": 413.6,
+            "right": 940,
+            "bottom": 513.6
+          },
+          "cover": {
+            "left": 220,
+            "top": 414,
+            "right": 1660,
+            "bottom": 614
+          },
+          "handle": {
+            "left": 220,
+            "top": 602.5,
+            "right": 1660,
+            "bottom": 625.5
+          },
+          "pass": false
+        }
+      },
+      "unlock": {
+        "ok": true,
+        "error": null,
+        "zoomLevel": 100,
+        "isZoomOut": false
+      },
+      "iframe": {
+        "left": 220,
+        "top": 121,
+        "width": 1440,
+        "height": 900,
+        "offsetWidth": 1440
+      },
+      "htmlClass": "block-editor-iframe__html",
+      "consoleErrors": [],
+      "pass": false
+    },
+    "inner@75": {
+      "mode": "inner",
+      "zoom": 75,
+      "checks": {
+        "toolbar": {
+          "count": 1,
+          "inHeader": 1,
+          "inPopover": 0,
+          "selected": "core/paragraph",
+          "pass": true
+        },
+        "typing": {
+          "text": "First paragraph with some text to select and link. TYPED",
+          "pass": true
+        },
+        "linkPopover": {
+          "anchor": {
+            "left": 220,
+            "top": 209.7,
+            "right": 1300,
+            "bottom": 232.8
+          },
+          "pop": {
+            "left": 248,
+            "top": 240,
+            "right": 598,
+            "bottom": 314
+          },
+          "fullSize": true,
+          "pass": true
+        },
+        "slashPopover": {
+          "anchor": {
+            "left": 220,
+            "top": 497.2,
+            "right": 1300,
+            "bottom": 520.3
+          },
+          "pop": {
+            "left": 226,
+            "top": 113,
+            "right": 426,
+            "bottom": 489
+          },
+          "pass": true
+        },
+        "sideInserter": {
+          "anchor": {
+            "left": 220,
+            "top": 497.2,
+            "right": 1300,
+            "bottom": 520.3
+          },
+          "button": {
+            "left": 1636,
+            "top": 497,
+            "right": 1660,
+            "bottom": 521
+          },
+          "coverContainer": {
+            "left": 220,
+            "top": 497,
+            "right": 1660,
+            "bottom": 528
+          },
+          "buttonSize": 24,
+          "pass": false,
+          "clickOpensQuickInserter": true
+        },
+        "optionsMenu": {
+          "btn": {
+            "left": 479,
+            "top": 31,
+            "right": 515,
+            "bottom": 79
+          },
+          "pop": {
+            "left": 479,
+            "top": 92,
+            "right": 731.1,
+            "bottom": 545
+          },
+          "pass": true
+        },
+        "inbetweenInserter": {
+          "gap": {
+            "top": 185.6,
+            "bottom": 209.7,
+            "left": 220,
+            "right": 1300
+          },
+          "line": {
+            "left": 220,
+            "top": 196,
+            "right": 1300,
+            "bottom": 200
+          },
+          "button": {
+            "left": 748,
+            "top": 186,
+            "right": 772,
+            "bottom": 210
+          },
+          "pass": true
+        },
+        "gridVisualizer": {
+          "selected": "core/group",
+          "anchor": {
+            "left": 220,
+            "top": 536.8,
+            "right": 1300,
+            "bottom": 559.9
+          },
+          "cover": {
+            "left": 220,
+            "top": 537,
+            "right": 1660,
+            "bottom": 568
+          },
+          "pass": false
+        },
+        "gridItemResizer": {
+          "selected": "core/paragraph",
+          "anchor": {
+            "left": 220,
+            "top": 536.8,
+            "right": 752.8,
+            "bottom": 559.9
+          },
+          "cover": {
+            "left": 220,
+            "top": 537,
+            "right": 930,
+            "bottom": 568
+          },
+          "pass": false
+        },
+        "coverResizeBox": {
+          "selected": "core/cover",
+          "anchor": {
+            "left": 220,
+            "top": 559.9,
+            "right": 1300,
+            "bottom": 709.9
+          },
+          "cover": {
+            "left": 220,
+            "top": 560,
+            "right": 1660,
+            "bottom": 760
+          },
+          "handle": {
+            "left": 220,
+            "top": 748.5,
+            "right": 1660,
+            "bottom": 771.5
+          },
+          "pass": false
+        }
+      },
+      "unlock": {
+        "ok": true,
+        "error": null,
+        "zoomLevel": 100,
+        "isZoomOut": false
+      },
+      "iframe": {
+        "left": 220,
+        "top": 121,
+        "width": 1440,
+        "height": 900,
+        "offsetWidth": 1440
+      },
+      "htmlClass": "block-editor-iframe__html",
+      "consoleErrors": [],
+      "pass": false
+    },
+    "inner@100": {
+      "mode": "inner",
+      "zoom": 100,
+      "checks": {
+        "toolbar": {
+          "count": 1,
+          "inHeader": 1,
+          "inPopover": 0,
+          "selected": "core/paragraph",
+          "pass": true
+        },
+        "typing": {
+          "text": "First paragraph with some text to select and link. TYPED",
+          "pass": true
+        },
+        "linkPopover": {
+          "anchor": {
+            "left": 220,
+            "top": 239.3,
+            "right": 1660,
+            "bottom": 270.1
+          },
+          "pop": {
+            "left": 316,
+            "top": 277,
+            "right": 666,
+            "bottom": 351
+          },
+          "fullSize": true,
+          "pass": true
+        },
+        "slashPopover": {
+          "anchor": {
+            "left": 220,
+            "top": 622.6,
+            "right": 1660,
+            "bottom": 653.4
+          },
+          "pop": {
+            "left": 228,
+            "top": 239,
+            "right": 428,
+            "bottom": 615
+          },
+          "pass": true
+        },
+        "sideInserter": {
+          "anchor": {
+            "left": 220,
+            "top": 622.6,
+            "right": 1660,
+            "bottom": 653.4
+          },
+          "button": {
+            "left": 1636,
+            "top": 623,
+            "right": 1660,
+            "bottom": 647
+          },
+          "coverContainer": {
+            "left": 220,
+            "top": 623,
+            "right": 1660,
+            "bottom": 654
+          },
+          "buttonSize": 24,
+          "pass": true,
+          "clickOpensQuickInserter": true
+        },
+        "optionsMenu": {
+          "btn": {
+            "left": 479,
+            "top": 31,
+            "right": 515,
+            "bottom": 79
+          },
+          "pop": {
+            "left": 479,
+            "top": 92,
+            "right": 731.1,
+            "bottom": 545
+          },
+          "pass": true
+        },
+        "inbetweenInserter": {
+          "gap": {
+            "top": 207.2,
+            "bottom": 239.3,
+            "left": 180,
+            "right": 1620
+          },
+          "line": {
+            "left": 180,
+            "top": 221.1,
+            "right": 1620,
+            "bottom": 225.1
+          },
+          "button": {
+            "left": 888,
+            "top": 211.1,
+            "right": 912,
+            "bottom": 235.1
+          },
+          "pass": true
+        },
+        "gridVisualizer": {
+          "selected": "core/group",
+          "anchor": {
+            "left": 180,
+            "top": 675.4,
+            "right": 1620,
+            "bottom": 706.2
+          },
+          "cover": {
+            "left": 180,
+            "top": 675,
+            "right": 1620,
+            "bottom": 706
+          },
+          "pass": true
+        },
+        "gridItemResizer": {
+          "selected": "core/paragraph",
+          "anchor": {
+            "left": 180,
+            "top": 675.4,
+            "right": 890.4,
+            "bottom": 706.2
+          },
+          "cover": {
+            "left": 180,
+            "top": 675,
+            "right": 890,
+            "bottom": 706
+          },
+          "pass": true
+        },
+        "coverResizeBox": {
+          "selected": "core/cover",
+          "anchor": {
+            "left": 180,
+            "top": 700.2,
+            "right": 1620,
+            "bottom": 900.2
+          },
+          "cover": {
+            "left": 180,
+            "top": 700,
+            "right": 1620,
+            "bottom": 900
+          },
+          "handle": {
+            "left": 180,
+            "top": 888.5,
+            "right": 1620,
+            "bottom": 911.5
+          },
+          "pass": true
+        }
+      },
+      "unlock": {
+        "ok": true,
+        "error": null,
+        "zoomLevel": 100,
+        "isZoomOut": false
+      },
+      "iframe": {
+        "left": 220,
+        "top": 121,
+        "width": 1440,
+        "height": 900,
+        "offsetWidth": 1440
+      },
+      "htmlClass": "block-editor-iframe__html",
+      "consoleErrors": [],
+      "pass": true
+    },
+    "expscale@50": {
+      "mode": "expscale",
+      "zoom": 50,
+      "checks": {
+        "toolbar": {
+          "count": 1,
+          "inHeader": 1,
+          "inPopover": 0,
+          "selected": "core/paragraph",
+          "pass": true
+        },
+        "typing": {
+          "text": "First paragraph with some text to select and link. TYPED",
+          "pass": true
+        },
+        "linkPopover": {
+          "anchor": {
+            "left": 220,
+            "top": 191.2,
+            "right": 940,
+            "bottom": 206.6
+          },
+          "pop": {
+            "left": 181,
+            "top": 214,
+            "right": 531,
+            "bottom": 288
+          },
+          "fullSize": true,
+          "pass": true
+        },
+        "slashPopover": {
+          "anchor": {
+            "left": 220,
+            "top": 393.8,
+            "right": 940,
+            "bottom": 409.2
+          },
+          "pop": {
+            "left": 224,
+            "top": 10,
+            "right": 424,
+            "bottom": 386
+          },
+          "pass": true
+        },
+        "sideInserter": {
+          "anchor": {
+            "left": 220,
+            "top": 393.8,
+            "right": 940,
+            "bottom": 409.2
+          },
+          "button": {
+            "left": 1636,
+            "top": 394,
+            "right": 1660,
+            "bottom": 418
+          },
+          "coverContainer": {
+            "left": 220,
+            "top": 394,
+            "right": 1660,
+            "bottom": 425
+          },
+          "buttonSize": 24,
+          "pass": false,
+          "clickOpensQuickInserter": true
+        },
+        "optionsMenu": {
+          "btn": {
+            "left": 479,
+            "top": 31,
+            "right": 515,
+            "bottom": 79
+          },
+          "pop": {
+            "left": 479,
+            "top": 92,
+            "right": 731.1,
+            "bottom": 545
+          },
+          "pass": true
+        },
+        "inbetweenInserter": {
+          "gap": {
+            "top": 164.1,
+            "bottom": 191.2,
+            "left": 220,
+            "right": 940
+          },
+          "line": {
+            "left": 220,
+            "top": 175.5,
+            "right": 940,
+            "bottom": 179.5
+          },
+          "button": {
+            "left": 568,
+            "top": 165.5,
+            "right": 592,
+            "bottom": 189.5
+          },
+          "pass": true
+        },
+        "gridVisualizer": {
+          "selected": "core/group",
+          "anchor": {
+            "left": 220,
+            "top": 420.2,
+            "right": 940,
+            "bottom": 435.6
+          },
+          "cover": {
+            "left": 220,
+            "top": 420,
+            "right": 1660,
+            "bottom": 451
+          },
+          "pass": false
+        },
+        "gridItemResizer": {
+          "selected": "core/paragraph",
+          "anchor": {
+            "left": 220,
+            "top": 420.2,
+            "right": 575.2,
+            "bottom": 435.6
+          },
+          "cover": {
+            "left": 220,
+            "top": 420,
+            "right": 930,
+            "bottom": 451
+          },
+          "pass": false
+        },
+        "coverResizeBox": {
+          "selected": "core/cover",
+          "anchor": {
+            "left": 220,
+            "top": 435.6,
+            "right": 940,
+            "bottom": 535.6
+          },
+          "cover": {
+            "left": 220,
+            "top": 436,
+            "right": 1660,
+            "bottom": 636
+          },
+          "handle": {
+            "left": 220,
+            "top": 624.5,
+            "right": 1660,
+            "bottom": 647.5
+          },
+          "pass": false
+        }
+      },
+      "unlock": {
+        "ok": true,
+        "error": null,
+        "zoomLevel": 100,
+        "isZoomOut": false
+      },
+      "iframe": {
+        "left": -140,
+        "top": 121,
+        "width": 1440,
+        "height": 450,
+        "offsetWidth": 1440
+      },
+      "htmlClass": "block-editor-iframe__html is-zoomed-out",
+      "consoleErrors": [],
+      "pass": false
+    },
+    "expscale@75": {
+      "mode": "expscale",
+      "zoom": 75,
+      "checks": {
+        "toolbar": {
+          "count": 1,
+          "inHeader": 1,
+          "inPopover": 0,
+          "selected": "core/paragraph",
+          "pass": true
+        },
+        "typing": {
+          "text": "First paragraph with some text to select and link. TYPED",
+          "pass": true
+        },
+        "linkPopover": {
+          "anchor": {
+            "left": 220,
+            "top": 226.2,
+            "right": 1300,
+            "bottom": 249.3
+          },
+          "pop": {
+            "left": 248,
+            "top": 257,
+            "right": 598,
+            "bottom": 331
+          },
+          "fullSize": true,
+          "pass": true
+        },
+        "slashPopover": {
+          "anchor": {
+            "left": 220,
+            "top": 530.2,
+            "right": 1300,
+            "bottom": 553.3
+          },
+          "pop": {
+            "left": 226,
+            "top": 146,
+            "right": 426,
+            "bottom": 522
+          },
+          "pass": true
+        },
+        "sideInserter": {
+          "anchor": {
+            "left": 220,
+            "top": 530.2,
+            "right": 1300,
+            "bottom": 553.3
+          },
+          "button": {
+            "left": 1636,
+            "top": 530,
+            "right": 1660,
+            "bottom": 554
+          },
+          "coverContainer": {
+            "left": 220,
+            "top": 530,
+            "right": 1660,
+            "bottom": 561
+          },
+          "buttonSize": 24,
+          "pass": false,
+          "clickOpensQuickInserter": true
+        },
+        "optionsMenu": {
+          "btn": {
+            "left": 479,
+            "top": 31,
+            "right": 515,
+            "bottom": 79
+          },
+          "pop": {
+            "left": 479,
+            "top": 92,
+            "right": 731.1,
+            "bottom": 545
+          },
+          "pass": true
+        },
+        "inbetweenInserter": {
+          "gap": {
+            "top": 185.6,
+            "bottom": 226.2,
+            "left": 220,
+            "right": 1300
+          },
+          "line": {
+            "left": 220,
+            "top": 204.3,
+            "right": 1300,
+            "bottom": 208.3
+          },
+          "button": {
+            "left": 748,
+            "top": 194.3,
+            "right": 772,
+            "bottom": 218.3
+          },
+          "pass": true
+        },
+        "gridVisualizer": {
+          "selected": "core/group",
+          "anchor": {
+            "left": 220,
+            "top": 569.8,
+            "right": 1300,
+            "bottom": 592.9
+          },
+          "cover": {
+            "left": 220,
+            "top": 570,
+            "right": 1660,
+            "bottom": 601
+          },
+          "pass": false
+        },
+        "gridItemResizer": {
+          "selected": "core/paragraph",
+          "anchor": {
+            "left": 220,
+            "top": 569.8,
+            "right": 752.8,
+            "bottom": 592.9
+          },
+          "cover": {
+            "left": 220,
+            "top": 570,
+            "right": 930,
+            "bottom": 601
+          },
+          "pass": false
+        },
+        "coverResizeBox": {
+          "selected": "core/cover",
+          "anchor": {
+            "left": 220,
+            "top": 592.9,
+            "right": 1300,
+            "bottom": 742.9
+          },
+          "cover": {
+            "left": 220,
+            "top": 593,
+            "right": 1660,
+            "bottom": 793
+          },
+          "handle": {
+            "left": 220,
+            "top": 781.5,
+            "right": 1660,
+            "bottom": 804.5
+          },
+          "pass": false
+        }
+      },
+      "unlock": {
+        "ok": true,
+        "error": null,
+        "zoomLevel": 100,
+        "isZoomOut": false
+      },
+      "iframe": {
+        "left": 40,
+        "top": 121,
+        "width": 1440,
+        "height": 675,
+        "offsetWidth": 1440
+      },
+      "htmlClass": "block-editor-iframe__html is-zoomed-out",
+      "consoleErrors": [],
+      "pass": false
+    },
+    "expscale@100": {
+      "mode": "expscale",
+      "zoom": 100,
+      "checks": {
+        "toolbar": {
+          "count": 1,
+          "inHeader": 1,
+          "inPopover": 0,
+          "selected": "core/paragraph",
+          "pass": true
+        },
+        "typing": {
+          "text": "First paragraph with some text to select and link. TYPED",
+          "pass": true
+        },
+        "linkPopover": {
+          "anchor": {
+            "left": 220,
+            "top": 239.3,
+            "right": 1660,
+            "bottom": 270.1
+          },
+          "pop": {
+            "left": 316,
+            "top": 277,
+            "right": 666,
+            "bottom": 351
+          },
+          "fullSize": true,
+          "pass": true
+        },
+        "slashPopover": {
+          "anchor": {
+            "left": 220,
+            "top": 622.6,
+            "right": 1660,
+            "bottom": 653.4
+          },
+          "pop": {
+            "left": 228,
+            "top": 239,
+            "right": 428,
+            "bottom": 615
+          },
+          "pass": true
+        },
+        "sideInserter": {
+          "anchor": {
+            "left": 220,
+            "top": 622.6,
+            "right": 1660,
+            "bottom": 653.4
+          },
+          "button": {
+            "left": 1636,
+            "top": 623,
+            "right": 1660,
+            "bottom": 647
+          },
+          "coverContainer": {
+            "left": 220,
+            "top": 623,
+            "right": 1660,
+            "bottom": 654
+          },
+          "buttonSize": 24,
+          "pass": true,
+          "clickOpensQuickInserter": true
+        },
+        "optionsMenu": {
+          "btn": {
+            "left": 479,
+            "top": 31,
+            "right": 515,
+            "bottom": 79
+          },
+          "pop": {
+            "left": 479,
+            "top": 92,
+            "right": 731.1,
+            "bottom": 545
+          },
+          "pass": true
+        },
+        "inbetweenInserter": {
+          "gap": {
+            "top": 207.2,
+            "bottom": 239.3,
+            "left": 180,
+            "right": 1620
+          },
+          "line": {
+            "left": 180,
+            "top": 221.1,
+            "right": 1620,
+            "bottom": 225.1
+          },
+          "button": {
+            "left": 888,
+            "top": 211.1,
+            "right": 912,
+            "bottom": 235.1
+          },
+          "pass": true
+        },
+        "gridVisualizer": {
+          "selected": "core/group",
+          "anchor": {
+            "left": 180,
+            "top": 675.4,
+            "right": 1620,
+            "bottom": 706.2
+          },
+          "cover": {
+            "left": 180,
+            "top": 675,
+            "right": 1620,
+            "bottom": 706
+          },
+          "pass": true
+        },
+        "gridItemResizer": {
+          "selected": "core/paragraph",
+          "anchor": {
+            "left": 180,
+            "top": 675.4,
+            "right": 890.4,
+            "bottom": 706.2
+          },
+          "cover": {
+            "left": 180,
+            "top": 675,
+            "right": 890,
+            "bottom": 706
+          },
+          "pass": true
+        },
+        "coverResizeBox": {
+          "selected": "core/cover",
+          "anchor": {
+            "left": 180,
+            "top": 700.2,
+            "right": 1620,
+            "bottom": 900.2
+          },
+          "cover": {
+            "left": 180,
+            "top": 700,
+            "right": 1620,
+            "bottom": 900
+          },
+          "handle": {
+            "left": 180,
+            "top": 888.5,
+            "right": 1620,
+            "bottom": 911.5
+          },
+          "pass": true
+        }
+      },
+      "unlock": {
+        "ok": true,
+        "error": null,
+        "zoomLevel": 100,
+        "isZoomOut": false
+      },
+      "iframe": {
+        "left": 220,
+        "top": 121,
+        "width": 1440,
+        "height": 900,
+        "offsetWidth": 1440
+      },
+      "htmlClass": "block-editor-iframe__html",
+      "consoleErrors": [],
+      "pass": true
+    },
+    "storezoom@50": {
+      "mode": "storezoom",
+      "zoom": 50,
+      "checks": {
+        "toolbar": {
+          "pass": false,
+          "error": "locator.click: Timeout 6000ms exceeded."
+        },
+        "typing": {
+          "text": "First paragraph with some text to select and link.",
+          "pass": false
+        },
+        "linkPopover": {
+          "pass": false,
+          "error": "page.waitForSelector: Timeout 6000ms exceeded."
+        },
+        "slashPopover": {
+          "pass": false,
+          "error": "locator.click: Timeout 6000ms exceeded."
+        },
+        "sideInserter": {
+          "pass": false,
+          "error": "locator.click: Timeout 6000ms exceeded."
+        },
+        "optionsMenu": {
+          "pass": false,
+          "error": "locator.click: Timeout 6000ms exceeded."
+        },
+        "inbetweenInserter": {
+          "pass": false,
+          "error": "page.waitForSelector: Timeout 3000ms exceeded."
+        },
+        "gridVisualizer": {
+          "selected": "core/group",
+          "present": false,
+          "pass": false
+        },
+        "gridItemResizer": {
+          "selected": "core/paragraph",
+          "present": false,
+          "pass": false
+        },
+        "coverResizeBox": {
+          "selected": "core/cover",
+          "present": false,
+          "pass": false
+        }
+      },
+      "unlock": {
+        "ok": true,
+        "error": null,
+        "zoomLevel": 0.5,
+        "isZoomOut": true
+      },
+      "iframe": {
+        "left": -140,
+        "top": 121,
+        "width": 1440,
+        "height": 450,
+        "offsetWidth": 1440
+      },
+      "htmlClass": "block-editor-iframe__html is-zoomed-out",
+      "consoleErrors": [],
+      "pass": false
+    },
+    "storezoom@75": {
+      "mode": "storezoom",
+      "zoom": 75,
+      "checks": {
+        "toolbar": {
+          "pass": false,
+          "error": "locator.click: Timeout 6000ms exceeded."
+        },
+        "typing": {
+          "text": "First paragraph with some text to select and link.",
+          "pass": false
+        },
+        "linkPopover": {
+          "pass": false,
+          "error": "page.waitForSelector: Timeout 6000ms exceeded."
+        },
+        "slashPopover": {
+          "pass": false,
+          "error": "locator.click: Timeout 6000ms exceeded."
+        },
+        "sideInserter": {
+          "pass": false,
+          "error": "locator.click: Timeout 6000ms exceeded."
+        },
+        "optionsMenu": {
+          "pass": false,
+          "error": "locator.click: Timeout 6000ms exceeded."
+        },
+        "inbetweenInserter": {
+          "pass": false,
+          "error": "page.waitForSelector: Timeout 3000ms exceeded."
+        },
+        "gridVisualizer": {
+          "selected": "core/group",
+          "present": false,
+          "pass": false
+        },
+        "gridItemResizer": {
+          "selected": "core/paragraph",
+          "present": false,
+          "pass": false
+        },
+        "coverResizeBox": {
+          "selected": "core/cover",
+          "present": false,
+          "pass": false
+        }
+      },
+      "unlock": {
+        "ok": true,
+        "error": null,
+        "zoomLevel": 0.75,
+        "isZoomOut": true
+      },
+      "iframe": {
+        "left": 40,
+        "top": 121,
+        "width": 1440,
+        "height": 675,
+        "offsetWidth": 1440
+      },
+      "htmlClass": "block-editor-iframe__html is-zoomed-out",
+      "consoleErrors": [],
+      "pass": false
+    },
+    "storezoom@100": {
+      "mode": "storezoom",
+      "zoom": 100,
+      "checks": {
+        "toolbar": {
+          "count": 1,
+          "inHeader": 1,
+          "inPopover": 0,
+          "selected": "core/paragraph",
+          "pass": true
+        },
+        "typing": {
+          "text": "First paragraph with some text to select and link. TYPED",
+          "pass": true
+        },
+        "linkPopover": {
+          "anchor": {
+            "left": 220,
+            "top": 239.3,
+            "right": 1660,
+            "bottom": 270.1
+          },
+          "pop": {
+            "left": 316,
+            "top": 277,
+            "right": 666,
+            "bottom": 351
+          },
+          "fullSize": true,
+          "pass": true
+        },
+        "slashPopover": {
+          "anchor": {
+            "left": 220,
+            "top": 622.6,
+            "right": 1660,
+            "bottom": 653.4
+          },
+          "pop": {
+            "left": 228,
+            "top": 239,
+            "right": 428,
+            "bottom": 615
+          },
+          "pass": true
+        },
+        "sideInserter": {
+          "anchor": {
+            "left": 220,
+            "top": 622.6,
+            "right": 1660,
+            "bottom": 653.4
+          },
+          "button": {
+            "left": 1636,
+            "top": 623,
+            "right": 1660,
+            "bottom": 647
+          },
+          "coverContainer": {
+            "left": 220,
+            "top": 623,
+            "right": 1660,
+            "bottom": 654
+          },
+          "buttonSize": 24,
+          "pass": true,
+          "clickOpensQuickInserter": true
+        },
+        "optionsMenu": {
+          "btn": {
+            "left": 479,
+            "top": 31,
+            "right": 515,
+            "bottom": 79
+          },
+          "pop": {
+            "left": 479,
+            "top": 92,
+            "right": 731.1,
+            "bottom": 545
+          },
+          "pass": true
+        },
+        "inbetweenInserter": {
+          "gap": {
+            "top": 207.2,
+            "bottom": 239.3,
+            "left": 180,
+            "right": 1620
+          },
+          "line": {
+            "left": 180,
+            "top": 221.1,
+            "right": 1620,
+            "bottom": 225.1
+          },
+          "button": {
+            "left": 888,
+            "top": 211.1,
+            "right": 912,
+            "bottom": 235.1
+          },
+          "pass": true
+        },
+        "gridVisualizer": {
+          "selected": "core/group",
+          "anchor": {
+            "left": 180,
+            "top": 675.4,
+            "right": 1620,
+            "bottom": 706.2
+          },
+          "cover": {
+            "left": 180,
+            "top": 675,
+            "right": 1620,
+            "bottom": 706
+          },
+          "pass": true
+        },
+        "gridItemResizer": {
+          "selected": "core/paragraph",
+          "anchor": {
+            "left": 180,
+            "top": 675.4,
+            "right": 890.4,
+            "bottom": 706.2
+          },
+          "cover": {
+            "left": 180,
+            "top": 675,
+            "right": 890,
+            "bottom": 706
+          },
+          "pass": true
+        },
+        "coverResizeBox": {
+          "selected": "core/cover",
+          "anchor": {
+            "left": 180,
+            "top": 700.2,
+            "right": 1620,
+            "bottom": 900.2
+          },
+          "cover": {
+            "left": 180,
+            "top": 700,
+            "right": 1620,
+            "bottom": 900
+          },
+          "handle": {
+            "left": 180,
+            "top": 888.5,
+            "right": 1620,
+            "bottom": 911.5
+          },
+          "pass": true
+        }
+      },
+      "unlock": {
+        "ok": true,
+        "error": null,
+        "zoomLevel": 100,
+        "isZoomOut": false
+      },
+      "iframe": {
+        "left": 220,
+        "top": 121,
+        "width": 1440,
+        "height": 900,
+        "offsetWidth": 1440
+      },
+      "htmlClass": "block-editor-iframe__html",
+      "consoleErrors": [],
+      "pass": true
+    },
+    "counter+cssfix@50": {
+      "mode": "counter+cssfix",
+      "zoom": 50,
+      "checks": {
+        "toolbar": {
+          "count": 1,
+          "inHeader": 1,
+          "inPopover": 0,
+          "selected": "core/paragraph",
+          "pass": true
+        },
+        "typing": {
+          "text": "First paragraph with some text to select and link. TYPED",
+          "pass": true
+        },
+        "linkPopover": {
+          "anchor": {
+            "left": 220,
+            "top": 180.2,
+            "right": 940,
+            "bottom": 195.6
+          },
+          "pop": {
+            "left": 181,
+            "top": 203,
+            "right": 531,
+            "bottom": 277
+          },
+          "fullSize": true,
+          "pass": true
+        },
+        "slashPopover": {
+          "anchor": {
+            "left": 220,
+            "top": 371.8,
+            "right": 940,
+            "bottom": 387.2
+          },
+          "pop": {
+            "left": 224,
+            "top": 395,
+            "right": 424,
+            "bottom": 771
+          },
+          "pass": true
+        },
+        "sideInserter": {
+          "anchor": {
+            "left": 220,
+            "top": 371.8,
+            "right": 940,
+            "bottom": 387.2
+          },
+          "button": {
+            "left": 916,
+            "top": 366,
+            "right": 940,
+            "bottom": 390
+          },
+          "coverContainer": {
+            "left": 220,
+            "top": 372,
+            "right": 940,
+            "bottom": 387.5
+          },
+          "buttonSize": 24,
+          "pass": true,
+          "clickOpensQuickInserter": true
+        },
+        "optionsMenu": {
+          "btn": {
+            "left": 479,
+            "top": 31,
+            "right": 515,
+            "bottom": 79
+          },
+          "pop": {
+            "left": 479,
+            "top": 92,
+            "right": 731.1,
+            "bottom": 545
+          },
+          "pass": true
+        },
+        "inbetweenInserter": {
+          "gap": {
+            "top": 164.1,
+            "bottom": 180.2,
+            "left": 220,
+            "right": 940
+          },
+          "line": {
+            "left": 220,
+            "top": 170,
+            "right": 940,
+            "bottom": 174
+          },
+          "button": {
+            "left": 568,
+            "top": 160,
+            "right": 592,
+            "bottom": 184
+          },
+          "pass": true
+        },
+        "gridVisualizer": {
+          "selected": "core/group",
+          "anchor": {
+            "left": 220,
+            "top": 398.2,
+            "right": 940,
+            "bottom": 413.6
+          },
+          "cover": {
+            "left": 220,
+            "top": 398,
+            "right": 940,
+            "bottom": 413.5
+          },
+          "pass": true
+        },
+        "gridItemResizer": {
+          "selected": "core/paragraph",
+          "anchor": {
+            "left": 220,
+            "top": 398.2,
+            "right": 575.2,
+            "bottom": 413.6
+          },
+          "cover": {
+            "left": 220,
+            "top": 398,
+            "right": 575,
+            "bottom": 413.5
+          },
+          "pass": true
+        },
+        "coverResizeBox": {
+          "selected": "core/cover",
+          "anchor": {
+            "left": 220,
+            "top": 413.6,
+            "right": 940,
+            "bottom": 513.6
+          },
+          "cover": {
+            "left": 220,
+            "top": 414,
+            "right": 940,
+            "bottom": 514
+          },
+          "handle": {
+            "left": 220,
+            "top": 508.3,
+            "right": 940,
+            "bottom": 519.8
+          },
+          "pass": true
+        }
+      },
+      "unlock": {
+        "ok": true,
+        "error": null,
+        "zoomLevel": 100,
+        "isZoomOut": false
+      },
+      "iframe": {
+        "left": 220,
+        "top": 121,
+        "width": 720,
+        "height": 450,
+        "offsetWidth": 1440
+      },
+      "htmlClass": "block-editor-iframe__html",
+      "consoleErrors": [],
+      "pass": true
+    },
+    "counter+cssfix@75": {
+      "mode": "counter+cssfix",
+      "zoom": 75,
+      "checks": {
+        "toolbar": {
+          "count": 1,
+          "inHeader": 1,
+          "inPopover": 0,
+          "selected": "core/paragraph",
+          "pass": true
+        },
+        "typing": {
+          "text": "First paragraph with some text to select and link. TYPED",
+          "pass": true
+        },
+        "linkPopover": {
+          "anchor": {
+            "left": 220,
+            "top": 209.7,
+            "right": 1300,
+            "bottom": 232.8
+          },
+          "pop": {
+            "left": 248,
+            "top": 240,
+            "right": 598,
+            "bottom": 314
+          },
+          "fullSize": true,
+          "pass": true
+        },
+        "slashPopover": {
+          "anchor": {
+            "left": 220,
+            "top": 497.2,
+            "right": 1300,
+            "bottom": 520.3
+          },
+          "pop": {
+            "left": 226,
+            "top": 113,
+            "right": 426,
+            "bottom": 489
+          },
+          "pass": true
+        },
+        "sideInserter": {
+          "anchor": {
+            "left": 220,
+            "top": 497.2,
+            "right": 1300,
+            "bottom": 520.3
+          },
+          "button": {
+            "left": 1276,
+            "top": 494,
+            "right": 1300,
+            "bottom": 518
+          },
+          "coverContainer": {
+            "left": 220,
+            "top": 497,
+            "right": 1300,
+            "bottom": 520.3
+          },
+          "buttonSize": 24,
+          "pass": true,
+          "clickOpensQuickInserter": true
+        },
+        "optionsMenu": {
+          "btn": {
+            "left": 479,
+            "top": 31,
+            "right": 515,
+            "bottom": 79
+          },
+          "pop": {
+            "left": 479,
+            "top": 92,
+            "right": 731.1,
+            "bottom": 545
+          },
+          "pass": true
+        },
+        "inbetweenInserter": {
+          "gap": {
+            "top": 185.6,
+            "bottom": 209.7,
+            "left": 220,
+            "right": 1300
+          },
+          "line": {
+            "left": 220,
+            "top": 196,
+            "right": 1300,
+            "bottom": 200
+          },
+          "button": {
+            "left": 748,
+            "top": 186,
+            "right": 772,
+            "bottom": 210
+          },
+          "pass": true
+        },
+        "gridVisualizer": {
+          "selected": "core/group",
+          "anchor": {
+            "left": 220,
+            "top": 536.8,
+            "right": 1300,
+            "bottom": 559.9
+          },
+          "cover": {
+            "left": 220,
+            "top": 537,
+            "right": 1300,
+            "bottom": 560.3
+          },
+          "pass": true
+        },
+        "gridItemResizer": {
+          "selected": "core/paragraph",
+          "anchor": {
+            "left": 220,
+            "top": 536.8,
+            "right": 752.8,
+            "bottom": 559.9
+          },
+          "cover": {
+            "left": 220,
+            "top": 537,
+            "right": 752.5,
+            "bottom": 560.3
+          },
+          "pass": true
+        },
+        "coverResizeBox": {
+          "selected": "core/cover",
+          "anchor": {
+            "left": 220,
+            "top": 559.9,
+            "right": 1300,
+            "bottom": 709.9
+          },
+          "cover": {
+            "left": 220,
+            "top": 560,
+            "right": 1300,
+            "bottom": 710
+          },
+          "handle": {
+            "left": 220,
+            "top": 701.4,
+            "right": 1300,
+            "bottom": 718.6
+          },
+          "pass": true
+        }
+      },
+      "unlock": {
+        "ok": true,
+        "error": null,
+        "zoomLevel": 100,
+        "isZoomOut": false
+      },
+      "iframe": {
+        "left": 220,
+        "top": 121,
+        "width": 1080,
+        "height": 675,
+        "offsetWidth": 1440
+      },
+      "htmlClass": "block-editor-iframe__html",
+      "consoleErrors": [],
+      "pass": true
+    },
+    "expscale+cssfix@50": {
+      "mode": "expscale+cssfix",
+      "zoom": 50,
+      "checks": {
+        "toolbar": {
+          "count": 1,
+          "inHeader": 1,
+          "inPopover": 0,
+          "selected": "core/paragraph",
+          "pass": true
+        },
+        "typing": {
+          "text": "First paragraph with some text to select and link. TYPED",
+          "pass": true
+        },
+        "linkPopover": {
+          "anchor": {
+            "left": 220,
+            "top": 191.2,
+            "right": 940,
+            "bottom": 206.6
+          },
+          "pop": {
+            "left": 181,
+            "top": 214,
+            "right": 531,
+            "bottom": 288
+          },
+          "fullSize": true,
+          "pass": true
+        },
+        "slashPopover": {
+          "anchor": {
+            "left": 220,
+            "top": 393.8,
+            "right": 940,
+            "bottom": 409.2
+          },
+          "pop": {
+            "left": 224,
+            "top": 10,
+            "right": 424,
+            "bottom": 386
+          },
+          "pass": true
+        },
+        "sideInserter": {
+          "anchor": {
+            "left": 220,
+            "top": 393.8,
+            "right": 940,
+            "bottom": 409.2
+          },
+          "button": {
+            "left": 916,
+            "top": 388,
+            "right": 940,
+            "bottom": 412
+          },
+          "coverContainer": {
+            "left": 220,
+            "top": 394,
+            "right": 940,
+            "bottom": 409.5
+          },
+          "buttonSize": 24,
+          "pass": true,
+          "clickOpensQuickInserter": true
+        },
+        "optionsMenu": {
+          "btn": {
+            "left": 479,
+            "top": 31,
+            "right": 515,
+            "bottom": 79
+          },
+          "pop": {
+            "left": 479,
+            "top": 92,
+            "right": 731.1,
+            "bottom": 545
+          },
+          "pass": true
+        },
+        "inbetweenInserter": {
+          "gap": {
+            "top": 164.1,
+            "bottom": 191.2,
+            "left": 220,
+            "right": 940
+          },
+          "line": {
+            "left": 220,
+            "top": 175.5,
+            "right": 940,
+            "bottom": 179.5
+          },
+          "button": {
+            "left": 568,
+            "top": 165.5,
+            "right": 592,
+            "bottom": 189.5
+          },
+          "pass": true
+        },
+        "gridVisualizer": {
+          "selected": "core/group",
+          "anchor": {
+            "left": 220,
+            "top": 420.2,
+            "right": 940,
+            "bottom": 435.6
+          },
+          "cover": {
+            "left": 220,
+            "top": 420,
+            "right": 940,
+            "bottom": 435.5
+          },
+          "pass": true
+        },
+        "gridItemResizer": {
+          "selected": "core/paragraph",
+          "anchor": {
+            "left": 220,
+            "top": 420.2,
+            "right": 575.2,
+            "bottom": 435.6
+          },
+          "cover": {
+            "left": 220,
+            "top": 420,
+            "right": 575,
+            "bottom": 435.5
+          },
+          "pass": true
+        },
+        "coverResizeBox": {
+          "selected": "core/cover",
+          "anchor": {
+            "left": 220,
+            "top": 435.6,
+            "right": 940,
+            "bottom": 535.6
+          },
+          "cover": {
+            "left": 220,
+            "top": 436,
+            "right": 940,
+            "bottom": 536
+          },
+          "handle": {
+            "left": 220,
+            "top": 530.3,
+            "right": 940,
+            "bottom": 541.8
+          },
+          "pass": true
+        }
+      },
+      "unlock": {
+        "ok": true,
+        "error": null,
+        "zoomLevel": 100,
+        "isZoomOut": false
+      },
+      "iframe": {
+        "left": -140,
+        "top": 121,
+        "width": 1440,
+        "height": 450,
+        "offsetWidth": 1440
+      },
+      "htmlClass": "block-editor-iframe__html is-zoomed-out",
+      "consoleErrors": [],
+      "pass": true
+    },
+    "expscale+cssfix@75": {
+      "mode": "expscale+cssfix",
+      "zoom": 75,
+      "checks": {
+        "toolbar": {
+          "count": 1,
+          "inHeader": 1,
+          "inPopover": 0,
+          "selected": "core/paragraph",
+          "pass": true
+        },
+        "typing": {
+          "text": "First paragraph with some text to select and link. TYPED",
+          "pass": true
+        },
+        "linkPopover": {
+          "anchor": {
+            "left": 220,
+            "top": 226.2,
+            "right": 1300,
+            "bottom": 249.3
+          },
+          "pop": {
+            "left": 248,
+            "top": 257,
+            "right": 598,
+            "bottom": 331
+          },
+          "fullSize": true,
+          "pass": true
+        },
+        "slashPopover": {
+          "anchor": {
+            "left": 220,
+            "top": 530.2,
+            "right": 1300,
+            "bottom": 553.3
+          },
+          "pop": {
+            "left": 226,
+            "top": 146,
+            "right": 426,
+            "bottom": 522
+          },
+          "pass": true
+        },
+        "sideInserter": {
+          "anchor": {
+            "left": 220,
+            "top": 530.2,
+            "right": 1300,
+            "bottom": 553.3
+          },
+          "button": {
+            "left": 1276,
+            "top": 527,
+            "right": 1300,
+            "bottom": 551
+          },
+          "coverContainer": {
+            "left": 220,
+            "top": 530,
+            "right": 1300,
+            "bottom": 553.3
+          },
+          "buttonSize": 24,
+          "pass": true,
+          "clickOpensQuickInserter": true
+        },
+        "optionsMenu": {
+          "btn": {
+            "left": 479,
+            "top": 31,
+            "right": 515,
+            "bottom": 79
+          },
+          "pop": {
+            "left": 479,
+            "top": 92,
+            "right": 731.1,
+            "bottom": 545
+          },
+          "pass": true
+        },
+        "inbetweenInserter": {
+          "gap": {
+            "top": 185.6,
+            "bottom": 226.2,
+            "left": 220,
+            "right": 1300
+          },
+          "line": {
+            "left": 220,
+            "top": 204.3,
+            "right": 1300,
+            "bottom": 208.3
+          },
+          "button": {
+            "left": 748,
+            "top": 194.3,
+            "right": 772,
+            "bottom": 218.3
+          },
+          "pass": true
+        },
+        "gridVisualizer": {
+          "selected": "core/group",
+          "anchor": {
+            "left": 220,
+            "top": 569.8,
+            "right": 1300,
+            "bottom": 592.9
+          },
+          "cover": {
+            "left": 220,
+            "top": 570,
+            "right": 1300,
+            "bottom": 593.3
+          },
+          "pass": true
+        },
+        "gridItemResizer": {
+          "selected": "core/paragraph",
+          "anchor": {
+            "left": 220,
+            "top": 569.8,
+            "right": 752.8,
+            "bottom": 592.9
+          },
+          "cover": {
+            "left": 220,
+            "top": 570,
+            "right": 752.5,
+            "bottom": 593.3
+          },
+          "pass": true
+        },
+        "coverResizeBox": {
+          "selected": "core/cover",
+          "anchor": {
+            "left": 220,
+            "top": 592.9,
+            "right": 1300,
+            "bottom": 742.9
+          },
+          "cover": {
+            "left": 220,
+            "top": 593,
+            "right": 1300,
+            "bottom": 743
+          },
+          "handle": {
+            "left": 220,
+            "top": 734.4,
+            "right": 1300,
+            "bottom": 751.6
+          },
+          "pass": true
+        }
+      },
+      "unlock": {
+        "ok": true,
+        "error": null,
+        "zoomLevel": 100,
+        "isZoomOut": false
+      },
+      "iframe": {
+        "left": 40,
+        "top": 121,
+        "width": 1440,
+        "height": 675,
+        "offsetWidth": 1440
+      },
+      "htmlClass": "block-editor-iframe__html is-zoomed-out",
+      "consoleErrors": [],
+      "pass": true
+    }
+  },
+  "probes": {
+    "optIn": {
+      "@wordpress/block-editor": {
+        "ok": true,
+        "error": null,
+        "privateKeyCount": 92,
+        "hasExperimentalBlockCanvas": true,
+        "wrongConsent": "You tried to opt-in to unstable APIs without confirming you know the consequences. This fe",
+        "consoleErrors": 0
+      },
+      "@wordpress/edit-site": {
+        "ok": true,
+        "error": null,
+        "privateKeyCount": 92,
+        "hasExperimentalBlockCanvas": true,
+        "wrongConsent": "You tried to opt-in to unstable APIs without confirming you know the consequences. This fe",
+        "consoleErrors": 0
+      },
+      "@wordpress/theme": {
+        "ok": true,
+        "error": null,
+        "privateKeyCount": 92,
+        "hasExperimentalBlockCanvas": true,
+        "wrongConsent": "You tried to opt-in to unstable APIs without confirming you know the consequences. This fe",
+        "consoleErrors": 0
+      },
+      "wordpress-for-designers": {
+        "ok": false,
+        "error": "You tried to opt-in to unstable APIs as module \"wordpress-for-designers\". This feature is only for JavaScript modules shipped with WordPress core. Please do not use it in plugins and themes as the unstable APIs will be removed without a warning. If you ignore this error and depend on unstable features, your product will inevitably break on one of the next WordPress releases.",
+        "wrongConsent": "You tried to opt-in to unstable APIs without confirming you know the consequences. This fe",
+        "consoleErrors": 0
+      },
+      "@wordpress/not-a-core-module": {
+        "ok": false,
+        "error": "You tried to opt-in to unstable APIs as module \"@wordpress/not-a-core-module\". This feature is only for JavaScript modules shipped with WordPress core. Please do not use it in plugins and themes as the unstable APIs will be removed without a warning. If you ignore this error and depend on unstable features, your product will inevitably break on one of the next WordPress releases.",
+        "wrongConsent": "You tried to opt-in to unstable APIs without confirming you know the consequences. This fe",
+        "consoleErrors": 0
+      }
+    },
+    "resizeDrag": {
+      "naive@100": {
+        "handle": {
+          "x": 900,
+          "y": 738,
+          "left": 180,
+          "right": 1620,
+          "top": 726.5,
+          "bottom": 749.5
+        },
+        "visualHeightBefore": 200,
+        "visualHeightAfter": 260,
+        "visualDelta": 60,
+        "draggedBy": 60,
+        "minHeightAttr": 260,
+        "pass": true,
+        "consoleErrors": []
+      },
+      "counter+cssfix@50": {
+        "handle": {
+          "x": 580,
+          "y": 514,
+          "left": 220,
+          "right": 940,
+          "top": 508.25,
+          "bottom": 519.75
+        },
+        "visualHeightBefore": 100,
+        "visualHeightAfter": 130,
+        "visualDelta": 30,
+        "draggedBy": 60,
+        "minHeightAttr": 260,
+        "pass": false,
+        "consoleErrors": []
+      },
+      "counter+cssfix@75": {
+        "handle": {
+          "x": 760,
+          "y": 709,
+          "left": 220,
+          "right": 1300,
+          "top": 700.375,
+          "bottom": 717.625
+        },
+        "visualHeightBefore": 150,
+        "visualHeightAfter": 195,
+        "visualDelta": 45,
+        "draggedBy": 60,
+        "minHeightAttr": 260,
+        "pass": false,
+        "consoleErrors": []
+      },
+      "expscale+cssfix@50": {
+        "handle": {
+          "x": 580,
+          "y": 536,
+          "left": 220,
+          "right": 940,
+          "top": 530.25,
+          "bottom": 541.75
+        },
+        "visualHeightBefore": 100,
+        "visualHeightAfter": 130,
+        "visualDelta": 30,
+        "draggedBy": 60,
+        "minHeightAttr": 260,
+        "pass": false,
+        "consoleErrors": []
+      },
+      "counter@50": {
+        "handle": {
+          "x": 900,
+          "y": 599,
+          "left": 180,
+          "right": 1620,
+          "top": 587.5,
+          "bottom": 610.5
+        },
+        "visualHeightBefore": 100,
+        "visualHeightAfter": 130,
+        "visualDelta": 30,
+        "draggedBy": 60,
+        "minHeightAttr": 260,
+        "pass": false,
+        "consoleErrors": []
+      }
+    }
+  },
+  "summary": {
+    "naive@100": {
+      "toolbar": "pass",
+      "typing": "pass",
+      "linkPopover": "pass",
+      "slashPopover": "pass",
+      "sideInserter": "pass",
+      "optionsMenu": "pass",
+      "inbetweenInserter": "pass",
+      "gridVisualizer": "pass",
+      "gridItemResizer": "pass",
+      "coverResizeBox": "pass",
+      "consoleErrors": 0
+    },
+    "naive@50": {
+      "toolbar": "pass",
+      "typing": "pass",
+      "linkPopover": "fail",
+      "slashPopover": "pass",
+      "sideInserter": "fail",
+      "optionsMenu": "pass",
+      "inbetweenInserter": "fail",
+      "gridVisualizer": "fail",
+      "gridItemResizer": "fail",
+      "coverResizeBox": "fail",
+      "consoleErrors": 0
+    },
+    "naive@75": {
+      "toolbar": "pass",
+      "typing": "pass",
+      "linkPopover": "fail",
+      "slashPopover": "pass",
+      "sideInserter": "fail",
+      "optionsMenu": "pass",
+      "inbetweenInserter": "fail",
+      "gridVisualizer": "fail",
+      "gridItemResizer": "fail",
+      "coverResizeBox": "fail",
+      "consoleErrors": 0
+    },
+    "counter@50": {
+      "toolbar": "pass",
+      "typing": "pass",
+      "linkPopover": "pass",
+      "slashPopover": "pass",
+      "sideInserter": "fail",
+      "optionsMenu": "pass",
+      "inbetweenInserter": "pass",
+      "gridVisualizer": "fail",
+      "gridItemResizer": "fail",
+      "coverResizeBox": "fail",
+      "consoleErrors": 0
+    },
+    "counter@75": {
+      "toolbar": "pass",
+      "typing": "pass",
+      "linkPopover": "pass",
+      "slashPopover": "pass",
+      "sideInserter": "fail",
+      "optionsMenu": "pass",
+      "inbetweenInserter": "pass",
+      "gridVisualizer": "fail",
+      "gridItemResizer": "fail",
+      "coverResizeBox": "fail",
+      "consoleErrors": 0
+    },
+    "counter@100": {
+      "toolbar": "pass",
+      "typing": "pass",
+      "linkPopover": "pass",
+      "slashPopover": "pass",
+      "sideInserter": "pass",
+      "optionsMenu": "pass",
+      "inbetweenInserter": "pass",
+      "gridVisualizer": "pass",
+      "gridItemResizer": "pass",
+      "coverResizeBox": "pass",
+      "consoleErrors": 0
+    },
+    "inner@50": {
+      "toolbar": "pass",
+      "typing": "pass",
+      "linkPopover": "pass",
+      "slashPopover": "pass",
+      "sideInserter": "fail",
+      "optionsMenu": "pass",
+      "inbetweenInserter": "pass",
+      "gridVisualizer": "fail",
+      "gridItemResizer": "fail",
+      "coverResizeBox": "fail",
+      "consoleErrors": 0
+    },
+    "inner@75": {
+      "toolbar": "pass",
+      "typing": "pass",
+      "linkPopover": "pass",
+      "slashPopover": "pass",
+      "sideInserter": "fail",
+      "optionsMenu": "pass",
+      "inbetweenInserter": "pass",
+      "gridVisualizer": "fail",
+      "gridItemResizer": "fail",
+      "coverResizeBox": "fail",
+      "consoleErrors": 0
+    },
+    "inner@100": {
+      "toolbar": "pass",
+      "typing": "pass",
+      "linkPopover": "pass",
+      "slashPopover": "pass",
+      "sideInserter": "pass",
+      "optionsMenu": "pass",
+      "inbetweenInserter": "pass",
+      "gridVisualizer": "pass",
+      "gridItemResizer": "pass",
+      "coverResizeBox": "pass",
+      "consoleErrors": 0
+    },
+    "expscale@50": {
+      "toolbar": "pass",
+      "typing": "pass",
+      "linkPopover": "pass",
+      "slashPopover": "pass",
+      "sideInserter": "fail",
+      "optionsMenu": "pass",
+      "inbetweenInserter": "pass",
+      "gridVisualizer": "fail",
+      "gridItemResizer": "fail",
+      "coverResizeBox": "fail",
+      "consoleErrors": 0
+    },
+    "expscale@75": {
+      "toolbar": "pass",
+      "typing": "pass",
+      "linkPopover": "pass",
+      "slashPopover": "pass",
+      "sideInserter": "fail",
+      "optionsMenu": "pass",
+      "inbetweenInserter": "pass",
+      "gridVisualizer": "fail",
+      "gridItemResizer": "fail",
+      "coverResizeBox": "fail",
+      "consoleErrors": 0
+    },
+    "expscale@100": {
+      "toolbar": "pass",
+      "typing": "pass",
+      "linkPopover": "pass",
+      "slashPopover": "pass",
+      "sideInserter": "pass",
+      "optionsMenu": "pass",
+      "inbetweenInserter": "pass",
+      "gridVisualizer": "pass",
+      "gridItemResizer": "pass",
+      "coverResizeBox": "pass",
+      "consoleErrors": 0
+    },
+    "storezoom@50": {
+      "toolbar": "error",
+      "typing": "fail",
+      "linkPopover": "error",
+      "slashPopover": "error",
+      "sideInserter": "error",
+      "optionsMenu": "error",
+      "inbetweenInserter": "error",
+      "gridVisualizer": "absent",
+      "gridItemResizer": "absent",
+      "coverResizeBox": "absent",
+      "consoleErrors": 0
+    },
+    "storezoom@75": {
+      "toolbar": "error",
+      "typing": "fail",
+      "linkPopover": "error",
+      "slashPopover": "error",
+      "sideInserter": "error",
+      "optionsMenu": "error",
+      "inbetweenInserter": "error",
+      "gridVisualizer": "absent",
+      "gridItemResizer": "absent",
+      "coverResizeBox": "absent",
+      "consoleErrors": 0
+    },
+    "storezoom@100": {
+      "toolbar": "pass",
+      "typing": "pass",
+      "linkPopover": "pass",
+      "slashPopover": "pass",
+      "sideInserter": "pass",
+      "optionsMenu": "pass",
+      "inbetweenInserter": "pass",
+      "gridVisualizer": "pass",
+      "gridItemResizer": "pass",
+      "coverResizeBox": "pass",
+      "consoleErrors": 0
+    },
+    "counter+cssfix@50": {
+      "toolbar": "pass",
+      "typing": "pass",
+      "linkPopover": "pass",
+      "slashPopover": "pass",
+      "sideInserter": "pass",
+      "optionsMenu": "pass",
+      "inbetweenInserter": "pass",
+      "gridVisualizer": "pass",
+      "gridItemResizer": "pass",
+      "coverResizeBox": "pass",
+      "consoleErrors": 0
+    },
+    "counter+cssfix@75": {
+      "toolbar": "pass",
+      "typing": "pass",
+      "linkPopover": "pass",
+      "slashPopover": "pass",
+      "sideInserter": "pass",
+      "optionsMenu": "pass",
+      "inbetweenInserter": "pass",
+      "gridVisualizer": "pass",
+      "gridItemResizer": "pass",
+      "coverResizeBox": "pass",
+      "consoleErrors": 0
+    },
+    "expscale+cssfix@50": {
+      "toolbar": "pass",
+      "typing": "pass",
+      "linkPopover": "pass",
+      "slashPopover": "pass",
+      "sideInserter": "pass",
+      "optionsMenu": "pass",
+      "inbetweenInserter": "pass",
+      "gridVisualizer": "pass",
+      "gridItemResizer": "pass",
+      "coverResizeBox": "pass",
+      "consoleErrors": 0
+    },
+    "expscale+cssfix@75": {
+      "toolbar": "pass",
+      "typing": "pass",
+      "linkPopover": "pass",
+      "slashPopover": "pass",
+      "sideInserter": "pass",
+      "optionsMenu": "pass",
+      "inbetweenInserter": "pass",
+      "gridVisualizer": "pass",
+      "gridItemResizer": "pass",
+      "coverResizeBox": "pass",
+      "consoleErrors": 0
+    }
+  },
+  "environment": {
+    "wordpress": "7.2-RC2",
+    "viewport": "1440x900",
+    "page": 10,
+    "fixtureNote": "page 10 had a grid group (2 paragraphs) and a cover block appended for checks 8-10",
+    "modes": {
+      "naive": "public BlockCanvas, ancestor scale(z)",
+      "counter": "public BlockCanvas, ancestor scale(z), wrapper scale(1/z), plugin CSS scale(z) on iframe element",
+      "inner": "public BlockCanvas, as counter but html{transform:scale(z)} injected in canvas",
+      "expscale": "PRIVATE ExperimentalBlockCanvas iframeProps={scale:z,frameSize:0}, tools unscaled, store zoomLevel left at 100",
+      "storezoom": "public BlockCanvas + PRIVATE store action setZoomLevel(z)",
+      "+cssfix": "plugin CSS: transform:scale(z) on the CoverContainer div, scale(1/z) on .block-editor-block-list__empty-block-inserter"
+    }
+  }
+}

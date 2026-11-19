@@ -1,0 +1,153 @@
+{
+ "browser": "webkit",
+ "z": 0.5,
+ "variant": "transform",
+ "checks": {
+  "c11a_spacing_visualizer": {
+   "label": "PaddingVertical paddingHorizontal paddin",
+   "block": {
+    "x": 304,
+    "y": 155.4,
+    "w": 720,
+    "h": 560.3
+   },
+   "cover": {
+    "x": 304,
+    "y": 155,
+    "w": 720,
+    "h": 560.5
+   },
+   "visualizer": {
+    "x": 304,
+    "y": 155,
+    "w": 720,
+    "h": 560.5
+   },
+   "visStyle": "border-width: 0px 50px;",
+   "blockPadding": [
+    "0px",
+    "50px",
+    "0px",
+    "50px"
+   ],
+   "renderedInsideArtboard": false,
+   "coverVsBlock": {
+    "dx": 0,
+    "dy": -0.4,
+    "dw": 0,
+    "dh": 0.2
+   },
+   "pass": true
+  },
+  "c11b_cover_resizer": {
+   "block": {
+    "x": 304,
+    "y": 120.4,
+    "w": 720,
+    "h": 120
+   },
+   "cover": {
+    "x": 304,
+    "y": 120,
+    "w": 720,
+    "h": 120
+   },
+   "coverStyle": "position: absolute; width: 1440px; height: 240px;",
+   "resizableBox": {
+    "x": 304,
+    "y": 120,
+    "w": 720,
+    "h": 120
+   },
+   "handle": {
+    "x": 304,
+    "y": 234.3,
+    "w": 720,
+    "h": 11.5
+   },
+   "coverVsBlock": {
+    "dx": 0,
+    "dy": -0.4,
+    "dw": 0,
+    "dh": 0
+   },
+   "renderedInsideArtboard": true,
+   "handleCenterDyFromBlockBottom": -0.4,
+   "drag": {
+    "draggedScreenPx": 40,
+    "screenHeightBefore": 120,
+    "screenHeightAfter": 227.5,
+    "screenDelta": 107.5,
+    "followsPointer": false
+   },
+   "placementPass": true,
+   "pass": false
+  },
+  "c11c_grid_visualizer": {
+   "block": {
+    "x": 304,
+    "y": 347.9,
+    "w": 720,
+    "h": 20
+   },
+   "cover": {
+    "x": 304,
+    "y": 348,
+    "w": 720,
+    "h": 20
+   },
+   "grid": {
+    "x": 304,
+    "y": 348,
+    "w": 720,
+    "h": 20
+   },
+   "cells": 6,
+   "coverVsBlock": {
+    "dx": 0,
+    "dy": 0.1,
+    "dw": 0,
+    "dh": 0
+   },
+   "renderedInsideArtboard": true,
+   "pass": true
+  },
+  "c11d_drop_zone": {
+   "target": {
+    "x": 304,
+    "y": 347.9,
+    "w": 720,
+    "h": 20
+   },
+   "targetClass": "block-editor-block-list__block wp-block is-selected wp-block-group block-editor-",
+   "dropZone": null,
+   "cover": null,
+   "indicator": null,
+   "popovers": [
+    "block-editor-grid-visualizer is-dropping-allowed"
+   ],
+   "pass": false,
+   "note": "no drop-zone cover shown (an in-between indicator may be used instead)"
+  }
+ },
+ "consoleErrors": [
+  "PAGEERROR /localhost:8888/wp-includes/css/dist/edit-post/style.css?ver=7.2-RC2 due to access control checks.",
+  "PAGEERROR /localhost:8888/wp-includes/css/dist/block-directory/style.css?ver=7.2-RC2 due to access control checks.",
+  "PAGEERROR /localhost:8888/wp-includes/css/dist/format-library/style.css?ver=7.2-RC2 due to access control checks.",
+  "PAGEERROR /localhost:8888/wp-includes/css/editor.css?ver=7.2-RC2 due to access control checks.",
+  "PAGEERROR /localhost:8888/wp-includes/css/media-views.css?ver=7.2-RC2 due to access control checks.",
+  "PAGEERROR /localhost:8888/wp-includes/js/imgareaselect/imgareaselect.css?ver=0.9.8 due to access control checks.",
+  "PAGEERROR /localhost:8888/wp-includes/css/dist/block-editor/style.css?ver=7.2-RC2 due to access control checks.",
+  "PAGEERROR /localhost:8888/wp-includes/css/dist/editor/style.css?ver=7.2-RC2 due to access control checks.",
+  "PAGEERROR /localhost:8888/wp-includes/css/dist/block-library/editor.css?ver=7.2-RC2 due to access control checks.",
+  "PAGEERROR /localhost:8888/wp-includes/css/dist/block-library/style.css?ver=7.2-RC2 due to access control checks.",
+  "PAGEERROR /localhost:8888/wp-includes/css/dist/preferences/style.css?ver=7.2-RC2 due to access control checks.",
+  "PAGEERROR /localhost:8888/wp-includes/js/mediaelement/wp-mediaelement.css?ver=7.2-RC2 due to access control checks.",
+  "PAGEERROR /localhost:8888/wp-includes/css/dist/reusable-blocks/style.css?ver=7.2-RC2 due to access control checks.",
+  "PAGEERROR /localhost:8888/wp-includes/css/dist/patterns/style.css?ver=7.2-RC2 due to access control checks.",
+  "PAGEERROR /localhost:8888/wp-includes/css/dist/media-utils/style.css?ver=7.2-RC2 due to access control checks.",
+  "PAGEERROR /localhost:8888/wp-includes/css/dist/block-library/reset.css?ver=7.2-RC2 due to access control checks.",
+  "PAGEERROR /localhost:8888/wp-includes/css/dist/block-editor/content.css?ver=7.2-RC2 due to access control checks.",
+  "PAGEERROR /localhost:8888/wp-includes/js/mediaelement/mediaelementplayer-legacy.min.css?ver=4.2.17 due to access control checks."
+ ]
+}

@@ -1,0 +1,709 @@
+{
+  "E0_serverProbes": {
+    "restContextHasLockFunctions": {
+      "wp_check_post_lock_exists": false,
+      "wp_set_post_lock_exists": false
+    },
+    "heartbeatDirectCall": {
+      "response": {
+        "new_lock": "1795080850:1"
+      },
+      "status": 200,
+      "metaAfter": "1795080850:1"
+    },
+    "removePostLockDirectCall": {
+      "response": {
+        "status": 200,
+        "text": "1"
+      },
+      "metaAfter": "1795080705:1",
+      "ageSecondsAfter": 145,
+      "seenBySecondAs": "int(1)"
+    },
+    "heartbeatDefaultIntervalSeconds": 60
+  },
+  "E1a_free_setEditedPostOnly_naturalHeartbeat": {
+    "actions": [
+      "setEditedPost"
+    ],
+    "stateBefore": {
+      "currentPostId": null,
+      "currentPostType": null,
+      "isPostLocked": false,
+      "isTakeover": null,
+      "activePostLock": null,
+      "lockUser": null,
+      "hasPostLockUtils": false
+    },
+    "secondsUntilLockTaken": 60,
+    "meta": "1795080912:1",
+    "stateAfter": {
+      "currentPostId": 11,
+      "currentPostType": "page",
+      "isPostLocked": false,
+      "isTakeover": null,
+      "activePostLock": "1795080912:1",
+      "lockUser": null,
+      "hasPostLockUtils": false
+    },
+    "modal": {
+      "shown": false
+    },
+    "errors": []
+  },
+  "E1c_unmount_and_clear": {
+    "metaBefore": "1795080912:1",
+    "afterUnmount": {
+      "meta": "1795080912:1",
+      "changed": false
+    },
+    "heartbeatAfterUnmount": {
+      "sentLockData": false,
+      "meta": "1795080912:1",
+      "changed": false
+    },
+    "afterSetEditedPostNull": {
+      "meta": "1795080912:1",
+      "changed": false,
+      "state": {
+        "currentPostId": null,
+        "currentPostType": null,
+        "isPostLocked": false,
+        "isTakeover": null,
+        "activePostLock": "1795080912:1",
+        "lockUser": null,
+        "hasPostLockUtils": false
+      }
+    },
+    "remountedWithNoPost": {
+      "sent": [
+        "data[wp-refresh-post-lock][lock]=1795080912:1&data[wp-refresh-post-lock][post_id]="
+      ],
+      "received": null,
+      "meta": "1795080912:1"
+    },
+    "errors": []
+  },
+  "E1a2_free_withUtils_then_navigateAway": {
+    "actions": [
+      "setEditedPost",
+      "updateEditorSettings({postLockUtils})"
+    ],
+    "heartbeatReceived": {
+      "new_lock": "1795080918:1"
+    },
+    "meta": "1795080918:1",
+    "state": {
+      "currentPostId": 11,
+      "currentPostType": "page",
+      "isPostLocked": false,
+      "isTakeover": null,
+      "activePostLock": "1795080918:1",
+      "lockUser": null,
+      "hasPostLockUtils": true
+    },
+    "metaAfterNavigatingAway": "1795080776:1",
+    "ageSecondsAfter": 146,
+    "seenBySecondAs": "int(1)",
+    "errors": []
+  },
+  "E1a3_free_noUtils_then_navigateAway": {
+    "meta": "1795080924:1",
+    "metaAfterNavigatingAway": "1795080924:1",
+    "released": false,
+    "errors": [
+      "pageerror: Cannot read properties of undefined (reading 'unlockNonce')"
+    ]
+  },
+  "E1b_i_lockedBySecond_setEditedPostOnly": {
+    "metaHeldBySecond": "1795080927:2",
+    "modalBeforeHeartbeat": {
+      "shown": false
+    },
+    "heartbeatReceived": {
+      "lock_error": {
+        "name": "second",
+        "text": "second has taken over and is currently editing.",
+        "avatar_src": "https://secure.gravatar.com/avatar/9aed32cef82bcc5b100282a6c853de6f814d5f320b9be5d9206cbf76aa047fa6?s=64&d=mm&r=g",
+        "avatar_src_2x": "https://secure.gravatar.com/avatar/9aed32cef82bcc5b100282a6c853de6f814d5f320b9be5d9206cbf76aa047fa6?s=128&d=mm&r=g"
+      }
+    },
+    "modalAfterHeartbeat": {
+      "shown": false
+    },
+    "appStillRendered": 0,
+    "metaAfter": "1795080927:2",
+    "errors": [
+      "pageerror: Cannot read properties of undefined (reading 'nonce')",
+      "pageerror: Cannot read properties of undefined (reading 'nonce')",
+      "The above error occurred in the <PostLockedModal> component:\n\n    at PostLockedModal (http://localhost:8888/wp-includes/js/dist/editor.js?ver=33deefc6545abe93022a:98197:59)\n    at div\n    at SlotFillProvider (http://localhost:8888/wp-includes/js/dist/components.js?ver=58f21503ed4d7c621e0c:28099:31)\n",
+      "pageerror: Cannot read properties of undefined (reading 'nonce')"
+    ]
+  },
+  "E1b_ii_lockedBySecond_post_and_utils": {
+    "modalBeforeHeartbeat": {
+      "shown": false
+    },
+    "heartbeatReceived": {
+      "lock_error": {
+        "name": "second",
+        "text": "second has taken over and is currently editing.",
+        "avatar_src": "https://secure.gravatar.com/avatar/9aed32cef82bcc5b100282a6c853de6f814d5f320b9be5d9206cbf76aa047fa6?s=64&d=mm&r=g",
+        "avatar_src_2x": "https://secure.gravatar.com/avatar/9aed32cef82bcc5b100282a6c853de6f814d5f320b9be5d9206cbf76aa047fa6?s=128&d=mm&r=g"
+      }
+    },
+    "modalAfterHeartbeat": {
+      "shown": true,
+      "title": "Someone else has taken over this post",
+      "text": [
+        "second now has editing control of this post (preview↗). Don’t worry, your changes up to this moment have been saved."
+      ],
+      "links": [
+        "preview↗ -> http://localhost:8888/diag-page-2/?preview_id=11&preview_nonce=7fcb91ca8e&preview=true",
+        "Exit editor -> edit.php?post_type=page"
+      ],
+      "closeButton": false,
+      "overlayRect": {
+        "x": 0,
+        "y": 0,
+        "w": 1440,
+        "h": 900
+      }
+    },
+    "state": {
+      "currentPostId": 11,
+      "currentPostType": "page",
+      "isPostLocked": true,
+      "isTakeover": true,
+      "activePostLock": null,
+      "lockUser": {
+        "name": "second",
+        "avatar": "https://secure.gravatar.com/avatar/9aed32cef82bcc5b100282a6c853de6f814d5f320b9be5d9206cbf76aa047fa6?s=128&d=mm&r=g"
+      },
+      "hasPostLockUtils": true
+    },
+    "requestsAfterFeed": [
+      "GET /wp-json/wp/v2/users/me?_locale=user",
+      "GET /wp-json/wp/v2/types?context=view&_locale=user",
+      "OPTIONS /wp-json/wp/v2/settings?_locale=user",
+      "GET /wp-json/wp/v2/pages/11?context=edit&_locale=user",
+      "GET /wp-json/wp/v2/types?context=edit&_locale=user",
+      "GET /wp-json/wp/v2/types/page?context=edit&_locale=user",
+      "GET /wp-json/wp/v2/pages/11/autosaves?context=edit&_locale=user",
+      "POST /wp-admin/admin-ajax.php",
+      "POST /wp-json/wp/v2/pages/11/autosaves?_locale=user"
+    ],
+    "errors": []
+  },
+  "E1b_iii_lockedBySecond_post_utils_lock": {
+    "actions": [
+      "setEditedPost",
+      "updateEditorSettings({postLockUtils})",
+      "updatePostLock(postLock)"
+    ],
+    "phpProvided": {
+      "postLock": {
+        "isLocked": true,
+        "user": {
+          "id": 2,
+          "name": "second",
+          "avatar": "https://secure.gravatar.com/avatar/9aed32cef82bcc5b100282a6c853de6f814d5f320b9be5d9206cbf76aa047fa6?s=128&d=mm&r=g"
+        }
+      },
+      "postLockUtilsKeys": [
+        "nonce",
+        "unlockNonce",
+        "ajaxUrl"
+      ]
+    },
+    "modal": {
+      "shown": true,
+      "title": "This post is already being edited",
+      "text": [
+        "second is currently working on this post (preview↗), which means you cannot make changes, unless you take over.",
+        "If you take over, the other user will lose editing control to the post, but their changes will be saved."
+      ],
+      "links": [
+        "preview↗ -> http://localhost:8888/diag-page-2/?preview_id=11&preview_nonce=75c81a5262&preview=true",
+        "Take over -> post.php?get-post-lock=1&lockKey=true&post=11&action=edit&_wpnonce=2fbb030dc0",
+        "Exit editor -> edit.php?post_type=page"
+      ],
+      "closeButton": false,
+      "overlayRect": {
+        "x": 0,
+        "y": 0,
+        "w": 1440,
+        "h": 900
+      }
+    },
+    "underlyingButtonClickable": false,
+    "modalStillShownAfterEscape": true,
+    "heartbeatWhileLockedSentLockData": false,
+    "metaAfterHeartbeatWhileLocked": "1795080927:2",
+    "takeOverLandsOn": "/wp-admin/post.php?post=11&action=edit",
+    "metaAfterTakeover": "1795080936:1",
+    "secondUserRealEditorThenSees": {
+      "shown": true,
+      "title": "Someone else has taken over this post",
+      "text": [
+        "admin now has editing control of this post (preview↗). Don’t worry, your changes up to this moment have been saved."
+      ],
+      "links": [
+        "preview↗ -> http://localhost:8888/diag-page-2/?preview_id=11&preview_nonce=98d5381c14&preview=true",
+        "Exit editor -> edit.php?post_type=page"
+      ],
+      "closeButton": false,
+      "overlayRect": {
+        "x": 0,
+        "y": 0,
+        "w": 1440,
+        "h": 900
+      }
+    },
+    "errors": []
+  },
+  "E3_exitEditor": {
+    "landsOn": "/wp-admin/edit.php?post_type=page",
+    "metaAfter": "1795080938:2"
+  },
+  "E3_takeOver_with_get_edit_post_link_filter": {
+    "landsOn": "/wp-admin/admin.php?page=wfd-diag2&post=11&spike=b&wfdreturn=1",
+    "metaAfter": "1795080941:1",
+    "lockInfoOnReturn": {
+      "isLocked": false
+    }
+  },
+  "E1d_takeoverDetected": {
+    "metaHeldByAdmin": "1795080944:1",
+    "refreshByHeartbeat": {
+      "received": {
+        "new_lock": "1795080945:1"
+      },
+      "meta": "1795080945:1"
+    },
+    "secondUserStockModal": {
+      "title": "This post is already being edited",
+      "links": [
+        "preview↗ -> http://localhost:8888/diag-page-2/?preview_id=11&preview_nonce=73f20d87f3&preview=true",
+        "Take over -> post.php?get-post-lock=1&lockKey=true&post=11&action=edit&_wpnonce=341156706b",
+        "Exit editor -> edit.php?post_type=page"
+      ]
+    },
+    "secondLandsOn": "/wp-admin/post.php?post=11&action=edit",
+    "metaAfterSecondTakeover": "1795080947:2",
+    "adminHeartbeatReceived": {
+      "lock_error": {
+        "name": "second",
+        "text": "second has taken over and is currently editing.",
+        "avatar_src": "https://secure.gravatar.com/avatar/9aed32cef82bcc5b100282a6c853de6f814d5f320b9be5d9206cbf76aa047fa6?s=64&d=mm&r=g",
+        "avatar_src_2x": "https://secure.gravatar.com/avatar/9aed32cef82bcc5b100282a6c853de6f814d5f320b9be5d9206cbf76aa047fa6?s=128&d=mm&r=g"
+      }
+    },
+    "adminModal": {
+      "shown": true,
+      "title": "Someone else has taken over this post",
+      "text": [
+        "second now has editing control of this post (preview↗). Don’t worry, your changes up to this moment have been saved."
+      ],
+      "links": [
+        "preview↗ -> http://localhost:8888/diag-page-2/?preview_id=11&preview_nonce=d4c653d55c&preview=true",
+        "Exit editor -> edit.php?post_type=page"
+      ],
+      "closeButton": false,
+      "overlayRect": {
+        "x": 0,
+        "y": 0,
+        "w": 1440,
+        "h": 900
+      }
+    },
+    "adminState": {
+      "currentPostId": 11,
+      "currentPostType": "page",
+      "isPostLocked": true,
+      "isTakeover": true,
+      "activePostLock": null,
+      "lockUser": {
+        "name": "second",
+        "avatar": "https://secure.gravatar.com/avatar/9aed32cef82bcc5b100282a6c853de6f814d5f320b9be5d9206cbf76aa047fa6?s=128&d=mm&r=g"
+      },
+      "hasPostLockUtils": true
+    },
+    "requestsAfterTakeover_autosaveCheck": [
+      "POST /wp-admin/admin-ajax.php",
+      "POST /wp-json/wp/v2/pages/11/autosaves?_locale=user"
+    ],
+    "titleInDb": "Diag page 2",
+    "autosaveRevisions": "[{\"ID\":14,\"post_name\":\"11-autosave-v1\",\"post_title\":\"Diag2 title edited\",\"post_author\":\"1\"},{\"ID\":15,\"post_name\":\"11-autosave-v1\",\"post_title\":\"Diag page 2\",\"post_author\":\"2\"}]",
+    "isDirtyStill": true,
+    "errors": [],
+    "warnings": []
+  },
+  "E2_sideEffects": {
+    "mounted": [
+      "PostLockedModal",
+      "UnsavedChangesWarning",
+      "EditorSnackbars",
+      "EntitiesSavedStates (on demand)"
+    ],
+    "baselineBeforeAnyEditorAction": {
+      "state": {
+        "editor": {
+          "currentPostId": null,
+          "isEditedPostDirty": null,
+          "isEditedPostAutosaveable": null,
+          "isSavingPost": false,
+          "editedTitle": null
+        },
+        "coreDirty": [
+          "page:11:Diag2 title edited"
+        ],
+        "hasEdits": true,
+        "notices": []
+      },
+      "beforeunload": {
+        "returnValue": true,
+        "defaultPrevented": false
+      }
+    },
+    "afterSetEditedPostAndUtils": {
+      "state": {
+        "editor": {
+          "currentPostId": 11,
+          "isEditedPostDirty": true,
+          "isEditedPostAutosaveable": true,
+          "isSavingPost": false,
+          "editedTitle": "Diag2 title edited"
+        },
+        "coreDirty": [
+          "page:11:Diag2 title edited"
+        ],
+        "hasEdits": true,
+        "notices": []
+      },
+      "beforeunload": {
+        "returnValue": true,
+        "defaultPrevented": false
+      }
+    },
+    "requestsRightAfterFeed": [
+      "GET /wp-json/wp/v2/types/page?context=edit&_locale=user",
+      "GET /wp-json/wp/v2/pages/11/autosaves?context=edit&_locale=user"
+    ],
+    "requestsDuring75sIdleWithDirtyPage": [
+      "GET /wp-json/wp/v2/types/page?context=edit&_locale=user",
+      "GET /wp-json/wp/v2/pages/11/autosaves?context=edit&_locale=user",
+      "POST /wp-admin/admin-ajax.php"
+    ],
+    "autosaveRequests": 0,
+    "metaAfter75s": "1795081062:1",
+    "entitiesSavedStatesText": "Cancel Save Are you ready to save? There is 1 site change waiting to be saved. Pages The following has been modified. Diag2 title edited",
+    "stateAfter75s": {
+      "editor": {
+        "currentPostId": 11,
+        "isEditedPostDirty": true,
+        "isEditedPostAutosaveable": true,
+        "isSavingPost": false,
+        "editedTitle": "Diag2 title edited"
+      },
+      "coreDirty": [
+        "page:11:Diag2 title edited"
+      ],
+      "hasEdits": true,
+      "notices": []
+    },
+    "titleInDb": "Diag page 2",
+    "errors": [],
+    "warnings": [
+      "wp.editor.EditorSnackbars is deprecated since version 7.0 and will be removed in version 7.2. Please use wp.notices.SnackbarNotices instead."
+    ]
+  },
+  "E2_switchPost_setEditedPostOnly": {
+    "afterFirstPost": {
+      "metaA": "1795081082:1",
+      "metaB": "",
+      "state": {
+        "currentPostId": 11,
+        "currentPostType": "page",
+        "isPostLocked": false,
+        "isTakeover": null,
+        "activePostLock": "1795081082:1",
+        "lockUser": null,
+        "hasPostLockUtils": true
+      }
+    },
+    "afterSwitch": {
+      "stateRightAfterSwitch": {
+        "currentPostId": 16,
+        "currentPostType": "page",
+        "isPostLocked": false,
+        "isTakeover": null,
+        "activePostLock": "1795081082:1",
+        "lockUser": null,
+        "hasPostLockUtils": true
+      },
+      "heartbeatSent": [
+        "data[wp-refresh-post-lock][lock]=1795081082:1",
+        "data[wp-refresh-post-lock][post_id]=16"
+      ],
+      "heartbeatReceived": {
+        "new_lock": "1795081083:1"
+      },
+      "metaA": "1795081082:1",
+      "ageA": 2,
+      "metaB": "1795081083:1",
+      "state": {
+        "currentPostId": 16,
+        "currentPostType": "page",
+        "isPostLocked": false,
+        "isTakeover": null,
+        "activePostLock": "1795081083:1",
+        "lockUser": null,
+        "hasPostLockUtils": true
+      }
+    },
+    "onLeave": {
+      "releaseRequestBodies": [
+        "| Content-Disposition: form-data; name=\"action\"  wp-remove-post-lock | Content-Disposition: form-data; name=\"_wpnonce\"  b7465b67b3 | Content-Disposition: form-data; name=\"post_ID\"  16 | Content-Disposition: form-data; name=\"active_post_lock\"  1795081083:1 |-- "
+      ],
+      "releaseResponseStatus": [
+        403
+      ],
+      "metaA": "1795081082:1",
+      "ageA": 4,
+      "metaB": "1795081083:1",
+      "ageB": 3
+    },
+    "errors": [
+      "Failed to load resource: the server responded with a status of 403 (Forbidden)"
+    ]
+  },
+  "E2_lockStateLeakAcrossPosts": {
+    "postA_lockedBySecond_modal": {
+      "shown": true,
+      "title": "This post is already being edited"
+    },
+    "afterSetEditedPostToFreePostB": {
+      "modalShown": true,
+      "title": "This post is already being edited",
+      "links": [
+        "preview↗ -> http://localhost:8888/diag2-switch-page/?preview=true",
+        "Take over -> post.php?get-post-lock=1&lockKey=true&post=16&action=edit&_wpnonce=aa22a5d8c5",
+        "Exit editor -> edit.php?post_type=page"
+      ],
+      "state": {
+        "currentPostId": 16,
+        "currentPostType": "page",
+        "isPostLocked": true,
+        "isTakeover": null,
+        "activePostLock": null,
+        "lockUser": {
+          "id": 2,
+          "name": "second",
+          "avatar": "https://secure.gravatar.com/avatar/9aed32cef82bcc5b100282a6c853de6f814d5f320b9be5d9206cbf76aa047fa6?s=128&d=mm&r=g"
+        },
+        "hasPostLockUtils": true
+      }
+    },
+    "afterResettingLockAndUtilsForB": {
+      "modalShown": false,
+      "heartbeatReceived": {
+        "new_lock": "1795081089:1"
+      },
+      "metaB": "1795081089:1",
+      "state": {
+        "currentPostId": 16,
+        "currentPostType": "page",
+        "isPostLocked": false,
+        "isTakeover": null,
+        "activePostLock": "1795081089:1",
+        "lockUser": null,
+        "hasPostLockUtils": true
+      }
+    },
+    "errors": []
+  },
+  "D1_take_refresh_release": {
+    "metaBefore": "",
+    "enterEdit": {
+      "status": "held",
+      "msToHeld": 56,
+      "meta": "1795081130:1"
+    },
+    "after7sAt3sRefresh": {
+      "meta": "1795081136:1",
+      "advancedSeconds": 6
+    },
+    "leaveEdit": {
+      "msToRelease": 50,
+      "meta": "",
+      "released": true
+    },
+    "reEnter": {
+      "meta": "1795081138:1"
+    },
+    "navigateAway_pagehideKeepalive": {
+      "meta": "",
+      "released": true
+    },
+    "requests": [
+      "POST /wp-json/wfd-diag2/v1/lock/11?_locale=user",
+      "POST /wp-json/wfd-diag2/v1/lock/11?_locale=user",
+      "POST /wp-json/wfd-diag2/v1/lock/11?_locale=user",
+      "POST /wp-json/wfd-diag2/v1/lock/11?_locale=user",
+      "POST /wp-json/wfd-diag2/v1/lock/11?_locale=user"
+    ],
+    "errors": []
+  },
+  "D2_twoUsers": {
+    "secondHolds": "1795081141:2",
+    "adminEntersEdit": {
+      "state": {
+        "live": true,
+        "status": "blocked",
+        "user": {
+          "id": 2,
+          "name": "second",
+          "avatar": "https://secure.gravatar.com/avatar/9aed32cef82bcc5b100282a6c853de6f814d5f320b9be5d9206cbf76aa047fa6?s=128&d=mm&r=g"
+        },
+        "lost": false,
+        "url": "/wp-admin/admin.php?page=wfd-diag2&post=11&spike=d&refresh=3000"
+      },
+      "dialog": {
+        "shown": true,
+        "title": "PLACEHOLDER title: already being edited",
+        "body": "PLACEHOLDER body (locked) naming second",
+        "buttons": [
+          "Close",
+          "PLACEHOLDER Take over",
+          "PLACEHOLDER Keep read-only"
+        ]
+      },
+      "meta": "1795081141:2"
+    },
+    "adminKeepsReadOnly": {
+      "state": {
+        "live": true,
+        "status": "blocked",
+        "user": {
+          "id": 2,
+          "name": "second",
+          "avatar": "https://secure.gravatar.com/avatar/9aed32cef82bcc5b100282a6c853de6f814d5f320b9be5d9206cbf76aa047fa6?s=128&d=mm&r=g"
+        },
+        "lost": false,
+        "url": "/wp-admin/admin.php?page=wfd-diag2&post=11&spike=d&refresh=3000"
+      },
+      "dialog": {
+        "shown": false
+      },
+      "statusText": "blocked (read-only)",
+      "meta": "1795081141:2"
+    },
+    "adminTakesOver": {
+      "state": {
+        "live": true,
+        "status": "held",
+        "lost": false,
+        "url": "/wp-admin/admin.php?page=wfd-diag2&post=11&spike=d&refresh=3000"
+      },
+      "dialog": {
+        "shown": false
+      },
+      "meta": "1795081143:1",
+      "ms": 489
+    },
+    "secondDetectsTakeover": {
+      "ms": 1136,
+      "state": {
+        "live": true,
+        "status": "blocked",
+        "user": {
+          "id": 1,
+          "name": "admin",
+          "avatar": "https://secure.gravatar.com/avatar/be3221a6fac131657111728b4d912a877ec158b123d5db3afef3bd8a59784ece?s=128&d=mm&r=g"
+        },
+        "lost": true,
+        "url": "/wp-admin/admin.php?page=wfd-diag2&post=11&spike=d&refresh=3000"
+      },
+      "dialog": {
+        "shown": true,
+        "title": "PLACEHOLDER title: someone took over",
+        "body": "PLACEHOLDER body (taken over) naming admin",
+        "buttons": [
+          "Close",
+          "PLACEHOLDER Take over",
+          "PLACEHOLDER Keep read-only"
+        ]
+      },
+      "meta": "1795081143:1"
+    },
+    "metaAfterLoserLeavesEdit": "1795081145:1",
+    "adminErrors": [],
+    "secondErrors": []
+  },
+  "D3_interopWithCoreEditor": {
+    "coreEditorForSecondShows": {
+      "shown": true,
+      "title": "This post is already being edited"
+    },
+    "afterCoreTakeover": {
+      "meta": "1795081147:2",
+      "boardDetected": true,
+      "ms": 2123,
+      "state": {
+        "live": true,
+        "status": "blocked",
+        "user": {
+          "id": 2,
+          "name": "second",
+          "avatar": "https://secure.gravatar.com/avatar/9aed32cef82bcc5b100282a6c853de6f814d5f320b9be5d9206cbf76aa047fa6?s=128&d=mm&r=g"
+        },
+        "lost": true,
+        "url": "/wp-admin/admin.php?page=wfd-diag2&post=11&spike=d&refresh=3000"
+      },
+      "dialog": {
+        "shown": true,
+        "title": "PLACEHOLDER title: someone took over",
+        "body": "PLACEHOLDER body (taken over) naming second",
+        "buttons": [
+          "Close",
+          "PLACEHOLDER Take over",
+          "PLACEHOLDER Keep read-only"
+        ]
+      }
+    }
+  },
+  "D4_restFieldVariant": {
+    "fieldWhenFree": null,
+    "saveEntityRecordTake": {
+      "requests": [
+        "POST /wp-json/wp/v2/pages/11?_locale=user"
+      ],
+      "meta": "1795081152:1",
+      "postModifiedBefore": "2026-11-19 09:36:41",
+      "postModifiedAfter": "2026-11-19 09:39:12",
+      "postModifiedChanged": true,
+      "revisionsBefore": "1",
+      "revisionsAfter": "1"
+    },
+    "afterOtherUserLocks_cachedRecordStillSays": null,
+    "fieldInAnonymousViewResponse": "(absent)",
+    "errors": []
+  },
+  "_notes": {
+    "env": "WordPress 7.2-RC2, wp-env, Chromium/Playwright, page id 11, users admin(1)/second(2)",
+    "nonAllowlisted": [
+      "core/editor store actions setEditedPost, updateEditorSettings, updatePostLock (driven via wp.data.dispatch in page.evaluate)",
+      "window.wp.heartbeat.connectNow (test trigger only)",
+      "window.heartbeatSettings.nonce + admin-ajax action=heartbeat (direct call probe)",
+      "register_rest_route (public PHP, not named in allowlist list but allowed by its rule)"
+    ],
+    "beforeunloadProbeInE2": "inconclusive: synthetic Event, returnValue true in baseline too; see editor.js:103406-103424 for UnsavedChangesWarning source",
+    "scripts": [
+      "run-1.mjs",
+      "run-2.mjs",
+      "run-3.mjs",
+      "util.mjs"
+    ]
+  }
+}

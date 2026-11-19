@@ -1,0 +1,408 @@
+{
+ "browser": "firefox",
+ "z": 0.3,
+ "variant": "transform",
+ "frameVisible": true,
+ "checks": {
+  "c2_hit_typing": {
+   "heading": {
+    "screenRect": {
+     "x": 423.3,
+     "y": 135.2,
+     "w": 193.5,
+     "h": 16.2
+    },
+    "caretInBlock": true,
+    "before": "Blog",
+    "after": "Blog Zed",
+    "selected": [
+     "core/heading:Blog Zed"
+    ]
+   },
+   "grid": {
+    ".wp-block-heading[data-type=\"core/heading\"]": "9/9",
+    "[data-type=\"core/post-title\"]": "9/9",
+    "[data-type=\"core/post-date\"]": "9/9",
+    "[data-type=\"core/template-part\"] p": "9/9"
+   },
+   "headerClickSelects": [
+    "core/template-part:Fixture head"
+   ],
+   "pass": true
+  },
+  "c1_toolbar": {
+   "count": 1,
+   "inHeader": 1,
+   "inIframe": 0,
+   "floating": 0,
+   "rect": {
+    "x": 272,
+    "y": 7,
+    "w": 185.1,
+    "h": 46
+   },
+   "uiScale": 1.0005405735325168,
+   "offsetHeight": 46,
+   "pass": true
+  },
+  "c6_toolbar_menu": {
+   "button": {
+    "x": 414,
+    "y": 6,
+    "w": 36,
+    "h": 48
+   },
+   "menu": {
+    "x": 414,
+    "y": 67,
+    "w": 252.1,
+    "h": 485
+   },
+   "uiScale": 1.0004629710363964,
+   "hittable": [
+    true,
+    true,
+    true
+   ],
+   "addBeforeMadeParagraph": true,
+   "gapBelow": 13,
+   "hOverlap": true,
+   "pass": true
+  },
+  "c4_slash": {
+   "paragraph": {
+    "x": 304,
+    "y": 120.8,
+    "w": 432,
+    "h": 9.2
+   },
+   "caret": {
+    "x": 306.4,
+    "y": 120.8,
+    "w": 0,
+    "h": 9.3
+   },
+   "popover": {
+    "x": 306,
+    "y": 138,
+    "w": 200,
+    "h": 376
+   },
+   "uiScale": 1,
+   "items": 9,
+   "hittable": [
+    true,
+    true,
+    true
+   ],
+   "gapBelow": 7.9,
+   "gapAbove": -393.2,
+   "dx": -0.4,
+   "onScreen": true,
+   "pass": true
+  },
+  "c5_add_block_button": {
+   "viewportWidenedTo": null,
+   "paragraph": {
+    "x": 304,
+    "y": 120.8,
+    "w": 432,
+    "h": 9.2
+   },
+   "paragraphLayout": [
+    1440,
+    31
+   ],
+   "cover": {
+    "x": 304,
+    "y": 121,
+    "w": 432,
+    "h": 9.3
+   },
+   "coverStyle": "position: absolute; width: 1440px; height: 31px;",
+   "button": {
+    "x": 712,
+    "y": 121,
+    "w": 24,
+    "h": 24
+   },
+   "hittable": [
+    true,
+    true,
+    true
+   ],
+   "rightDx": 0,
+   "topDy": 0.2,
+   "coverDw": 0,
+   "coverDh": 0.1,
+   "sizeOk": true,
+   "placedPass": true,
+   "quickInserter": {
+    "rect": {
+     "x": 712,
+     "y": 158,
+     "w": 350,
+     "h": 293
+    },
+    "uiScale": 1,
+    "hittable": [
+     true,
+     true,
+     true
+    ],
+    "gapBelowButton": 13,
+    "gapAboveButton": -330,
+    "gapLeftOfButton": -350,
+    "hOverlap": true
+   },
+   "quickPass": true,
+   "pass": true
+  },
+  "setup_paragraphs": {
+   "texts": [
+    "Second paragraph words",
+    "Third paragraph words"
+   ],
+   "pass": true
+  },
+  "c3_link_popover": {
+   "selectedText": "Second",
+   "selection": {
+    "x": 304,
+    "y": 120.8,
+    "w": 22.7,
+    "h": 9.3
+   },
+   "popover": {
+    "x": 281,
+    "y": 138,
+    "w": 350,
+    "h": 74
+   },
+   "uiScale": 1,
+   "hittable": [
+    true,
+    true,
+    true
+   ],
+   "insideArtboardDom": true,
+   "gapBelow": 7.9,
+   "gapAbove": -91.2,
+   "hOverlap": true,
+   "onScreen": true,
+   "pass": true
+  },
+  "c8_selection": {
+   "single": {
+    "ids": [
+     "core/paragraph:Second parag"
+    ],
+    "isSelected": true,
+    "afterOutline": "3px none",
+    "afterBoxShadow": "none",
+    "focusVar": "2px"
+   },
+   "multi": [
+    "#block-504d96fb-3885-43fb-9c9d-5c9e00bc6b13",
+    "#block-8bb7f25f-5418-4f8f-b49a-d4759f46c50f"
+   ],
+   "expected": [
+    "#block-504d96fb-3885-43fb-9c9d-5c9e00bc6b13",
+    "#block-8bb7f25f-5418-4f8f-b49a-d4759f46c50f"
+   ],
+   "pass": true
+  },
+  "c7_inbetween": {
+   "present": true,
+   "gap": {
+    "x": 304,
+    "y": 130.1,
+    "w": 432,
+    "h": 6.6
+   },
+   "container": {
+    "x": 304,
+    "y": 130,
+    "w": 432,
+    "h": 0
+   },
+   "indicator": {
+    "x": 304,
+    "y": 131.3,
+    "w": 432,
+    "h": 4
+   },
+   "button": {
+    "x": 508,
+    "y": 121.3,
+    "w": 24,
+    "h": 24
+   },
+   "buttonUiScale": 1,
+   "dx": 0,
+   "dw": 0,
+   "dyCenter": -0.1,
+   "pass": true,
+   "buttonDyCenter": -0.1
+  },
+  "c9_drag_indicator": {
+   "listRows": [
+    "HeaderBlock ",
+    "ParagraphBlo",
+    "ParagraphBlo",
+    "GroupBlock 4",
+    "Hidden blog ",
+    "List of post",
+    "FooterBlock "
+   ],
+   "pointer": {
+    "x": 520,
+    "y": 122.8
+   },
+   "prevBlock": "core/template-part",
+   "prevRect": {
+    "x": 304,
+    "y": 105,
+    "w": 432,
+    "h": 9.2
+   },
+   "p1Rect": {
+    "x": 304,
+    "y": 120.8,
+    "w": 432,
+    "h": 9.2
+   },
+   "indicator": {
+    "x": 304,
+    "y": 115.3,
+    "w": 432,
+    "h": 4
+   },
+   "dropZone": null,
+   "popovers": [
+    "block-editor-block-popover block-editor-block-popover__inbetween"
+   ],
+   "orderAfterCancel": [
+    "template-part",
+    "paragraph",
+    "paragraph",
+    "group",
+    "template-part"
+   ],
+   "gapOnScreen": [
+    114.2,
+    120.8
+   ],
+   "indicatorCenterY": 117.3,
+   "dyFromGapCenter": -0.2,
+   "dyFromPointer": -5.5,
+   "dx": 0,
+   "dw": 0,
+   "pass": true
+  },
+  "c10_image": {
+   "placeholder": {
+    "x": 304,
+    "y": 152.5,
+    "w": 432,
+    "h": 48
+   },
+   "buttons": [
+    "Insert from URL@{\"x\":311.2,\"y\":181.3,\"w\":37.7,\"h\":12}"
+   ],
+   "placeholderButtonClickOpensUrlForm": true,
+   "urlButton": {
+    "x": 311.2,
+    "y": 181.3,
+    "w": 37.7,
+    "h": 12
+   },
+   "urlPopover": {
+    "rect": {
+     "x": 172,
+     "y": 193,
+     "w": 316,
+     "h": 56
+    },
+    "uiScale": 1,
+    "hittable": [
+     true,
+     true,
+     true
+    ],
+    "gapBelowButton": -0.3,
+    "gapAboveButton": -67.7,
+    "hOverlap": true
+   },
+   "imageScreen": {
+    "x": 304,
+    "y": 152.5,
+    "w": 82.2,
+    "h": 18.9
+   },
+   "imageLayout": {
+    "x": 0,
+    "y": 158.4,
+    "w": 274,
+    "h": 63
+   },
+   "selected": true,
+   "handlesInTopDocument": 0,
+   "handles": [
+    {
+     "cls": "handle side-handle handle-right",
+     "dxFromRightEdge": 0,
+     "dyFromBottomEdge": -31.5,
+     "screen": {
+      "x": 382.8,
+      "y": 152.5,
+      "w": 6.9,
+      "h": 18.9
+     }
+    },
+    {
+     "cls": "handle side-handle handle-bottom",
+     "dxFromRightEdge": -137,
+     "dyFromBottomEdge": 0,
+     "screen": {
+      "x": 304,
+      "y": 168,
+      "w": 82.2,
+      "h": 6.9
+     }
+    }
+   ],
+   "resizeDrag": {
+    "draggedScreenPx": -30,
+    "layoutWidthBefore": 274,
+    "layoutWidthAfter": 174,
+    "screenWidthBefore": 82.2,
+    "screenWidthAfter": 52.2,
+    "screenDelta": -30,
+    "followsPointer": true
+   },
+   "pass": true
+  }
+ },
+ "geometry": {
+  "frame": {
+   "x": 304,
+   "y": 105,
+   "width": 432,
+   "height": 518.4000244140625
+  },
+  "iframe": {
+   "x": 304,
+   "y": 105,
+   "width": 432,
+   "height": 518.4000244140625
+  },
+  "iframeLayout": [
+   1440,
+   1728
+  ],
+  "innerWidth": 1440,
+  "scale": 0.3
+ },
+ "consoleErrors": []
+}

@@ -1,0 +1,186 @@
+{
+ "browser": "chromium",
+ "mode": "B",
+ "fix": false,
+ "zoom": 0.5,
+ "checks": {
+  "11a-drop-zone-cover": {
+   "pass": false,
+   "evidence": {
+    "synthetic": true,
+    "emptyParagraph": {
+     "x": 320,
+     "y": 287.6,
+     "w": 322.5,
+     "h": 15.4
+    },
+    "dropZone": {
+     "x": 320.3,
+     "y": 286.6,
+     "w": 645,
+     "h": 31,
+     "layoutW": 645,
+     "layoutH": 31,
+     "scale": 1,
+     "topmost": false,
+     "inFrame": true,
+     "onScreen": true
+    }
+   }
+  },
+  "11b-resizable-box-popover": {
+   "pass": false,
+   "evidence": {
+    "selectedType": "core/cover",
+    "coverOnScreen": {
+     "x": 320,
+     "y": 287.6,
+     "w": 322.5,
+     "h": 120
+    },
+    "resizableBox": {
+     "x": 320.3,
+     "y": 286.6,
+     "w": 645,
+     "h": 240,
+     "layoutW": 645,
+     "layoutH": 240,
+     "scale": 1,
+     "topmost": true,
+     "inFrame": true,
+     "onScreen": true
+    },
+    "bottomHandle": {
+     "x": 320.3,
+     "y": 515.1,
+     "w": 645,
+     "h": 23,
+     "layoutW": 645,
+     "layoutH": 23,
+     "scale": 1,
+     "topmost": true,
+     "inFrame": true,
+     "onScreen": true
+    },
+    "handleCentre": [
+     642.8,
+     526.6
+    ],
+    "expectedHandleCentre": [
+     481.3,
+     407.6
+    ],
+    "elementAtHandleCentre": "",
+    "dragBottomHandleBy": 40,
+    "coverHeightChangeOnScreen": 20,
+    "handleOnBottomEdge": false,
+    "resizeTracksPointer": false
+   }
+  },
+  "11c-spacing-visualizer": {
+   "pass": false,
+   "evidence": {
+    "coverOnScreen": {
+     "x": 320,
+     "y": 287.6,
+     "w": 322.5,
+     "h": 140
+    },
+    "visualizer": {
+     "x": 320,
+     "y": 287,
+     "w": 645,
+     "h": 280,
+     "layoutW": 645,
+     "layoutH": 280,
+     "scale": 1,
+     "topmost": true,
+     "inFrame": false,
+     "onScreen": true
+    },
+    "label": [
+     "_463056a1846babdd__flex eefcc0383f58d3a1__items-row _8a74174:Typography",
+     "_463056a1846babdd__flex eefcc0383f58d3a1__items-row _8a74174:Color",
+     "_463056a1846babdd__flex eefcc0383f58d3a1__items-row _8a74174:Filters",
+     "_463056a1846babdd__flex eefcc0383f58d3a1__items-row _8a74174:Layout"
+    ]
+   }
+  }
+ },
+ "notes": [
+  "blocked board autosave POST",
+  "blocked board autosave POST",
+  "blocked board autosave POST"
+ ],
+ "maps": [
+  {
+   "for": "post-title",
+   "at": {
+    "x": 320,
+    "y": 250
+   },
+   "paintScaleMismatch": null,
+   "innerRect": {
+    "x": 397.5,
+    "y": 170.8,
+    "w": 645,
+    "h": 54
+   },
+   "paintedBox": {
+    "x": 320,
+    "y": 251,
+    "width": 322,
+    "height": 26,
+    "clipped": false
+   },
+   "paint": {
+    "scale": [
+     0.5,
+     0.5
+    ],
+    "origin": [
+     121.3,
+     165.6
+    ]
+   },
+   "event": {
+    "scale": [
+     0.5,
+     0.5
+    ],
+    "origin": [
+     121.5,
+     165
+    ]
+   },
+   "hitOffsetOnScreen": [
+    -0.2,
+    0.6
+   ]
+  }
+ ],
+ "layout": {
+  "innerWidth": 1440,
+  "clientWidth": 1440,
+  "dpr": 1,
+  "mqMin1440": true,
+  "mqMin782": true,
+  "mqMin600": true,
+  "rootOffsetWidth": 1440,
+  "rootRectWidth": 1440,
+  "p1OffsetWidth": 645,
+  "p1RectWidth": 645,
+  "vw100": "1440/1440",
+  "iframeScreen": {
+   "x": 304,
+   "y": 105,
+   "w": 1440,
+   "h": 3585
+  }
+ },
+ "errors": [
+  "Failed to load resource: net::ERR_FAILED",
+  "Failed to load resource: net::ERR_FAILED",
+  "Failed to load resource: net::ERR_FAILED"
+ ]
+}

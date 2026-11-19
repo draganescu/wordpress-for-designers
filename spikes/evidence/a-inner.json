@@ -1,0 +1,275 @@
+[
+  {
+    "zoom": 50,
+    "checks": {
+      "toolbar": {
+        "count": 1,
+        "inHeader": 1,
+        "inPopover": 0,
+        "pass": true
+      },
+      "typing": {
+        "text": "First paragraph with some text to select and link. TYPED",
+        "pass": true
+      },
+      "linkPopover": {
+        "anchor": {
+          "left": 220,
+          "top": 180.15625,
+          "right": 940,
+          "bottom": 195.5546875
+        },
+        "pop": {
+          "left": 181,
+          "top": 203,
+          "right": 531,
+          "bottom": 277
+        },
+        "gapBelowAnchor": 7.4453125,
+        "gapAboveAnchor": -96.84375,
+        "fullSize": true,
+        "pass": true
+      },
+      "slashPopover": {
+        "anchor": {
+          "left": 220,
+          "top": 371.7890625,
+          "right": 940,
+          "bottom": 387.1875
+        },
+        "pop": {
+          "left": 224,
+          "top": 395,
+          "right": 424,
+          "bottom": 771
+        },
+        "gapBelowAnchor": 7.8125,
+        "gapAboveAnchor": -399.2109375,
+        "leftOffset": 4,
+        "pass": true
+      },
+      "sideInserter": {
+        "anchor": {
+          "left": 220,
+          "top": 371.7890625,
+          "right": 940,
+          "bottom": 387.1875
+        },
+        "pop": {
+          "left": 1636,
+          "top": 372,
+          "right": 1660,
+          "bottom": 396
+        },
+        "buttonSize": 24,
+        "pass": false
+      },
+      "optionsMenu": {
+        "btn": {
+          "left": 479,
+          "top": 31,
+          "right": 515,
+          "bottom": 79
+        },
+        "pop": {
+          "left": 479,
+          "top": 92,
+          "right": 731.125,
+          "bottom": 545
+        },
+        "pass": true
+      }
+    },
+    "iframe": {
+      "left": 220,
+      "top": 121,
+      "width": 1440,
+      "height": 900,
+      "offsetWidth": 1440
+    },
+    "consoleErrors": [],
+    "pass": false
+  },
+  {
+    "zoom": 75,
+    "checks": {
+      "toolbar": {
+        "count": 1,
+        "inHeader": 1,
+        "inPopover": 0,
+        "pass": true
+      },
+      "typing": {
+        "text": "First paragraph with some text to select and link. TYPED",
+        "pass": true
+      },
+      "linkPopover": {
+        "anchor": {
+          "left": 220,
+          "top": 209.734375,
+          "right": 1300,
+          "bottom": 232.83203125
+        },
+        "pop": {
+          "left": 248,
+          "top": 240,
+          "right": 598,
+          "bottom": 314
+        },
+        "gapBelowAnchor": 7.16796875,
+        "gapAboveAnchor": -104.265625,
+        "fullSize": true,
+        "pass": true
+      },
+      "slashPopover": {
+        "anchor": {
+          "left": 220,
+          "top": 497.18359375,
+          "right": 1300,
+          "bottom": 520.28125
+        },
+        "pop": {
+          "left": 226,
+          "top": 113,
+          "right": 426,
+          "bottom": 489
+        },
+        "gapBelowAnchor": -407.28125,
+        "gapAboveAnchor": 8.18359375,
+        "leftOffset": 6,
+        "pass": true
+      },
+      "sideInserter": {
+        "anchor": {
+          "left": 220,
+          "top": 497.18359375,
+          "right": 1300,
+          "bottom": 520.28125
+        },
+        "pop": {
+          "left": 1636,
+          "top": 497,
+          "right": 1660,
+          "bottom": 521
+        },
+        "buttonSize": 24,
+        "pass": false
+      },
+      "optionsMenu": {
+        "btn": {
+          "left": 479,
+          "top": 31,
+          "right": 515,
+          "bottom": 79
+        },
+        "pop": {
+          "left": 479,
+          "top": 92,
+          "right": 731.125,
+          "bottom": 545
+        },
+        "pass": true
+      }
+    },
+    "iframe": {
+      "left": 220,
+      "top": 121,
+      "width": 1440,
+      "height": 900,
+      "offsetWidth": 1440
+    },
+    "consoleErrors": [],
+    "pass": false
+  },
+  {
+    "zoom": 100,
+    "checks": {
+      "toolbar": {
+        "count": 1,
+        "inHeader": 1,
+        "inPopover": 0,
+        "pass": true
+      },
+      "typing": {
+        "text": "First paragraph with some text to select and link. TYPED",
+        "pass": true
+      },
+      "linkPopover": {
+        "anchor": {
+          "left": 220,
+          "top": 239.3125,
+          "right": 1660,
+          "bottom": 270.109375
+        },
+        "pop": {
+          "left": 316,
+          "top": 277,
+          "right": 666,
+          "bottom": 351
+        },
+        "gapBelowAnchor": 6.890625,
+        "gapAboveAnchor": -111.6875,
+        "fullSize": true,
+        "pass": true
+      },
+      "slashPopover": {
+        "anchor": {
+          "left": 220,
+          "top": 622.578125,
+          "right": 1660,
+          "bottom": 653.375
+        },
+        "pop": {
+          "left": 228,
+          "top": 239,
+          "right": 428,
+          "bottom": 615
+        },
+        "gapBelowAnchor": -414.375,
+        "gapAboveAnchor": 7.578125,
+        "leftOffset": 8,
+        "pass": true
+      },
+      "sideInserter": {
+        "anchor": {
+          "left": 220,
+          "top": 622.578125,
+          "right": 1660,
+          "bottom": 653.375
+        },
+        "pop": {
+          "left": 1636,
+          "top": 623,
+          "right": 1660,
+          "bottom": 647
+        },
+        "buttonSize": 24,
+        "pass": true
+      },
+      "optionsMenu": {
+        "btn": {
+          "left": 479,
+          "top": 31,
+          "right": 515,
+          "bottom": 79
+        },
+        "pop": {
+          "left": 479,
+          "top": 92,
+          "right": 731.125,
+          "bottom": 545
+        },
+        "pass": true
+      }
+    },
+    "iframe": {
+      "left": 220,
+      "top": 121,
+      "width": 1440,
+      "height": 900,
+      "offsetWidth": 1440
+    },
+    "consoleErrors": [],
+    "pass": true
+  }
+]

@@ -1,0 +1,462 @@
+{
+ "browser": "chromium",
+ "mode": "A-frame-zoom",
+ "fix": false,
+ "zoom": 0.3,
+ "checks": {
+  "2-hit-typing": {
+   "pass": true,
+   "evidence": {
+    "paragraphOnScreen": {
+     "x": 320,
+     "y": 300,
+     "w": 19.3,
+     "h": 5.9
+    },
+    "clickedParagraphAt": [
+     329.7,
+     302.9
+    ],
+    "selectedType": "core/paragraph",
+    "paragraphSelected": true,
+    "caretInParagraph": true,
+    "textAfterTyping": "WrittZqen by",
+    "neighbourClickAt": [
+     352.5,
+     302.9
+    ],
+    "neighbourClickSelected": "core/post-author-name",
+    "neighbourOnScreen": {
+     "x": 340.2,
+     "y": 300,
+     "w": 24.6,
+     "h": 5.9
+    }
+   }
+  },
+  "1-toolbar": {
+   "pass": true,
+   "evidence": {
+    "total": 2,
+    "inH6": 2,
+    "rect": [
+     269,
+     7,
+     277,
+     46
+    ],
+    "layoutH": 46,
+    "h6": [
+     269,
+     7,
+     277,
+     46
+    ],
+    "innerToolbars": 0
+   }
+  },
+  "3-link-popover": {
+   "pass": false,
+   "evidence": {
+    "selText": "Written",
+    "selectionOnScreen": {
+     "x": 320,
+     "y": 300,
+     "w": 14.1,
+     "h": 5
+    },
+    "popover": {
+     "x": 487,
+     "y": 242.8,
+     "w": 105,
+     "h": 22.2,
+     "layoutW": 350,
+     "layoutH": 74,
+     "scale": 0.3,
+     "topmost": true,
+     "inFrame": true,
+     "onScreen": true
+    },
+    "gapBelowSelection": -62.2,
+    "popoverSpansSelectionCentre": false
+   }
+  },
+  "6-toolbar-menu": {
+   "pass": true,
+   "evidence": {
+    "button": {
+     "x": 530.8,
+     "y": 6,
+     "w": 36,
+     "h": 48
+    },
+    "menu": {
+     "x": 510,
+     "y": 67,
+     "w": 251.9,
+     "h": 161,
+     "layoutW": 252,
+     "layoutH": 161,
+     "scale": 1,
+     "topmost": true,
+     "inFrame": false,
+     "onScreen": true
+    },
+    "gapBelowButton": 13,
+    "overlapX": true
+   }
+  },
+  "5-add-block-button": {
+   "pass": false,
+   "evidence": {
+    "emptyParagraph": {
+     "x": 320,
+     "y": 272,
+     "w": 193.5,
+     "h": 9.2
+    },
+    "button": {
+     "x": 718.6,
+     "y": 142.1,
+     "w": 7.2,
+     "h": 7.2,
+     "layoutW": 24,
+     "layoutH": 24,
+     "scale": 0.299,
+     "topmost": true,
+     "inFrame": true,
+     "onScreen": true
+    },
+    "coverContainer": {
+     "x": 532.3,
+     "y": 142.1,
+     "w": 193.5,
+     "h": 9.3,
+     "layoutW": 645,
+     "layoutH": 31,
+     "scale": 0.3,
+     "topmost": true,
+     "inFrame": true,
+     "onScreen": true
+    },
+    "rightEdgeDelta": 212.3,
+    "centreYDelta": -130.9,
+    "clickOpensQuickInserter": false,
+    "quickInserter": null
+   }
+  },
+  "4-slash-inserter": {
+   "pass": true,
+   "evidence": {
+    "caretParagraph": {
+     "x": 320,
+     "y": 272,
+     "w": 193.5,
+     "h": 9.2
+    },
+    "popover": {
+     "x": 322,
+     "y": 289,
+     "w": 200,
+     "h": 376,
+     "layoutW": 200,
+     "layoutH": 376,
+     "scale": 1,
+     "topmost": true,
+     "inFrame": false,
+     "onScreen": true
+    },
+    "leftDeltaFromCaret": 2,
+    "gapBelowLine": 7.8
+   }
+  },
+  "10-image": {
+   "pass": true,
+   "evidence": {
+    "placeholder": {
+     "x": 320,
+     "y": 272,
+     "w": 193.5,
+     "h": 48.2
+    },
+    "insertFromUrlButton": {
+     "x": 327.2,
+     "y": 300.9,
+     "w": 39.1,
+     "h": 12
+    },
+    "urlPopover": {
+     "x": 188,
+     "y": 313,
+     "w": 316,
+     "h": 56,
+     "layoutW": 316,
+     "layoutH": 56,
+     "scale": 1,
+     "topmost": true,
+     "inFrame": false,
+     "onScreen": true
+    },
+    "urlPopoverGapBelowButton": 0.1,
+    "image": {
+     "x": 320,
+     "y": 272,
+     "w": 82.2,
+     "h": 18.9
+    },
+    "handles": {
+     "right": {
+      "x": 398.7,
+      "y": 272,
+      "w": 6.9,
+      "h": 18.9
+     },
+     "bottom": {
+      "x": 320,
+      "y": 287.4,
+      "w": 82.2,
+      "h": 6.9
+     }
+    },
+    "dragRightHandleBy": 40,
+    "imageWidthChangeOnScreen": 39.9,
+    "placeholderClickable": true,
+    "urlPopoverPlaced": true,
+    "handlesOnEdges": true,
+    "resizeTracksPointer": true
+   }
+  },
+  "8-selection": {
+   "pass": true,
+   "evidence": {
+    "singleSelected": true,
+    "selectedOutlineInCanvas": {
+     "id": "36ddbda7-3339-429a-9aaa-38db93462723",
+     "outline": "solid 3.33333px rgb(56, 88, 233)",
+     "shadow": "rgba(255, 255, 255, 0.7) 0px 0px 0px 2.5px inset"
+    },
+    "multiSelectedCount": 2,
+    "multiIsTheTwoClicked": true,
+    "firstOnScreen": {
+     "x": 320,
+     "y": 250,
+     "w": 193.5,
+     "h": 16.2
+    },
+    "secondOnScreen": {
+     "x": 320,
+     "y": 272,
+     "w": 193.5,
+     "h": 28
+    }
+   }
+  },
+  "7-inbetween": {
+   "pass": false,
+   "evidence": {
+    "gapOnScreen": {
+     "top": 266.2,
+     "bottom": 272,
+     "left": 320,
+     "width": 193.5
+    },
+    "indicator": {
+     "x": 532.3,
+     "y": 129.3,
+     "w": 193.5,
+     "h": 1.2,
+     "layoutW": 645,
+     "layoutH": 4,
+     "scale": 0.3,
+     "topmost": true,
+     "inFrame": true,
+     "onScreen": true
+    },
+    "plusButton": {
+     "x": 625.4,
+     "y": 126.3,
+     "w": 7.2,
+     "h": 7.2,
+     "layoutW": 24,
+     "layoutH": 24,
+     "scale": 0.299,
+     "topmost": true,
+     "inFrame": true,
+     "onScreen": true
+    },
+    "popover": {
+     "x": 532.3,
+     "y": 127.1,
+     "w": 193.5,
+     "h": 5.8,
+     "layoutW": 645,
+     "layoutH": 19,
+     "scale": 0.3,
+     "topmost": true,
+     "inFrame": true,
+     "onScreen": true
+    }
+   }
+  },
+  "9-drop-indicator": {
+   "pass": false,
+   "evidence": {
+    "synthetic": true,
+    "pointerOnScreen": [
+     384.5,
+     273.5
+    ],
+    "dispatchedOn": "IMG in core/image",
+    "gapOnScreen": {
+     "top": 266.2,
+     "bottom": 272,
+     "left": 320,
+     "width": 193.5
+    },
+    "indicator": {
+     "x": 532.3,
+     "y": 129.3,
+     "w": 193.5,
+     "h": 1.2,
+     "layoutW": 645,
+     "layoutH": 4,
+     "scale": 0.3,
+     "topmost": true,
+     "inFrame": true,
+     "onScreen": true
+    },
+    "dropZone": null
+   }
+  }
+ },
+ "notes": [
+  "blocked board autosave POST",
+  "blocked board autosave POST",
+  "blocked board autosave POST",
+  "blocked board autosave POST"
+ ],
+ "maps": [
+  {
+   "for": "paragraph",
+   "at": {
+    "x": 320,
+    "y": 300
+   },
+   "paintScaleMismatch": null,
+   "innerRect": {
+    "x": 2077.5,
+    "y": 693.1,
+    "w": 64.5,
+    "h": 19.6
+   },
+   "paintedBox": {
+    "x": 320,
+    "y": 300,
+    "width": 19,
+    "height": 5,
+    "clipped": false
+   },
+   "paint": {
+    "scale": [
+     0.3,
+     0.3
+    ],
+    "origin": [
+     -303.2,
+     92.1
+    ]
+   },
+   "event": {
+    "scale": [
+     0.3,
+     0.3
+    ],
+    "origin": [
+     -303.2,
+     92.1
+    ]
+   },
+   "hitOffsetOnScreen": [
+    0,
+    0
+   ]
+  },
+  {
+   "for": "post-title",
+   "at": {
+    "x": 320,
+    "y": 250
+   },
+   "paintScaleMismatch": null,
+   "innerRect": {
+    "x": 2077.5,
+    "y": 170.7,
+    "w": 645,
+    "h": 54
+   },
+   "paintedBox": {
+    "x": 320,
+    "y": 250,
+    "width": 193,
+    "height": 15,
+    "clipped": false
+   },
+   "paint": {
+    "scale": [
+     0.3,
+     0.3
+    ],
+    "origin": [
+     -303.2,
+     198.8
+    ]
+   },
+   "event": {
+    "scale": [
+     0.3,
+     0.3
+    ],
+    "origin": [
+     -303.5,
+     199
+    ]
+   },
+   "hitOffsetOnScreen": [
+    0.3,
+    -0.2
+   ]
+  }
+ ],
+ "layout": {
+  "innerWidth": 4800,
+  "clientWidth": 4800,
+  "dpr": 0.30000001192092896,
+  "mqMin1440": true,
+  "mqMin782": true,
+  "mqMin600": true,
+  "rootOffsetWidth": 4800,
+  "rootRectWidth": 4800,
+  "p1OffsetWidth": 645,
+  "p1RectWidth": 645,
+  "vw100": "4800/4800",
+  "titleScreen": {
+   "x": 320,
+   "y": 143.3,
+   "w": 193.5,
+   "h": 16.2
+  },
+  "iframeScreen": {
+   "x": -303.2,
+   "y": 91.9,
+   "w": 1440,
+   "h": 1084.2
+  }
+ },
+ "quickInserter": null,
+ "errors": [
+  "Failed to load resource: net::ERR_FAILED",
+  "Failed to load resource: net::ERR_FAILED",
+  "Failed to load resource: net::ERR_FAILED",
+  "Failed to load resource: net::ERR_FAILED"
+ ]
+}
