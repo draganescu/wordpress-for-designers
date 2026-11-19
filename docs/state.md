@@ -4,14 +4,14 @@ As of 2026-11-19. This describes what exists; `spec/` says what should exist. Fo
 
 ## Summary
 
-The plugin is built through Milestone 12 of `spec/build-order.md`, plus the decisions taken afterwards (D32 to D43).
+The plugin is built through Milestone 12 of `spec/build-order.md`, plus the decisions taken afterwards (D32 to D44).
 
 | Check | Result |
 |---|---|
-| Acceptance criteria in `spec/acceptance.md` | 118 |
-| End-to-end tests, one per criterion | 118. AC-PERF-03 fails only when run from a git worktree (see working-notes.md) |
+| Acceptance criteria in `spec/acceptance.md` | 119 |
+| End-to-end tests, one per criterion | 119. 114 passed in the last full run; AC-KEY-04 and AC-KEY-05 (D42) are written and have not been run yet; AC-CANVAS-06 (D43) passes. AC-CANVAS-03 fails since D42: its empty-board point is under the Keyboard shortcuts control |
 | `npm run lint` | Exits 0, no disabled lines |
-| Open questions waiting for the product owner | 24 (`spec/open-questions.md`) |
+| Open questions waiting for the product owner | 25 (`spec/open-questions.md`) |
 | Browsers the suite runs in | Chromium only |
 | WordPress it was built and tested on | 7.2-RC2, Twenty Twenty-Five, PHP 8.2, no Gutenberg plugin |
 
@@ -30,7 +30,7 @@ A "Designer" menu in wp-admin lists boards. A board opens full screen: a header,
 - **Canvas.** Pan and zoom from 2% to 400%. Each artboard shows one page, template, template part or pattern at a device width (Desktop 1440, Tablet 780, Mobile 360 with default breakpoints). Images from the media library can also sit on the board as media objects.
 - **Tiers.** An artboard far from view is an outline (Ghost). In view it is a read-only render (Preview), at most 12 at once. Below 20% zoom, or beyond the 12, it is a frozen copy (Snapshot); an artboard that was never rendered is rendered once to make that copy. One artboard at a time is the real block editor (Live); the two edited before it stay mounted (Warm).
 - **Editing.** Double-click or Enter edits an artboard at the board's zoom, from 30% up. Below 30% the zoom first fits the artboard's width. The block toolbar sits in the header, the list view in the left panel, the inspector in the right panel. Esc, the back button, a click on empty board, a click on another artboard, or zooming out below 30% ends edit.
-- **Selecting several.** Cmd/Ctrl + click in the artboard list or on the board adds an artboard to the selection or takes it out; Shift + click in the list selects a range (D41). Several selected artboards move together, by drag or arrow keys, and Delete takes them all off the board with no dialog; the right panel shows Styles. The store keeps `selectedIds`; `getSelectedId` gives an id only when exactly one is selected.
+- **Selecting several.** Cmd/Ctrl + click in the artboard list or on the board adds an artboard to the selection or takes it out; Shift + click in the list selects a range (D41). Dragging from empty board draws a rectangle and selects every artboard it touches as it is dragged; with Cmd/Ctrl it adds to the selection, and in edit it first leaves edit (D43, in `src/shell/use-canvas-interactions.js`; OQ-29 lists the builder's choices). Several selected artboards move together, by drag or arrow keys, and Delete takes them all off the board with no dialog; the right panel shows Styles. The store keeps `selectedIds`; `getSelectedId` gives an id only when exactly one is selected.
 - **Keyboard shortcuts dialog.** A control floating at the bottom left of the canvas area, and Ctrl + Option + H on a Mac or Shift + Alt + H elsewhere, open a dialog listing the board's shortcuts (D42). It is in `src/shell/shortcuts-dialog.js`. Closing it puts focus back where it was, the caret of a block included. The control's shadow is a Sass variable of `@wordpress/base-styles`, because the design system has no elevation token (OQ-28).
 - **Dragging blocks.** A block that is not being edited moves when pressed anywhere, its text included, and dragged; a click puts the caret in it and dragging then selects text (D40). This is the behaviour of Gutenberg pull request 86911, added as a layer in `src/artboard-editor/drag-anywhere.js`; the top of that file says how to remove it once WordPress has the behaviour.
 - **Pages** are shown inside their template, which is locked. A page's template can be changed from the right panel.
@@ -153,11 +153,11 @@ Each of these is recorded in the spec; this is the short list to read first.
 - **Snapshots during gestures.** The spec asks for Snapshots during any pan or zoom; Previews stay mounted instead, because swapping them would break the no-render rule (OQ-19).
 - **Drag from anywhere.** C6 has one stated addition, D40; OQ-26 lists how the layer differs from the pull request.
 - **Accessibility scan.** It covers the plugin's document, not the artboard iframes (OQ-17).
-- **Added after Milestone 12:** showing all of an artboard's content outside edit (D43), hiding the side panels (D32), the Blocks tab hidden outside edit (D33), media objects (D34), the page template select (D35), the new-page template (D36), leaving edit on deselect (D38), inserter rows that act the same clicked or dragged (D39), dragging blocks from anywhere (D40).
+- **Added after Milestone 12:** showing all of an artboard's content outside edit (D44), hiding the side panels (D32), the Blocks tab hidden outside edit (D33), media objects (D34), the page template select (D35), the new-page template (D36), leaving edit on deselect (D38), inserter rows that act the same clicked or dragged (D39), dragging blocks from anywhere (D40).
 
 ## Open questions
 
-Twenty-four entries are open, OQ-4, OQ-6 to OQ-10 and OQ-12 to OQ-29. The missing numbers were decided by the product owner and removed from the file. None leaves something unbuilt; each records a choice made where the spec was silent or could not be met as written. Grouped:
+Twenty-five entries are open, OQ-4, OQ-6 to OQ-10 and OQ-12 to OQ-30. The missing numbers were decided by the product owner and removed from the file. None leaves something unbuilt; each records a choice made where the spec was silent or could not be met as written. Grouped:
 
 | About | Entries |
 |---|---|
@@ -166,7 +166,7 @@ Twenty-four entries are open, OQ-4, OQ-6 to OQ-10 and OQ-12 to OQ-29. The missin
 | The allowlist | OQ-14, OQ-17, OQ-20 |
 | Limits inside WordPress | OQ-13, OQ-21 |
 | Two spec statements that conflict | OQ-12, OQ-18, OQ-19 |
-| Builder's choices to confirm | OQ-6, OQ-23, OQ-24, OQ-25, OQ-26, OQ-27, OQ-28, OQ-29 |
+| Builder's choices to confirm | OQ-6, OQ-23, OQ-24, OQ-25, OQ-26, OQ-27, OQ-28, OQ-29, OQ-30 |
 | Build order | OQ-10 |
 
 ## Sensible next steps
