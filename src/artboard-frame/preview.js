@@ -156,6 +156,7 @@ export function usePreview() {
         let isSending = false;
         let failures = 0;
         let retryAt = 0;
+        let isOver = false;
         // What the last look at the stores saw. The changes are put together
         // again only when one of these is different.
         let isWanted = false;
@@ -165,6 +166,9 @@ export function usePreview() {
 
         function sendIn( delay ) {
             clearTimeout( timer );
+            if ( isOver ) {
+                return;
+            }
             timer = setTimeout( send, Math.max( delay, retryAt - Date.now() ) );
         }
 
@@ -257,6 +261,8 @@ export function usePreview() {
             }
         }, RESEND_AFTER );
         return () => {
+            // A send still on its way does not start another.
+            isOver = true;
             unsubscribe();
             clearTimeout( timer );
             clearInterval( resend );

@@ -258,28 +258,30 @@ export function ArtboardBrowser( {
         }
         firstReload.current = reloadToken;
         const frame = iframeRef.current;
+        const { homeUrl: home, decorateUrl: decorate } = latest.current;
         hasGoneBack.current = false;
+        let href = null;
         try {
             const view = frame.contentWindow;
+            href = view.location.href;
             // A reload keeps the page where it was scrolled to.
             scrollBack.current = { x: view.scrollX, y: view.scrollY };
-            const href = view.location.href;
-            const wanted = latest.current.decorateUrl( href );
-            if ( wanted === href ) {
-                view.location.reload();
-            } else {
-                view.location.replace( wanted );
-            }
-            listeners.awaitDocument();
         } catch {
-            // The page cannot be read: its address is asked for again.
-            frame.src = latest.current.decorateUrl(
-                urlOf(
-                    current.current ?? latest.current.path,
-                    latest.current.homeUrl
-                )
-            );
+            href = null;
         }
+        if (
+            href === null ||
+            addressOf( latest.current.plainUrl( href ), home ) === null
+        ) {
+            // No page of the site is there yet, or it cannot be read: the
+            // address last asked for is asked for again.
+            frame.src = decorate( urlOf( asked.current, home ) );
+        } else if ( decorate( href ) === href ) {
+            frame.contentWindow.location.reload();
+        } else {
+            frame.contentWindow.location.replace( decorate( href ) );
+        }
+        listeners.awaitDocument();
     }, [ reloadToken, listeners ] );
 
     // Outside browsing the page takes no input; it stays where it was
