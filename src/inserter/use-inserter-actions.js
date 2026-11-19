@@ -1,6 +1,7 @@
 /**
- * What happens when an inserter row is clicked or dropped on the board
- * (decision D19).
+ * What happens when an inserter row is clicked or dragged (decision D39):
+ * with an artboard in edit the item goes into its content, with none in edit
+ * it goes onto the board.
  */
 import {
     cloneElement,
@@ -10,7 +11,7 @@ import {
 } from '@wordpress/element';
 import { useDispatch, useRegistry } from '@wordpress/data';
 import { store as coreStore } from '@wordpress/core-data';
-import { createBlock, parse } from '@wordpress/blocks';
+import { createBlock, parse, serialize } from '@wordpress/blocks';
 import { MediaUpload } from '@wordpress/block-editor';
 import { store as boardStore } from '../board-store';
 import { NEW_ARTBOARD_HEIGHT } from '../shell/use-placement';
@@ -30,84 +31,169 @@ const KIND_OF = {
  * @param {Object}   options.lookup    Maps from useInserterData.
  * @param {Object}   options.bridgeRef The Live editor's bridge, if any.
  * @param {Function} options.toBoard   Converts a pointer event to board units.
+ * @param {Function} options.findSpace Receives a size or null, returns a free
+ *                                     point of the board in view.
  * @return {Object} Handlers for the panel and the canvas.
  */
-export function useInserterActions( { lookup, bridgeRef, toBoard } ) {
+export function useInserterActions( {
+    lookup,
+    bridgeRef,
+    toBoard,
+    findSpace,
+} ) {
     const registry = useRegistry();
     const { saveEntityRecord, invalidateResolution } = useDispatch( coreStore );
     const { addArtboard, selectArtboard } = useDispatch( boardStore );
     const dragged = useRef( null );
     const [ dropTarget, setDropTarget ] = useState( null );
 
-    const insert = useCallback(
-        ( blocks ) => {
-            if ( bridgeRef.current && blocks.length ) {
-                bridgeRef.current.insertBlocks( blocks );
-            }
-        },
-        [ bridgeRef ]
+    const isEditing = useCallback(
+        () => !! registry.select( boardStore ).getLiveId(),
+        [ registry ]
     );
 
-    const onInsertBlock = useCallback(
-        ( name ) => insert( [ createBlock( name ) ] ),
-        [ insert ]
-    );
-
-    const onInsertPattern = useCallback(
-        ( id ) => {
-            const item = lookup.patterns.get( id );
-            if ( ! item ) {
-                return;
+    /**
+     * The blocks an item becomes inside an artboard. A template has none.
+     */
+    const blocksFor = useCallback(
+        ( { type, id } ) => {
+            if ( type === 'block' ) {
+                return [ createBlock( id ) ];
             }
-            if ( item.record ) {
+            if ( type === 'pattern' ) {
+                const item = lookup.patterns.get( id );
+                if ( ! item ) {
+                    return [];
+                }
+                if ( ! item.record ) {
+                    return parse( item.pattern.content ?? '' );
+                }
                 // A user pattern: synced patterns are inserted by reference.
-                const isUnsynced =
-                    item.record.wp_pattern_sync_status === 'unsynced';
-                insert(
-                    isUnsynced
-                        ? parse( item.record.content?.raw ?? '' )
-                        : [
-                              createBlock( 'core/block', {
-                                  ref: item.record.id,
-                              } ),
-                          ]
-                );
+                return item.record.wp_pattern_sync_status === 'unsynced'
+                    ? parse( item.record.content?.raw ?? '' )
+                    : [ createBlock( 'core/block', { ref: item.record.id } ) ];
+            }
+            if ( type === 'template-part' ) {
+                const part = lookup.parts.get( id );
+                return part
+                    ? [
+                          createBlock( 'core/template-part', {
+                              slug: part.slug,
+                              theme: part.theme,
+                          } ),
+                      ]
+                    : [];
+            }
+            if ( type === 'media' ) {
+                const image = lookup.images.get( id );
+                return image
+                    ? [
+                          createBlock( 'core/image', {
+                              id: image.id,
+                              url: image.source_url,
+                              alt: image.alt_text ?? '',
+                          } ),
+                      ]
+                    : [];
+            }
+            return [];
+        },
+        [ lookup ]
+    );
+
+    /**
+     * The size an item takes on the board, or null for an artboard's own.
+     */
+    const sizeOf = useCallback(
+        ( { type, id } ) => {
+            const image = type === 'media' ? lookup.images.get( id ) : null;
+            return image
+                ? mediaSize(
+                      image.media_details?.width,
+                      image.media_details?.height
+                  )
+                : null;
+        },
+        [ lookup ]
+    );
+
+    /**
+     * Puts an item on the board with its top-left corner at a point: an
+     * image as a media object, anything else as a Desktop artboard. It is
+     * selected, not in edit.
+     */
+    const openOnBoard = useCallback(
+        async ( item, { x, y } ) => {
+            const object = {
+                id: window.crypto.randomUUID(),
+                kind: KIND_OF[ item.type ],
+                entityId: item.id,
+                x: Math.round( x ),
+                y: Math.round( y ),
+            };
+            if ( item.type === 'media' ) {
+                if ( ! lookup.images.has( item.id ) ) {
+                    return;
+                }
+                Object.assign( object, sizeOf( item ) );
+            } else {
+                object.device = 'desktop';
+                object.height = NEW_ARTBOARD_HEIGHT;
+            }
+            if ( item.type === 'pattern' ) {
+                const entry = lookup.patterns.get( item.id );
+                if ( entry?.record ) {
+                    object.entityId = entry.record.id;
+                } else if ( entry?.pattern ) {
+                    // A theme pattern is copied to a new user pattern first.
+                    const copy = await saveEntityRecord(
+                        'postType',
+                        'wp_block',
+                        {
+                            title: entry.pattern.title,
+                            content: entry.pattern.content,
+                            status: 'draft',
+                        },
+                        { throwOnError: true }
+                    );
+                    object.entityId = copy.id;
+                } else {
+                    return;
+                }
+            }
+            addArtboard( object );
+            if ( ! isEditing() ) {
+                selectArtboard( object.id );
+            }
+        },
+        [
+            lookup,
+            sizeOf,
+            saveEntityRecord,
+            addArtboard,
+            selectArtboard,
+            isEditing,
+        ]
+    );
+
+    /**
+     * A click on a row (decision D39): into the artboard in edit, or with
+     * none in edit onto the board.
+     */
+    const onItemClick = useCallback(
+        ( item ) => {
+            if ( isEditing() ) {
+                const blocks = blocksFor( item );
+                if ( bridgeRef.current && blocks.length ) {
+                    bridgeRef.current.insertBlocks( blocks );
+                }
                 return;
             }
-            insert( parse( item.pattern.content ?? '' ) );
-        },
-        [ lookup, insert ]
-    );
-
-    const onInsertTemplatePart = useCallback(
-        ( id ) => {
-            const part = lookup.parts.get( id );
-            if ( part ) {
-                insert( [
-                    createBlock( 'core/template-part', {
-                        slug: part.slug,
-                        theme: part.theme,
-                    } ),
-                ] );
+            if ( KIND_OF[ item.type ] ) {
+                openOnBoard( item, findSpace( sizeOf( item ) ) );
             }
         },
-        [ lookup, insert ]
-    );
-
-    const onInsertMedia = useCallback(
-        ( id ) => {
-            const image = lookup.images.get( id );
-            if ( image ) {
-                insert( [
-                    createBlock( 'core/image', {
-                        id: image.id,
-                        url: image.source_url,
-                        alt: image.alt_text ?? '',
-                    } ),
-                ] );
-            }
-        },
-        [ lookup, insert ]
+        [ isEditing, blocksFor, bridgeRef, openOnBoard, findSpace, sizeOf ]
     );
 
     const renderUpload = useCallback(
@@ -136,17 +222,31 @@ export function useInserterActions( { lookup, bridgeRef, toBoard } ) {
         [ invalidateResolution ]
     );
 
-    const onItemDragStart = useCallback( ( item ) => {
-        dragged.current = item;
-    }, [] );
+    const onItemDragStart = useCallback(
+        ( item, event ) => {
+            dragged.current = item;
+            if ( ! isEditing() ) {
+                return;
+            }
+            // With an artboard in edit the drag carries the item's blocks as
+            // markup, which the editor takes like any dropped HTML and
+            // inserts where it is dropped.
+            const blocks = blocksFor( item );
+            if ( blocks.length ) {
+                event.dataTransfer.setData( 'text/html', serialize( blocks ) );
+            }
+        },
+        [ isEditing, blocksFor ]
+    );
     const onItemDragEnd = useCallback( () => {
         dragged.current = null;
         setDropTarget( null );
     }, [] );
 
-    // Only empty board takes a drop.
+    // Only empty board takes a drop, and only with no artboard in edit.
     const isOverEmptyBoard = ( event ) =>
         !! dragged.current &&
+        ! isEditing() &&
         event.dataTransfer?.types?.includes( DRAG_DATA_TYPE ) &&
         ! event.target.closest?.( '[data-wfd-artboard]' );
 
@@ -159,22 +259,13 @@ export function useInserterActions( { lookup, bridgeRef, toBoard } ) {
             event.preventDefault();
             event.dataTransfer.dropEffect = 'copy';
             const point = toBoard( event );
-            const image =
-                dragged.current.type === 'media'
-                    ? lookup.images.get( dragged.current.id )
-                    : null;
             setDropTarget( {
                 kind: KIND_OF[ dragged.current.type ],
                 name: dragged.current.name,
                 x: point.x,
                 y: point.y,
                 // A media object has its own size.
-                size: image
-                    ? mediaSize(
-                          image.media_details?.width,
-                          image.media_details?.height
-                      )
-                    : null,
+                size: sizeOf( dragged.current ),
             } );
         },
         onDragLeave( event ) {
@@ -188,77 +279,16 @@ export function useInserterActions( { lookup, bridgeRef, toBoard } ) {
             }
             event.preventDefault();
             const item = dragged.current;
-            const { x, y } = toBoard( event );
+            const point = toBoard( event );
             dragged.current = null;
             setDropTarget( null );
-
-            let entityId = item.id;
-            if ( item.type === 'media' ) {
-                // An image goes on the board as an object of its own size.
-                const image = lookup.images.get( item.id );
-                if ( ! image ) {
-                    return;
-                }
-                const object = {
-                    id: window.crypto.randomUUID(),
-                    kind: 'media',
-                    entityId: image.id,
-                    x: Math.round( x ),
-                    y: Math.round( y ),
-                    ...mediaSize(
-                        image.media_details?.width,
-                        image.media_details?.height
-                    ),
-                };
-                addArtboard( object );
-                if ( ! registry.select( boardStore ).getLiveId() ) {
-                    selectArtboard( object.id );
-                }
-                return;
-            }
-            if ( item.type === 'pattern' ) {
-                const entry = lookup.patterns.get( item.id );
-                if ( entry?.record ) {
-                    entityId = entry.record.id;
-                } else if ( entry?.pattern ) {
-                    // A theme pattern is copied to a new user pattern first.
-                    const copy = await saveEntityRecord(
-                        'postType',
-                        'wp_block',
-                        {
-                            title: entry.pattern.title,
-                            content: entry.pattern.content,
-                            status: 'draft',
-                        },
-                        { throwOnError: true }
-                    );
-                    entityId = copy.id;
-                } else {
-                    return;
-                }
-            }
-            const artboard = {
-                id: window.crypto.randomUUID(),
-                kind: KIND_OF[ item.type ],
-                entityId,
-                device: 'desktop',
-                x: Math.round( x ),
-                y: Math.round( y ),
-                height: NEW_ARTBOARD_HEIGHT,
-            };
-            addArtboard( artboard );
-            if ( ! registry.select( boardStore ).getLiveId() ) {
-                selectArtboard( artboard.id );
-            }
+            await openOnBoard( item, point );
         },
     };
 
     return {
         panelProps: {
-            onInsertBlock,
-            onInsertPattern,
-            onInsertTemplatePart,
-            onInsertMedia,
+            onItemClick,
             onItemDragStart,
             onItemDragEnd,
             renderUpload,

@@ -51,7 +51,7 @@ test.describe( 'MEDIA', () => {
             } )
         ).layout.artboards as Record< string, unknown >[];
 
-    test( 'AC-MEDIA-01 Dragging an image from the Media tab to empty board shows the drop target at the image\'s size and places a media object there, labelled "{Name} · Media", listed under "Media" in the left panel; after a reload it is still there', async ( {
+    test( 'AC-MEDIA-01 With no artboard in edit, clicking an image in the Media tab places a media object in view, and dragging one to empty board shows the drop target at the image\'s size and places a media object there, labelled "{Name} · Media", listed under "Media" in the left panel; after a reload it is still there', async ( {
         page,
         requestUtils,
     } ) => {
@@ -159,6 +159,31 @@ test.describe( 'MEDIA', () => {
         await expect(
             page.locator( '[data-wfd-kind="media"] img' )
         ).toHaveAttribute( 'src', /wfd-sample/ );
+
+        // A click places one too: selected, in view, not in edit.
+        await page
+            .locator( '[data-wfd-region="header"]' )
+            .getByRole( 'button', { name: 'Block inserter', exact: true } )
+            .click();
+        await page
+            .locator( '.wfd-inserter' )
+            .getByRole( 'tab', { name: 'Media' } )
+            .click();
+        await expect( page.locator( '.wfd-inserter' ) ).toContainText(
+            'Click or drag to the board to place it there.'
+        );
+        await page
+            .locator( '.wfd-inserter .wfd-row', { hasText: 'wfd-sample' } )
+            .click();
+        const objects = page.locator( '[data-wfd-kind="media"]' );
+        await expect( objects ).toHaveCount( 2 );
+        await expect( objects.last() ).toHaveClass( /is-selected/ );
+        await expect(
+            objects.last().locator( '.wfd-artboard__frame' )
+        ).toBeInViewport();
+        await expect( page.locator( '[data-wfd-tier="live"]' ) ).toHaveCount(
+            0
+        );
     } );
 
     test( 'AC-MEDIA-02 A media object is selected by a click, moved by dragging and removed with Delete through a dialog with no checkbox; double-click and Enter do not enter edit; its settings show the image\'s pixel size and only "Remove from board"', async ( {

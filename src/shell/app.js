@@ -65,6 +65,11 @@ const VIEWPORT_KEY = `wfd/viewport/${ userId }/${ boardId }`;
 /**
  * Names of layout changes, for the Undo and Redo tooltips.
  */
+/**
+ * Board units between a clicked inserter item and what it was moved past.
+ */
+const PLACEMENT_GAP = 80;
+
 const LAYOUT_ACTIONS = {
     move: __( 'move artboard', 'wordpress-for-designers' ),
     device: __( 'change device', 'wordpress-for-designers' ),
@@ -292,6 +297,41 @@ export function App() {
                 x: event.clientX - box.left,
                 y: event.clientY - box.top,
             } );
+        },
+        // A clicked item lands in the middle of the board in view, moved
+        // right past anything it would cover, and is brought into view.
+        findSpace: ( size ) => {
+            const box = areaRef.current.getBoundingClientRect();
+            const rect = {
+                width: widthOf( 'desktop' ),
+                height: NEW_ARTBOARD_HEIGHT,
+                ...size,
+            };
+            const middle = viewport.toBoard( {
+                x: box.width / 2,
+                y: box.height / 2,
+            } );
+            const start = Math.round( middle.x - rect.width / 2 );
+            rect.x = start;
+            rect.y = Math.round( middle.y - rect.height / 2 );
+            const others = artboards.map( ( artboard ) =>
+                rectOf( artboard, widthOf )
+            );
+            const covered = () =>
+                others.find(
+                    ( other ) =>
+                        rect.x < other.x + other.width &&
+                        other.x < rect.x + rect.width &&
+                        rect.y < other.y + other.height &&
+                        other.y < rect.y + rect.height
+                );
+            for ( let other = covered(); other; other = covered() ) {
+                rect.x = other.x + other.width + PLACEMENT_GAP;
+            }
+            if ( rect.x !== start ) {
+                viewport.panBy( ( start - rect.x ) * viewport.get().zoom, 0 );
+            }
+            return { x: rect.x, y: rect.y };
         },
     } );
     const placing = usePlacement( { theme, enterEdit: onEdit } );
