@@ -17,6 +17,7 @@ import { useResizeObserver } from '@wordpress/compose';
 import { Skeleton, useEnableWpCompatOverlaySlot } from '@wordpress/ui';
 import { store as boardStore } from '../board-store';
 import { useLayoutAutosave } from '../board-store/use-layout-autosave';
+import { usePreviewPush } from './use-preview-push';
 import { createViewport } from '../viewport';
 import { ArtboardEditor } from '../artboard-editor';
 import {
@@ -181,6 +182,7 @@ export function App() {
     useEnableWpCompatOverlaySlot();
     const isLoaded = useBoard();
     useLayoutAutosave();
+    usePreviewPush();
     const viewportRef = useRef();
     if ( ! viewportRef.current ) {
         viewportRef.current = createViewport();
@@ -214,10 +216,12 @@ export function App() {
         editingNoteId,
         isNoteToolArmed,
         siteVersion,
+        previewVersion,
     } = useSelect( ( select ) => {
         const board = select( boardStore );
         return {
             siteVersion: board.getSiteVersion(),
+            previewVersion: board.getPreviewVersion(),
             notes: board.getNotes(),
             selectedNoteId: board.getSelectedNoteId(),
             editingNoteId: board.getEditingNoteId(),
@@ -256,6 +260,7 @@ export function App() {
         startNoteEdit,
         endNoteEdit,
         setBrowserPath,
+        setBrowserShows,
     } = useDispatch( boardStore );
     // Reloads asked for each browser (D48), by id.
     const [ reloads, setReloads ] = useState( {} );
@@ -731,6 +736,9 @@ export function App() {
                 onRemove={ () => setRemovingId( selected.id ) }
                 isBrowsing={ selected.id === liveId }
                 onReload={ () => reload( selected.id ) }
+                onShowsChange={ ( shows ) =>
+                    setBrowserShows( selected.id, shows )
+                }
             />
         );
     } else {
@@ -989,15 +997,25 @@ export function App() {
                                             record={ artboard.record }
                                         />
                                     );
-                                } else if ( isBrowser ) {
+                                } else if ( isBrowser && tier !== 'ghost' ) {
+                                    // Unsaved changes are shown once they have
+                                    // been sent (D50); until then, a Skeleton.
+                                    const isPreview =
+                                        artboard.shows === 'unsaved';
                                     content =
-                                        tier === 'ghost' ? null : (
+                                        isPreview && ! previewVersion ? (
+                                            <Skeleton className="wfd-artboard__skeleton" />
+                                        ) : (
                                             <ArtboardBrowser
+                                                key={ artboard.shows }
                                                 path={ artboard.path }
                                                 homeUrl={ homeUrl }
                                                 isBrowsing={ tier === 'live' }
+                                                isPreview={ isPreview }
                                                 reloadToken={
-                                                    siteVersion +
+                                                    ( isPreview
+                                                        ? previewVersion
+                                                        : siteVersion ) +
                                                     ( reloads[ artboard.id ] ??
                                                         0 )
                                                 }

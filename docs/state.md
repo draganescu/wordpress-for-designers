@@ -4,14 +4,14 @@ As of 2026-11-19. This describes what exists; `spec/` says what should exist. Fo
 
 ## Summary
 
-The plugin is built through Milestone 12 of `spec/build-order.md`, plus the decisions taken afterwards (D32 to D49).
+The plugin is built through Milestone 12 of `spec/build-order.md`, plus the decisions taken afterwards (D32 to D50).
 
 | Check | Result |
 |---|---|
-| Acceptance criteria in `spec/acceptance.md` | 132 |
-| End-to-end tests, one per criterion | 132. AC-BROWSER-01 to AC-BROWSER-07 pass after D49, with the CANVAS and UNDO groups (AC-CANVAS-03 fails as before). The whole suite was run after D48 on a worktree site: 128 pass; AC-CANVAS-03 and AC-PERF-03 fail as before (AC-STATE-01 was then fixed for the fifth menu item and passes). AC-NOTE-01 to AC-NOTE-05 (D46) pass; see the merge commit for what was run after merging. Not run as a whole since D44 and D45 landed. AC-CANVAS-07 (D45) passed before its rebase onto D43 and D44. AC-CANVAS-03 fails since D42: its empty-board point is under the Keyboard shortcuts control. AC-PERF-03 failed on the port-8890 environment before D45 as well. AC-KEY-04 and AC-KEY-05 (D42) are written and have not been run |
+| Acceptance criteria in `spec/acceptance.md` | 134 |
+| End-to-end tests, one per criterion | 134. The whole suite was run after D50: 132 pass; AC-CANVAS-03 and AC-PERF-03 fail as before. The whole suite was run after D48 on a worktree site: 128 pass; AC-CANVAS-03 and AC-PERF-03 fail as before (AC-STATE-01 was then fixed for the fifth menu item and passes). AC-NOTE-01 to AC-NOTE-05 (D46) pass; see the merge commit for what was run after merging. Not run as a whole since D44 and D45 landed. AC-CANVAS-07 (D45) passed before its rebase onto D43 and D44. AC-CANVAS-03 fails since D42: its empty-board point is under the Keyboard shortcuts control. AC-PERF-03 failed on the port-8890 environment before D45 as well. AC-KEY-04 and AC-KEY-05 (D42) are written and have not been run |
 | `npm run lint` | Exits 0, no disabled lines |
-| Open questions waiting for the product owner | 27 (`spec/open-questions.md`) |
+| Open questions waiting for the product owner | 28 (`spec/open-questions.md`) |
 | Browsers the suite runs in | Chromium only |
 | WordPress it was built and tested on | 7.2-RC2, Twenty Twenty-Five, PHP 8.2, no Gutenberg plugin |
 
@@ -33,7 +33,7 @@ A "Designer" menu in wp-admin lists boards. A board opens full screen: a header,
 - **Selecting several.** Cmd/Ctrl + click in the artboard list or on the board adds an artboard to the selection or takes it out; Shift + click in the list selects a range (D41). Dragging from empty board draws a rectangle and selects every artboard it touches as it is dragged; with Cmd/Ctrl it adds to the selection, and in edit it first leaves edit (D43, in `src/shell/use-canvas-interactions.js`; OQ-29 lists the builder's choices). Several selected artboards move together, by drag or arrow keys, and Delete takes them all off the board with no dialog; the right panel shows Styles. The store keeps `selectedIds`; `getSelectedId` gives an id only when exactly one is selected.
 - **Keyboard shortcuts dialog.** A control floating at the bottom left of the canvas area, and Ctrl + Option + H on a Mac or Shift + Alt + H elsewhere, open a dialog listing the board's shortcuts (D42). It is in `src/shell/shortcuts-dialog.js`. Closing it puts focus back where it was, the caret of a block included. The control's shadow is a Sass variable of `@wordpress/base-styles`, because the design system has no elevation token (OQ-28).
 - **Tidy up.** A "Tidy up" control in the header, just before the zoom menu (H12), puts everything on the board in one row per kind, in left-panel order, starting at the top left of what was there, then fits all (D45). It is one undoable layout step named "tidy up", and is disabled while an artboard is in edit or with fewer than two items. The arrangement is in `src/shell/tidy.js`. Row spacing uses each artboard's last measured height, so a height not yet measured can leave a row gap uneven; labels are drawn at screen size, so at low zoom the labels of narrow artboards can run into the next one's.
-- **Browsers.** "Browser" in the Add artboard menu places a window onto the site's front end, the homepage first, at a device width and 900 board units tall (D48). Double-click, Enter or "Browse" starts browsing, which is the Live state: links work, the wheel scrolls the page, and the label holds an address field and Reload. The address is kept as `path` in the layout, outside the undo history. Dragging the window's bottom edge resizes it, from 200 units up, saved as `height` and undoable (D49); the page keeps its scroll position after browsing. Browsers reload after Review saves anything. The window is `src/artboard-frame/browser.js`; it is same-origin, so the plugin reads the page's address, hides the WordPress toolbar with a style and listens for Esc and Cmd/Ctrl + wheel inside the page. Browsers are outside the tiers: near the view the page is loaded, far away it is a box. OQ-32 lists the builder's choices.
+- **Browsers.** "Browser" in the Add artboard menu places a window onto the site's front end, the homepage first, at a device width and 900 board units tall (D48). Double-click, Enter or "Browse" starts browsing, which is the Live state: links work, the wheel scrolls the page, and the label holds an address field and Reload. The address is kept as `path` in the layout, outside the undo history. Dragging the window's bottom edge resizes it, from 200 units up, saved as `height` and undoable (D49); the page keeps its scroll position after browsing. A browser can show the board's unsaved changes (D50, the default) or the saved site: the board sends its unsaved changes to `wfd/v1/preview` (`src/shell/use-preview-push.js`) about a second after the last change, and pages asked for with `wfd_preview=1` are rendered with them by `includes/preview.php`, through public filters only. The kept changes are one record per user, so they could later move into a Customizer changeset for shared or scheduled previews. Browsers reload after Review saves anything. The window is `src/artboard-frame/browser.js`; it is same-origin, so the plugin reads the page's address, hides the WordPress toolbar with a style and listens for Esc and Cmd/Ctrl + wheel inside the page. Browsers are outside the tiers: near the view the page is loaded, far away it is a box. OQ-32 lists the builder's choices.
 - **Notes.** "Add note" in the header arms the note tool; the next click on the board places a note there and puts the caret in it (D46). Notes are plain text in Yellow, Green, Blue or Pink, 240 board units wide, drawn above every artboard. They are selected, moved and multi-selected like artboards, Delete removes them with no dialog, double-click or Enter edits the text. They are listed under "Notes" in the left panel and saved in the board's layout (`notes`) by the same 2-second autosave, typing included; they never reach Review. The note itself and its right-panel settings are in `src/shell/notes.js`; the store keeps `notes`, `editingNoteId` and `isNoteToolArmed`. `getSelectedId` gives an artboard only; `getSelectedNoteId` gives a note.
 - **Dragging blocks.** A block that is not being edited moves when pressed anywhere, its text included, and dragged; a click puts the caret in it and dragging then selects text (D40). This is the behaviour of Gutenberg pull request 86911, added as a layer in `src/artboard-editor/drag-anywhere.js`; the top of that file says how to remove it once WordPress has the behaviour.
 - **Pages** are shown inside their template, which is locked. A page's template can be changed from the right panel.
@@ -52,7 +52,7 @@ spec/                         The specification (source of truth)
 docs/                         This folder
 wordpress-for-designers.php   Plugin header, loads includes/
 uninstall.php                 Deletes all boards
-includes/                     PHP, six files
+includes/                     PHP, seven files
 src/                          JavaScript and SCSS, built by wp-scripts into build/
 tests/e2e/                    Playwright tests, test helper plugin, test theme
 tools/                        Allowlist data and small scripts
@@ -61,7 +61,7 @@ spikes/                       Throwaway spike code and evidence
 
 Ignored by git: `node_modules/`, `build/`, `artifacts/`, `test-results/`, `playwright-report/`.
 
-### PHP (`includes/`, about 640 lines with the two root files)
+### PHP (`includes/`, about 1,000 lines with the two root files)
 
 | File | Holds |
 |---|---|
@@ -71,6 +71,7 @@ Ignored by git: `node_modules/`, `build/`, `artifacts/`, `test-results/`, `playw
 | `board-app.php` | The full-screen board page, without wp-admin chrome |
 | `bootstrap.php` | Editor settings, REST preload, block definitions and editor assets for the board page |
 | `lock.php` | `wfd/v1/lock/{id}`: take or refresh, take over, release |
+| `preview.php` | `wfd/v1/preview`, and the front-end swaps for `wfd_preview=1` (D50) |
 
 ### JavaScript (`src/`, about 10,300 lines, plus 640 of SCSS)
 

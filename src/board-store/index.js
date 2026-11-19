@@ -33,6 +33,9 @@ const DEFAULT_STATE = {
     removingId: null,
     // Goes up each time Review has saved something; browsers reload (D48).
     siteVersion: 0,
+    // Goes up each time the unsaved changes have been sent for browsers to
+    // preview (D50); 0 until the first send.
+    previewVersion: 0,
 };
 
 /**
@@ -419,6 +422,39 @@ const actions = {
                 : artboards
         ),
     /**
+     * Chooses what a browser shows, outside the history (D50).
+     *
+     * @param {string} id    The browser.
+     * @param {string} shows 'unsaved' or 'saved'.
+     */
+    setBrowserShows:
+        ( id, shows ) =>
+        ( { select, dispatch } ) => {
+            const artboards = select.getArtboards();
+            if (
+                ! artboards.some( ( a ) => a.id === id && a.shows !== shows )
+            ) {
+                return;
+            }
+            dispatch( {
+                type: 'LAYOUT_SILENT',
+                artboards: artboards.map( ( a ) =>
+                    a.id === id ? { ...a, shows } : a
+                ),
+            } );
+        },
+    /**
+     * Tells browsers showing unsaved changes that they have been sent.
+     */
+    bumpPreviewVersion:
+        () =>
+        ( { select, dispatch } ) => {
+            dispatch( {
+                type: 'PATCH',
+                patch: { previewVersion: select.getPreviewVersion() + 1 },
+            } );
+        },
+    /**
      * Tells browsers that the site has changed.
      */
     bumpSiteVersion:
@@ -585,6 +621,7 @@ const selectors = {
     getViewport: ( state ) => state.viewport,
     getRemovingId: ( state ) => state.removingId,
     getSiteVersion: ( state ) => state.siteVersion,
+    getPreviewVersion: ( state ) => state.previewVersion,
     getUndoName: ( state ) => state.past[ state.past.length - 1 ]?.name ?? null,
     getRedoName: ( state ) =>
         state.future[ state.future.length - 1 ]?.name ?? null,
@@ -617,6 +654,7 @@ export function toLayout( artboards, notes = [] ) {
                     kind,
                     entityId,
                     path,
+                    shows,
                     device,
                     x,
                     y,
@@ -624,7 +662,7 @@ export function toLayout( artboards, notes = [] ) {
                     height,
                 } ) => {
                     if ( kind === 'browser' ) {
-                        return { id, kind, path, device, x, y, height };
+                        return { id, kind, path, device, x, y, height, shows };
                     }
                     return kind === 'media'
                         ? { id, kind, entityId, x, y, width, height }

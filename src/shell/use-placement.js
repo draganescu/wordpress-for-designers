@@ -164,6 +164,7 @@ export function usePlacement( { theme, enterEdit } ) {
                     x: Math.round( point.x ),
                     y: Math.round( point.y ),
                     height: NEW_ARTBOARD_HEIGHT,
+                    shows: 'unsaved',
                 };
                 addArtboard( browser );
                 selectArtboard( browser.id );

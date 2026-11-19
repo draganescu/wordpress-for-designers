@@ -11,6 +11,7 @@ import {
 } from './utils';
 
 const BROWSER_ID = '11111111-2222-4333-8444-777777777777';
+const SAVED_ID = '11111111-2222-4333-8444-888888888888';
 
 type Browser = {
     id: string;
@@ -20,6 +21,7 @@ type Browser = {
     x: number;
     y: number;
     height: number;
+    shows: 'unsaved' | 'saved';
 };
 
 // Left of everything in the fixture.
@@ -68,6 +70,7 @@ test.describe( 'BROWSER', () => {
                     path: '/',
                     device: 'desktop',
                     height: 900,
+                    shows: 'saved',
                     ...AT,
                     ...browser,
                 },
@@ -90,11 +93,15 @@ test.describe( 'BROWSER', () => {
         ( await page.locator( '[data-wfd-region="canvas"]' ).boundingBox() )!;
     const address = ( page: Page ) =>
         page.getByRole( 'textbox', { name: 'Address' } );
+    // The address the window's page is on, or null before it is mounted.
     const pageUrl = ( page: Page, id = BROWSER_ID ) =>
         page.evaluate(
             ( selector ) =>
-                ( document.querySelector( selector ) as HTMLIFrameElement )
-                    .contentWindow!.location.href,
+                (
+                    document.querySelector(
+                        selector
+                    ) as HTMLIFrameElement | null
+                 )?.contentWindow?.location.href ?? null,
             `[data-wfd-artboard="${ id }"] iframe.wfd-browser`
         );
 
@@ -133,7 +140,7 @@ test.describe( 'BROWSER', () => {
         const id = ( await placed.getAttribute( 'data-wfd-artboard' ) )!;
         await expect
             .poll( () => pageUrl( page, id ) )
-            .toMatch( /^https?:\/\/[^/]+\/$/ );
+            .toMatch( /^https?:\/\/[^/]+\/\?wfd_preview=1$/ );
         await expect( page$( page, id ).locator( 'body' ) ).toBeVisible();
         // WordPress's toolbar is not shown.
         await expect( page$( page, id ).locator( '#wpadminbar' ) ).toBeHidden();
@@ -264,7 +271,7 @@ test.describe( 'BROWSER', () => {
         await expect.poll( () => pageUrl( page ) ).toBe( link );
     } );
 
-    test( 'AC-BROWSER-04 A change to a page made in an artboard is not shown in a browser on that page until it is saved from Review; after the save the browser shows it without Reload being pressed', async ( {
+    test( 'AC-BROWSER-04 A change to a page made in an artboard is not shown in a browser on that page set to "Saved site" until it is saved from Review; after the save the browser shows it without Reload being pressed', async ( {
         page,
         requestUtils,
     } ) => {
@@ -308,7 +315,7 @@ test.describe( 'BROWSER', () => {
         ).toBeVisible();
     } );
 
-    test( 'AC-BROWSER-05 The server accepts a browser with exactly its fields and rejects one with an `entityId`, one without a `path`, one whose `path` does not start with "/", one without a `height` and one whose `height` is below 200', async ( {
+    test( 'AC-BROWSER-05 The server accepts a browser with exactly its fields and rejects one with an `entityId`, one without a `path`, one whose `path` does not start with "/", one without a `height`, one whose `height` is below 200 and one whose `shows` is not "unsaved" or "saved"', async ( {
         requestUtils,
     } ) => {
         expect( await seedBrowser( requestUtils ) ).toBe( 200 );
@@ -328,6 +335,7 @@ test.describe( 'BROWSER', () => {
             kind: 'browser',
             device: 'desktop',
             height: 900,
+            shows: 'saved',
             ...AT,
         };
         expect(
@@ -348,12 +356,21 @@ test.describe( 'BROWSER', () => {
         expect( await seedBrowser( requestUtils, { height: 199 } ) ).toBe(
             400
         );
+        expect( await seedBrowser( requestUtils, { shows: 'unsaved' } ) ).toBe(
+            200
+        );
+        expect(
+            await seedBrowser( requestUtils, {
+                shows: 'draft',
+            } as unknown as Partial< Browser > )
+        ).toBe( 400 );
         const { height, ...withoutHeight } = {
             id: BROWSER_ID,
             kind: 'browser',
             path: '/',
             device: 'desktop',
             height: 900,
+            shows: 'saved',
             ...AT,
         };
         expect( height ).toBe( 900 );
@@ -468,5 +485,178 @@ test.describe( 'BROWSER', () => {
         );
         await page.waitForTimeout( 300 );
         expect( await scrollY() ).toBe( scrolled );
+    } );
+
+    // Two browsers on the About page, left of its artboard: one showing
+    // unsaved changes above one showing the saved site.
+    const seedPair = async ( requestUtils: any, path: string ) => {
+        const about = artboardOf( fixture, 'page' );
+        const at = { x: about.x - 1600, y: about.y };
+        await saveLayout( requestUtils, {
+            version: 1,
+            artboards: [
+                ...fixture.layout.artboards,
+                {
+                    id: BROWSER_ID,
+                    kind: 'browser',
+                    path,
+                    device: 'desktop',
+                    height: 600,
+                    shows: 'unsaved',
+                    ...at,
+                },
+                {
+                    id: SAVED_ID,
+                    kind: 'browser',
+                    path,
+                    device: 'desktop',
+                    height: 600,
+                    shows: 'saved',
+                    x: at.x,
+                    y: at.y + 800,
+                },
+            ],
+        } );
+        return { about, at };
+    };
+
+    const aboutAddress = async ( requestUtils: any ) => {
+        const link = (
+            await requestUtils.rest( {
+                path: `/wp/v2/pages/${ fixture.pages.about }`,
+            } )
+        ).link as string;
+        return {
+            link,
+            path: '/' + link.slice( new URL( '/', link ).href.length ),
+        };
+    };
+
+    test( 'AC-BROWSER-08 A browser showing unsaved changes shows a change typed into a page\'s artboard, without a save and without Reload being pressed, and keeps showing it on a link followed to another page and back; a browser on the same page set to "Saved site" does not show it until Review saves it. The page requested without signing in shows the saved content even with `wfd_preview=1`', async ( {
+        page,
+        requestUtils,
+        playwright,
+    } ) => {
+        const { link, path } = await aboutAddress( requestUtils );
+        const { about, at } = await seedPair( requestUtils, path );
+        await openBoard( page, fixture.boardId, 11 );
+        await setViewport( page, {
+            x: 60 - at.x * 0.3,
+            y: 60 - at.y * 0.3,
+            zoom: 0.3,
+        } );
+        const unsaved = page$( page );
+        const saved = page$( page, SAVED_ID );
+        await expect(
+            unsaved.locator( 'p', { hasText: 'About paragraph.' } )
+        ).toBeVisible();
+
+        await enterEdit( page, about.id );
+        await editorFrame( page, about.id )
+            .locator( 'p', { hasText: 'About paragraph.' } )
+            .first()
+            .click();
+        await page.keyboard.press( 'End' );
+        await page.keyboard.type( ' Previewed' );
+        await page.getByRole( 'button', { name: 'Back to the board' } ).click();
+
+        await expect(
+            unsaved.locator( 'p', { hasText: 'About paragraph. Previewed' } )
+        ).toBeVisible( { timeout: 8000 } );
+        await expect(
+            saved.locator( 'p', { hasText: 'About paragraph.' } )
+        ).not.toContainText( 'Previewed' );
+
+        // Without signing in the argument does nothing.
+        const visitor = await playwright.request.newContext( {
+            storageState: { cookies: [], origins: [] },
+        } );
+        const html = await (
+            await visitor.get(
+                `${ link }${ link.includes( '?' ) ? '&' : '?' }wfd_preview=1`
+            )
+        ).text();
+        expect( html ).not.toContain( 'id="wpadminbar"' );
+        expect( html ).toMatch( /About paragraph\.<\/p>/ );
+        expect( html ).not.toContain( 'About paragraph. Previewed' );
+        await visitor.dispose();
+
+        // A link to another page and back.
+        const box = ( await browser( page )
+            .locator( '.wfd-artboard__frame' )
+            .boundingBox() )!;
+        await page.mouse.dblclick( box.x + 100, box.y + 60 );
+        await expect( browser( page ) ).toHaveAttribute(
+            'data-wfd-tier',
+            'live'
+        );
+        await unsaved.locator( '.wp-block-site-title a' ).first().click();
+        await expect( address( page ) ).toHaveValue( '/' );
+        expect( await pageUrl( page ) ).toContain( 'wfd_preview=1' );
+        await address( page ).fill( path );
+        await address( page ).press( 'Enter' );
+        await expect(
+            unsaved.locator( 'p', { hasText: 'About paragraph. Previewed' } )
+        ).toBeVisible();
+        await page.keyboard.press( 'Escape' );
+
+        await page.locator( '[data-wfd-control="H9"]' ).click();
+        const drawer = page.getByRole( 'dialog', { name: 'Review changes' } );
+        await drawer.getByRole( 'button', { name: 'Save 1 change' } ).click();
+        await expect(
+            saved.locator( 'p', { hasText: 'About paragraph. Previewed' } )
+        ).toBeVisible();
+    } );
+
+    test( 'AC-BROWSER-09 A browser showing unsaved changes shows an unsaved change to global styles and to a template part', async ( {
+        page,
+        requestUtils,
+    } ) => {
+        // Left of the header part's artboard, both in view at 30%.
+        const header = artboardOf( fixture, 'template-part' );
+        const at = { x: header.x - 1600, y: header.y };
+        await seedBrowser( requestUtils, {
+            shows: 'unsaved',
+            height: 600,
+            ...at,
+        } );
+        await openBoard( page, fixture.boardId, 10 );
+        await setViewport( page, {
+            x: 60 - at.x * 0.3,
+            y: 60 - at.y * 0.3,
+            zoom: 0.3,
+        } );
+        const shown = page$( page );
+        await expect( shown.locator( 'body' ) ).toBeVisible();
+        const background = () =>
+            shown
+                .locator( 'body' )
+                .evaluate(
+                    ( body ) => getComputedStyle( body ).backgroundColor
+                );
+        const before = await background();
+
+        // Global styles: another variation.
+        await page.locator( '[data-wfd-region="canvas"]' ).focus();
+        await page.keyboard.press( 'Escape' );
+        await page
+            .locator( '[data-wfd-region="right"]' )
+            .getByRole( 'button', { name: /^Variation:/ } )
+            .click();
+        await page.getByRole( 'menuitemradio', { name: 'Evening' } ).click();
+        await expect.poll( background, { timeout: 8000 } ).not.toBe( before );
+
+        // The header part, in its artboard.
+        await enterEdit( page, header.id );
+        await editorFrame( page, header.id )
+            .locator( 'p', { hasText: 'Fixture header text' } )
+            .first()
+            .click();
+        await page.keyboard.press( 'End' );
+        await page.keyboard.type( ' Edited' );
+        await page.getByRole( 'button', { name: 'Back to the board' } ).click();
+        await expect(
+            shown.getByText( 'Fixture header text Edited' )
+        ).toBeVisible( { timeout: 8000 } );
     } );
 } );

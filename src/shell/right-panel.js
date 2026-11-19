@@ -146,6 +146,7 @@ export function ArtboardSettings( {
     onRemove,
     isBrowsing = false,
     onReload,
+    onShowsChange,
 } ) {
     if ( artboard.kind === 'browser' ) {
         // A browser browses instead of editing, and reloads (D48).
@@ -156,6 +157,30 @@ export function ArtboardSettings( {
                     device={ artboard.device }
                     onChange={ onDeviceChange }
                 />
+                <div className="wfd-device-control">
+                    <ToggleGroupControl
+                        __next40pxDefaultSize
+                        isBlock
+                        label={ __( 'Shows', 'wordpress-for-designers' ) }
+                        value={ artboard.shows }
+                        onChange={ onShowsChange }
+                    >
+                        <ToggleGroupControlOption
+                            value="unsaved"
+                            label={ __(
+                                'Unsaved changes',
+                                'wordpress-for-designers'
+                            ) }
+                        />
+                        <ToggleGroupControlOption
+                            value="saved"
+                            label={ __(
+                                'Saved site',
+                                'wordpress-for-designers'
+                            ) }
+                        />
+                    </ToggleGroupControl>
+                </div>
                 <Stack
                     className="wfd-artboard-settings__actions"
                     direction="row"

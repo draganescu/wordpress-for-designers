@@ -12,6 +12,29 @@ const PAGE_CSS =
     '#wpadminbar { display: none !important; } html { margin-top: 0 !important; }';
 
 /**
+ * The query argument that asks for a page with the board's unsaved changes
+ * (D50).
+ */
+const PREVIEW_ARG = 'wfd_preview';
+
+/**
+ * A URL with or without the preview argument.
+ *
+ * @param {string}  href      The URL.
+ * @param {boolean} isPreview Whether it asks for unsaved changes.
+ * @return {string} The URL.
+ */
+function withPreview( href, isPreview ) {
+    const url = new URL( href );
+    if ( isPreview ) {
+        url.searchParams.set( PREVIEW_ARG, '1' );
+    } else {
+        url.searchParams.delete( PREVIEW_ARG );
+    }
+    return url.href;
+}
+
+/**
  * The address of a URL relative to the site's home, or null when the URL is
  * not on the site.
  *
@@ -23,7 +46,8 @@ export function addressOf( href, homeUrl ) {
     if ( typeof href !== 'string' || ! href.startsWith( homeUrl ) ) {
         return null;
     }
-    return '/' + href.slice( homeUrl.length );
+    // The preview argument is not part of the address.
+    return '/' + withPreview( href, false ).slice( homeUrl.length );
 }
 
 /**
@@ -40,12 +64,13 @@ export function normalizeAddress( typed ) {
 /**
  * The URL of an address on the site.
  *
- * @param {string} path    The address, starting with a slash.
- * @param {string} homeUrl The site's home URL, ending with a slash.
+ * @param {string}  path      The address, starting with a slash.
+ * @param {string}  homeUrl   The site's home URL, ending with a slash.
+ * @param {boolean} isPreview Whether it asks for unsaved changes (D50).
  * @return {string} The URL.
  */
-export function urlOf( path, homeUrl ) {
-    return homeUrl + path.slice( 1 );
+export function urlOf( path, homeUrl, isPreview = false ) {
+    return withPreview( homeUrl + path.slice( 1 ), isPreview );
 }
 
 /**
@@ -53,6 +78,7 @@ export function urlOf( path, homeUrl ) {
  * @param {string}   props.path        The address to show.
  * @param {string}   props.homeUrl     The site's home URL.
  * @param {boolean}  props.isBrowsing  Whether the page takes input.
+ * @param {boolean}  props.isPreview   Whether it shows unsaved changes (D50).
  * @param {number}   props.reloadToken Reloads the page when it changes.
  * @param {Function} props.onNavigate  Called with the address the page is on.
  * @param {Function} props.onEscape    Called when Esc is pressed in the page.
@@ -63,6 +89,7 @@ export function ArtboardBrowser( {
     path,
     homeUrl,
     isBrowsing,
+    isPreview = false,
     reloadToken,
     onNavigate,
     onEscape,
@@ -72,9 +99,11 @@ export function ArtboardBrowser( {
     // The address the page is on, as last loaded.
     const current = useRef( null );
     const [ isLoaded, setLoaded ] = useState( false );
-    const [ src ] = useState( () => urlOf( path, homeUrl ) );
+    const [ src ] = useState( () => urlOf( path, homeUrl, isPreview ) );
+    // Where the page was scrolled to before a reload.
+    const scrollBack = useRef( null );
     const latest = useRef( {} );
-    latest.current = { onNavigate, onEscape, onWheel, homeUrl };
+    latest.current = { onNavigate, onEscape, onWheel, homeUrl, isPreview };
 
     // A new address from outside (typed in the address field) is gone to.
     useEffect( () => {
@@ -83,9 +112,11 @@ export function ArtboardBrowser( {
             return;
         }
         try {
-            frame.contentWindow.location.assign( urlOf( path, homeUrl ) );
+            frame.contentWindow.location.assign(
+                urlOf( path, homeUrl, latest.current.isPreview )
+            );
         } catch {
-            frame.src = urlOf( path, homeUrl );
+            frame.src = urlOf( path, homeUrl, latest.current.isPreview );
         }
     }, [ path, homeUrl ] );
 
@@ -96,7 +127,10 @@ export function ArtboardBrowser( {
         }
         firstReload.current = reloadToken;
         try {
-            iframeRef.current.contentWindow.location.reload();
+            const view = iframeRef.current.contentWindow;
+            // A reload keeps the page where it was scrolled to.
+            scrollBack.current = { x: view.scrollX, y: view.scrollY };
+            view.location.reload();
         } catch {
             // The page is not reachable; the next load shows it again.
         }
@@ -114,7 +148,7 @@ export function ArtboardBrowser( {
 
     function onLoad() {
         const frame = iframeRef.current;
-        const { homeUrl: home } = latest.current;
+        const { homeUrl: home, isPreview: preview } = latest.current;
         let doc;
         let href;
         try {
@@ -126,11 +160,18 @@ export function ArtboardBrowser( {
         const address = doc ? addressOf( href, home ) : null;
         if ( address === null ) {
             // Off the site: back to the page it was on.
-            frame.src = urlOf( current.current ?? '/', home );
+            frame.src = urlOf( current.current ?? '/', home, preview );
             return;
         }
         current.current = address;
         setLoaded( true );
+        if ( scrollBack.current ) {
+            frame.contentWindow.scrollTo(
+                scrollBack.current.x,
+                scrollBack.current.y
+            );
+            scrollBack.current = null;
+        }
         const style = doc.createElement( 'style' );
         style.textContent = PAGE_CSS;
         doc.head?.appendChild( style );
@@ -141,10 +182,31 @@ export function ArtboardBrowser( {
                 const link = event.target.closest?.( 'a[href]' );
                 if ( link && addressOf( link.href, home ) === null ) {
                     event.preventDefault();
+                } else if ( link && preview ) {
+                    // A link followed keeps showing unsaved changes.
+                    link.href = withPreview( link.href, true );
                 }
             },
             true
         );
+        if ( preview ) {
+            doc.addEventListener(
+                'submit',
+                ( event ) => {
+                    const form = event.target;
+                    if (
+                        ! form.querySelector?.( `[name="${ PREVIEW_ARG }"]` )
+                    ) {
+                        const field = doc.createElement( 'input' );
+                        field.type = 'hidden';
+                        field.name = PREVIEW_ARG;
+                        field.value = '1';
+                        form.appendChild( field );
+                    }
+                },
+                true
+            );
+        }
         doc.addEventListener( 'keydown', ( event ) => {
             if ( event.key === 'Escape' && ! event.defaultPrevented ) {
                 latest.current.onEscape();
