@@ -1,5 +1,6 @@
 /**
- * Saves the layout 2 seconds after its last change (decision D25). The layout
+ * Saves the layout 2 seconds after its last change (decision D25), notes and
+ * their text included (D43). The layout
  * is not site content: it goes straight to the board's REST route and never
  * appears in Review.
  */
@@ -11,11 +12,12 @@ import { store as boardStore, toLayout } from './index';
 const DELAY = 2000;
 
 export function useLayoutAutosave() {
-    const { boardId, artboards, isLoaded } = useSelect( ( select ) => {
+    const { boardId, artboards, notes, isLoaded } = useSelect( ( select ) => {
         const board = select( boardStore );
         return {
             boardId: board.getBoardId(),
             artboards: board.getArtboards(),
+            notes: board.getNotes(),
             isLoaded: board.isLoaded(),
         };
     }, [] );
@@ -29,12 +31,13 @@ export function useLayoutAutosave() {
         if ( ! isLoaded ) {
             return;
         }
-        const layout = toLayout( artboards );
+        const layout = toLayout( artboards, notes );
         const json = JSON.stringify( layout );
         // The layout without the measured heights.
-        const placement = JSON.stringify(
-            layout.artboards.map( ( { height, ...rest } ) => rest )
-        );
+        const placement = JSON.stringify( [
+            layout.artboards.map( ( { height, ...rest } ) => rest ),
+            layout.notes,
+        ] );
         const wasPlaced = placed.current;
         placed.current = placement;
         if ( saved.current === null ) {
@@ -69,7 +72,7 @@ export function useLayoutAutosave() {
         pending.current = save;
         const timer = setTimeout( save, delay );
         return () => clearTimeout( timer );
-    }, [ artboards, boardId, isLoaded ] );
+    }, [ artboards, notes, boardId, isLoaded ] );
 
     useEffect( () => {
         const flush = () => pending.current?.();

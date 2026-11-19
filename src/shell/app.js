@@ -48,6 +48,7 @@ import {
 import { KINDS } from './constants';
 import { LockDialog, RemoveDialog } from './dialogs';
 import { ShortcutsButton, ShortcutsDialog } from './shortcuts-dialog';
+import { Note, NoteSettings } from './notes';
 import { Header } from './header';
 import { artboardLabel, liveLabel } from './labels';
 import { ArtboardSettings, EditingPanel } from './right-panel';
@@ -80,6 +81,11 @@ const LAYOUT_ACTIONS = {
     device: __( 'change device', 'wordpress-for-designers' ),
     add: __( 'add artboard', 'wordpress-for-designers' ),
     remove: __( 'remove artboard', 'wordpress-for-designers' ),
+    'add-note': __( 'add note', 'wordpress-for-designers' ),
+    'move-note': __( 'move note', 'wordpress-for-designers' ),
+    'edit-note': __( 'edit note', 'wordpress-for-designers' ),
+    'note-color': __( 'change note color', 'wordpress-for-designers' ),
+    'remove-note': __( 'remove note', 'wordpress-for-designers' ),
 };
 
 function readStoredViewport() {
@@ -119,7 +125,8 @@ function useBoard() {
             setBoard(
                 record.id,
                 record.title?.raw ?? '',
-                record.layout?.artboards ?? []
+                record.layout?.artboards ?? [],
+                record.layout?.notes ?? []
             );
         }
     }, [ record, isLoaded, setBoard ] );
@@ -194,9 +201,17 @@ export function App() {
         undoName,
         redoName,
         removingId,
+        notes,
+        selectedNoteId,
+        editingNoteId,
+        isNoteToolArmed,
     } = useSelect( ( select ) => {
         const board = select( boardStore );
         return {
+            notes: board.getNotes(),
+            selectedNoteId: board.getSelectedNoteId(),
+            editingNoteId: board.getEditingNoteId(),
+            isNoteToolArmed: board.isNoteToolArmed(),
             title: board.getTitle(),
             selectedId: board.getSelectedId(),
             selectedIds: board.getSelectedIds(),
@@ -222,6 +237,13 @@ export function App() {
         updateArtboard,
         undoLayout,
         redoLayout,
+        setNoteToolArmed,
+        addNote,
+        setNoteColor,
+        setNoteText,
+        setNoteHeight,
+        startNoteEdit,
+        endNoteEdit,
     } = useDispatch( boardStore );
 
     // Hidden panels (D32): kept for the session only.
@@ -367,8 +389,11 @@ export function App() {
         leaving
             .filter( ( a ) => a.draft )
             .forEach( ( a ) => remove( a, false ) );
+        // Notes leave with the artboards (D43).
         removeArtboards(
-            leaving.filter( ( a ) => ! a.draft ).map( ( a ) => a.id ),
+            ids.filter(
+                ( id ) => ! leaving.some( ( a ) => a.id === id && a.draft )
+            ),
             { undoable: true }
         );
     };
@@ -558,11 +583,14 @@ export function App() {
         left = (
             <ArtboardsPanel
                 artboards={ artboards }
+                notes={ notes }
                 selectedIds={ selectedIds }
+                onEditNote={ startNoteEdit }
                 onSelect={ ( id, event ) => {
-                    const ordered = orderedArtboards( artboards ).map(
-                        ( artboard ) => artboard.id
-                    );
+                    const ordered = [
+                        ...orderedArtboards( artboards ),
+                        ...notes,
+                    ].map( ( item ) => item.id );
                     const from = ordered.indexOf( anchorId );
                     if ( event?.shiftKey && from !== -1 ) {
                         // Shift + click selects from the row clicked last
@@ -585,9 +613,9 @@ export function App() {
                 onRemove={ () => {
                     // Delete on a row acts on the selection, as on the
                     // board.
-                    if ( selectedIds.length === 1 ) {
-                        setRemovingId( selectedIds[ 0 ] );
-                    } else if ( selectedIds.length > 1 ) {
+                    if ( selectedId ) {
+                        setRemovingId( selectedId );
+                    } else if ( selectedIds.length ) {
                         removeMany( selectedIds );
                         // The focused row may be gone.
                         focusBoard();
@@ -637,6 +665,19 @@ export function App() {
                           )
                         : null
                 }
+            />
+        );
+    } else if ( selectedNoteId ) {
+        right = (
+            <NoteSettings
+                note={ notes.find( ( note ) => note.id === selectedNoteId ) }
+                onColorChange={ ( color ) =>
+                    setNoteColor( selectedNoteId, color )
+                }
+                onRemove={ () => {
+                    removeMany( [ selectedNoteId ] );
+                    focusBoard();
+                } }
             />
         );
     } else if ( selected ) {
@@ -745,6 +786,11 @@ export function App() {
                             zoomPercent={ Math.round( zoom * 100 ) }
                             onZoom={ canvas.zoom }
                             canFitSelection={ selectedIds.length > 0 }
+                            isNoteToolArmed={ isNoteToolArmed }
+                            isNoteToolDisabled={ !! live }
+                            onToggleNoteTool={ () =>
+                                setNoteToolArmed( ! isNoteToolArmed )
+                            }
                             reviewCount={ review.count }
                             onReview={ review.open }
                         />
@@ -802,26 +848,47 @@ export function App() {
                                 )
                             }
                             placer={
-                                placing.placement && (
+                                isNoteToolArmed && ! live ? (
                                     <div
                                         className="wfd-canvas__placer"
-                                        data-wfd-placer
-                                        onPointerMove={ ( event ) =>
-                                            setGhost( pointOf( event ) )
-                                        }
+                                        data-wfd-placer="note"
                                         onPointerDown={ ( event ) =>
                                             event.stopPropagation()
                                         }
                                         onPointerUp={ ( event ) => {
                                             event.stopPropagation();
                                             if ( event.button === 0 ) {
-                                                setGhost( null );
-                                                placing.place(
-                                                    pointOf( event )
-                                                );
+                                                const at = pointOf( event );
+                                                addNote( {
+                                                    id: window.crypto.randomUUID(),
+                                                    x: Math.round( at.x ),
+                                                    y: Math.round( at.y ),
+                                                } );
                                             }
                                         } }
                                     />
+                                ) : (
+                                    placing.placement && (
+                                        <div
+                                            className="wfd-canvas__placer"
+                                            data-wfd-placer
+                                            onPointerMove={ ( event ) =>
+                                                setGhost( pointOf( event ) )
+                                            }
+                                            onPointerDown={ ( event ) =>
+                                                event.stopPropagation()
+                                            }
+                                            onPointerUp={ ( event ) => {
+                                                event.stopPropagation();
+                                                if ( event.button === 0 ) {
+                                                    setGhost( null );
+                                                    placing.place(
+                                                        pointOf( event )
+                                                    );
+                                                }
+                                            } }
+                                        />
+                                    )
                                 )
                             }
                             emptyState={
@@ -1007,6 +1074,28 @@ export function App() {
                                     </ArtboardFrame>
                                 );
                             } ) }
+                            { notes.map( ( note ) => (
+                                <Note
+                                    key={ note.id }
+                                    note={ note }
+                                    isSelected={ selectedIds.includes(
+                                        note.id
+                                    ) }
+                                    isEditing={ editingNoteId === note.id }
+                                    onText={ ( text ) =>
+                                        setNoteText( note.id, text )
+                                    }
+                                    onEndEdit={ ( refocus ) => {
+                                        endNoteEdit();
+                                        if ( refocus ) {
+                                            focusBoard();
+                                        }
+                                    } }
+                                    onHeight={ ( height ) =>
+                                        setNoteHeight( note.id, height )
+                                    }
+                                />
+                            ) ) }
                         </Canvas>
                     }
                     right={ isRightHidden ? null : right }

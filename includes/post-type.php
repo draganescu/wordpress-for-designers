@@ -94,7 +94,7 @@ function wfd_update_layout( $layout, $post ) {
     $result = wp_update_post(
         array(
             'ID'           => $post->ID,
-            'post_content' => wp_slash( wp_json_encode( $layout ) ),
+            'post_content' => wp_slash( wp_json_encode( $layout, JSON_HEX_TAG | JSON_HEX_AMP ) ),
         ),
         true
     );
@@ -135,8 +135,10 @@ function wfd_layout_error( $layout ) {
     if ( ! is_array( $layout ) ) {
         return __( 'The layout must be an object.', 'wordpress-for-designers' );
     }
-    if ( array_diff( array_keys( $layout ), array( 'version', 'artboards' ) ) || 2 !== count( $layout ) ) {
-        return __( 'The layout must have exactly the fields version and artboards.', 'wordpress-for-designers' );
+    // The notes list is optional (D43).
+    $keys = array_keys( $layout );
+    if ( array_diff( array( 'version', 'artboards' ), $keys ) || array_diff( $keys, array( 'version', 'artboards', 'notes' ) ) ) {
+        return __( 'The layout must have exactly the fields version and artboards, and may have notes.', 'wordpress-for-designers' );
     }
     if ( 1 !== $layout['version'] ) {
         return __( 'The layout version must be 1.', 'wordpress-for-designers' );
@@ -177,6 +179,41 @@ function wfd_layout_error( $layout ) {
                     ? __( 'The media object x, y, width and height must be numbers.', 'wordpress-for-designers' )
                     : __( 'The artboard x, y and height must be numbers.', 'wordpress-for-designers' );
             }
+        }
+    }
+    return array_key_exists( 'notes', $layout )
+        ? wfd_notes_error( $layout['notes'], $ids )
+        : true;
+}
+
+/**
+ * Checks the notes of a layout (spec/data-model.md, D43).
+ *
+ * @param mixed $notes The decoded notes.
+ * @param array $ids   Ids already used by artboards.
+ * @return true|string True when valid, otherwise the reason.
+ */
+function wfd_notes_error( $notes, $ids ) {
+    if ( ! is_array( $notes ) || ( $notes && ! wp_is_numeric_array( $notes ) ) ) {
+        return __( 'The layout notes must be a list.', 'wordpress-for-designers' );
+    }
+    $fields = array( 'id', 'x', 'y', 'text', 'color' );
+    foreach ( $notes as $note ) {
+        if ( ! is_array( $note ) || array_diff( array_keys( $note ), $fields ) || count( $note ) !== count( $fields ) ) {
+            return __( 'Each note must have exactly the fields id, x, y, text and color.', 'wordpress-for-designers' );
+        }
+        if ( ! is_string( $note['id'] ) || ! wp_is_uuid( $note['id'] ) || isset( $ids[ $note['id'] ] ) ) {
+            return __( 'Each note id must be a unique UUID.', 'wordpress-for-designers' );
+        }
+        $ids[ $note['id'] ] = true;
+        if ( ! wfd_is_number( $note['x'] ) || ! wfd_is_number( $note['y'] ) ) {
+            return __( 'The note x and y must be numbers.', 'wordpress-for-designers' );
+        }
+        if ( ! is_string( $note['text'] ) ) {
+            return __( 'The note text must be a string.', 'wordpress-for-designers' );
+        }
+        if ( ! in_array( $note['color'], array( 'yellow', 'green', 'blue', 'pink' ), true ) ) {
+            return __( 'The note color is not valid.', 'wordpress-for-designers' );
         }
     }
     return true;

@@ -10,6 +10,7 @@ import { useRegistry } from '@wordpress/data';
 import { store as boardStore } from '../board-store';
 import { orderedArtboards } from './artboards-panel';
 import { isShortcutsDialogEvent } from './shortcuts-dialog';
+import { noteRect } from './notes';
 
 const DRAG_THRESHOLD = 3;
 const ZOOM_STEP = 1.25;
@@ -87,21 +88,27 @@ export function useCanvasInteractions( {
     if ( ! api.current ) {
         const board = () => registry.select( boardStore );
         const actions = () => registry.dispatch( boardStore );
-        const rects = ( list ) =>
-            list.map( ( artboard ) =>
-                rectOf( artboard, latest.current.widthOf )
-            );
+        // Artboards and notes (D43), with or without a filter on their ids.
+        const rects = ( ids ) => [
+            ...board()
+                .getArtboards()
+                .filter( ( artboard ) => ! ids || ids.includes( artboard.id ) )
+                .map( ( artboard ) =>
+                    rectOf( artboard, latest.current.widthOf )
+                ),
+            ...board()
+                .getNotes()
+                .filter( ( note ) => ! ids || ids.includes( note.id ) )
+                .map( noteRect ),
+        ];
         api.current = {
             fitAll( options ) {
-                viewport.fit( rects( board().getArtboards() ), options );
+                viewport.fit( rects(), options );
             },
             fitSelection( options ) {
-                const ids = board().getSelectedIds();
-                const selected = board()
-                    .getArtboards()
-                    .filter( ( artboard ) => ids.includes( artboard.id ) );
+                const selected = rects( board().getSelectedIds() );
                 if ( selected.length ) {
-                    viewport.fit( rects( selected ), options );
+                    viewport.fit( selected, options );
                 }
             },
             zoom( id ) {
@@ -131,16 +138,20 @@ export function useCanvasInteractions( {
                 }
             },
             /**
-             * Brings an artboard into view without changing the zoom.
+             * Brings an artboard or a note into view without changing the
+             * zoom.
              *
-             * @param {string} id The artboard.
+             * @param {string} id The artboard or note.
              */
             reveal( id ) {
                 const artboard = board().getArtboard( id );
-                if ( ! artboard ) {
+                const note = board().getNote( id );
+                if ( ! artboard && ! note ) {
                     return;
                 }
-                const rect = rectOf( artboard, latest.current.widthOf );
+                const rect = artboard
+                    ? rectOf( artboard, latest.current.widthOf )
+                    : noteRect( note );
                 const view = viewport.get();
                 const size = viewport.size();
                 const left = rect.x * view.zoom + view.x;
@@ -189,8 +200,13 @@ export function useCanvasInteractions( {
             const box = area.getBoundingClientRect();
             return { x: event.clientX - box.left, y: event.clientY - box.top };
         };
+        // An artboard or a note (D43).
         const frameOf = ( target ) =>
-            target.closest?.( '[data-wfd-artboard]' ) || null;
+            target.closest?.( '[data-wfd-artboard], [data-wfd-note]' ) || null;
+        const idOf = ( element ) =>
+            element.dataset.wfdArtboard ?? element.dataset.wfdNote;
+        const isBody = ( target ) =>
+            !! target.closest( '.wfd-artboard__frame, [data-wfd-note]' );
 
         function wheel( event, at ) {
             event.preventDefault();
@@ -234,7 +250,11 @@ export function useCanvasInteractions( {
                 gesture = { type: 'empty' };
                 return;
             }
-            const id = element.dataset.wfdArtboard;
+            const id = idOf( element );
+            if ( board().getEditingNoteId() === id ) {
+                // The text field of the note being edited.
+                return;
+            }
             const liveId = board().getLiveId();
             if ( liveId === id ) {
                 // The Live artboard's own label and tools.
@@ -244,7 +264,7 @@ export function useCanvasInteractions( {
                 // Selecting another artboard ends edit.
                 latest.current.onLeaveEdit();
             }
-            if ( ! event.target.closest( '.wfd-artboard__frame' ) ) {
+            if ( ! isBody( event.target ) ) {
                 return;
             }
             if ( ! liveId && ( event.metaKey || event.ctrlKey ) ) {
@@ -269,25 +289,24 @@ export function useCanvasInteractions( {
             area.focus( { preventScroll: true } );
             const movedIds = isOneOfMany ? selectedIds : [ id ];
             const items = [];
-            area.querySelectorAll( '[data-wfd-artboard]' ).forEach(
-                ( node ) => {
-                    const artboard = movedIds.includes(
-                        node.dataset.wfdArtboard
-                    )
-                        ? board().getArtboard( node.dataset.wfdArtboard )
-                        : null;
-                    if ( artboard ) {
-                        items.push( {
-                            id: artboard.id,
-                            element: node,
-                            originX: artboard.x,
-                            originY: artboard.y,
-                            x: artboard.x,
-                            y: artboard.y,
-                        } );
-                    }
+            area.querySelectorAll(
+                '[data-wfd-artboard], [data-wfd-note]'
+            ).forEach( ( node ) => {
+                const nodeId = idOf( node );
+                const item = movedIds.includes( nodeId )
+                    ? board().getArtboard( nodeId ) || board().getNote( nodeId )
+                    : null;
+                if ( item ) {
+                    items.push( {
+                        id: item.id,
+                        element: node,
+                        originX: item.x,
+                        originY: item.y,
+                        x: item.x,
+                        y: item.y,
+                    } );
                 }
-            );
+            } );
             gesture = {
                 type: 'press',
                 id,
@@ -374,9 +393,15 @@ export function useCanvasInteractions( {
                 doc.elementFromPoint( event.clientX, event.clientY ) ||
                 event.target;
             const element = frameOf( target );
+            if ( element?.dataset.wfdNote ) {
+                if ( board().getEditingNoteId() !== element.dataset.wfdNote ) {
+                    actions().startNoteEdit( element.dataset.wfdNote );
+                }
+                return;
+            }
             if (
                 element &&
-                target.closest( '.wfd-artboard__frame' ) &&
+                isBody( target ) &&
                 element.dataset.wfdArtboard !== board().getLiveId()
             ) {
                 latest.current.onEdit( element.dataset.wfdArtboard );
@@ -405,6 +430,10 @@ export function useCanvasInteractions( {
 
         function onKeyDown( event ) {
             if ( event.target !== area ) {
+                return;
+            }
+            if ( event.key === 'Escape' && board().isNoteToolArmed() ) {
+                // Left to the document: it switches the note tool off.
                 return;
             }
             if ( board().getLiveId() && event.code !== 'Space' ) {
@@ -454,11 +483,8 @@ export function useCanvasInteractions( {
             const step = event.shiftKey ? 10 : 1;
             const nudge = ( dx, dy ) => {
                 actions().moveArtboards(
-                    board()
-                        .getArtboards()
-                        .filter( ( artboard ) =>
-                            selectedIds.includes( artboard.id )
-                        )
+                    [ ...board().getArtboards(), ...board().getNotes() ]
+                        .filter( ( item ) => selectedIds.includes( item.id ) )
                         .map( ( { id, x, y } ) => ( {
                             id,
                             x: x + dx,
@@ -472,6 +498,9 @@ export function useCanvasInteractions( {
                     // Only one artboard can be in edit.
                     if ( selectedId ) {
                         latest.current.onEdit( selectedId );
+                        done();
+                    } else if ( board().getSelectedNoteId() ) {
+                        actions().startNoteEdit( board().getSelectedNoteId() );
                         done();
                     }
                     return;
@@ -503,6 +532,13 @@ export function useCanvasInteractions( {
 
         // The shortcuts marked "always" in the keyboard map.
         function onDocumentKeyDown( event ) {
+            if ( event.key === 'Escape' && board().isNoteToolArmed() ) {
+                // Esc switches the note tool off (D43).
+                event.preventDefault();
+                event.stopPropagation();
+                actions().setNoteToolArmed( false );
+                return;
+            }
             const mod = event.metaKey || event.ctrlKey;
             const { zoom } = viewport.get();
             if ( mod && ( event.key === '+' || event.key === '=' ) ) {

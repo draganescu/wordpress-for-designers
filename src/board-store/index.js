@@ -11,7 +11,15 @@ const DEFAULT_STATE = {
     title: '',
     isLoaded: false,
     artboards: [],
-    // Every selected artboard, in the order they were selected.
+    // Notes on the board (D43), with their measured `height` (not saved).
+    notes: [],
+    // The note whose text is being edited.
+    editingNoteId: null,
+    // Whether the next click on the board places a note.
+    isNoteToolArmed: false,
+    // The notes as they were when the note's text edit started.
+    noteEditStart: null,
+    // Every selected artboard and note artboard, in the order they were selected.
     selectedIds: [],
     // Where a Shift range in the artboard list starts.
     anchorId: null,
@@ -41,9 +49,14 @@ function restore( snapshot, current ) {
     );
 }
 
-function keepSelection( state, artboards ) {
-    const exists = ( id ) => artboards.some( ( a ) => a.id === id );
+function keepSelection( state, artboards, notes = state.notes ) {
+    const exists = ( id ) =>
+        artboards.some( ( a ) => a.id === id ) ||
+        notes.some( ( note ) => note.id === id );
     return {
+        editingNoteId: notes.some( ( note ) => note.id === state.editingNoteId )
+            ? state.editingNoteId
+            : null,
         selectedIds: state.selectedIds.every( exists )
             ? state.selectedIds
             : state.selectedIds.filter( exists ),
@@ -61,6 +74,7 @@ function reducer( state = DEFAULT_STATE, action ) {
                 boardId: action.boardId,
                 title: action.title,
                 artboards: action.artboards,
+                notes: action.notes,
                 isLoaded: true,
             };
         case 'SELECT': {
@@ -84,57 +98,62 @@ function reducer( state = DEFAULT_STATE, action ) {
         case 'SET_REMOVING':
             return { ...state, removingId: action.id };
         case 'LAYOUT': {
-            // A change to the layout that can be undone.
+            // A change to the layout that can be undone. `before` is the
+            // state to go back to, when it is not the current one (a note's
+            // text, changed silently while it was typed).
+            const artboards = action.artboards ?? state.artboards;
+            const notes = action.notes ?? state.notes;
             return {
                 ...state,
-                artboards: action.artboards,
-                ...keepSelection( state, action.artboards ),
+                artboards,
+                notes,
+                ...keepSelection( state, artboards, notes ),
                 past: [
                     ...state.past,
-                    { name: action.name, artboards: state.artboards },
+                    {
+                        name: action.name,
+                        artboards: state.artboards,
+                        notes: state.notes,
+                        ...action.before,
+                    },
                 ],
                 future: [],
             };
         }
-        case 'LAYOUT_SILENT':
+        case 'LAYOUT_SILENT': {
             // A change that is not part of the history.
-            return {
-                ...state,
-                artboards: action.artboards,
-                ...keepSelection( state, action.artboards ),
-            };
-        case 'UNDO': {
-            const entry = state.past[ state.past.length - 1 ];
-            if ( ! entry ) {
-                return state;
-            }
-            const artboards = restore( entry.artboards, state.artboards );
+            const artboards = action.artboards ?? state.artboards;
+            const notes = action.notes ?? state.notes;
             return {
                 ...state,
                 artboards,
-                ...keepSelection( state, artboards ),
-                past: state.past.slice( 0, -1 ),
-                future: [
-                    ...state.future,
-                    { name: entry.name, artboards: state.artboards },
-                ],
+                notes,
+                ...keepSelection( state, artboards, notes ),
             };
         }
+        case 'UNDO':
         case 'REDO': {
-            const entry = state.future[ state.future.length - 1 ];
+            const isUndo = action.type === 'UNDO';
+            const from = isUndo ? state.past : state.future;
+            const entry = from[ from.length - 1 ];
             if ( ! entry ) {
                 return state;
             }
             const artboards = restore( entry.artboards, state.artboards );
+            const notes = restore( entry.notes, state.notes );
+            const current = {
+                name: entry.name,
+                artboards: state.artboards,
+                notes: state.notes,
+            };
+            const to = isUndo ? state.future : state.past;
             return {
                 ...state,
                 artboards,
-                ...keepSelection( state, artboards ),
-                future: state.future.slice( 0, -1 ),
-                past: [
-                    ...state.past,
-                    { name: entry.name, artboards: state.artboards },
-                ],
+                notes,
+                ...keepSelection( state, artboards, notes ),
+                [ isUndo ? 'past' : 'future' ]: from.slice( 0, -1 ),
+                [ isUndo ? 'future' : 'past' ]: [ ...to, current ],
             };
         }
         case 'SET_LIVE': {
@@ -169,12 +188,46 @@ const change = ( name, update ) =>
         }
     };
 
+const changeNotes = ( name, update ) =>
+    function ( { select, dispatch } ) {
+        const before = select.getNotes();
+        const after = update( before );
+        if ( after !== before ) {
+            dispatch( { type: 'LAYOUT', name, notes: after } );
+        }
+    };
+
+/**
+ * Applies moves, as { id, x, y }, to a list of artboards or notes.
+ *
+ * @param {Array} items The list.
+ * @param {Map}   byId  The moves by id.
+ * @return {Array} The same list when nothing moved.
+ */
+function applyMoves( items, byId ) {
+    const isMoved = ( item ) =>
+        byId.has( item.id ) &&
+        ( byId.get( item.id ).x !== item.x ||
+            byId.get( item.id ).y !== item.y );
+    if ( ! items.some( isMoved ) ) {
+        return items;
+    }
+    return items.map( ( item ) =>
+        isMoved( item )
+            ? { ...item, x: byId.get( item.id ).x, y: byId.get( item.id ).y }
+            : item
+    );
+}
+
+export const NOTE_COLORS = [ 'yellow', 'green', 'blue', 'pink' ];
+
 const actions = {
-    setBoard: ( boardId, title, artboards ) => ( {
+    setBoard: ( boardId, title, artboards, notes = [] ) => ( {
         type: 'SET_BOARD',
         boardId,
         title,
         artboards,
+        notes,
     } ),
     selectArtboard: ( id ) => ( {
         type: 'SELECT',
@@ -223,25 +276,31 @@ const actions = {
             );
         } ),
     /**
-     * Moves several artboards as one step of the history.
+     * Moves several artboards and notes as one step of the history.
      *
      * @param {Array} moves The moves, as { id, x, y }.
      */
-    moveArtboards: ( moves ) =>
-        change( 'move', ( artboards ) => {
+    moveArtboards:
+        ( moves ) =>
+        ( { select, dispatch } ) => {
             const byId = new Map( moves.map( ( move ) => [ move.id, move ] ) );
-            const isMoved = ( a ) =>
-                byId.has( a.id ) &&
-                ( byId.get( a.id ).x !== a.x || byId.get( a.id ).y !== a.y );
-            if ( ! artboards.some( isMoved ) ) {
-                return artboards;
+            const artboards = applyMoves( select.getArtboards(), byId );
+            const notes = applyMoves( select.getNotes(), byId );
+            if (
+                artboards === select.getArtboards() &&
+                notes === select.getNotes()
+            ) {
+                return;
             }
-            return artboards.map( ( a ) =>
-                isMoved( a )
-                    ? { ...a, x: byId.get( a.id ).x, y: byId.get( a.id ).y }
-                    : a
-            );
-        } ),
+            dispatch( {
+                type: 'LAYOUT',
+                // Named for notes only when no artboard moved.
+                name:
+                    artboards === select.getArtboards() ? 'move-note' : 'move',
+                artboards,
+                notes,
+            } );
+        },
     setArtboardDevice: ( id, device ) =>
         change( 'device', ( artboards ) => {
             const artboard = artboards.find( ( a ) => a.id === id );
@@ -296,12 +355,139 @@ const actions = {
     removeArtboards:
         ( ids, { undoable = false } = {} ) =>
         ( { select, dispatch } ) => {
+            const artboards = select
+                .getArtboards()
+                .filter( ( a ) => ! ids.includes( a.id ) );
+            const notes = select
+                .getNotes()
+                .filter( ( note ) => ! ids.includes( note.id ) );
             dispatch( {
                 type: undoable ? 'LAYOUT' : 'LAYOUT_SILENT',
-                name: 'remove',
-                artboards: select
-                    .getArtboards()
-                    .filter( ( a ) => ! ids.includes( a.id ) ),
+                // Named for notes only when no artboard left.
+                name:
+                    artboards.length === select.getArtboards().length
+                        ? 'remove-note'
+                        : 'remove',
+                artboards,
+                notes,
+            } );
+        },
+
+    setNoteToolArmed: ( isArmed ) => ( {
+        type: 'PATCH',
+        patch: { isNoteToolArmed: isArmed },
+    } ),
+    /**
+     * Places a new note, selects it and starts editing its text.
+     *
+     * @param {Object} note The note: id, x, y.
+     */
+    addNote:
+        ( note ) =>
+        ( { dispatch } ) => {
+            dispatch(
+                changeNotes( 'add-note', ( notes ) => [
+                    ...notes,
+                    { text: '', color: 'yellow', ...note },
+                ] )
+            );
+            dispatch( {
+                type: 'PATCH',
+                patch: {
+                    isNoteToolArmed: false,
+                    selectedIds: [ note.id ],
+                    anchorId: note.id,
+                    editingNoteId: note.id,
+                },
+            } );
+        },
+    setNoteColor: ( id, color ) =>
+        changeNotes( 'note-color', ( notes ) =>
+            notes.some( ( note ) => note.id === id && note.color !== color )
+                ? notes.map( ( note ) =>
+                      note.id === id ? { ...note, color } : note
+                  )
+                : notes
+        ),
+    /**
+     * Starts editing a note's text; the whole edit is one step of the
+     * history, recorded when it ends.
+     *
+     * @param {string} id The note.
+     */
+    startNoteEdit:
+        ( id ) =>
+        ( { select, dispatch } ) => {
+            if ( ! select.getNote( id ) ) {
+                return;
+            }
+            dispatch( {
+                type: 'PATCH',
+                patch: {
+                    selectedIds: [ id ],
+                    anchorId: id,
+                    editingNoteId: id,
+                    noteEditStart: select.getNotes(),
+                },
+            } );
+        },
+    /**
+     * Changes a note's text while it is typed, outside the history.
+     *
+     * @param {string} id   The note.
+     * @param {string} text The text.
+     */
+    setNoteText:
+        ( id, text ) =>
+        ( { select, dispatch } ) => {
+            dispatch( {
+                type: 'LAYOUT_SILENT',
+                notes: select
+                    .getNotes()
+                    .map( ( note ) =>
+                        note.id === id ? { ...note, text } : note
+                    ),
+            } );
+        },
+    endNoteEdit:
+        () =>
+        ( { select, dispatch } ) => {
+            const id = select.getEditingNoteId();
+            const start = select.getNoteEditStart();
+            dispatch( {
+                type: 'PATCH',
+                patch: { editingNoteId: null, noteEditStart: null },
+            } );
+            const before = start?.find( ( note ) => note.id === id );
+            const after = select.getNote( id );
+            if ( before && after && before.text !== after.text ) {
+                // One step for the whole edit.
+                dispatch( {
+                    type: 'LAYOUT',
+                    name: 'edit-note',
+                    before: { notes: start },
+                } );
+            }
+        },
+    /**
+     * Keeps a note's measured height, for fitting; it is not saved.
+     *
+     * @param {string} id     The note.
+     * @param {number} height The height in board units.
+     */
+    setNoteHeight:
+        ( id, height ) =>
+        ( { select, dispatch } ) => {
+            if ( select.getNote( id )?.height === height ) {
+                return;
+            }
+            dispatch( {
+                type: 'LAYOUT_SILENT',
+                notes: select
+                    .getNotes()
+                    .map( ( note ) =>
+                        note.id === id ? { ...note, height } : note
+                    ),
             } );
         },
     undoLayout: () => ( { type: 'UNDO' } ),
@@ -315,9 +501,25 @@ const selectors = {
     getArtboards: ( state ) => state.artboards,
     getArtboard: ( state, id ) =>
         state.artboards.find( ( artboard ) => artboard.id === id ) || null,
-    // The selected artboard when exactly one is selected.
+    getNotes: ( state ) => state.notes,
+    getNote: ( state, id ) =>
+        state.notes.find( ( note ) => note.id === id ) || null,
+    getEditingNoteId: ( state ) => state.editingNoteId,
+    getNoteEditStart: ( state ) => state.noteEditStart ?? null,
+    isNoteToolArmed: ( state ) => state.isNoteToolArmed,
+    // The selected artboard when exactly one artboard, and nothing else, is
+    // selected.
     getSelectedId: ( state ) =>
-        state.selectedIds.length === 1 ? state.selectedIds[ 0 ] : null,
+        state.selectedIds.length === 1 &&
+        state.artboards.some( ( a ) => a.id === state.selectedIds[ 0 ] )
+            ? state.selectedIds[ 0 ]
+            : null,
+    // The selected note when exactly one note, and nothing else, is selected.
+    getSelectedNoteId: ( state ) =>
+        state.selectedIds.length === 1 &&
+        state.notes.some( ( note ) => note.id === state.selectedIds[ 0 ] )
+            ? state.selectedIds[ 0 ]
+            : null,
     getSelectedIds: ( state ) => state.selectedIds,
     getSelectionAnchorId: ( state ) => state.anchorId,
     getLiveId: ( state ) => state.liveId,
@@ -340,13 +542,14 @@ export const store = createReduxStore( STORE_NAME, {
 register( store );
 
 /**
- * The layout as it is stored on the board: saved artboards only, with exactly
- * the fields of spec/data-model.md.
+ * The layout as it is stored on the board: saved artboards only, and notes,
+ * with exactly the fields of spec/data-model.md.
  *
  * @param {Array} artboards The artboards in the store.
+ * @param {Array} notes     The notes in the store.
  * @return {Object} The layout.
  */
-export function toLayout( artboards ) {
+export function toLayout( artboards, notes = [] ) {
     return {
         version: 1,
         artboards: artboards
@@ -356,5 +559,15 @@ export function toLayout( artboards ) {
                     ? { id, kind, entityId, x, y, width, height }
                     : { id, kind, entityId, device, x, y, height }
             ),
+        // A board with no notes keeps the layout it always had.
+        ...( notes.length && {
+            notes: notes.map( ( { id, x, y, text, color } ) => ( {
+                id,
+                x,
+                y,
+                text,
+                color,
+            } ) ),
+        } ),
     };
 }

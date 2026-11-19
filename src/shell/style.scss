@@ -475,3 +475,74 @@ html.wp-toolbar:has(.wfd-board-page) {
     position: relative;
     pointer-events: none;
 }
+
+// Notes (D43): above every artboard, the Live one included.
+.wfd-note {
+    position: absolute;
+    z-index: 3;
+    box-sizing: border-box;
+    min-height: calc(var(--wpds-dimension-padding-md) * 2 + 1lh);
+    padding: var(--wpds-dimension-padding-md);
+    font-family: var(--wpds-typography-font-family-body);
+    font-size: var(--wpds-typography-font-size-md);
+    line-height: var(--wpds-typography-line-height-md);
+    color: var(--wpds-color-foreground-content-neutral);
+    cursor: default;
+    user-select: none;
+    outline: calc(var(--wpds-border-width-xs) / var(--wfd-zoom)) solid var(--wpds-color-stroke-surface-neutral);
+}
+
+.wfd-note.is-selected {
+    outline: calc(var(--wpds-border-width-sm) / var(--wfd-zoom)) solid var(--wpds-color-stroke-interactive-brand);
+}
+
+.wfd-note.is-yellow,
+.wfd-note-probe.is-yellow {
+    background: var(--wpds-color-background-surface-caution);
+}
+
+.wfd-note.is-green,
+.wfd-note-probe.is-green {
+    background: var(--wpds-color-background-surface-success);
+}
+
+.wfd-note.is-blue,
+.wfd-note-probe.is-blue {
+    background: var(--wpds-color-background-surface-info);
+}
+
+.wfd-note.is-pink,
+.wfd-note-probe.is-pink {
+    background: var(--wpds-color-background-surface-error);
+}
+
+.wfd-note-probe {
+    position: absolute;
+    visibility: hidden;
+}
+
+.wfd-note__text {
+    display: block;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+.wfd-note__field {
+    display: block;
+    box-sizing: border-box;
+    width: 100%;
+    padding: 0;
+    margin: 0;
+    overflow: hidden;
+    font: inherit;
+    color: inherit;
+    resize: none;
+    background: transparent;
+    border: 0;
+    outline: none;
+    user-select: text;
+}
+
+.wfd-note-colors {
+    margin-top: var(--wpds-dimension-gap-lg);
+}

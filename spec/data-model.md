@@ -64,7 +64,7 @@ A media object has `"kind": "media"`, a numeric `entityId` (the attachment), a `
 { "id": "…", "kind": "media", "entityId": 12, "x": 0, "y": 0, "width": 1200, "height": 800 }
 ```
 
-The layout may also have a `notes` list (D43). A layout without it has no notes. Each note has exactly these fields: `[U]`
+The layout may also have a `notes` list (D43). A layout without it has no notes; a board with no notes is saved without it. Each note has exactly these fields: `[U]`
 
 ```json
 { "id": "a UUID made by the client", "x": 0, "y": 0, "text": "string, plain text, may be empty", "color": "yellow | green | blue | pink" }

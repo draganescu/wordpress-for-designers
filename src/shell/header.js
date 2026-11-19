@@ -1,5 +1,5 @@
 /**
- * Region: Header (H1 to H9).
+ * Region: Header (H1 to H13).
  */
 import { countRender } from './test-hooks';
 import { __, _n, sprintf } from '@wordpress/i18n';
@@ -7,6 +7,7 @@ import {
     arrowLeft,
     chevronDown,
     close,
+    comment,
     listView as listViewIcon,
     drawerLeft,
     drawerRight,
@@ -72,6 +73,9 @@ export function Header( {
     onToggleLeft,
     isRightShown,
     onToggleRight,
+    isNoteToolArmed,
+    isNoteToolDisabled,
+    onToggleNoteTool,
 } ) {
     countRender();
     return (
@@ -157,6 +161,17 @@ export function Header( {
                         aria-pressed={ isLeftShown }
                         onClick={ onToggleLeft }
                         data-wfd-control="H10"
+                    />
+                    <IconButton
+                        icon={ comment }
+                        label={ __( 'Add note', 'wordpress-for-designers' ) }
+                        variant="minimal"
+                        tone="neutral"
+                        size="compact"
+                        aria-pressed={ isNoteToolArmed }
+                        disabled={ isNoteToolDisabled }
+                        onClick={ onToggleNoteTool }
+                        data-wfd-control="H13"
                     />
                     { liveName && (
                         <div

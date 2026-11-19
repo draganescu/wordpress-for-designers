@@ -3,10 +3,11 @@
  * (L5, L6).
  */
 import { __ } from '@wordpress/i18n';
-import { closeSmall } from '@wordpress/icons';
+import { closeSmall, comment } from '@wordpress/icons';
 import { IconButton } from '@wordpress/ui';
 import { ListViewSlot } from '../chrome-slots';
 import { DEVICES, DEVICE_ORDER, KINDS, KIND_ORDER } from './constants';
+import { noteName } from './notes';
 import {
     GroupHeading,
     PanelHeader,
@@ -46,11 +47,39 @@ export function orderedArtboards( artboards ) {
     return groupArtboards( artboards ).flatMap( ( group ) => group.artboards );
 }
 
+/**
+ * Delete or Backspace on a row acts on the selection.
+ *
+ * @param {Function} onRemove Removes the selection.
+ * @param {Function} onEdit   Edits the row's item, or nothing.
+ * @return {Function} The key handler.
+ */
+const rowKeys = ( onRemove, onEdit ) => ( event ) => {
+    if ( event.key === 'Delete' || event.key === 'Backspace' ) {
+        event.preventDefault();
+        onRemove();
+        return;
+    }
+    if ( event.key === 'Enter' && onEdit ) {
+        event.preventDefault();
+        onEdit();
+    }
+};
+
+// Shift + click selects a range of rows, not the text between them.
+const keepTextSelection = ( event ) => {
+    if ( event.shiftKey ) {
+        event.preventDefault();
+    }
+};
+
 export function ArtboardsPanel( {
     artboards,
+    notes = [],
     selectedIds,
     onSelect,
     onEdit,
+    onEditNote,
     onRemove,
     addMenu,
 } ) {
@@ -81,41 +110,50 @@ export function ArtboardsPanel( {
                                     artboard.id
                                 ) }
                                 data-wfd-row={ artboard.id }
-                                onMouseDown={ ( event ) => {
-                                    // Shift + click selects a range of rows,
-                                    // not the text between them.
-                                    if ( event.shiftKey ) {
-                                        event.preventDefault();
-                                    }
-                                } }
+                                onMouseDown={ keepTextSelection }
                                 onClick={ ( event ) =>
                                     onSelect( artboard.id, event )
                                 }
                                 onDoubleClick={ () => onEdit( artboard.id ) }
-                                onKeyDown={ ( event ) => {
-                                    if (
-                                        event.key === 'Delete' ||
-                                        event.key === 'Backspace'
-                                    ) {
-                                        event.preventDefault();
-                                        onRemove();
-                                        return;
-                                    }
-                                    // A media object cannot be edited: the
-                                    // key is left to the row's own click.
-                                    if (
-                                        event.key === 'Enter' &&
-                                        artboard.kind !== 'media'
-                                    ) {
-                                        event.preventDefault();
-                                        onEdit( artboard.id );
-                                    }
-                                } }
+                                // A media object cannot be edited: Enter is
+                                // left to the row's own click.
+                                onKeyDown={ rowKeys(
+                                    onRemove,
+                                    artboard.kind === 'media'
+                                        ? null
+                                        : () => onEdit( artboard.id )
+                                ) }
                             />
                         ) ) }
                     </RowGroup>
                 </section>
             ) ) }
+            { notes.length > 0 && (
+                <section data-wfd-group="note">
+                    <GroupHeading suffix={ notes.length }>
+                        { __( 'Notes', 'wordpress-for-designers' ) }
+                    </GroupHeading>
+                    <RowGroup>
+                        { notes.map( ( note ) => (
+                            <Row
+                                key={ note.id }
+                                icon={ comment }
+                                name={ noteName( note ) }
+                                isSelected={ selectedIds.includes( note.id ) }
+                                data-wfd-row={ note.id }
+                                onMouseDown={ keepTextSelection }
+                                onClick={ ( event ) =>
+                                    onSelect( note.id, event )
+                                }
+                                onDoubleClick={ () => onEditNote( note.id ) }
+                                onKeyDown={ rowKeys( onRemove, () =>
+                                    onEditNote( note.id )
+                                ) }
+                            />
+                        ) ) }
+                    </RowGroup>
+                </section>
+            ) }
         </div>
     );
 }
