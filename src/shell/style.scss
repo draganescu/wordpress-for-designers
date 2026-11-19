@@ -581,3 +581,16 @@ html.wp-toolbar:has(.wfd-board-page) {
 .wfd-artboard__address {
     width: 320px;
 }
+
+// The bottom edge of a browser's window resizes it (D49): a band 8 px tall
+// at screen size, centred on the edge.
+.wfd-artboard__resize {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    transform: translateY(50%);
+    height: calc(8px / var(--wfd-zoom));
+    cursor: ns-resize;
+    z-index: 1;
+}

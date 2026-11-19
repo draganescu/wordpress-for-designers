@@ -19,6 +19,7 @@ type Browser = {
     device: string;
     x: number;
     y: number;
+    height: number;
 };
 
 // Left of everything in the fixture.
@@ -66,6 +67,7 @@ test.describe( 'BROWSER', () => {
                     kind: 'browser',
                     path: '/',
                     device: 'desktop',
+                    height: 900,
                     ...AT,
                     ...browser,
                 },
@@ -306,7 +308,7 @@ test.describe( 'BROWSER', () => {
         ).toBeVisible();
     } );
 
-    test( 'AC-BROWSER-05 The server accepts a browser with exactly its fields and rejects one with an `entityId`, one without a `path`, and one whose `path` does not start with "/"', async ( {
+    test( 'AC-BROWSER-05 The server accepts a browser with exactly its fields and rejects one with an `entityId`, one without a `path`, one whose `path` does not start with "/", one without a `height` and one whose `height` is below 200', async ( {
         requestUtils,
     } ) => {
         expect( await seedBrowser( requestUtils ) ).toBe( 200 );
@@ -325,6 +327,7 @@ test.describe( 'BROWSER', () => {
             id: BROWSER_ID,
             kind: 'browser',
             device: 'desktop',
+            height: 900,
             ...AT,
         };
         expect(
@@ -339,5 +342,131 @@ test.describe( 'BROWSER', () => {
         expect(
             await seedBrowser( requestUtils, { path: 'https://example.com/' } )
         ).toBe( 400 );
+        expect( await seedBrowser( requestUtils, { height: 200 } ) ).toBe(
+            200
+        );
+        expect( await seedBrowser( requestUtils, { height: 199 } ) ).toBe(
+            400
+        );
+        const { height, ...withoutHeight } = {
+            id: BROWSER_ID,
+            kind: 'browser',
+            path: '/',
+            device: 'desktop',
+            height: 900,
+            ...AT,
+        };
+        expect( height ).toBe( 900 );
+        expect(
+            await saveLayout( requestUtils, {
+                version: 1,
+                artboards: [ withoutHeight ],
+            } )
+        ).toBe( 400 );
+    } );
+
+    test( 'AC-BROWSER-06 Dragging a browser\'s bottom edge down by 200 board units makes its window 200 units taller, and the height is kept after a reload; Undo, whose tooltip reads "Undo resize browser, on the board", puts it back; dragging it up past 200 stops at 200', async ( {
+        page,
+        requestUtils,
+    } ) => {
+        await seedBrowser( requestUtils, { height: 600 } );
+        await openBoard( page, fixture.boardId, 10 );
+        await showBrowser( page );
+        const frame = () =>
+            browser( page ).locator( '.wfd-artboard__frame' ).boundingBox();
+        const before = ( await frame() )!;
+        // 600 units at 50%.
+        expect( before.height ).toBeCloseTo( 300, 0 );
+        const dragEdge = async ( dy: number ) => {
+            const now = ( await frame() )!;
+            const edge = {
+                x: now.x + now.width / 2,
+                y: now.y + now.height,
+            };
+            await page.mouse.move( edge.x, edge.y );
+            await page.mouse.down();
+            await page.mouse.move( edge.x, edge.y + dy / 2, { steps: 4 } );
+            await page.mouse.move( edge.x, edge.y + dy, { steps: 4 } );
+            await page.mouse.up();
+        };
+        // Down 200 board units: 100 pixels at 50%.
+        await dragEdge( 100 );
+        await expect
+            .poll( async () => ( await frame() )!.height )
+            .toBeCloseTo( 400, 0 );
+        await expect( browser( page ) ).toHaveClass( /is-selected/ );
+        await expect
+            .poll(
+                async () =>
+                    ( await savedBrowsers( requestUtils ) )[ 0 ]?.height,
+                {
+                    timeout: 6000,
+                }
+            )
+            .toBe( 800 );
+        await page.reload();
+        await browser( page ).waitFor();
+        await expect
+            .poll( async () => ( await frame() )!.height )
+            .toBeCloseTo( 400, 0 );
+
+        // Undo puts it back.
+        await page.locator( '[data-wfd-region="canvas"]' ).focus();
+        const undo = page
+            .locator( '[data-wfd-region="header"]' )
+            .getByRole( 'button', { name: /^Undo/ } );
+        await dragEdge( 100 );
+        await expect
+            .poll( async () => ( await frame() )!.height )
+            .toBeCloseTo( 500, 0 );
+        await expect( undo ).toHaveAccessibleName(
+            'Undo resize browser, on the board'
+        );
+        await undo.click();
+        await expect
+            .poll( async () => ( await frame() )!.height )
+            .toBeCloseTo( 400, 0 );
+
+        // Up past the minimum.
+        await dragEdge( -1000 );
+        await expect
+            .poll( async () => ( await frame() )!.height )
+            .toBeCloseTo( 100, 0 );
+    } );
+
+    test( 'AC-BROWSER-07 A page scrolled while browsing stays scrolled where it was after Esc ends browsing', async ( {
+        page,
+        requestUtils,
+    } ) => {
+        await seedBrowser( requestUtils, { height: 300 } );
+        await openBoard( page, fixture.boardId, 10 );
+        await showBrowser( page );
+        await page$( page ).locator( 'body' ).waitFor();
+        const box = ( await browser( page )
+            .locator( '.wfd-artboard__frame' )
+            .boundingBox() )!;
+        await page.mouse.dblclick( box.x + 200, box.y + 60 );
+        await expect( browser( page ) ).toHaveAttribute(
+            'data-wfd-tier',
+            'live'
+        );
+        const scrollY = () =>
+            page.evaluate(
+                ( selector ) =>
+                    ( document.querySelector( selector ) as HTMLIFrameElement )
+                        .contentWindow!.scrollY,
+                `[data-wfd-artboard="${ BROWSER_ID }"] iframe.wfd-browser`
+            );
+        await page.mouse.move( box.x + 200, box.y + 60 );
+        await page.mouse.wheel( 0, 300 );
+        await expect.poll( scrollY ).toBeGreaterThan( 100 );
+        const scrolled = await scrollY();
+        await page.keyboard.press( 'Escape' );
+        await expect( browser( page ) ).not.toHaveAttribute(
+            'data-wfd-tier',
+            'live'
+        );
+        await page.waitForTimeout( 300 );
+        expect( await scrollY() ).toBe( scrolled );
     } );
 } );

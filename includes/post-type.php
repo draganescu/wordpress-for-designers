@@ -202,9 +202,9 @@ function wfd_layout_error( $layout ) {
  * @return true|string True when valid, otherwise the reason.
  */
 function wfd_browser_error( $browser, $ids ) {
-    $fields = array( 'id', 'kind', 'path', 'device', 'x', 'y' );
+    $fields = array( 'id', 'kind', 'path', 'device', 'x', 'y', 'height' );
     if ( array_diff( array_keys( $browser ), $fields ) || count( $browser ) !== count( $fields ) ) {
-        return __( 'Each browser must have exactly the fields id, kind, path, device, x and y.', 'wordpress-for-designers' );
+        return __( 'Each browser must have exactly the fields id, kind, path, device, x, y and height.', 'wordpress-for-designers' );
     }
     if ( ! is_string( $browser['id'] ) || ! wp_is_uuid( $browser['id'] ) || isset( $ids[ $browser['id'] ] ) ) {
         return __( 'Each artboard id must be a unique UUID.', 'wordpress-for-designers' );
@@ -217,6 +217,10 @@ function wfd_browser_error( $browser, $ids ) {
     }
     if ( ! wfd_is_number( $browser['x'] ) || ! wfd_is_number( $browser['y'] ) ) {
         return __( 'The browser x and y must be numbers.', 'wordpress-for-designers' );
+    }
+    // The window is 200 board units tall at least (D49).
+    if ( ! wfd_is_number( $browser['height'] ) || $browser['height'] < 200 ) {
+        return __( 'The browser height must be a number of 200 or more.', 'wordpress-for-designers' );
     }
     return true;
 }

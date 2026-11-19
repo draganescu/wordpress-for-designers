@@ -57,9 +57,14 @@ export const KINDS = {
 };
 
 /**
- * Height of a browser's window, in board units (D48).
+ * Height of a new browser's window, in board units (D48).
  */
 export const BROWSER_HEIGHT = 900;
+
+/**
+ * Lowest a browser's window can be resized to, in board units (D49).
+ */
+export const MIN_BROWSER_HEIGHT = 200;
 
 /**
  * Widest a media object is drawn on the board, in board units.

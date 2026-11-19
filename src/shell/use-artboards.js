@@ -35,7 +35,7 @@ export function useArtboards() {
                     // A browser has no entity: its name is its address.
                     return {
                         ...artboard,
-                        height: BROWSER_HEIGHT,
+                        height: artboard.height ?? BROWSER_HEIGHT,
                         record: null,
                         name: artboard.path,
                         status: 'ready',

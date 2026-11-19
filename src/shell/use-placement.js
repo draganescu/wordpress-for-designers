@@ -163,6 +163,7 @@ export function usePlacement( { theme, enterEdit } ) {
                     device: 'desktop',
                     x: Math.round( point.x ),
                     y: Math.round( point.y ),
+                    height: NEW_ARTBOARD_HEIGHT,
                 };
                 addArtboard( browser );
                 selectArtboard( browser.id );

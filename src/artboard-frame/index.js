@@ -305,6 +305,10 @@ export function ArtboardFrame( {
                     { children }
                 </FrameElementContext.Provider>
             </div>
+            { artboard.kind === 'browser' && ! isLive && (
+                // The window's bottom edge resizes it (D49).
+                <div className="wfd-artboard__resize" data-wfd-resize />
+            ) }
         </div>
     );
 }

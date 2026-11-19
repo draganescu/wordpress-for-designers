@@ -1,6 +1,6 @@
 /**
  * A browser on the board (D48): the site's front end in a window at the
- * device width, as visitors see it.
+ * device width, as visitors see it, as tall as the browser's height (D49).
  */
 import { useEffect, useRef, useState } from '@wordpress/element';
 import { Skeleton } from '@wordpress/ui';
@@ -102,18 +102,13 @@ export function ArtboardBrowser( {
         }
     }, [ reloadToken ] );
 
-    // Outside browsing the page takes no input and shows its top.
+    // Outside browsing the page takes no input; it stays where it was
+    // scrolled to (D49).
     useEffect( () => {
-        const frame = iframeRef.current;
         if ( isBrowsing ) {
-            frame.removeAttribute( 'inert' );
-            return;
-        }
-        frame.setAttribute( 'inert', '' );
-        try {
-            frame.contentWindow.scrollTo( 0, 0 );
-        } catch {
-            // Nothing to scroll yet.
+            iframeRef.current.removeAttribute( 'inert' );
+        } else {
+            iframeRef.current.setAttribute( 'inert', '' );
         }
     }, [ isBrowsing ] );
 

@@ -12,7 +12,7 @@ import { store as boardStore } from '../board-store';
 import { orderedArtboards } from './artboards-panel';
 import { isShortcutsDialogEvent } from './shortcuts-dialog';
 import { noteRect } from './notes';
-import { BROWSER_HEIGHT } from './constants';
+import { BROWSER_HEIGHT, MIN_BROWSER_HEIGHT } from './constants';
 
 const DRAG_THRESHOLD = 3;
 const ZOOM_STEP = 1.25;
@@ -42,7 +42,10 @@ export function rectOf( artboard, widthOf ) {
             artboard.kind === 'media'
                 ? artboard.width
                 : widthOf( artboard.device ),
-        height: artboard.kind === 'browser' ? BROWSER_HEIGHT : artboard.height,
+        height:
+            artboard.kind === 'browser'
+                ? ( artboard.height ?? BROWSER_HEIGHT )
+                : artboard.height,
     };
 }
 
@@ -264,6 +267,29 @@ export function useCanvasInteractions( {
                 return;
             }
             const id = idOf( element );
+            if (
+                event.target.closest( '[data-wfd-resize]' ) &&
+                board().getLiveId() !== id
+            ) {
+                // The bottom edge of a browser's window (D49).
+                if ( board().getLiveId() ) {
+                    latest.current.onLeaveEdit();
+                }
+                actions().selectArtboard( id );
+                area.focus( { preventScroll: true } );
+                const frame = element.querySelector( '.wfd-artboard__frame' );
+                gesture = {
+                    type: 'resize',
+                    id,
+                    frame,
+                    originHeight:
+                        board().getArtboard( id ).height ?? BROWSER_HEIGHT,
+                    height: null,
+                    startY: event.clientY,
+                };
+                area.setPointerCapture( event.pointerId );
+                return;
+            }
             if ( board().getEditingNoteId() === id ) {
                 // The text field of the note being edited.
                 return;
@@ -406,6 +432,18 @@ export function useCanvasInteractions( {
                 gesture.y = event.clientY;
                 return;
             }
+            if ( gesture.type === 'resize' ) {
+                const { zoom } = viewport.get();
+                gesture.height = Math.max(
+                    MIN_BROWSER_HEIGHT,
+                    Math.round(
+                        gesture.originHeight +
+                            ( event.clientY - gesture.startY ) / zoom
+                    )
+                );
+                gesture.frame.style.height = gesture.height + 'px';
+                return;
+            }
             const dx = event.clientX - gesture.startX;
             const dy = event.clientY - gesture.startY;
             if ( gesture.type === 'empty' || gesture.type === 'marquee' ) {
@@ -456,6 +494,12 @@ export function useCanvasInteractions( {
             if ( ended.type === 'marquee' ) {
                 if ( ended.element ) {
                     ended.element.hidden = true;
+                }
+                return;
+            }
+            if ( ended.type === 'resize' ) {
+                if ( ended.height !== null ) {
+                    actions().resizeBrowser( ended.id, ended.height );
                 }
                 return;
             }

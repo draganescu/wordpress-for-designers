@@ -88,6 +88,7 @@ const LAYOUT_ACTIONS = {
     device: __( 'change device', 'wordpress-for-designers' ),
     add: __( 'add artboard', 'wordpress-for-designers' ),
     remove: __( 'remove artboard', 'wordpress-for-designers' ),
+    'resize-browser': __( 'resize browser', 'wordpress-for-designers' ),
     'add-note': __( 'add note', 'wordpress-for-designers' ),
     'move-note': __( 'move note', 'wordpress-for-designers' ),
     'edit-note': __( 'edit note', 'wordpress-for-designers' ),

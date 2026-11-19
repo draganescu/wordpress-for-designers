@@ -45,7 +45,8 @@ const DEFAULT_STATE = {
 function restore( snapshot, current ) {
     const heights = new Map( current.map( ( a ) => [ a.id, a.height ] ) );
     return snapshot.map( ( artboard ) =>
-        heights.has( artboard.id )
+        // A browser's height is set by hand, not measured (D49).
+        artboard.kind !== 'browser' && heights.has( artboard.id )
             ? { ...artboard, height: heights.get( artboard.id ) }
             : artboard
     );
@@ -404,6 +405,20 @@ const actions = {
             } );
         },
     /**
+     * Changes a browser's window height, as one step of the history (D49).
+     *
+     * @param {string} id     The browser.
+     * @param {number} height The height in board units.
+     */
+    resizeBrowser: ( id, height ) =>
+        change( 'resize-browser', ( artboards ) =>
+            artboards.some( ( a ) => a.id === id && a.height !== height )
+                ? artboards.map( ( a ) =>
+                      a.id === id ? { ...a, height } : a
+                  )
+                : artboards
+        ),
+    /**
      * Tells browsers that the site has changed.
      */
     bumpSiteVersion:
@@ -609,7 +624,7 @@ export function toLayout( artboards, notes = [] ) {
                     height,
                 } ) => {
                     if ( kind === 'browser' ) {
-                        return { id, kind, path, device, x, y };
+                        return { id, kind, path, device, x, y, height };
                     }
                     return kind === 'media'
                         ? { id, kind, entityId, x, y, width, height }
