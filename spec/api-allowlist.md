@@ -11,7 +11,7 @@ Import only what is listed here. "WP script" means use the script handle WordPre
 | `@wordpress/element` | WP script | React API as re-exported | |
 | `@wordpress/i18n` | WP script | `__`, `_n`, `_x`, `sprintf`, `isRTL` | |
 | `@wordpress/data` | WP script | `useSelect`, `useDispatch`, `useRegistry`, `createReduxStore`, `register`, `select`, `dispatch`, `subscribe`, `RegistryProvider` | |
-| `@wordpress/compose` | WP script | `useMergeRefs`, `useDebounce`, `useThrottle`, `useResizeObserver`, `useInstanceId`, `usePrevious`, `useViewportMatch`, `useRefEffect`, `useEvent` | |
+| `@wordpress/compose` | WP script | `useMergeRefs`, `useDebounce`, `useThrottle`, `useResizeObserver`, `useInstanceId`, `usePrevious`, `useViewportMatch`, `useMediaQuery`, `useRefEffect`, `useEvent` | |
 | `@wordpress/api-fetch` | WP script | default export | |
 | `@wordpress/url` | WP script | `addQueryArgs`, `getQueryArg` | |
 | `@wordpress/keycodes` | WP script | all | |
