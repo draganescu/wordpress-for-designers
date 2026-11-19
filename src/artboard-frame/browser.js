@@ -43,11 +43,25 @@ function withPreview( href, preview ) {
  * @return {string|null} The address, starting with a slash.
  */
 export function addressOf( href, homeUrl ) {
-    if ( typeof href !== 'string' || ! href.startsWith( homeUrl ) ) {
+    let url;
+    let home;
+    try {
+        // The preview argument is not part of the address.
+        url = new URL( withPreview( href, null ) );
+        home = new URL( homeUrl );
+    } catch {
         return null;
     }
-    // The preview argument is not part of the address.
-    return '/' + withPreview( href, null ).slice( homeUrl.length );
+    if (
+        url.origin !== home.origin ||
+        ! url.pathname.startsWith( home.pathname )
+    ) {
+        return null;
+    }
+    return (
+        '/' +
+        ( url.pathname + url.search + url.hash ).slice( home.pathname.length )
+    );
 }
 
 /**
@@ -104,8 +118,18 @@ export function ArtboardBrowser( {
     const [ src ] = useState( () => urlOf( path, homeUrl, preview ) );
     // Where the page was scrolled to before a reload.
     const scrollBack = useRef( null );
+    // Whether the page has been sent back once from a page that is off the
+    // site or cannot be read.
+    const hasGoneBack = useRef( false );
     const latest = useRef( {} );
-    latest.current = { onNavigate, onEscape, onWheel, homeUrl, preview };
+    latest.current = {
+        onNavigate,
+        onEscape,
+        onWheel,
+        homeUrl,
+        preview,
+        path,
+    };
 
     // A new address from outside (typed in the address field) is gone to.
     useEffect( () => {
@@ -128,13 +152,20 @@ export function ArtboardBrowser( {
             return;
         }
         firstReload.current = reloadToken;
+        const frame = iframeRef.current;
+        hasGoneBack.current = false;
         try {
-            const view = iframeRef.current.contentWindow;
+            const view = frame.contentWindow;
             // A reload keeps the page where it was scrolled to.
             scrollBack.current = { x: view.scrollX, y: view.scrollY };
             view.location.reload();
         } catch {
-            // The page is not reachable; the next load shows it again.
+            // The page cannot be read: its address is asked for again.
+            frame.src = urlOf(
+                current.current ?? latest.current.path,
+                latest.current.homeUrl,
+                latest.current.preview
+            );
         }
     }, [ reloadToken ] );
 
@@ -161,7 +192,14 @@ export function ArtboardBrowser( {
         }
         const address = doc ? addressOf( href, home ) : null;
         if ( address === null ) {
-            // Off the site: back to the page it was on.
+            // Off the site, or a page that cannot be read: back to the page
+            // it was on, once. If that fails too it stays on what loaded,
+            // and is not asked for again and again.
+            if ( hasGoneBack.current ) {
+                setLoaded( true );
+                return;
+            }
+            hasGoneBack.current = true;
             frame.src = urlOf(
                 current.current ?? '/',
                 home,
@@ -169,6 +207,7 @@ export function ArtboardBrowser( {
             );
             return;
         }
+        hasGoneBack.current = false;
         current.current = address;
         setLoaded( true );
         if ( scrollBack.current ) {
