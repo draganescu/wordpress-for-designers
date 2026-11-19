@@ -156,6 +156,48 @@ function countLeaves( value ) {
 }
 
 /**
+ * The part of a styles object that sits under one of the given keys, at any
+ * depth.
+ *
+ * @param {Object} value Settings and styles.
+ * @param {Array}  keys  The keys to keep.
+ * @return {Object} What is under those keys, in place.
+ */
+function onlyUnder( value, keys ) {
+    const kept = {};
+    Object.keys( value ?? {} ).forEach( ( key ) => {
+        if ( keys.includes( key ) ) {
+            kept[ key ] = value[ key ];
+        } else if ( value[ key ] && typeof value[ key ] === 'object' ) {
+            const inner = onlyUnder( value[ key ], keys );
+            if ( Object.keys( inner ).length ) {
+                kept[ key ] = inner;
+            }
+        }
+    } );
+    return kept;
+}
+
+/**
+ * Whether a theme variation is a preset of one kind only, colours or type,
+ * which WordPress lists as a palette or a typeset and not as a style
+ * variation.
+ *
+ * @param {Object} variation A variation from the theme.
+ * @return {boolean} True for a colour-only or type-only preset.
+ */
+function isPartial( variation ) {
+    const whole = {
+        settings: variation.settings ?? {},
+        styles: variation.styles ?? {},
+    };
+    const size = countLeaves( whole );
+    return [ [ 'color' ], [ 'typography', 'spacing' ] ].some(
+        ( keys ) => countLeaves( onlyUnder( whole, keys ) ) === size
+    );
+}
+
+/**
  * The px a CSS length resolves to, measured in the page.
  *
  * @param {string} size A CSS length.
@@ -205,13 +247,19 @@ export function useStylesPanel( { styles, serverSettings, usesOf } ) {
         ( select ) => getCurrentThemeGlobalStylesVariations( select ) ?? NONE,
         []
     );
-    // The theme's whole-site variations: block style variations are left
-    // out, and a title is listed once (themes reuse a variation's title for
-    // its colour-only and type-only presets).
+    // The theme's whole-site variations, each a combination of colours and
+    // type. Left out, as in the stock styles screens: block style
+    // variations, and the colour-only and type-only presets (the stock
+    // Colors and Typography screens list those as palettes and typesets).
+    // A title is listed once.
     const variations = useMemo( () => {
         const seen = new Set();
         return allVariations.filter( ( variation ) => {
-            if ( variation.blockTypes || seen.has( variation.title ) ) {
+            if (
+                variation.blockTypes ||
+                isPartial( variation ) ||
+                seen.has( variation.title )
+            ) {
                 return false;
             }
             seen.add( variation.title );

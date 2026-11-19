@@ -496,8 +496,18 @@ test.describe( 'STYLE', () => {
         await menu.click();
         const items = page.getByRole( 'menuitemradio' );
         await expect( items.first() ).toBeVisible();
-        expect( await items.count() ).toBeGreaterThan( 2 );
-        await expect( items.filter( { hasText: 'Evening' } ) ).toHaveCount( 1 );
+        // The theme's whole variations only: its colour-only and type-only
+        // presets are not variations.
+        await expect( items ).toHaveText( [
+            'Evening',
+            'Noon',
+            'Dusk',
+            'Afternoon',
+            'Twilight',
+            'Morning',
+            'Sunrise',
+            'Midnight',
+        ] );
         await items.filter( { hasText: 'Evening' } ).click();
         await expect(
             right( page ).getByRole( 'button', { name: 'Variation: Evening' } )
