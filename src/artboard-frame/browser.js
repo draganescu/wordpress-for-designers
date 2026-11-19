@@ -362,6 +362,9 @@ export function ArtboardBrowser( {
             <iframe
                 ref={ iframeRef }
                 className="wfd-browser"
+                // The page cannot move the board itself to another address
+                // or open windows.
+                sandbox="allow-same-origin allow-scripts allow-forms"
                 src={ src }
                 title={ path }
                 onLoad={ onLoad }
