@@ -244,7 +244,7 @@ test.describe( 'STYLE', () => {
             'Each block opens the same styles panel the Site Editor uses.'
         );
         const rows = panel.getByRole( 'tabpanel' ).locator( '.wfd-row' );
-        expect( await rows.count() ).toBeGreaterThan( 30 );
+        await expect.poll( () => rows.count() ).toBeGreaterThan( 30 );
         const row = ( title: string ) =>
             rows.filter( {
                 has: page.locator( '.wfd-row__name', {

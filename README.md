@@ -24,6 +24,20 @@ npm run wp-env start
 
 The site runs at http://localhost:8888. End-to-end tests run with `npm run test:e2e`.
 
+## Release
+
+Pushing a version tag builds the plugin and attaches `wordpress-for-designers.zip` to a GitHub release:
+
+```bash
+npm version minor -m "Release %s"
+```
+
+```bash
+git push --follow-tags
+```
+
+`npm version` sets the version in `package.json` and the plugin file, commits and tags. See "Releasing it" in [docs/state.md](docs/state.md).
+
 ## Documentation
 
 - [docs/state.md](docs/state.md): what exists now and how to run it

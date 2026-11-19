@@ -31,12 +31,10 @@ jobs:
             - run: npm run build
 
             - name: Assemble the plugin
-              run: |
-                  mkdir dist
-                  cp -R wordpress-for-designers.php uninstall.php includes build dist/
+              run: npm run package
 
             - name: Publish to the playground branch
-              working-directory: dist
+              working-directory: dist/wordpress-for-designers
               run: |
                   git init -q -b playground
                   git config user.name "github-actions[bot]"
