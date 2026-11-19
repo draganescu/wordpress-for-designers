@@ -176,6 +176,7 @@ Unless a criterion says otherwise, the fixture in `architecture.md` is loaded an
 - AC-SAVE-05 Saving a template changes the template on the front end at once; saving a draft page leaves it a draft. `[U]`
 - AC-SAVE-06 Discard all, after confirmation, reverts every edited record and removes unsaved new templates and parts from the board. `[N]`
 - AC-SAVE-07 Closing the tab with unsaved changes triggers the browser's leave warning; with none it does not. `[U]`
+- AC-SAVE-08 Discard on one item, after confirmation, reverts that record alone, or removes that unsaved new template or part from the board; the other items stay changed. `[U]`
 
 ## STATE
 
