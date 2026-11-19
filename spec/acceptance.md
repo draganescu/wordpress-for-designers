@@ -44,7 +44,7 @@ Unless a criterion says otherwise, the fixture in `architecture.md` is loaded an
 - AC-KEY-01 Every row of the keyboard map in `architecture.md` does what it says with focus on the board. `[U]`
 - AC-KEY-02 With an artboard in edit, typing, arrows and Delete act on blocks, not on the board. `[U]`
 - AC-KEY-03 Esc in edit, with no popover or selection for the editor to dismiss, leaves edit and keeps the artboard selected. `[B1]`
-- AC-KEY-04 The "Keyboard shortcuts" control in the header opens a dialog titled "Keyboard shortcuts" that has one row for each row of `screens/ShortcutsDialog.md`; Esc closes it and focus returns to the control. `[U]`
+- AC-KEY-04 The "Keyboard shortcuts" control at the bottom left of the canvas area opens a dialog titled "Keyboard shortcuts" that has one row for each row of `screens/ShortcutsDialog.md`; Esc closes it and focus returns to the control. `[U]`
 - AC-KEY-05 Ctrl + Option + H on a Mac, Shift + Alt + H elsewhere, opens the keyboard shortcuts dialog and pressed again closes it, on the board and while an artboard is in edit. `[U]`
 
 ## DEV
