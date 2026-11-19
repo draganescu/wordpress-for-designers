@@ -117,16 +117,16 @@ Unless a criterion says otherwise, the fixture in `architecture.md` is loaded an
 - AC-INS-01 Blocks tab lists allowed blocks by category; clicking one inserts it at the insertion point of the artboard in edit. `[U]`
 - AC-INS-02 Patterns tab groups user patterns under "Yours" and others by source, each with the correct usage line. `[U]`
 - AC-INS-03 With no artboard in edit the inserter has no Blocks tab: its tabs are Patterns, Templates and Media, and Patterns is selected. Entering edit brings the Blocks tab back. `[U]`
-- AC-INS-04 Dragging a pattern, template or part to empty board shows the drop target and opens it as a Desktop artboard at the drop point. `[U]`
-- AC-INS-05 Clicking a pattern inserts its blocks into the artboard in edit. `[U]`
+- AC-INS-04 With no artboard in edit, dragging a pattern, template or part to empty board shows the drop target and opens it as a Desktop artboard at the drop point; clicking one opens it as a Desktop artboard in view that covers no other artboard. `[U]`
+- AC-INS-05 Clicking a pattern inserts its blocks into the artboard in edit; dragging one onto the artboard in edit inserts its blocks where it is dropped; dragging one to empty board while in edit adds nothing. `[U]`
 - AC-INS-06 No inserter row contains a rendered preview or iframe. `[U]`
-- AC-INS-07 Clicking a template part row inserts a Template Part block; clicking a template row does nothing. `[U]`
-- AC-INS-08 Media tab lists images with dimensions; clicking one inserts an Image block for it; Upload adds a file and lists it. `[U]`
+- AC-INS-07 With an artboard in edit, clicking a template part row inserts a Template Part block and clicking a template row does nothing. `[U]`
+- AC-INS-08 Media tab lists images with dimensions; with an artboard in edit clicking one inserts an Image block for it and dragging one onto the artboard inserts an Image block where it is dropped; Upload adds a file and lists it. `[U]`
 - AC-INS-09 Search filters all tabs. `[U]`
 
 ## MEDIA
 
-- AC-MEDIA-01 Dragging an image from the Media tab to empty board shows the drop target at the image's size and places a media object there, labelled "{Name} · Media", listed under "Media" in the left panel; after a reload it is still there. `[U]`
+- AC-MEDIA-01 With no artboard in edit, clicking an image in the Media tab places a media object in view, and dragging one to empty board shows the drop target at the image's size and places a media object there, labelled "{Name} · Media", listed under "Media" in the left panel; after a reload it is still there. `[U]`
 - AC-MEDIA-02 A media object is selected by a click, moved by dragging and removed with Delete through a dialog with no checkbox; double-click and Enter do not enter edit; its settings show the image's pixel size and only "Remove from board". `[U]`
 - AC-MEDIA-03 The server accepts a media object with exactly its fields and rejects one with a device or without a width; a media object whose image no longer exists is removed from the board on load. `[N]`
 

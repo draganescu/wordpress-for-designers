@@ -19,7 +19,7 @@ Each item was considered and cut. Do not build any of them, in part or behind a 
 | Starter content prompts inside an artboard | `[U]` |
 | A modal dialog or form for creating an artboard | `[U]` |
 | Publishing a draft page or pattern from the board (done in wp-admin) | `[N]` |
-| Opening an existing page or pattern as an artboard by any path other than dragging from the inserter | `[U]` |
+| Opening an existing page or pattern as an artboard by any path other than the inserter (D39) | `[U]` |
 | Replacing the wp-admin dashboard | `[U]` |
 | Board sharing controls, per-user boards | `[U]` |
 | Mounting the post editor or site editor | `[U]` |

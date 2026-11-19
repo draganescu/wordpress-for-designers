@@ -4,14 +4,14 @@ As of 2026-11-19. This describes what exists; `spec/` says what should exist. Fo
 
 ## Summary
 
-The plugin is built through Milestone 12 of `spec/build-order.md`, plus the decisions taken afterwards (D32 to D38).
+The plugin is built through Milestone 12 of `spec/build-order.md`, plus the decisions taken afterwards (D32 to D39).
 
 | Check | Result |
 |---|---|
 | Acceptance criteria in `spec/acceptance.md` | 107 |
 | End-to-end tests, one per criterion | 107, all passing in the last full run |
 | `npm run lint` | Exits 0, no disabled lines |
-| Open questions waiting for the product owner | 20 (`spec/open-questions.md`) |
+| Open questions waiting for the product owner | 21 (`spec/open-questions.md`) |
 | Browsers the suite runs in | Chromium only |
 | WordPress it was built and tested on | 7.2-RC2, Twenty Twenty-Five, PHP 8.2, no Gutenberg plugin |
 
@@ -32,7 +32,7 @@ A "Designer" menu in wp-admin lists boards. A board opens full screen: a header,
 - **Editing.** Double-click or Enter edits an artboard at the board's zoom, from 30% up. Below 30% the zoom first fits the artboard's width. The block toolbar sits in the header, the list view in the left panel, the inspector in the right panel. Esc, the back button, a click on empty board, a click on another artboard, or zooming out below 30% ends edit.
 - **Pages** are shown inside their template, which is locked. A page's template can be changed from the right panel.
 - **Creating.** The Add artboard menu places a new page, pattern, template or template part. Pages and patterns are created as drafts at once; templates and parts exist only in the session until saved.
-- **Inserter.** Blocks, Patterns, Templates and Media tabs. Clicking inserts into the artboard in edit; dragging a pattern, template, part or image to empty board places it there. The Blocks tab is shown only while an artboard is in edit.
+- **Inserter.** Blocks, Patterns, Templates and Media tabs. A row does the same thing clicked or dragged (D39). With an artboard in edit, a pattern, template part or image goes into its content: at the insertion point on a click, where it is dropped on a drag. With none in edit, a pattern, template, part or image goes onto the board: at the drop point on a drag, in the middle of the view and clear of other artboards on a click. The Blocks tab is shown only while an artboard is in edit.
 - **Styles.** With nothing selected the right panel edits global styles: tokens with use counts, per-block styles, revisions, variations. A change repaints every artboard from one style compile.
 - **Review.** Nothing reaches the site until "Review changes" is used. It lists each changed item and saves the checked ones. Artboard positions save on their own, two seconds after a change.
 - **Locks.** Editing a page or pattern takes WordPress's post lock through the plugin's own route and dialog.

@@ -44,6 +44,57 @@ const dropOnEmptyBoard = async (
     return { box, target };
 };
 
+const dragOntoBlock = async (
+    page: Page,
+    row: ReturnType< Page[ 'locator' ] >,
+    block: ReturnType< ReturnType< Page[ 'frameLocator' ] >[ 'locator' ] >
+) => {
+    await row.scrollIntoViewIfNeeded();
+    const start = ( await row.boundingBox() )!;
+    const end = ( await block.boundingBox() )!;
+    const x = end.x + end.width / 2;
+    const y = end.y + end.height - 2;
+    await page.mouse.move( start.x + 30, start.y + start.height / 2 );
+    await page.mouse.down();
+    await page.mouse.move( start.x + 60, start.y + start.height / 2 + 6, {
+        steps: 3,
+    } );
+    await page.mouse.move( x - 20, y - 6, { steps: 6 } );
+    await page.mouse.move( x, y, { steps: 4 } );
+    // The editor's drop zone answers on a throttle.
+    await page.waitForTimeout( 400 );
+    await page.mouse.move( x + 1, y, { steps: 2 } );
+    await page.mouse.up();
+};
+
+const overlapsAnother = ( page: Page, id: string ) =>
+    page.evaluate( ( own ) => {
+        const box = ( element: Element ) =>
+            element
+                .querySelector( '.wfd-artboard__frame' )!
+                .getBoundingClientRect();
+        const all = [ ...document.querySelectorAll( '[data-wfd-artboard]' ) ];
+        const mine = box(
+            all.find(
+                ( element ) =>
+                    element.getAttribute( 'data-wfd-artboard' ) === own
+            )!
+        );
+        return all
+            .filter(
+                ( element ) =>
+                    element.getAttribute( 'data-wfd-artboard' ) !== own
+            )
+            .map( box )
+            .some(
+                ( other ) =>
+                    mine.left < other.right &&
+                    other.left < mine.right &&
+                    mine.top < other.bottom &&
+                    other.top < mine.bottom
+            );
+    }, id );
+
 test.describe( 'INS', () => {
     let fixture: Fixture;
     test.beforeEach( async ( { page, requestUtils } ) => {
@@ -176,7 +227,7 @@ test.describe( 'INS', () => {
             groups.nth( 0 ).locator( '.wfd-group-heading__suffix' )
         ).toHaveText( '4' );
         await expect( panel ).toContainText(
-            "Click to insert into the artboard you're editing. Drag to the board to open it as an artboard."
+            'Click or drag to the board to open it as an artboard.'
         );
     } );
 
@@ -225,7 +276,7 @@ test.describe( 'INS', () => {
         ] );
     } );
 
-    test( 'AC-INS-04 Dragging a pattern, template or part to empty board shows the drop target and opens it as a Desktop artboard at the drop point', async ( {
+    test( 'AC-INS-04 With no artboard in edit, dragging a pattern, template or part to empty board shows the drop target and opens it as a Desktop artboard at the drop point; clicking one opens it as a Desktop artboard in view that covers no other artboard', async ( {
         page,
         requestUtils,
     } ) => {
@@ -321,9 +372,47 @@ test.describe( 'INS', () => {
             'Footer · Template part · Desktop',
             'template-part'
         );
+
+        // A click opens the row's item too: selected, not in edit, in view
+        // and covering nothing.
+        const click = async (
+            row: ReturnType< Page[ 'locator' ] >,
+            kind: string
+        ) => {
+            const before = await page.locator( '[data-wfd-artboard]' ).count();
+            await row.click();
+            await expect( page.locator( '[data-wfd-artboard]' ) ).toHaveCount(
+                before + 1
+            );
+            const added = page.locator( '[data-wfd-artboard]' ).last();
+            await expect( added ).toHaveAttribute( 'data-wfd-kind', kind );
+            await expect( added ).toHaveAttribute(
+                'data-wfd-device',
+                'desktop'
+            );
+            await expect( added ).toHaveClass( /is-selected/ );
+            await expect(
+                page.locator( '[data-wfd-tier="live"]' )
+            ).toHaveCount( 0 );
+            await page.waitForTimeout( 300 );
+            const id = ( await added.getAttribute( 'data-wfd-artboard' ) )!;
+            expect( await overlapsAnother( page, id ) ).toBe( false );
+            await expect(
+                added.locator( '.wfd-artboard__frame' )
+            ).toBeInViewport();
+        };
+        await click( footerRow.first(), 'template-part' );
+        await click( pagesRow, 'template' );
+        await panel.getByRole( 'tab', { name: 'Patterns' } ).click();
+        await click(
+            panel.getByRole( 'tabpanel' ).locator( '.wfd-row', {
+                has: page.locator( '.wfd-row__name', { hasText: /^Hero$/ } ),
+            } ),
+            'pattern'
+        );
     } );
 
-    test( 'AC-INS-05 Clicking a pattern inserts its blocks into the artboard in edit', async ( {
+    test( 'AC-INS-05 Clicking a pattern inserts its blocks into the artboard in edit; dragging one onto the artboard in edit inserts its blocks where it is dropped; dragging one to empty board while in edit adds nothing', async ( {
         page,
     } ) => {
         const sign = artboardOf( fixture, 'pattern', 'desktop', 1 );
@@ -355,6 +444,43 @@ test.describe( 'INS', () => {
         await expect(
             frame.locator( '[data-type="core/block"]' )
         ).toContainText( 'Hero paragraph.' );
+        await expect( panel ).toContainText(
+            'Click or drag to insert into Sign-off.'
+        );
+
+        // Dragged onto the artboard in edit, it goes in where it is dropped.
+        const heroRow = list.locator( '.wfd-row', {
+            has: page.locator( '.wfd-row__name', { hasText: /^Hero$/ } ),
+        } );
+        await dragOntoBlock(
+            page,
+            heroRow,
+            frame.locator( 'p', { hasText: 'Until Sunday.' } )
+        );
+        await expect( frame.locator( '[data-type="core/block"]' ) ).toHaveCount(
+            2
+        );
+        await expect(
+            frame.locator(
+                'p:has-text("Until Sunday.") + [data-type="core/block"]'
+            )
+        ).toHaveCount( 1 );
+
+        // Dragged to empty board while in edit: no drop target, nothing added.
+        const boards = await page.locator( '[data-wfd-artboard]' ).count();
+        await dropOnEmptyBoard( page, heroRow );
+        await expect( page.locator( '[data-wfd-placement]' ) ).toHaveCount( 0 );
+        await page.mouse.up();
+        await page.waitForTimeout( 300 );
+        await expect( page.locator( '[data-wfd-artboard]' ) ).toHaveCount(
+            boards
+        );
+        await expect( frame.locator( '[data-type="core/block"]' ) ).toHaveCount(
+            2
+        );
+        await expect( page.locator( '[data-wfd-tier="live"]' ) ).toHaveCount(
+            1
+        );
     } );
 
     test( 'AC-INS-06 No inserter row contains a rendered preview or iframe', async ( {
@@ -384,7 +510,7 @@ test.describe( 'INS', () => {
         }
     } );
 
-    test( 'AC-INS-07 Clicking a template part row inserts a Template Part block; clicking a template row does nothing', async ( {
+    test( 'AC-INS-07 With an artboard in edit, clicking a template part row inserts a Template Part block and clicking a template row does nothing', async ( {
         page,
     } ) => {
         const sign = artboardOf( fixture, 'pattern', 'desktop', 1 );
@@ -399,7 +525,7 @@ test.describe( 'INS', () => {
             'template parts',
         ] );
         await expect( panel ).toContainText(
-            'Drag to the board to open it as an artboard. Template parts can also be clicked to insert.'
+            'Click or drag a template part to insert it into Sign-off.'
         );
         const count = () => frame.locator( '.is-root-container > *' ).count();
         const before = await count();
@@ -427,7 +553,7 @@ test.describe( 'INS', () => {
         expect( await count() ).toBe( before + 1 );
     } );
 
-    test( 'AC-INS-08 Media tab lists images with dimensions; clicking one inserts an Image block; Upload adds a file and lists it', async ( {
+    test( 'AC-INS-08 Media tab lists images with dimensions; with an artboard in edit clicking one inserts an Image block for it and dragging one onto the artboard inserts an Image block where it is dropped; Upload adds a file and lists it', async ( {
         page,
     } ) => {
         const sign = artboardOf( fixture, 'pattern', 'desktop', 1 );
@@ -444,13 +570,23 @@ test.describe( 'INS', () => {
             '1'
         );
         await expect( panel ).toContainText(
-            'Click to insert as an Image block in Sign-off.'
+            'Click or drag to insert as an Image block in Sign-off.'
         );
 
         await row.click();
         const image = frame.locator( '[data-type="core/image"] img' );
         await expect( image ).toHaveCount( 1 );
         await expect( image ).toHaveAttribute( 'src', /wfd-sample/ );
+
+        await dragOntoBlock(
+            page,
+            row,
+            frame.locator( 'p', { hasText: 'Until Sunday.' } )
+        );
+        await expect( image ).toHaveCount( 2 );
+        await expect( page.locator( '[data-wfd-kind="media"]' ) ).toHaveCount(
+            0
+        );
 
         // Upload through the media library.
         await list.getByRole( 'button', { name: 'Upload' } ).click();

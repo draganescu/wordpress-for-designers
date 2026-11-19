@@ -38,7 +38,7 @@ Media objects (D34): `[U]`
 - Selected, the right panel shows the entity card (name; description "{width} × {height}", the image's pixel size) and one `Button` outline "Remove from board". No device control, no "Edit", no hint line.
 - The remove dialog has its title and buttons only: no description and no checkbox.
 - If the image cannot be loaded the error state reads "Couldn't load this image."
-- Dragging a row of the Media tab over empty board shows the drop target at the object's size with the label "{file name} · Media"; dropping places it there. This works with or without an artboard in edit.
+- Dragging a row of the Media tab over empty board shows the drop target at the object's size with the label "{file name} · Media"; dropping places it there. Clicking the row places it in the middle of the board in view, moved right past anything it would cover. Both apply only with no artboard in edit; in edit the image goes into the artboard as an Image block (D39).
 
 ## Region: Left panel, artboards by kind `[D:Overview]` `[U]`
 
@@ -65,7 +65,7 @@ Rows are ordered by name within a group, then Desktop, Tablet, Mobile. `[N]`
 | L7 | Search | `wpc.SearchControl` | Placeholder "Search" | Filters all four tabs; the tab strip stays. |
 | L8 | Tabs | `Tabs` | "Blocks", "Patterns", "Templates", "Media" | With no artboard in edit the Blocks tab is not shown and Patterns is the first tab (D33). |
 | L9 | Group heading | as L3 | per tab, see each inserter screen | |
-| L10 | Item row | as L4: icon, name, optional second line | per tab | Click inserts into the artboard in edit at the editor's insertion point. With no artboard in edit, click does nothing and the row is not disabled. `[N]` for the last sentence |
+| L10 | Item row | as L4: icon, name, optional second line | per tab | Click and drag do the same thing (D39). With an artboard in edit: click inserts at the editor's insertion point, drag inserts where it is dropped in that artboard; a template row does nothing. With no artboard in edit: click or drag puts the item on the board as an artboard, or a media object for an image. |
 | L11 | Hint | `Text` on a weak neutral surface, pinned to the panel bottom | per tab | |
 
 ## Region: Canvas `[D:Overview]` `[D:Main]` `[U]`

@@ -163,26 +163,47 @@ function getHint( tab, liveArtboardName ) {
                       'wordpress-for-designers'
                   );
         case 'patterns':
-            return __(
-                "Click to insert into the artboard you're editing. Drag to the board to open it as an artboard.",
-                'wordpress-for-designers'
-            );
+            return isEditing
+                ? sprintf(
+                      /* translators: %s: name of the artboard in edit. */
+                      __(
+                          'Click or drag to insert into %s.',
+                          'wordpress-for-designers'
+                      ),
+                      liveArtboardName
+                  )
+                : __(
+                      'Click or drag to the board to open it as an artboard.',
+                      'wordpress-for-designers'
+                  );
         case 'templates':
-            return __(
-                'Drag to the board to open it as an artboard. Template parts can also be clicked to insert.',
-                'wordpress-for-designers'
-            );
+            return isEditing
+                ? sprintf(
+                      /* translators: %s: name of the artboard in edit. */
+                      __(
+                          'Click or drag a template part to insert it into %s.',
+                          'wordpress-for-designers'
+                      ),
+                      liveArtboardName
+                  )
+                : __(
+                      'Click or drag to the board to open it as an artboard.',
+                      'wordpress-for-designers'
+                  );
         case 'media':
             return isEditing
                 ? sprintf(
                       /* translators: %s: name of the artboard in edit. */
                       __(
-                          'Click to insert as an Image block in %s.',
+                          'Click or drag to insert as an Image block in %s.',
                           'wordpress-for-designers'
                       ),
                       liveArtboardName
                   )
-                : undefined;
+                : __(
+                      'Click or drag to the board to place it there.',
+                      'wordpress-for-designers'
+                  );
         default:
             return undefined;
     }
@@ -201,23 +222,20 @@ function Group( { title, count, children } ) {
  * The inserter panel.
  *
  * @param {Object}                                props
- * @param {string}                                props.query                The search query.
- * @param {(query: string) => void}               props.onQueryChange        Called with the new query.
- * @param {string}                                props.tab                  'blocks', 'patterns', 'templates' or 'media'.
- * @param {(tab: string) => void}                 props.onTabChange          Called with the new tab.
- * @param {string|null}                           props.liveArtboardName     Name of the artboard in edit, or null.
- * @param {Array}                                 props.blocks               [ { category: { slug, title }, items: [ { name, title, icon } ] } ].
- * @param {Array}                                 props.patterns             [ { source: 'user' } or { source: 'theme', themeName }, with items: [ { id, name, isOnBoard, usedIn } ] ].
- * @param {Array}                                 props.templates            [ { id, name, isOnBoard } ].
- * @param {Array}                                 props.templateParts        [ { id, name, isOnBoard } ].
- * @param {Array}                                 props.media                [ { id, filename, width, height } ].
- * @param {(name: string) => void}                props.onInsertBlock        Called with a block name.
- * @param {(id: string|number) => void}           props.onInsertPattern      Called with a pattern id.
- * @param {(id: string|number) => void}           props.onInsertTemplatePart Called with a template part id.
- * @param {(id: string|number) => void}           props.onInsertMedia        Called with an attachment id.
- * @param {(item: Object, event: Object) => void} props.onItemDragStart      Called with { type, id, name } and the event.
- * @param {(event: Object) => void}               props.onItemDragEnd        Called with the event.
- * @param {(button: Element) => Element}          props.renderUpload         Receives the "Upload" button element, returns what to render.
+ * @param {string}                                props.query            The search query.
+ * @param {(query: string) => void}               props.onQueryChange    Called with the new query.
+ * @param {string}                                props.tab              'blocks', 'patterns', 'templates' or 'media'.
+ * @param {(tab: string) => void}                 props.onTabChange      Called with the new tab.
+ * @param {string|null}                           props.liveArtboardName Name of the artboard in edit, or null.
+ * @param {Array}                                 props.blocks           [ { category: { slug, title }, items: [ { name, title, icon } ] } ].
+ * @param {Array}                                 props.patterns         [ { source: 'user' } or { source: 'theme', themeName }, with items: [ { id, name, isOnBoard, usedIn } ] ].
+ * @param {Array}                                 props.templates        [ { id, name, isOnBoard } ].
+ * @param {Array}                                 props.templateParts    [ { id, name, isOnBoard } ].
+ * @param {Array}                                 props.media            [ { id, filename, width, height } ].
+ * @param {(item: Object) => void}                props.onItemClick      Called with { type, id }; type is 'block', 'pattern', 'template', 'template-part' or 'media'.
+ * @param {(item: Object, event: Object) => void} props.onItemDragStart  Called with { type, id, name } and the event.
+ * @param {(event: Object) => void}               props.onItemDragEnd    Called with the event.
+ * @param {(button: Element) => Element}          props.renderUpload     Receives the "Upload" button element, returns what to render.
  */
 export function InserterPanel( {
     query = '',
@@ -230,10 +248,7 @@ export function InserterPanel( {
     templates,
     templateParts,
     media,
-    onInsertBlock,
-    onInsertPattern,
-    onInsertTemplatePart,
-    onInsertMedia,
+    onItemClick,
     onItemDragStart,
     onItemDragEnd,
     renderUpload,
@@ -263,10 +278,9 @@ export function InserterPanel( {
     const trimmedQuery = query.trim();
     const isEmpty = trimmedQuery !== '' && filtered.total === 0;
 
-    // With no artboard in edit a click does nothing; the row stays enabled.
-    const insertWith = ( callback, value ) => () => {
-        if ( isEditing && callback ) {
-            callback( value );
+    const click = ( type, id ) => () => {
+        if ( onItemClick ) {
+            onItemClick( { type, id } );
         }
     };
 
@@ -330,7 +344,7 @@ export function InserterPanel( {
                         key={ item.name }
                         icon={ <BlockIcon icon={ item.icon } /> }
                         name={ item.title }
-                        onClick={ insertWith( onInsertBlock, item.name ) }
+                        onClick={ click( 'block', item.name ) }
                     />
                 ) ) }
             </Group>
@@ -356,7 +370,7 @@ export function InserterPanel( {
                             icon={ KINDS.pattern.icon }
                             name={ item.name }
                             secondLine={ getPatternUsageLine( item ) }
-                            onClick={ insertWith( onInsertPattern, item.id ) }
+                            onClick={ click( 'pattern', item.id ) }
                             { ...dragProps(
                                 {
                                     type: 'pattern',
@@ -383,6 +397,7 @@ export function InserterPanel( {
                                 icon={ KINDS.template.icon }
                                 name={ item.name }
                                 secondLine={ getBoardLine( item.isOnBoard ) }
+                                onClick={ click( 'template', item.id ) }
                                 { ...dragProps(
                                     {
                                         type: 'template',
@@ -406,10 +421,7 @@ export function InserterPanel( {
                                 icon={ KINDS[ 'template-part' ].icon }
                                 name={ item.name }
                                 secondLine={ getBoardLine( item.isOnBoard ) }
-                                onClick={ insertWith(
-                                    onInsertTemplatePart,
-                                    item.id
-                                ) }
+                                onClick={ click( 'template-part', item.id ) }
                                 { ...dragProps(
                                     {
                                         type: 'template-part',
@@ -445,7 +457,7 @@ export function InserterPanel( {
                                     item.width,
                                     item.height
                                 ) }
-                                onClick={ insertWith( onInsertMedia, item.id ) }
+                                onClick={ click( 'media', item.id ) }
                                 { ...dragProps(
                                     {
                                         type: 'media',
