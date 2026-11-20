@@ -143,6 +143,7 @@ Tab order and the Shift + arrow step are `[N]`.
 - History tab: global styles revisions, newest first, plus "Unsaved" when there are edits and "Theme default" last. Picking one previews it on the whole board; Restore makes it the edited record; Stop previewing returns to the edited record. `[B7]` `[D:StylesHistory]` `[U]`
 - Variation menu: lists the theme's style variations; choosing one replaces the user record's values with the variation's, as an edit that appears in Review. `[B7]` `[U]` "Default", its first item, replaces them with nothing. The trigger names the variation the user record equals, reads "Default" for a user record with no values and "Custom" otherwise (D54). `[U]`
 - "Style applies to" in the Block tab: "This block" edits the block's own attributes through the stock inspector. "All {block name}" shows `GlobalStylesUI` at that block's path in place of the stock inspector controls. `[B7]` `[D:Main]` `[N]` for the second sentence's mechanism
+- Every stock screen (`GlobalStylesUI`, in the Tokens tab, the Blocks tab and "All {block name}") is drawn inside `ErrorBoundary` of `@wordpress/editor`. If one throws, the stock notice takes its place and nothing else on the board is lost (D60). The two styles packages are pinned to the releases named in `api-allowlist.md` (D59). `[U]`
 
 ## Usage index
 
