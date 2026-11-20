@@ -534,4 +534,40 @@ test.describe( 'STYLE', () => {
             page.getByRole( 'dialog', { name: 'Review changes' } )
         ).toContainText( 'Styles' );
     } );
+
+    test( 'AC-STYLE-11 With "Style applies to" on "All {block}", the stock styles screen\'s Back sets it back to "This block"', async ( {
+        page,
+    } ) => {
+        const hero = artboardOf( fixture, 'pattern' );
+        await enterEdit( page, hero.id );
+        await editorFrame( page, hero.id ).locator( 'h2' ).click();
+        const panel = right( page );
+        const group = panel.getByRole( 'radiogroup', {
+            name: 'Style applies to',
+        } );
+        const thisBlock = group.getByRole( 'radio', { name: 'This block' } );
+        const all = group.getByRole( 'radio', { name: 'All Heading' } );
+        const inspector = panel.locator( '.block-editor-block-inspector' );
+        const title = panel.getByRole( 'heading', {
+            name: 'Heading',
+            exact: true,
+        } );
+        const back = panel.getByRole( 'button', { name: 'Back', exact: true } );
+
+        await all.click();
+        await expect( title ).toHaveCount( 1 );
+        await expect( inspector ).toBeHidden();
+        await back.click();
+        await expect( thisBlock ).toBeChecked();
+        await expect( inspector ).toBeVisible();
+        // The stock screens are gone, WordPress's list of blocks included.
+        await expect( back ).toHaveCount( 0 );
+        await expect( title ).toHaveCount( 0 );
+
+        // "All Heading" opens the block's screen again.
+        await all.click();
+        await expect( all ).toBeChecked();
+        await expect( title ).toHaveCount( 1 );
+        await expect( back ).toHaveCount( 1 );
+    } );
 } );
