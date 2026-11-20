@@ -5,6 +5,10 @@
  * Pan, zoom and artboard drags change the DOM directly; the store hears about
  * them when they end (constraint C22). The selection rectangle (D43) is drawn
  * the same way; the store hears when the set of selected artboards changes.
+ *
+ * Pointer events reach this file through ./touch-gestures.js, which turns
+ * fingers into presses, drags and double-clicks and pans and pinches the
+ * board with two of them (D64).
  */
 import { useEffect, useRef } from '@wordpress/element';
 import { useRegistry } from '@wordpress/data';
@@ -13,6 +17,7 @@ import { orderedArtboards } from './artboards-panel';
 import { isShortcutsDialogEvent } from './shortcuts-dialog';
 import { noteRect } from './notes';
 import { MIN_BROWSER_HEIGHT, hasDevice } from './constants';
+import { createTouchGestures } from './touch-gestures';
 
 const DRAG_THRESHOLD = 3;
 const ZOOM_STEP = 1.25;
@@ -201,9 +206,22 @@ export function useCanvasInteractions( {
         let isSpaceDown = false;
         let gesture = null;
 
-        const point = ( event ) => {
+        // Where an event is, in canvas area pixels. An event of an artboard
+        // iframe's document comes with that iframe.
+        const point = ( event, frame ) => {
             const box = area.getBoundingClientRect();
-            return { x: event.clientX - box.left, y: event.clientY - box.top };
+            if ( ! frame ) {
+                return {
+                    x: event.clientX - box.left,
+                    y: event.clientY - box.top,
+                };
+            }
+            const frameBox = frame.getBoundingClientRect();
+            const scale = frameBox.width / frame.offsetWidth || 1;
+            return {
+                x: frameBox.left + event.clientX * scale - box.left,
+                y: frameBox.top + event.clientY * scale - box.top,
+            };
         };
         // An artboard or a note (D46).
         const frameOf = ( target ) =>
@@ -230,20 +248,24 @@ export function useCanvasInteractions( {
         }
         // Wheel events inside artboard iframes are forwarded here.
         api.current.forwardWheel = ( event, frame ) => {
-            const box = area.getBoundingClientRect();
-            const frameBox = frame.getBoundingClientRect();
-            const scale = frameBox.width / frame.offsetWidth || 1;
-            wheel( event, {
-                x: frameBox.left + event.clientX * scale - box.left,
-                y: frameBox.top + event.clientY * scale - box.top,
-            } );
+            wheel( event, point( event, frame ) );
         };
+
+        // A finger's tap presses after it has lifted (./touch-gestures.js),
+        // and a pointer that has lifted cannot be captured.
+        function capture( pointerId ) {
+            try {
+                area.setPointerCapture( pointerId );
+            } catch {
+                // Nothing to capture.
+            }
+        }
 
         function onPointerDown( event ) {
             if ( event.button === 1 || ( event.button === 0 && isSpaceDown ) ) {
                 event.preventDefault();
                 gesture = { type: 'pan', x: event.clientX, y: event.clientY };
-                area.setPointerCapture( event.pointerId );
+                capture( event.pointerId );
                 area.classList.add( 'is-panning' );
                 return;
             }
@@ -262,7 +284,7 @@ export function useCanvasInteractions( {
                     startY: event.clientY,
                 };
                 if ( gesture.canSelect ) {
-                    area.setPointerCapture( event.pointerId );
+                    capture( event.pointerId );
                 }
                 return;
             }
@@ -275,6 +297,8 @@ export function useCanvasInteractions( {
                 if ( board().getEditId() ) {
                     latest.current.onLeaveEdit();
                 }
+                // What the gesture puts back if it is cancelled.
+                const selectionBefore = board().getSelectedIds();
                 actions().selectArtboard( id );
                 area.focus( { preventScroll: true } );
                 const frame = element.querySelector( '.wfd-artboard__frame' );
@@ -285,8 +309,9 @@ export function useCanvasInteractions( {
                     originHeight: board().getArtboard( id ).height,
                     height: null,
                     startY: event.clientY,
+                    selectionBefore,
                 };
-                area.setPointerCapture( event.pointerId );
+                capture( event.pointerId );
                 return;
             }
             if ( board().getEditingNoteId() === id ) {
@@ -352,8 +377,10 @@ export function useCanvasInteractions( {
                 items,
                 startX: event.clientX,
                 startY: event.clientY,
+                // What the gesture puts back if it is cancelled.
+                selectionBefore: selectedIds,
             };
-            area.setPointerCapture( event.pointerId );
+            capture( event.pointerId );
         }
 
         const toBoard = ( { x, y } ) => {
@@ -364,11 +391,36 @@ export function useCanvasInteractions( {
             };
         };
 
+        // Ends the gesture in progress as if it had not started: what it
+        // moved goes back and the selection is what it was. Esc does this to
+        // the selection rectangle, and a second finger or the browser to
+        // what one finger was doing (./touch-gestures.js).
+        function cancelGesture() {
+            const cancelled = gesture;
+            gesture = null;
+            area.classList.remove( 'is-panning' );
+            if ( cancelled?.type === 'drag' ) {
+                cancelled.items.forEach( ( item ) => {
+                    item.element.style.left = item.originX + 'px';
+                    item.element.style.top = item.originY + 'px';
+                } );
+            } else if ( cancelled?.type === 'marquee' ) {
+                if ( cancelled.element ) {
+                    cancelled.element.hidden = true;
+                }
+            } else if ( cancelled?.type === 'resize' ) {
+                cancelled.frame.style.height = cancelled.originHeight + 'px';
+            } else {
+                return;
+            }
+            actions().selectArtboards( cancelled.selectionBefore );
+        }
+
         // The selection rectangle (D43). It is kept in board units, so it
         // stays put on the board if the board is scrolled during the drag.
         function startMarquee() {
             const isEditing = !! board().getEditId();
-            const before = board().getSelectedIds();
+            const selectionBefore = board().getSelectedIds();
             if ( isEditing ) {
                 // Deselecting ends edit.
                 latest.current.onLeaveEdit();
@@ -380,7 +432,7 @@ export function useCanvasInteractions( {
                 x: gesture.startX - box.left,
                 y: gesture.startY - box.top,
             } );
-            gesture.before = before;
+            gesture.selectionBefore = selectionBefore;
             gesture.kept =
                 gesture.add && ! isEditing ? board().getSelectedIds() : [];
             area.focus( { preventScroll: true } );
@@ -524,7 +576,8 @@ export function useCanvasInteractions( {
             }
         }
 
-        function onDoubleClick( event ) {
+        // Edits what was double-clicked or double-tapped.
+        function open( event ) {
             // Pointer capture retargets the event to the canvas area, so
             // look at what is under the pointer.
             const target =
@@ -583,10 +636,7 @@ export function useCanvasInteractions( {
             if ( gesture?.type === 'marquee' && event.key === 'Escape' ) {
                 // Esc cancels the selection rectangle: the selection goes
                 // back to what it was and the rest of the drag does nothing.
-                if ( gesture.element ) {
-                    gesture.element.hidden = true;
-                }
-                actions().selectArtboards( gesture.before );
+                cancelGesture();
                 gesture = { type: 'cancelled' };
                 event.preventDefault();
                 event.stopPropagation();
@@ -739,22 +789,26 @@ export function useCanvasInteractions( {
             }
         }
 
+        // Pointer events come through the fingers' own handling (D64).
+        const touch = createTouchGestures( {
+            area,
+            viewport,
+            pointOf: point,
+            onPress: onPointerDown,
+            onMove: onPointerMove,
+            onRelease: onPointerUp,
+            onCancel: cancelGesture,
+            onOpen: open,
+        } );
+        // The Live editor has its canvas document watched for fingers.
+        api.current.watchDocument = touch.watchDocument;
         area.addEventListener( 'wheel', onWheel, { passive: false } );
-        area.addEventListener( 'pointerdown', onPointerDown );
-        area.addEventListener( 'pointermove', onPointerMove );
-        area.addEventListener( 'pointerup', onPointerUp );
-        area.addEventListener( 'pointercancel', onPointerUp );
-        area.addEventListener( 'dblclick', onDoubleClick );
         area.addEventListener( 'keydown', onKeyDown );
         area.addEventListener( 'keyup', onKeyUp );
         doc.addEventListener( 'keydown', onDocumentKeyDown );
         return () => {
+            touch.destroy();
             area.removeEventListener( 'wheel', onWheel );
-            area.removeEventListener( 'pointerdown', onPointerDown );
-            area.removeEventListener( 'pointermove', onPointerMove );
-            area.removeEventListener( 'pointerup', onPointerUp );
-            area.removeEventListener( 'pointercancel', onPointerUp );
-            area.removeEventListener( 'dblclick', onDoubleClick );
             area.removeEventListener( 'keydown', onKeyDown );
             area.removeEventListener( 'keyup', onKeyUp );
             doc.removeEventListener( 'keydown', onDocumentKeyDown );

@@ -57,12 +57,14 @@ const CANVAS_STYLES = [
  * @param {Object}   options
  * @param {Function} options.onHeight         Reports the content height.
  * @param {Function} options.onWheel          Receives wheel events with the iframe.
+ * @param {Function} options.onDocument       Receives the canvas document with the iframe,
+ *                                            and returns what lets go of it.
  * @param {Function} options.onKeyDownCapture Called before the editor handles a key.
  */
-function useCanvasProbe( { onHeight, onWheel, onKeyDownCapture } ) {
+function useCanvasProbe( { onHeight, onWheel, onDocument, onKeyDownCapture } ) {
     const frame = useContext( FrameElementContext );
     const latest = useRef( {} );
-    latest.current = { onHeight, onWheel, onKeyDownCapture };
+    latest.current = { onHeight, onWheel, onDocument, onKeyDownCapture };
     useEffect( () => {
         if ( ! frame ) {
             return;
@@ -98,10 +100,14 @@ function useCanvasProbe( { onHeight, onWheel, onKeyDownCapture } ) {
             const keyDown = () => latest.current.onKeyDownCapture?.();
             doc.addEventListener( 'wheel', wheel, { passive: false } );
             doc.addEventListener( 'keydown', keyDown, true );
+            // The shell counts the fingers in the canvas document with the
+            // ones on the board (D64). The editor still gets them all.
+            const letGo = latest.current.onDocument?.( doc, iframe );
             detach = () => {
                 observer.disconnect();
                 doc.removeEventListener( 'wheel', wheel );
                 doc.removeEventListener( 'keydown', keyDown, true );
+                letGo?.();
             };
         };
         // The canvas document is filled in after the iframe loads.
@@ -244,6 +250,7 @@ function Editor( {
     isPage,
     onHeight,
     onWheel,
+    onDocument,
     onKeyDownCapture,
     bridgeRef,
     onSelection,
@@ -271,6 +278,7 @@ function Editor( {
             onHeight( value );
         },
         onWheel,
+        onDocument,
         onKeyDownCapture,
     } );
     const [ height, setHeight ] = useState( 0 );
@@ -366,6 +374,7 @@ function PageEditor( { artboard, ...props } ) {
  * @param {boolean}  props.isActive         True for the Live editor, false for a warm one.
  * @param {Function} props.onHeight         Reports the measured content height.
  * @param {Function} props.onWheel          Receives wheel events from the canvas document.
+ * @param {Function} props.onDocument       Receives the canvas document and returns what lets go of it.
  * @param {Function} props.onKeyDownCapture Called before the editor handles a key.
  * @param {Object}   props.bridgeRef        Receives the bridge to this editor.
  * @param {Function} props.onSelection      Called when the selected block changes.

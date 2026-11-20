@@ -1053,6 +1053,7 @@ export function App() {
                                             isActive={ tier === 'live' }
                                             onHeight={ onHeight }
                                             onWheel={ canvas.forwardWheel }
+                                            onDocument={ canvas.watchDocument }
                                             onKeyDownCapture={
                                                 editing.noteKeyDown
                                             }
