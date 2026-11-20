@@ -9,11 +9,12 @@ import { store as coreStore } from '@wordpress/core-data';
 import { parse, serialize } from '@wordpress/blocks';
 import { getGlobalStylesChanges } from '@wordpress/global-styles-engine';
 import { store as boardStore } from '../board-store';
+import { KINDS } from '../shell/constants';
 import { recordName } from '../shell/use-artboards';
 import { countTemplatesUsing } from '../shell/use-entity-info';
 import { changeLines } from './diff';
 import { discardEntityEdits } from './discard-entity-edits';
-import { changedEntries, rawContent } from './entries';
+import { changedEntries, rawContent, rawTitle } from './entries';
 
 const KIND_OF_TYPE = {
     page: 'page',
@@ -98,6 +99,13 @@ export function useReview() {
                 );
                 item.lines = lines;
                 item.moreCount = moreCount;
+                const fieldChanged = ( field ) =>
+                    sprintf(
+                        /* translators: 1: what was changed, for example "Template". 2: what happened to it, for example "changed". */
+                        __( '%1$s: %2$s', 'wordpress-for-designers' ),
+                        field,
+                        __( 'changed', 'wordpress-for-designers' )
+                    );
                 if (
                     entry.type === 'page' &&
                     entry.saved &&
@@ -106,11 +114,21 @@ export function useReview() {
                 ) {
                     // The page was given another template.
                     item.lines = [
-                        sprintf(
-                            /* translators: 1: what was changed, for example "Template". 2: what happened to it, for example "changed". */
-                            __( '%1$s: %2$s', 'wordpress-for-designers' ),
-                            __( 'Template', 'wordpress-for-designers' ),
-                            __( 'changed', 'wordpress-for-designers' )
+                        fieldChanged(
+                            __( 'Template', 'wordpress-for-designers' )
+                        ),
+                        ...item.lines,
+                    ];
+                }
+                if (
+                    KINDS[ entry.type ]?.isNamed &&
+                    entry.saved &&
+                    rawTitle( entry.saved ) !== rawTitle( entry.edited )
+                ) {
+                    // It was renamed on its label (D62).
+                    item.lines = [
+                        fieldChanged(
+                            __( 'Title', 'wordpress-for-designers' )
                         ),
                         ...item.lines,
                     ];

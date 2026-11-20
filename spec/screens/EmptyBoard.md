@@ -16,8 +16,8 @@
 
 | Element | Components and text | Behaviour |
 |---|---|---|
-| Left panel | L1 and L2, then `Text` weak "No artboards yet." |  |
-| Empty state | `EmptyState` centred in the canvas: title "This board has no artboards", text "Add a page, template, template part or pattern to start designing.", `Button` solid "Add artboard". | The button opens the same menu as L2. |
+| Left panel | L1, then `Text` weak "No artboards yet." |  |
+| Empty state | `EmptyState` centred in the canvas: title "This board has no artboards", text "Add a page, template, template part or pattern to start designing.", `Button` solid "Add artboard". | The button turns the inserter on, as H2 does (D63). |
 
 ## Acceptance criteria
 

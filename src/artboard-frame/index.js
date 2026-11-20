@@ -16,9 +16,15 @@ import {
     VisuallyHidden,
 } from '@wordpress/ui';
 import { DEVICES, DEVICE_ORDER, KINDS } from '../shell/constants';
-import { artboardLabel, liveLabel, usesText } from '../shell/labels';
+import {
+    artboardLabel,
+    labelAroundName,
+    liveLabel,
+    usesText,
+} from '../shell/labels';
 import { countRender } from '../shell/test-hooks';
 import { normalizeAddress } from './browser';
+import { NameField } from './name-field';
 
 export { BrowserArtboard, browserTier } from './browser-artboard';
 export { usePreview } from './preview';
@@ -135,9 +141,41 @@ function Label( {
     uses,
     isChanged,
     onDeviceChange,
+    isRenaming,
+    onRename,
     onAddress,
     onReload,
 } ) {
+    // The label's text. While the artboard is named, its name is a text
+    // field and the rest of the label stays as it is (A7).
+    const text = ( isShort, suffix = null ) => {
+        if ( ! isRenaming ) {
+            return (
+                <Text variant="body-sm" className="wfd-artboard__label-text">
+                    { ( isShort ? liveLabel : artboardLabel )( artboard ) }
+                    { suffix }
+                </Text>
+            );
+        }
+        const [ before, after ] = labelAroundName( artboard, isShort );
+        return (
+            <>
+                { before && (
+                    <Text
+                        variant="body-sm"
+                        className="wfd-artboard__label-text"
+                    >
+                        { before }
+                    </Text>
+                ) }
+                <NameField name={ artboard.name } onDone={ onRename } />
+                <Text variant="body-sm" className="wfd-artboard__label-text">
+                    { after }
+                    { suffix }
+                </Text>
+            </>
+        );
+    };
     if ( isLive ) {
         return (
             <div className="wfd-artboard__label is-live">
@@ -148,12 +186,7 @@ function Label( {
                         onReload={ onReload }
                     />
                 ) : (
-                    <Text
-                        variant="body-sm"
-                        className="wfd-artboard__label-text"
-                    >
-                        { liveLabel( artboard ) }
-                    </Text>
+                    text( true )
                 ) }
                 <Menu.Root>
                     <Menu.Trigger
@@ -202,10 +235,8 @@ function Label( {
         'separator between parts of an artboard label',
         'wordpress-for-designers'
     );
-    let text = artboardLabel( artboard );
     let suffix = null;
     if ( uses ) {
-        text = liveLabel( artboard );
         suffix = (
             <>
                 { ' ' + separator + ' ' }
@@ -224,13 +255,9 @@ function Label( {
             </>
         );
     }
+    // With the uses of a token shown, the label has no device.
     return (
-        <div className="wfd-artboard__label">
-            <Text variant="body-sm" className="wfd-artboard__label-text">
-                { text }
-                { suffix }
-            </Text>
-        </div>
+        <div className="wfd-artboard__label">{ text( !! uses, suffix ) }</div>
     );
 }
 
@@ -243,6 +270,8 @@ function Label( {
  * @param {number}   props.uses           Uses of the selected token, if any.
  * @param {boolean}  props.isChanged      Whether Review marks it as changed.
  * @param {Function} props.onDeviceChange Changes the device from the Live label.
+ * @param {boolean}  props.isRenaming     Whether its name is being typed in the label.
+ * @param {Function} props.onRename       Ends renaming: see NameField.
  * @param {Object}   props.frameProps     Pointer handlers for the frame.
  * @param {boolean}  props.hasError       Whether the error state is shown.
  * @param {boolean}  props.isStale        Whether its Snapshot is out of date.
@@ -258,6 +287,8 @@ export function ArtboardFrame( {
     uses,
     isChanged,
     onDeviceChange,
+    isRenaming,
+    onRename,
     frameProps,
     hasError,
     isStale,
@@ -291,6 +322,8 @@ export function ArtboardFrame( {
                 uses={ uses }
                 isChanged={ isChanged }
                 onDeviceChange={ onDeviceChange }
+                isRenaming={ isRenaming }
+                onRename={ onRename }
                 onAddress={ onAddress }
                 onReload={ onReload }
             />

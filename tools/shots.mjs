@@ -23,6 +23,7 @@ const ALL = [
     'InserterBlocks',
     'InserterEmpty',
     'InserterMedia',
+    'InserterPages',
     'InserterTemplates',
     'Library',
     'Styles',

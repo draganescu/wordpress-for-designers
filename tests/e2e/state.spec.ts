@@ -9,7 +9,7 @@ import {
 } from './utils';
 
 test.describe( 'STATE', () => {
-    test( 'AC-STATE-01 A board with no artboards shows the empty state and its button opens the Add artboard menu', async ( {
+    test( 'AC-STATE-01 A board with no artboards shows the empty state and its button turns the inserter on', async ( {
         page,
         requestUtils,
     } ) => {
@@ -41,12 +41,18 @@ test.describe( 'STATE', () => {
         ).toBeVisible();
 
         await canvas.getByRole( 'button', { name: 'Add artboard' } ).click();
-        const items = page.getByRole( 'menu' ).first().getByRole( 'menuitem' );
-        await expect( items ).toHaveCount( 5 );
-        await expect( items.nth( 0 ) ).toContainText( 'Page' );
-        await expect( items.nth( 3 ) ).toContainText( 'Pattern' );
+        const inserter = left.locator( '.wfd-inserter' );
+        await expect( inserter ).toBeVisible();
+        await expect(
+            page.locator( '[data-wfd-control="H2"]' )
+        ).toHaveAccessibleName( 'Close block inserter' );
+        await expect(
+            inserter.getByRole( 'tab', { name: 'Pages' } )
+        ).toHaveAttribute( 'aria-selected', 'true' );
+        await expect( canvas ).toContainText( 'This board has no artboards' );
         // Placing from it works and the empty state goes away.
-        await items.nth( 3 ).click();
+        await inserter.getByRole( 'tab', { name: 'Patterns' } ).click();
+        await inserter.locator( '[data-wfd-new="pattern"]' ).click();
         const box = ( await canvas.boundingBox() )!;
         await page.mouse.move( box.x + 180, box.y + 180 );
         await page.mouse.move( box.x + 200, box.y + 200, { steps: 2 } );
@@ -76,7 +82,7 @@ test.describe( 'STATE', () => {
         );
         await expect( panel.locator( '.wfd-row' ) ).toHaveCount( 0 );
         // Nothing is in edit, so there is no Blocks tab.
-        await expect( panel.getByRole( 'tab' ) ).toHaveCount( 3 );
+        await expect( panel.getByRole( 'tab' ) ).toHaveCount( 4 );
         // A query that matches in another tab is not "no results".
         await panel.getByRole( 'searchbox' ).fill( 'Sign-off' );
         await expect( panel ).not.toContainText( 'No results' );

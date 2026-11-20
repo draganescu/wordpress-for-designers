@@ -6,7 +6,7 @@ import { countRender } from './test-hooks';
 import { __, _n, sprintf } from '@wordpress/i18n';
 import { forwardRef } from '@wordpress/element';
 import { ColorIndicator } from '@wordpress/components';
-import { EmptyState, Notice, Text } from '@wordpress/ui';
+import { Button, EmptyState, Notice, Text } from '@wordpress/ui';
 
 /**
  * The banner shown while a token is selected (spec/screens/Styles.md).
@@ -138,7 +138,13 @@ export function PlacementOutline( { rect, label, hint } ) {
     );
 }
 
-export function EmptyBoard( { addMenu } ) {
+/**
+ * The empty board. Its button turns the inserter on (D63).
+ *
+ * @param {Object}   props
+ * @param {Function} props.onAdd Called when "Add artboard" is pressed.
+ */
+export function EmptyBoard( { onAdd } ) {
     return (
         <EmptyState.Root className="wfd-canvas__empty">
             <EmptyState.Title>
@@ -153,7 +159,11 @@ export function EmptyBoard( { addMenu } ) {
                     'wordpress-for-designers'
                 ) }
             </EmptyState.Description>
-            <EmptyState.Actions>{ addMenu }</EmptyState.Actions>
+            <EmptyState.Actions>
+                <Button variant="solid" tone="brand" onClick={ onAdd }>
+                    { __( 'Add artboard', 'wordpress-for-designers' ) }
+                </Button>
+            </EmptyState.Actions>
         </EmptyState.Root>
     );
 }

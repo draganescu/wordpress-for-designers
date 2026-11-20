@@ -31,6 +31,17 @@ export function rawContent( record ) {
 }
 
 /**
+ * The saved or unsaved title of a record, as it is stored.
+ *
+ * @param {Object} record The record.
+ * @return {string} The title.
+ */
+export function rawTitle( record ) {
+    const title = record?.title;
+    return typeof title === 'string' ? title : ( title?.raw ?? '' );
+}
+
+/**
  * @param {(store: Object) => Object} select The registry's select.
  * @return {Array} One entry per changed item, with its saved and edited
  *                 records.

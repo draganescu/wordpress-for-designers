@@ -58,6 +58,8 @@ export function rectOf( artboard, widthOf ) {
  * @param {Function} options.getNames          Gives artboards with their names.
  * @param {Function} options.onEdit            Enters edit on an artboard.
  * @param {Function} options.onLeaveEdit       Leaves edit.
+ * @param {Function} options.onRename          Starts naming an artboard's
+ *                                             page or pattern on its label.
  * @param {Function} options.onTogglePanels    Hides or shows both side panels.
  * @param {Function} options.onToggleShortcuts Opens or closes the keyboard
  *                                             shortcuts dialog.
@@ -73,6 +75,7 @@ export function useCanvasInteractions( {
     getNames,
     onEdit,
     onLeaveEdit,
+    onRename,
     onTogglePanels,
     onToggleShortcuts,
     onRemoveMany,
@@ -85,6 +88,7 @@ export function useCanvasInteractions( {
         getNames,
         onEdit,
         onLeaveEdit,
+        onRename,
         onTogglePanels,
         onToggleShortcuts,
         onRemoveMany,
@@ -579,11 +583,24 @@ export function useCanvasInteractions( {
             const target =
                 doc.elementFromPoint( event.clientX, event.clientY ) ||
                 event.target;
+            if ( target.closest?.( 'input, textarea' ) ) {
+                // A text field on the board selects its own words.
+                return;
+            }
             const element = frameOf( target );
             if ( element?.dataset.wfdNote ) {
                 if ( board().getEditingNoteId() !== element.dataset.wfdNote ) {
                     actions().startNoteEdit( element.dataset.wfdNote );
                 }
+                return;
+            }
+            if (
+                element &&
+                target.closest( '.wfd-artboard__label' ) &&
+                ! target.closest( 'button' )
+            ) {
+                // The label of a page or pattern names it (D62).
+                latest.current.onRename( element.dataset.wfdArtboard );
                 return;
             }
             if (
@@ -702,6 +719,12 @@ export function useCanvasInteractions( {
                         done();
                     } else if ( board().getSelectedNoteId() ) {
                         actions().startNoteEdit( board().getSelectedNoteId() );
+                        done();
+                    }
+                    return;
+                case 'F2':
+                    if ( selectedId ) {
+                        latest.current.onRename( selectedId );
                         done();
                     }
                     return;

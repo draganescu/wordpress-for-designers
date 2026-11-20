@@ -20,6 +20,8 @@ Each item was considered and cut. Do not build any of them, in part or behind a 
 | A modal dialog or form for creating an artboard | `[U]` |
 | Publishing a draft page or pattern from the board (done in wp-admin) | `[N]` |
 | Opening an existing page or pattern as an artboard by any path other than the inserter (D39) | `[U]` |
+| Creating an artboard from anywhere but the inserter's "New" rows (D63) | `[U]` |
+| Renaming a template, a template part or a media object on the board (D62) | `[U]` |
 | Replacing the wp-admin dashboard | `[U]` |
 | Board sharing controls, per-user boards | `[U]` |
 | Mounting the post editor or site editor | `[U]` |

@@ -37,6 +37,7 @@ const OF_BLOCKS = {
  * - `isBoardOnly`: whether removing it only ever takes it off the board.
  * - `isResized`: whether its height is set by hand, not measured (D56).
  * - `layout`: the fields saved for it; it has a device when `device` is one.
+ * - `isNamed`: whether it is named on its artboard's label (D62).
  */
 export const KINDS = {
     page: {
@@ -45,6 +46,7 @@ export const KINDS = {
         icon: page,
         postType: 'page',
         ...OF_BLOCKS,
+        isNamed: true,
     },
     template: {
         label: __( 'Template', 'wordpress-for-designers' ),
@@ -66,6 +68,7 @@ export const KINDS = {
         icon: symbol,
         postType: 'wp_block',
         ...OF_BLOCKS,
+        isNamed: true,
     },
     // An image from the media library placed on the board as an object: it
     // has no device and cannot be edited.
