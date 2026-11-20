@@ -110,7 +110,7 @@ Unless a criterion says otherwise, the fixture in `architecture.md` is loaded an
 
 ## NEW
 
-- AC-NEW-01 The Add artboard menu lists the four kinds with their descriptions; Template has the submenu described in `screens/AddArtboard.md`. `[U]`
+- AC-NEW-01 The Add artboard menu lists the four kinds and Browser (D55) with their descriptions; Template has the submenu described in `screens/AddArtboard.md`. `[U]`
 - AC-NEW-02 After choosing a kind, a placement ghost follows the pointer; Esc cancels and nothing is created. `[U]`
 - AC-NEW-03 Placing a Page creates a draft page titled "Untitled page" whose template is the theme's `blank` template, or else its `page-no-title` template, when the theme has one; placing a Pattern creates a draft synced pattern titled "Untitled pattern". `[U]`
 - AC-NEW-04 Placing a Template or Template part creates no post until it is saved from Review, where it is listed as "New". `[U]`
@@ -145,6 +145,19 @@ Unless a criterion says otherwise, the fixture in `architecture.md` is loaded an
 - AC-MEDIA-01 With no artboard in edit, clicking an image in the Media tab places a media object in view, and dragging one to empty board shows the drop target at the image's size and places a media object there, labelled "{Name} · Media", listed under "Media" in the left panel; after a reload it is still there. `[U]`
 - AC-MEDIA-02 A media object is selected by a click, moved by dragging and removed with Delete through a dialog with no checkbox; double-click and Enter do not enter edit; its settings show the image's pixel size and only "Remove from board". `[U]`
 - AC-MEDIA-03 The server accepts a media object with exactly its fields and rejects one with a device or without a width; a media object whose image no longer exists is removed from the board on load. `[N]`
+
+## BROWSER
+
+- AC-BROWSER-01 "Browser" in the Add artboard menu arms placement; a click on the board places a Desktop browser there showing the homepage, labelled "/ · Browser · Desktop", selected and not browsing, with a window 900 board units tall, listed under "Browsers" in the left panel; after a reload it is still there. `[U]`
+- AC-BROWSER-02 Outside browsing, a click on a browser's page selects the browser and follows no link, and a drag moves it; Delete opens the remove dialog with no checkbox and Remove takes it off the board. `[U]`
+- AC-BROWSER-03 Double-click starts browsing: following a link in the page changes the address field and the document bar; typing an address of the site and pressing Enter goes there; Esc pressed inside the page ends browsing with the browser selected; after a reload of the board the browser shows the last address. `[U]`
+- AC-BROWSER-04 A change to a page made in an artboard is not shown in a browser on that page set to "Saved site" (D57) until it is saved from Review; after the save the browser shows it without Reload being pressed. `[U]`
+- AC-BROWSER-05 The server accepts a browser with exactly its fields and rejects one with an `entityId`, one without a `path`, one whose `path` does not start with "/", one without a `height`, one whose `height` is below 200 and one whose `shows` is not "unsaved" or "saved". `[N]`
+- AC-BROWSER-06 Dragging a browser's bottom edge down by 200 board units makes its window 200 units taller, and the height is kept after a reload; Undo, whose tooltip reads "Undo resize browser, on the board", puts it back; dragging it up past 200 stops at 200 (D56). `[U]`
+- AC-BROWSER-07 A page scrolled while browsing stays scrolled where it was after Esc ends browsing (D56). `[U]`
+- AC-BROWSER-08 A browser showing unsaved changes shows a change typed into a page's artboard, without a save and without Reload being pressed, and keeps showing it on a link followed to another page and back; a browser on the same page set to "Saved site" does not show it until Review saves it. The page requested without signing in shows the saved content even with that browser's `wfd_preview` argument, and so does the signed-in user's own request with another value (D57). `[U]`
+- AC-BROWSER-09 A browser showing unsaved changes shows an unsaved change to global styles and to a template part (D57). `[U]`
+- AC-BROWSER-10 With a browser showing unsaved changes, when the preview route fails the canvas shows one notice reading "We're having a problem saving."; it is still one notice after the send has been tried again and has failed again; it goes away when a send succeeds (D61). `[U]`
 
 ## NOTE
 

@@ -42,7 +42,7 @@ test.describe( 'STATE', () => {
 
         await canvas.getByRole( 'button', { name: 'Add artboard' } ).click();
         const items = page.getByRole( 'menu' ).first().getByRole( 'menuitem' );
-        await expect( items ).toHaveCount( 4 );
+        await expect( items ).toHaveCount( 5 );
         await expect( items.nth( 0 ) ).toContainText( 'Page' );
         await expect( items.nth( 3 ) ).toContainText( 'Pattern' );
         // Placing from it works and the empty state goes away.

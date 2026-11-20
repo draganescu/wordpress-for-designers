@@ -287,6 +287,10 @@ html.wp-toolbar:has(.wfd-board-page) {
     left: var(--wpds-dimension-padding-lg);
     width: var(--wpds-dimension-surface-width-md);
     max-width: calc(100% - 2 * var(--wpds-dimension-padding-lg));
+    // Two banners at once (D61) are one above the other.
+    display: flex;
+    flex-direction: column;
+    row-gap: var(--wpds-dimension-gap-sm);
 }
 
 .wfd-banner__text {
@@ -409,6 +413,7 @@ html.wp-toolbar:has(.wfd-board-page) {
 
 .wfd-entity-card,
 .wfd-device-control,
+.wfd-shows-control,
 .wfd-template-control,
 .wfd-scope-switch,
 .wfd-artboard-settings__actions,
@@ -633,4 +638,37 @@ html.wp-toolbar:has(.wfd-board-page) {
 
 .wfd-note-colors {
     margin-top: var(--wpds-dimension-gap-lg);
+}
+
+// A browser's window (D55): the page at the device width, as tall as the
+// window (D56). Outside browsing the frame is inert and takes no input.
+.wfd-browser {
+    display: block;
+    width: 100%;
+    height: 100%;
+    border: 0;
+    background: var(--wpds-color-background-surface-neutral);
+}
+
+// While it is browsed, the pointer is the board's when the board pans.
+.wfd-canvas.is-pan-ready .wfd-browser,
+.wfd-canvas.is-panning .wfd-browser {
+    pointer-events: none;
+}
+
+.wfd-artboard__address {
+    width: 320px;
+}
+
+// The bottom edge of a browser's window resizes it (D56): a band 8 px tall
+// at screen size, centred on the edge.
+.wfd-artboard__resize {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    transform: translateY(50%);
+    height: calc(8px / var(--wfd-zoom));
+    cursor: ns-resize;
+    z-index: 1;
 }

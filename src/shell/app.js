@@ -19,7 +19,14 @@ import { store as boardStore } from '../board-store';
 import { useLayoutAutosave } from '../board-store/use-layout-autosave';
 import { createViewport } from '../viewport';
 import { ArtboardEditor } from '../artboard-editor';
-import { ArtboardError, ArtboardFrame, ArtboardMedia } from '../artboard-frame';
+import {
+    ArtboardError,
+    ArtboardFrame,
+    ArtboardMedia,
+    BrowserArtboard,
+    browserTier,
+    usePreview,
+} from '../artboard-frame';
 import { ArtboardPreview, ArtboardPreviewOnce } from '../artboard-preview';
 import { ArtboardSnapshot, createSnapshotStore } from '../artboard-snapshot';
 import { useTiers } from '../tier-scheduler';
@@ -43,9 +50,10 @@ import {
     EmptyBoard,
     PlacementOutline,
     PreviewBanner,
+    SavingBanner,
     UsageBanner,
 } from './canvas';
-import { KINDS } from './constants';
+import { KINDS, hasDevice } from './constants';
 import { LockDialog, RemoveDialog } from './dialogs';
 import { ShortcutsButton, ShortcutsDialog } from './shortcuts-dialog';
 import { Note, NoteSettings } from './notes';
@@ -64,7 +72,7 @@ import { useEntityInfo } from './use-entity-info';
 import { NEW_ARTBOARD_HEIGHT, usePlacement } from './use-placement';
 import { removalInfo, useRemoval } from './use-removal';
 
-const { boardId, boardsUrl, userId, theme } = window.wfdConfig;
+const { boardId, boardsUrl, userId, theme, homeUrl } = window.wfdConfig;
 bootEditor();
 
 const VIEWPORT_KEY = `wfd/viewport/${ userId }/${ boardId }`;
@@ -83,6 +91,7 @@ const LAYOUT_ACTIONS = {
     device: __( 'change device', 'wordpress-for-designers' ),
     add: __( 'add artboard', 'wordpress-for-designers' ),
     remove: __( 'remove artboard', 'wordpress-for-designers' ),
+    'resize-browser': __( 'resize browser', 'wordpress-for-designers' ),
     'add-note': __( 'add note', 'wordpress-for-designers' ),
     'move-note': __( 'move note', 'wordpress-for-designers' ),
     'edit-note': __( 'edit note', 'wordpress-for-designers' ),
@@ -175,6 +184,7 @@ export function App() {
     useEnableWpCompatOverlaySlot();
     const isLoaded = useBoard();
     useLayoutAutosave();
+    const preview = usePreview();
     const viewportRef = useRef();
     if ( ! viewportRef.current ) {
         viewportRef.current = createViewport();
@@ -197,6 +207,7 @@ export function App() {
         selectedIds,
         anchorId,
         liveId,
+        browsingId,
         isInserterOpen,
         isListViewOpen,
         zoom,
@@ -219,6 +230,7 @@ export function App() {
             selectedIds: board.getSelectedIds(),
             anchorId: board.getSelectionAnchorId(),
             liveId: board.getLiveId(),
+            browsingId: board.getBrowsingId(),
             isInserterOpen: board.isInserterOpen(),
             isListViewOpen: board.isListViewOpen(),
             zoom: board.getViewport().zoom,
@@ -247,8 +259,8 @@ export function App() {
         setNoteHeight,
         startNoteEdit,
         endNoteEdit,
+        reloadBrowser,
     } = useDispatch( boardStore );
-
     // Hidden panels (D32): kept for the session only.
     const [ isLeftHidden, setLeftHidden ] = useState( false );
     const [ isRightHidden, setRightHidden ] = useState( false );
@@ -408,7 +420,7 @@ export function App() {
     }, [ missingIds, removeArtboards ] );
 
     const focused = artboards.find(
-        ( artboard ) => artboard.id === ( liveId || selectedId )
+        ( artboard ) => artboard.id === ( liveId || browsingId || selectedId )
     );
     const entityInfo = useEntityInfo( focused );
     const [ resizeListener, areaSize ] = useResizeObserver();
@@ -426,8 +438,9 @@ export function App() {
     const rects = useMemo(
         () =>
             layout
-                // Media objects are images, outside the tiers.
-                .filter( ( artboard ) => artboard.kind !== 'media' )
+                // Media objects are images and browsers are pages of the
+                // site, both outside the tiers.
+                .filter( ( artboard ) => KINDS[ artboard.kind ].isTiered )
                 .map( ( artboard ) => ( {
                     id: artboard.id,
                     ...rectOf( artboard, widthOf ),
@@ -532,17 +545,31 @@ export function App() {
     }
     const renderVersion = versionRef.current.value;
 
+    // A browser stops browsing when it is no longer selected (D38, D55), for
+    // example when the inserter places something.
+    const isBrowsingSelected = selectedIds.includes( browsingId );
+    const leaveEdit = editing.leaveEdit;
+    useEffect( () => {
+        if ( browsingId && ! isBrowsingSelected ) {
+            leaveEdit();
+        }
+    }, [ browsingId, isBrowsingSelected, leaveEdit ] );
+
     if ( ! isLoaded ) {
         return null;
     }
 
     const selected = artboards.find( ( a ) => a.id === selectedId );
     const live = artboards.find( ( a ) => a.id === liveId );
+    // The artboard in edit: the Live editor, or the browser being browsed,
+    // which has no blocks (D55).
+    const inEdit =
+        live ?? artboards.find( ( a ) => a.id === browsingId ) ?? null;
     const removing = artboards.find( ( a ) => a.id === removingId );
     let banner = null;
     if ( styles.preview?.banner ) {
         banner = <PreviewBanner { ...styles.preview.banner } />;
-    } else if ( token && located && ! live && ! selected ) {
+    } else if ( token && located && ! inEdit && ! selected ) {
         const picked =
             stylesPanel.panelProps.colors.find(
                 ( color ) => token.type === 'color' && color.slug === token.slug
@@ -559,6 +586,15 @@ export function App() {
                     artboards: located.artboards,
                 } }
             />
+        );
+    }
+    if ( preview.isFailing ) {
+        // Above the banner of the Styles screens, when there is one (D61).
+        banner = (
+            <>
+                <SavingBanner />
+                { banner }
+            </>
         );
     }
     const addMenu = (
@@ -706,6 +742,11 @@ export function App() {
                 }
                 onEdit={ () => onEdit( selected.id ) }
                 onRemove={ () => setRemovingId( selected.id ) }
+                isBrowsing={ selected.id === browsingId }
+                onReload={ () => reloadBrowser( selected.id ) }
+                onShowsChange={ ( shows ) =>
+                    updateArtboard( selected.id, { shows } )
+                }
             />
         );
     } else {
@@ -726,7 +767,7 @@ export function App() {
                         <Header
                             boardsUrl={ boardsUrl }
                             boardName={ title }
-                            liveName={ live ? liveLabel( live ) : null }
+                            liveName={ inEdit ? liveLabel( inEdit ) : null }
                             isInserterOpen={ isInserterOpen }
                             onToggleInserter={ () => {
                                 if ( ! isInserterOpen ) {
@@ -803,11 +844,11 @@ export function App() {
                             onZoom={ canvas.zoom }
                             canFitSelection={ selectedIds.length > 0 }
                             isNoteToolArmed={ isNoteToolArmed }
-                            isNoteToolDisabled={ !! live }
+                            isNoteToolDisabled={ !! inEdit }
                             onToggleNoteTool={ () =>
                                 setNoteToolArmed( ! isNoteToolArmed )
                             }
-                            canTidy={ ! live && artboards.length > 1 }
+                            canTidy={ ! inEdit && artboards.length > 1 }
                             onTidy={ () => {
                                 moveArtboards(
                                     tidyMoves( artboards, widthOf ),
@@ -872,7 +913,7 @@ export function App() {
                                 )
                             }
                             placer={
-                                isNoteToolArmed && ! live ? (
+                                isNoteToolArmed && ! inEdit ? (
                                     <div
                                         className="wfd-canvas__placer"
                                         data-wfd-placer="note"
@@ -931,12 +972,21 @@ export function App() {
                         >
                             { artboards.map( ( artboard ) => {
                                 const isMedia = artboard.kind === 'media';
-                                const tier = isMedia
+                                const isBrowser = artboard.kind === 'browser';
+                                let tier = isMedia
                                     ? 'media'
                                     : tiers.get( artboard.id ) || 'ghost';
-                                const width = isMedia
-                                    ? artboard.width
-                                    : widthOf( artboard.device );
+                                if ( isBrowser ) {
+                                    tier = browserTier( artboard, {
+                                        browsingId,
+                                        rect: rectOf( artboard, widthOf ),
+                                        viewport: settledViewport,
+                                        size,
+                                    } );
+                                }
+                                const width = hasDevice( artboard )
+                                    ? widthOf( artboard.device )
+                                    : artboard.width;
                                 let content = null;
                                 const onHeight = ( height ) =>
                                     updateArtboard( artboard.id, { height } );
@@ -976,6 +1026,17 @@ export function App() {
                                     content = (
                                         <ArtboardMedia
                                             record={ artboard.record }
+                                        />
+                                    );
+                                } else if ( isBrowser && tier !== 'ghost' ) {
+                                    content = (
+                                        <BrowserArtboard
+                                            artboard={ artboard }
+                                            isBrowsing={ tier === 'live' }
+                                            homeUrl={ homeUrl }
+                                            preview={ preview }
+                                            onEscape={ editing.leaveEdit }
+                                            onWheel={ canvas.forwardWheel }
                                         />
                                     );
                                 } else if (
@@ -1110,6 +1171,14 @@ export function App() {
                                                 artboard.id,
                                                 device
                                             )
+                                        }
+                                        onAddress={ ( path ) =>
+                                            updateArtboard( artboard.id, {
+                                                path,
+                                            } )
+                                        }
+                                        onReload={ () =>
+                                            reloadBrowser( artboard.id )
                                         }
                                     >
                                         { content }
