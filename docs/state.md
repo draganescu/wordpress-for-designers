@@ -8,8 +8,8 @@ The plugin is built through Milestone 12 of `spec/build-order.md`, plus the deci
 
 | Check | Result |
 |---|---|
-| Acceptance criteria in `spec/acceptance.md` | 128 |
-| End-to-end tests, one per criterion | 128; AC-SHELL-10 to 12 (D49, D50) were added after the runs described next. On 2026-11-19 the whole suite was run three times: all pass after two fixes to the tests. AC-CANVAS-03 used an empty-board point that D42's Keyboard shortcuts control now covers; AC-STYLE-07 (and three like it in `ins.spec.ts` and `style.spec.ts`) counted menu rows once instead of waiting for them, and failed one run in three. AC-PERF-03 still fails on a port-8890 environment from a worktree (see working-notes.md) |
+| Acceptance criteria in `spec/acceptance.md` | 129 |
+| End-to-end tests, one per criterion | 129; AC-SHELL-10 to 13 (D49, D50) were added after the runs described next. On 2026-11-19 the whole suite was run three times: all pass after two fixes to the tests. AC-CANVAS-03 used an empty-board point that D42's Keyboard shortcuts control now covers; AC-STYLE-07 (and three like it in `ins.spec.ts` and `style.spec.ts`) counted menu rows once instead of waiting for them, and failed one run in three. AC-PERF-03 still fails on a port-8890 environment from a worktree (see working-notes.md) |
 | `npm run lint` | Exits 0, no disabled lines |
 | CI | `.github/workflows/tests.yml` runs lint, build and the suite (Chromium, wp-env) on every pull request; CI retries a failed test twice and reports a pass on retry as flaky |
 | Open questions waiting for the product owner | 27 (`spec/open-questions.md`) |
@@ -43,7 +43,8 @@ A "Designer" menu in wp-admin lists boards. A board opens full screen: a header,
 - **Review.** Nothing reaches the site until "Review changes" is used. It lists each changed item and saves the checked ones. Artboard positions save on their own, two seconds after a change.
 - **Locks.** Editing a page or pattern takes WordPress's post lock through the plugin's own route and dialog.
 - **Panels.** Both side panels can be hidden from the header or with Cmd/Ctrl + \. Resting the pointer on the left or right edge of the canvas area brings a hidden panel back.
-- **Window size.** Below 1180 px wide (an iPad Air in landscape) the whole window shows "Designing needs more space" and nothing of the board can be used; a board already open stays mounted behind it and comes back as it was (D49, `src/shell/space-gate.js` and `_space-gate.scss`). From 1180 to 1439 px the panels are narrower and, in edit, the document bar is 180 px wide next to the end controls so the block toolbar has the room; a toolbar wider than its room scrolls sideways, as the stock toolbar does (D50, `src/shell/style.scss`). From 1440 to about 1653 px the toolbar has less room than at 1180 px, and touch input is cut while the message invites tablets; both are with the product owner (OQ-33).
+- **Window size.** Below 1180 px wide (an iPad Air in landscape) the whole window shows "Designing needs more space" and nothing of the board can be used; a board already open stays mounted behind it and comes back as it was (D49, `src/shell/space-gate.js` and `_space-gate.scss`). From 1180 to 1439 px the panels are narrower (D50, `src/shell/style.scss`). Touch input is cut while the message invites tablets; it is being added separately.
+- **Block toolbar.** While a block is selected its toolbar is in the header in place of the document bar's title, at every width, with an arrow at its end that hides it and shows it again; "Back to the board" stays visible beside it. It copies the collapsible block toolbar of WordPress's own header, which is not exported (D50, `src/artboard-editor/collapsible-block-toolbar.js`). A toolbar wider than its room scrolls sideways, as the stock toolbar does.
 
 ## Layout of the repository
 
@@ -85,7 +86,7 @@ Two entries: `boards` (the Boards list, `src/boards/`) and `board` (the app, `sr
 | `tier-scheduler/` | Tier of each artboard; Previews mounted nearest first through a priority queue |
 | `artboard-frame/` | One artboard: position, label, outline, error state, media image |
 | `artboard-preview/` | The Preview tier; finding a page's template |
-| `artboard-editor/` | The Live editor; `coalesce.js` groups typing into undo steps; `drag-anywhere.js` is the removable drag-from-anywhere layer (D40) |
+| `artboard-editor/` | The Live editor; `collapsible-block-toolbar.js` is the header's block toolbar and its arrow (D50); `coalesce.js` groups typing into undo steps; `drag-anywhere.js` is the removable drag-from-anywhere layer (D40) |
 | `artboard-snapshot/` | The frozen copy of a Preview |
 | `chrome-slots/` | Slots for the block toolbar, inspector and list view |
 | `inserter/` | The inserter panel, its data and actions |
