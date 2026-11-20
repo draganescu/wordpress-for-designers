@@ -131,7 +131,8 @@ function previewChanges( registry ) {
  *                  failed, then one more each time browsers showing unsaved
  *                  changes should reload; `decorateUrl( href )`: the URL that
  *                  asks for a page with the unsaved changes; `plainUrl( href )`:
- *                  that URL as an address shows it.
+ *                  that URL as an address shows it; `isFailing`: whether the
+ *                  last send failed and none has succeeded since (D61).
  */
 export function usePreview() {
     const registry = useRegistry();
@@ -140,6 +141,7 @@ export function usePreview() {
     // this board page. The server gives a new one with each answer.
     const value = useRef( firstValue );
     const [ version, setVersion ] = useState( 0 );
+    const [ isFailing, setIsFailing ] = useState( false );
     const decorateUrl = useCallback(
         ( href ) => withArg( href, arg, value.current ),
         [ arg ]
@@ -204,6 +206,7 @@ export function usePreview() {
                 sentAt = Date.now();
                 failures = 0;
                 retryAt = 0;
+                setIsFailing( false );
                 // Browsers reload when the changes are new, or the server
                 // had stopped keeping them.
                 if ( json !== sent || ! held ) {
@@ -212,6 +215,8 @@ export function usePreview() {
                 sent = json;
             } catch {
                 failures++;
+                // Said once for the tries that fail in a row (D61).
+                setIsFailing( true );
                 retryAt =
                     Date.now() +
                     Math.min( LONGEST_RETRY, DELAY * 2 ** failures );
@@ -248,6 +253,12 @@ export function usePreview() {
                     sendIn( 0 );
                     return;
                 }
+                if ( ! isWanted && wasWanted ) {
+                    // Nothing is sent any more, so nothing is failing.
+                    failures = 0;
+                    retryAt = 0;
+                    setIsFailing( false );
+                }
             }
             if ( hasChanged && isWanted ) {
                 sendIn( DELAY );
@@ -270,7 +281,7 @@ export function usePreview() {
     }, [ registry, path ] );
 
     return useMemo(
-        () => ( { version, decorateUrl, plainUrl } ),
-        [ version, decorateUrl, plainUrl ]
+        () => ( { version, isFailing, decorateUrl, plainUrl } ),
+        [ version, isFailing, decorateUrl, plainUrl ]
     );
 }

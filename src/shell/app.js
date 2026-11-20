@@ -50,6 +50,7 @@ import {
     EmptyBoard,
     PlacementOutline,
     PreviewBanner,
+    SavingBanner,
     UsageBanner,
 } from './canvas';
 import { KINDS, hasDevice } from './constants';
@@ -573,6 +574,15 @@ export function App() {
                     artboards: located.artboards,
                 } }
             />
+        );
+    }
+    if ( preview.isFailing ) {
+        // Above the banner of the Styles screens, when there is one (D61).
+        banner = (
+            <>
+                <SavingBanner />
+                { banner }
+            </>
         );
     }
     const addMenu = (

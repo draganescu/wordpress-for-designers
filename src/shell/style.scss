@@ -223,6 +223,10 @@ html.wp-toolbar:has(.wfd-board-page) {
     left: var(--wpds-dimension-padding-lg);
     width: var(--wpds-dimension-surface-width-md);
     max-width: calc(100% - 2 * var(--wpds-dimension-padding-lg));
+    // Two banners at once (D61) are one above the other.
+    display: flex;
+    flex-direction: column;
+    row-gap: var(--wpds-dimension-gap-sm);
 }
 
 .wfd-banner__text {

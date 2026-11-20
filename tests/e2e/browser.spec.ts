@@ -726,4 +726,37 @@ test.describe( 'BROWSER', () => {
             shown.getByText( /Fixture header text Edited/ )
         ).toBeVisible( { timeout: 8000 } );
     } );
+    test( 'AC-BROWSER-10 With a browser showing unsaved changes, when the preview route fails the canvas shows one notice reading "We\'re having a problem saving."; it is still one notice after the send has been tried again and has failed again; it goes away when a send succeeds', async ( {
+        page,
+        requestUtils,
+    } ) => {
+        await seedBrowser( requestUtils, { shows: 'unsaved' } );
+        // The route fails, however the site writes its REST addresses.
+        const route = /wfd(\/|%2F)v1(\/|%2F)preview/;
+        let failed = 0;
+        await page.route( route, ( request ) => {
+            failed++;
+            return request.fulfill( {
+                status: 500,
+                contentType: 'application/json',
+                body: '{"code":"wfd_test","message":"Failed for the test."}',
+            } );
+        } );
+        await openBoard( page, fixture.boardId, 10 );
+        await showBrowser( page );
+        const notice = page.locator( '[data-wfd-banner="saving"]' );
+        await expect( notice ).toHaveText( "We're having a problem saving." );
+        // The browser shows the saved site meanwhile.
+        await expect( page$( page ).locator( 'body' ) ).toBeVisible();
+
+        // The send is tried again and fails again: still one notice.
+        await expect
+            .poll( () => failed, { timeout: 15000 } )
+            .toBeGreaterThan( 1 );
+        await expect( notice ).toHaveCount( 1 );
+
+        // The next try succeeds.
+        await page.unroute( route );
+        await expect( notice ).toHaveCount( 0, { timeout: 20000 } );
+    } );
 } );
