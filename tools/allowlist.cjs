@@ -26,6 +26,7 @@ const allowed = {
         'useInstanceId',
         'usePrevious',
         'useViewportMatch',
+        'useMediaQuery',
         'useRefEffect',
         'useEvent',
     ],

@@ -269,10 +269,29 @@ test.describe( 'STYLE', () => {
         await expect( stock.getByText( 'Typography' ).first() ).toBeVisible();
         await expect( stock.getByText( 'Color' ).first() ).toBeVisible();
         await expect( rows ).toHaveCount( 0 );
-        await panel
-            .locator( '.wfd-styles__block-back' )
-            .getByRole( 'button' )
+        // The block's title and the back control are shown once: the stock
+        // screen's.
+        const heading = ( name: string ) =>
+            panel.getByRole( 'heading', { name, exact: true } );
+        const back = panel.getByRole( 'button', { name: 'Back', exact: true } );
+        await expect( heading( 'Button' ) ).toHaveCount( 1 );
+        await expect(
+            panel.getByText( 'Button', { exact: true } )
+        ).toHaveCount( 1 );
+        await expect( back ).toHaveCount( 1 );
+
+        // Back on a style variation's screen returns to the block, and on the
+        // block's screen to the list.
+        await stock
+            .getByRole( 'button', { name: 'Outline', exact: true } )
             .click();
+        await expect( heading( 'Outline' ) ).toHaveCount( 1 );
+        await expect( heading( 'Button' ) ).toHaveCount( 0 );
+        await back.click();
+        await expect( heading( 'Button' ) ).toHaveCount( 1 );
+        await expect( heading( 'Outline' ) ).toHaveCount( 0 );
+        await expect( rows ).toHaveCount( 0 );
+        await back.click();
         await expect( stock ).toHaveCount( 0 );
         await expect( rows.first() ).toBeVisible();
     } );
@@ -903,5 +922,41 @@ test.describe( 'STYLE', () => {
             .click();
         await setColor( page, 'Base', '#112233' );
         await expect.poll( background ).toBe( 'rgb(17, 34, 51)' );
+    } );
+
+    test( 'AC-STYLE-11 With "Style applies to" on "All {block}", the stock styles screen\'s Back sets it back to "This block"', async ( {
+        page,
+    } ) => {
+        const hero = artboardOf( fixture, 'pattern' );
+        await enterEdit( page, hero.id );
+        await editorFrame( page, hero.id ).locator( 'h2' ).click();
+        const panel = right( page );
+        const group = panel.getByRole( 'radiogroup', {
+            name: 'Style applies to',
+        } );
+        const thisBlock = group.getByRole( 'radio', { name: 'This block' } );
+        const all = group.getByRole( 'radio', { name: 'All Heading' } );
+        const inspector = panel.locator( '.block-editor-block-inspector' );
+        const title = panel.getByRole( 'heading', {
+            name: 'Heading',
+            exact: true,
+        } );
+        const back = panel.getByRole( 'button', { name: 'Back', exact: true } );
+
+        await all.click();
+        await expect( title ).toHaveCount( 1 );
+        await expect( inspector ).toBeHidden();
+        await back.click();
+        await expect( thisBlock ).toBeChecked();
+        await expect( inspector ).toBeVisible();
+        // The stock screens are gone, WordPress's list of blocks included.
+        await expect( back ).toHaveCount( 0 );
+        await expect( title ).toHaveCount( 0 );
+
+        // "All Heading" opens the block's screen again.
+        await all.click();
+        await expect( all ).toBeChecked();
+        await expect( title ).toHaveCount( 1 );
+        await expect( back ).toHaveCount( 1 );
     } );
 } );

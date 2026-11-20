@@ -456,15 +456,15 @@ function TokensTab( {
 }
 
 /**
- * The Blocks tab: search, block rows, or one block's styles with a back
- * control.
+ * The Blocks tab: search and block rows, or one block's stock styles screen,
+ * which has its own heading and back control.
  *
  * @param {Object}      props
  * @param {string}      props.blockQuery         The search text.
  * @param {Function}    props.onBlockQueryChange Called with the search text.
  * @param {Array}       props.blockGroups        [{ title, rows: [{ path, title, icon, changes }] }], the elements' groups first (D53).
  * @param {string|null} props.openBlock          Path of the open row's stock screen.
- * @param {Function}    props.onOpenBlock        Called with a path or null.
+ * @param {Function}    props.onOpenBlock        Called with a path.
  * @param {Function}    props.renderBlockStyles  Renders the stock screen at a path.
  */
 function BlocksTab( {
@@ -476,26 +476,9 @@ function BlocksTab( {
     renderBlockStyles,
 } ) {
     if ( openBlock ) {
-        const open = blockGroups
-            .flatMap( ( group ) => group.rows )
-            .find( ( { path } ) => path === openBlock );
         return (
-            <div className="wfd-styles__block">
-                <div className="wfd-styles__block-back">
-                    <Button
-                        variant="minimal"
-                        tone="neutral"
-                        onClick={ () => onOpenBlock?.( null ) }
-                    >
-                        <Button.Icon
-                            icon={ isRTL() ? chevronRight : chevronLeft }
-                        />
-                        { open?.title }
-                    </Button>
-                </div>
-                <div className="wfd-styles__block-styles">
-                    { renderBlockStyles?.( openBlock ) }
-                </div>
+            <div className="wfd-styles__block-styles">
+                { renderBlockStyles?.( openBlock ) }
             </div>
         );
     }
@@ -693,7 +676,7 @@ function HistoryTab( {
  * @param {Function}    props.onBlockQueryChange Called with the search text.
  * @param {Array}       props.blockGroups        [{ title, rows: [{ path, title, icon, changes }] }].
  * @param {string|null} props.openBlock          Path of the open row's stock screen.
- * @param {Function}    props.onOpenBlock        Called with a path or null.
+ * @param {Function}    props.onOpenBlock        Called with a path.
  * @param {Function}    props.renderBlockStyles  Renders the stock screen at a path.
  * @param {Array}       props.historyRows        [{ id, kind, date, author, changes }].
  * @param {*}           props.selectedHistoryId  Id of the previewed row.
