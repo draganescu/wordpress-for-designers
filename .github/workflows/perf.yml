@@ -1,0 +1,137 @@
+name: Performance
+
+# Measures the pull request's build and the build of its base on the same
+# runner, and writes the comparison to the job summary. Fails when an
+# indicator is over its budget in tests/perf/budgets.json. What is measured
+# and how to read it is in docs/performance.md.
+
+on:
+    pull_request:
+        # A change to documents only has nothing to measure.
+        paths-ignore:
+            - 'docs/**'
+            - 'spec/**'
+            - '**/*.md'
+    workflow_dispatch:
+
+permissions:
+    contents: read
+
+concurrency:
+    group: perf-${{ github.event.pull_request.number || github.ref }}
+    cancel-in-progress: true
+
+env:
+    # How many times the timing tests run on each build. The report gives
+    # the median.
+    ROUNDS: 3
+    # One folder of results files per build, one file per run.
+    RESULTS: ${{ github.workspace }}/results
+    # Why 2 and not the suite's own 4: docs/performance.md, "On a real
+    # laptop".
+    PERF_CPU_THROTTLE: 2
+
+jobs:
+    perf:
+        name: Performance
+        runs-on: ubuntu-latest
+        timeout-minutes: 75
+        steps:
+            # The suite, its tools and the action that starts a site always
+            # come from head. Base is only built and served.
+            - uses: actions/checkout@v4
+              with:
+                  path: head
+
+            - uses: actions/checkout@v4
+              if: github.event_name == 'pull_request'
+              with:
+                  ref: ${{ github.event.pull_request.base.sha }}
+                  path: base
+
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: 24
+                  cache: npm
+                  cache-dependency-path: head/package-lock.json
+
+            # SCRIPT_DEBUG off: minified WordPress scripts and the production
+            # build of React, as a visitor's site would serve them.
+            - name: Build head and start its WordPress
+              uses: ./head/.github/actions/site
+              with:
+                  path: head
+                  script-debug: 'false'
+
+            - name: Build base and start its WordPress
+              if: github.event_name == 'pull_request'
+              uses: ./head/.github/actions/site
+              with:
+                  path: base
+                  port: 8889
+                  script-debug: 'false'
+                  chromium: 'false'
+
+            - name: Measure the builds
+              run: |
+                  mkdir -p "$RESULTS/head"
+                  node head/tools/perf-bundle.mjs head/build > "$RESULTS/head/bundle.jsonl"
+                  if [ -d base ]; then
+                      mkdir -p "$RESULTS/base"
+                      node head/tools/perf-bundle.mjs base/build > "$RESULTS/base/bundle.jsonl"
+                  fi
+
+            # A failure while measuring base does not fail the job: base may
+            # lack what a new test needs. Its indicators are then missing
+            # from the comparison.
+            - name: Counts and memory
+              working-directory: head
+              run: |
+                  if [ -d ../base ]; then
+                      PERF_RESULTS="$RESULTS/base/once.jsonl" WP_BASE_URL=http://localhost:8889 \
+                          npm run test:perf -- --grep @once || true
+                  fi
+                  PERF_RESULTS="$RESULTS/head/once.jsonl" WP_BASE_URL=http://localhost:8888 \
+                      npm run test:perf -- --grep @once
+
+            # Base and head take turns, so that a slow or fast spell of the
+            # runner falls on both.
+            - name: Timings
+              working-directory: head
+              run: |
+                  for round in $(seq "$ROUNDS"); do
+                      if [ -d ../base ]; then
+                          PERF_RESULTS="$RESULTS/base/timing-$round.jsonl" WP_BASE_URL=http://localhost:8889 \
+                              npm run test:perf -- --grep @timing || true
+                      fi
+                      PERF_RESULTS="$RESULTS/head/timing-$round.jsonl" WP_BASE_URL=http://localhost:8888 \
+                          npm run test:perf -- --grep @timing
+                  done
+
+            - name: Report
+              if: always()
+              working-directory: head
+              run: |
+                  set +e
+                  node tools/perf-report.mjs \
+                      --head "$RESULTS/head" \
+                      --base "$RESULTS/base" \
+                      --budgets tests/perf/budgets.json \
+                      --strict > "$RESULTS/report.md"
+                  status=$?
+                  cat "$RESULTS/report.md" >> "$GITHUB_STEP_SUMMARY"
+                  exit $status
+
+            - name: Upload results
+              if: always()
+              uses: actions/upload-artifact@v4
+              with:
+                  name: perf-results
+                  path: results
+                  retention-days: 30
+                  if-no-files-found: ignore
+
+            - name: WordPress debug log
+              if: failure()
+              working-directory: head
+              run: npx wp-env run wordpress cat wp-content/debug.log || true

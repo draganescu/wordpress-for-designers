@@ -12,6 +12,7 @@ The plugin is built through Milestone 12 of `spec/build-order.md`, plus the deci
 | End-to-end tests, one per criterion | 155. AC-INS-10 and AC-NAME-01 to 03 (D62, D63) joined on 2026-11-20 on their own branch. AC-CANVAS-08 to 11 and AC-PERF-04 (touch, D64) were added on 2026-11-20 and run with Chromium's emulated touches. With the naming and inserter work merged in, the suite of 155 was run once from the touch worktree on its own site: 154 passed and AC-PERF-03 failed, as it does from any worktree. They, AC-SHELL-10 to 13 (D49, D50) and AC-STYLE-11 (D58) joined after the runs described next. On 2026-11-20 the whole suite of 127, AC-SAVE-08 and AC-SAVE-09 (D48) included, was run once from a worktree: 126 pass and AC-PERF-03 fails, as it does from any worktree. On 2026-11-19 the suite of 125 was run three times: all pass after two fixes to the tests. AC-CANVAS-03 used an empty-board point that D42's Keyboard shortcuts control now covers; AC-STYLE-07 (and three like it in `ins.spec.ts` and `style.spec.ts`) counted menu rows once instead of waiting for them, and failed one run in three. AC-PERF-03 still fails on a port-8890 environment from a worktree (see working-notes.md). After D51 to D54, D59 and D60 the suite was run from their worktree on its own site: 128 passed and AC-PERF-03 failed, as it does from any worktree (see working-notes.md). On the browser branch (D55 to D57 and D61) the suite was run from its worktree on its own site before the other decisions were merged in: 133 of 134 passed and AC-PERF-03 failed, as it does from any worktree |
 | `npm run lint` | Exits 0, no disabled lines |
 | CI | `.github/workflows/tests.yml` runs lint, build and the suite (Chromium, wp-env) on every pull request; CI retries a failed test twice and reports a pass on retry as flaky |
+| Performance | `.github/workflows/perf.yml` measures every pull request that changes more than documents against its base and fails on a broken budget; see [performance.md](performance.md) |
 | Open questions waiting for the product owner | 36 (`spec/open-questions.md`) |
 | Browsers the suite runs in | Chromium only, touch included |
 | WordPress it was built and tested on | 7.2-RC2, Twenty Twenty-Five, PHP 8.2, no Gutenberg plugin |
@@ -62,6 +63,7 @@ uninstall.php                 Deletes all boards and the changes kept for previe
 includes/                     PHP, seven files
 src/                          JavaScript and SCSS, built by wp-scripts into build/
 tests/e2e/                    Playwright tests, test helper plugin, test theme
+tests/perf/                   The performance suite and its budgets
 tools/                        Allowlist data and small scripts
 spikes/                       Throwaway spike code and evidence
 ```
@@ -106,6 +108,8 @@ Two entries: `boards` (the Boards list, `src/boards/`) and `board` (the app, `sr
 ### Tests (`tests/e2e/`, about 7,000 lines)
 
 Twenty-two spec files, one per acceptance group: `a11y`, `board`, `canvas`, `data`, `del`, `dev`, `edit`, `index`, `ins`, `key`, `media`, `name`, `new`, `note`, `perf`, `perm`, `save`, `shell`, `state`, `style`, `tier`, `undo`. `utils.ts` has the shared helpers. `plugin/` is the test helper plugin. `themes/wfd-viewport` is a theme with non-default breakpoints for AC-DEV-02.
+
+`tests/perf/` is a separate suite that measures and records instead of asserting: counts, memory, timings and gestures, with budgets in `tests/perf/budgets.json`. It is described in [performance.md](performance.md).
 
 The app marks elements for the tests with `data-wfd-*` attributes: `region`, `control` (the H and L ids of `spec/screens/README.md`), `artboard`, `tier`, `kind`, `device`, `row`, `group`, `panel`, `placement`, `placer`, `banner`, `stale`, `live-notice`, `lock-dialog`, `template-control`, `new` (a New row of the inserter), `name-field`.
 

@@ -47,15 +47,8 @@ jobs:
                   node-version: 24
                   cache: npm
 
-            - run: npm ci
-
-            - run: npm run build
-
-            - name: Install Chromium
-              run: npx playwright install --with-deps chromium
-
-            - name: Start WordPress
-              run: npx wp-env start
+            # npm ci, the build, Chromium and wp-env start.
+            - uses: ./.github/actions/site
 
             # Retries are on in CI (wp-scripts sets two). A test that passes on
             # a retry is reported as flaky in the summary, not as a failure.
