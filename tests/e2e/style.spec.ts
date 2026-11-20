@@ -821,7 +821,7 @@ test.describe( 'STYLE', () => {
         await expect( trigger ).toHaveText( 'Variation: Custom' );
     } );
 
-    test( "AC-STYLE-12 A stock styles screen that throws shows WordPress's error notice in its place; the board, the other tabs and the other stock screens keep working", async ( {
+    test( "AC-STYLE-12 A stock styles screen that throws shows WordPress's error notice in its place and is closed when its tab is left; the board, the other tabs and the other stock screens keep working", async ( {
         page,
     } ) => {
         await setViewport( page, { x: 40, y: 40, zoom: 0.25 } );
@@ -867,18 +867,37 @@ test.describe( 'STYLE', () => {
             } )
         ).toBe( true );
 
-        // The other tabs, another stock screen and the board still work.
+        // Leaving the tab closes the screen that threw: the list is back
+        // and a screen can be opened from it.
+        await panel.getByRole( 'tab', { name: 'History' } ).click();
+        await panel.getByRole( 'tab', { name: 'Blocks' } ).click();
+        await expect( crashed ).toHaveCount( 0 );
+        await panel.getByRole( 'searchbox' ).fill( 'Paragraph' );
+        await panel
+            .locator( '.wfd-row__name', { hasText: /^Paragraph$/ } )
+            .click();
+        const paragraph = panel
+            .locator( '.wfd-styles__block-styles' )
+            .getByRole( 'heading', { name: 'Paragraph', exact: true } )
+            .first();
+        await expect( paragraph ).toBeVisible();
+
+        // The other tabs, another stock screen and the board still work,
+        // and a screen that has not thrown stays open when its tab is left.
         await panel.getByRole( 'tab', { name: 'Tokens' } ).click();
         await panel
             .getByRole( 'button', { name: 'Edit Colors', exact: true } )
             .click();
         const stock = panel.locator( '.wfd-styles__screen' );
-        await expect(
-            stock
-                .getByRole( 'heading', { name: 'Colors', exact: true } )
-                .first()
-        ).toBeVisible();
+        const colors = stock
+            .getByRole( 'heading', { name: 'Colors', exact: true } )
+            .first();
+        await expect( colors ).toBeVisible();
         await expect( stock ).not.toContainText( 'The editor has crashed' );
+        await panel.getByRole( 'tab', { name: 'Blocks' } ).click();
+        await expect( paragraph ).toBeVisible();
+        await panel.getByRole( 'tab', { name: 'Tokens' } ).click();
+        await expect( colors ).toBeVisible();
         await stock
             .getByRole( 'button', { name: 'Back', exact: true } )
             .click();

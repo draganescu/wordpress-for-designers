@@ -3,7 +3,7 @@
  * history and the variation menu (spec/architecture.md, Styles).
  */
 import { __, sprintf } from '@wordpress/i18n';
-import { useMemo, useState } from '@wordpress/element';
+import { useMemo, useRef, useState } from '@wordpress/element';
 import { useSelect } from '@wordpress/data';
 import { getBlockTypes } from '@wordpress/blocks';
 import {
@@ -113,6 +113,9 @@ export function useStylesPanel( { styles, serverSettings, usesOf } ) {
     // The stock screens open in the Blocks and Tokens tabs, as their paths.
     const [ openBlock, setOpenBlock ] = useState( null );
     const [ openScreen, setOpenScreen ] = useState( null );
+    // Each is true while that tab's stock screen is drawn and has not thrown.
+    const blockStands = useRef( false );
+    const screenStands = useRef( false );
     const allVariations = useSelect(
         ( select ) => getCurrentThemeGlobalStylesVariations( select ) ?? NONE,
         []
@@ -300,10 +303,11 @@ export function useStylesPanel( { styles, serverSettings, usesOf } ) {
 
     // A stock screen has its own Back control: `onLeave` is called when it
     // goes back past the screen.
-    const stockScreen = ( path, onLeave ) => (
+    const stockScreen = ( path, onLeave, standing ) => (
         <StockScreen
             path={ path }
             onLeave={ onLeave }
+            standing={ standing }
             value={ user }
             baseValue={ base }
             onChange={ update }
@@ -333,7 +337,21 @@ export function useStylesPanel( { styles, serverSettings, usesOf } ) {
                 }
             },
             tab,
-            onTabChange: setTab,
+            onTabChange: ( next ) => {
+                // A stock screen that threw is closed when its tab is left,
+                // so the tab shows its own list again (D60).
+                if (
+                    tab === 'tokens' &&
+                    openScreen &&
+                    ! screenStands.current
+                ) {
+                    setOpenScreen( null );
+                }
+                if ( tab === 'blocks' && openBlock && ! blockStands.current ) {
+                    setOpenBlock( null );
+                }
+                setTab( next );
+            },
             colors,
             typography,
             spacing,
@@ -341,7 +359,7 @@ export function useStylesPanel( { styles, serverSettings, usesOf } ) {
             openScreen,
             onOpenScreen: setOpenScreen,
             renderScreen: ( path ) =>
-                stockScreen( path, () => setOpenScreen( null ) ),
+                stockScreen( path, () => setOpenScreen( null ), screenStands ),
             onChangeColor: ( slug, value ) => {
                 const token = colors.find( ( color ) => color.slug === slug );
                 if ( ! token ) {
@@ -388,7 +406,7 @@ export function useStylesPanel( { styles, serverSettings, usesOf } ) {
             openBlock,
             onOpenBlock: setOpenBlock,
             renderBlockStyles: ( path ) =>
-                stockScreen( path, () => setOpenBlock( null ) ),
+                stockScreen( path, () => setOpenBlock( null ), blockStands ),
             historyRows,
             selectedHistoryId: preview?.id ?? null,
             onSelectHistory: ( id ) => {

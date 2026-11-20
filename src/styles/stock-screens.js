@@ -1,11 +1,12 @@
 /**
  * What the plugin knows about WordPress's stock styles screens, the
  * `GlobalStylesUI` of `@wordpress/global-styles-ui`: where they are rendered
- * and what shows when one throws, their paths, and three things the package has but does not export (its
- * element list, what makes a variation a whole one, and when the Background
- * screen is offered). When WordPress exports one of these, or changes a
- * path, this is the only file to change.
+ * and what shows when one throws, their paths, and three things the package
+ * has but does not export (its element list, what makes a variation a whole
+ * one, and when the Background screen is offered). When WordPress exports
+ * one of these, or changes a path, this is the only file to change.
  */
+import { useEffect } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
 import { ErrorBoundary } from '@wordpress/editor';
 import {
@@ -29,6 +30,24 @@ import {
 } from '@wordpress/icons';
 
 /**
+ * Keeps a ref true while it is mounted. Drawn inside the error boundary next
+ * to a stock screen, it is taken out with the screen when the screen throws,
+ * and never put in when the screen throws at once.
+ *
+ * @param {Object} props
+ * @param {Object} props.flag The ref.
+ */
+function Standing( { flag } ) {
+    useEffect( () => {
+        flag.current = true;
+        return () => {
+            flag.current = false;
+        };
+    }, [ flag ] );
+    return null;
+}
+
+/**
  * A stock styles screen and the screens under it. The stock package uses
  * private functions of the block editor WordPress ships; if a screen throws,
  * WordPress's own error notice takes its place and nothing else is lost
@@ -37,6 +56,7 @@ import {
  * @param {Object}   props
  * @param {string}   props.path           The screen's path.
  * @param {Function} props.onLeave        Called when the stock navigation leaves the screen and the ones under it, as its own Back control does.
+ * @param {Object}   props.standing       A ref the screen keeps true while it is drawn and has not thrown.
  * @param {Object}   props.value          The user's global styles.
  * @param {Object}   props.baseValue      The theme's global styles.
  * @param {Function} props.onChange       Called with the user's styles as changed.
@@ -45,6 +65,7 @@ import {
 export function StockScreen( {
     path,
     onLeave,
+    standing,
     value,
     baseValue,
     onChange,
@@ -52,6 +73,7 @@ export function StockScreen( {
 } ) {
     return (
         <ErrorBoundary key={ path }>
+            { standing && <Standing flag={ standing } /> }
             <GlobalStylesUI
                 value={ value }
                 baseValue={ baseValue }
