@@ -230,34 +230,42 @@ export async function postLock(
 }
 
 /**
+ * The middle of the part of an artboard's frame that is inside the canvas
+ * area, or null when none of it is.
+ *
+ * @param page The page.
+ * @param id   The artboard id.
+ */
+export async function visiblePoint( page: Page, id: string ) {
+    const frame = page.locator(
+        `[data-wfd-artboard="${ id }"] .wfd-artboard__frame`
+    );
+    const canvas = page.locator( '[data-wfd-region="canvas"]' );
+    const c = ( await canvas.boundingBox() )!;
+    const f = ( await frame.boundingBox() )!;
+    const left = Math.max( c.x, f.x );
+    const top = Math.max( c.y, f.y );
+    const right = Math.min( c.x + c.width, f.x + f.width );
+    const bottom = Math.min( c.y + c.height, f.y + f.height );
+    return right - left > 2 && bottom - top > 2
+        ? { x: ( left + right ) / 2, y: ( top + bottom ) / 2 }
+        : null;
+}
+
+/**
  * Enters edit on an artboard by double-clicking it, and waits for the editor.
  *
  * @param page The page.
  * @param id   The artboard id.
  */
 export async function enterEdit( page: Page, id: string ) {
-    const frame = page.locator(
-        `[data-wfd-artboard="${ id }"] .wfd-artboard__frame`
-    );
-    const canvas = page.locator( '[data-wfd-region="canvas"]' );
-    const visiblePoint = async () => {
-        const c = ( await canvas.boundingBox() )!;
-        const f = ( await frame.boundingBox() )!;
-        const left = Math.max( c.x, f.x );
-        const top = Math.max( c.y, f.y );
-        const right = Math.min( c.x + c.width, f.x + f.width );
-        const bottom = Math.min( c.y + c.height, f.y + f.height );
-        return right - left > 2 && bottom - top > 2
-            ? { x: ( left + right ) / 2, y: ( top + bottom ) / 2 }
-            : null;
-    };
-    let point = await visiblePoint();
+    let point = await visiblePoint( page, id );
     if ( ! point ) {
         // Bring every artboard into view first.
-        await canvas.focus();
+        await page.locator( '[data-wfd-region="canvas"]' ).focus();
         await page.keyboard.press( 'Shift+Digit1' );
         await page.waitForTimeout( 150 );
-        point = ( await visiblePoint() )!;
+        point = ( await visiblePoint( page, id ) )!;
     }
     await page.mouse.dblclick( point.x, point.y );
     await page
