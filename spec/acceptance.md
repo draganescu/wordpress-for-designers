@@ -165,6 +165,7 @@ Unless a criterion says otherwise, the fixture in `architecture.md` is loaded an
 - AC-STYLE-05 History lists revisions; picking one shows the banner and repaints the board; Restore makes it the edited styles; Stop previewing reverts the board. `[U]`
 - AC-STYLE-06 "Style applies to" set to "All {block}" changes that block's global style and every such block on the board; "This block" changes only the selected block. `[B7]`
 - AC-STYLE-07 Choosing a variation from the menu repaints the board once and adds Styles to Review. `[U]`
+- AC-STYLE-11 With "Style applies to" on "All {block}", the stock styles screen's Back control sets it back to "This block" (D58). `[U]`
 
 ## INDEX
 
@@ -180,8 +181,10 @@ Unless a criterion says otherwise, the fixture in `architecture.md` is loaded an
 - AC-SAVE-03 Save with one item unchecked saves the others and leaves that one changed. `[U]`
 - AC-SAVE-04 When a save request fails, the item stays with the error notice and the button reads "Retry 1 change". `[U]`
 - AC-SAVE-05 Saving a template changes the template on the front end at once; saving a draft page leaves it a draft. `[U]`
-- AC-SAVE-06 Discard all, after confirmation, reverts every edited record and removes unsaved new templates and parts from the board. `[N]`
+- AC-SAVE-06 Discard all, after confirmation, reverts every edited record as one step that Undo and Redo act on, and removes unsaved new templates and parts from the board. `[N]` `[U]`
 - AC-SAVE-07 Closing the tab with unsaved changes triggers the browser's leave warning; with none it does not. `[U]`
+- AC-SAVE-08 Discard on one item, after confirmation, reverts that record alone as one step that Undo and Redo act on, or removes that unsaved new template or part from the board; the other items stay changed. `[U]`
+- AC-SAVE-09 Each item's Discard control shows "Discard" and has the accessible name "Discard changes to {name}". `[U]`
 
 ## STATE
 

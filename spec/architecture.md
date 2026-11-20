@@ -146,7 +146,7 @@ On the canvas area (D50): `[U]`
 
 ## Undo
 
-- Content history is core-data's undo stack. It is active while an artboard is Live. `[B8]`
+- Content history is core-data's undo stack. It is active while an artboard is Live. Discarding saved items' changes from Review, one item or all of them at once, is one step of it (D48). `[B8]` `[U]`
 - Layout history lives in `board-store`: moves, tidying up (D45), device changes, adds and removals from the board, and every change to a note (D46). It lasts for the session. Removing an artboard with the "also delete" box checked is not undoable and clears nothing else. `[B8]` `[U]` `[N]`
 - The header's Undo and Redo act on the active history. Their tooltips name the action and scope, in the form "Undo {action}, in {artboard name}" and "Undo {action}, on the board" (the same with "Redo"). `[U]` `[D:Main]` `[D:Overview]`
 - Action names. On the board: "move artboard", "tidy up", "change device", "add artboard", "remove artboard"; for notes "add note", "move note", "edit note", "change note color", "remove note". Moving or removing artboards and notes together is named for artboards. Editing a note's text, from the moment it enters edit until it leaves, is one step. In an artboard the action is always "edit" ("Undo edit, in Header"); WordPress keeps no name for a content change, so the "block spacing" in `images/Main.png` is not built. `[U]`
@@ -156,10 +156,10 @@ On the canvas area (D50): `[U]`
 - Inputs: the theme's base global styles, the user's `globalStyles` entity (edited record), and, only while a History revision is being previewed, that revision in place of the user record. `[B7]`
 - One merge and one generate per change, using `mergeGlobalStyles` and `generateGlobalStyles`. The resulting stylesheet and settings are given to every mounted artboard. `[B7]` `[V]`
 - Tokens tab: colours (palette), typography (font sizes and families presets), spacing (spacing scale presets), each row with its use count. Editing a token writes through `setSetting` / `setStyle`. `[B7]` `[D:Styles]` `[V]`
-- Blocks tab: a searchable list of block types; choosing one opens `GlobalStylesUI` at that block's path. A block with user changes shows the count of changed properties. `[B7]` `[D:StylesBlocks]` `[V]`
+- Blocks tab: a searchable list of block types; choosing one opens `GlobalStylesUI` at that block's path. A block with user changes shows the count of changed properties. `[B7]` `[D:StylesBlocks]` `[V]` The stock screen's own Back control returns to the list; the plugin adds no back control (D58). `[U]`
 - History tab: global styles revisions, newest first, plus "Unsaved" when there are edits and "Theme default" last. Picking one previews it on the whole board; Restore makes it the edited record; Stop previewing returns to the edited record. `[B7]` `[D:StylesHistory]` `[U]`
 - Variation menu: lists the theme's style variations; choosing one replaces the user record's values with the variation's, as an edit that appears in Review. `[B7]` `[U]`
-- "Style applies to" in the Block tab: "This block" edits the block's own attributes through the stock inspector. "All {block name}" shows `GlobalStylesUI` at that block's path in place of the stock inspector controls. `[B7]` `[D:Main]` `[N]` for the second sentence's mechanism
+- "Style applies to" in the Block tab: "This block" edits the block's own attributes through the stock inspector. "All {block name}" shows `GlobalStylesUI` at that block's path in place of the stock inspector controls. `[B7]` `[D:Main]` `[N]` for the second sentence's mechanism. The stock screen's Back control sets the switch back to "This block" (D58). `[U]`
 
 ## Usage index
 
