@@ -46,12 +46,15 @@ export function useArtboards() {
                     artboard.entityId,
                 ];
                 if ( artboard.draft ) {
-                    // A new template or part: it has edits and no saved record.
+                    // A new template or part: it has edits and no saved
+                    // record. Once those are discarded nothing is left of
+                    // it, and board undo can still bring its artboard back.
+                    const draft = core.getEditedEntityRecord( ...args ) || null;
                     return {
                         ...artboard,
-                        record: core.getEditedEntityRecord( ...args ) || null,
+                        record: draft,
                         name: artboard.draft.title,
-                        status: 'ready',
+                        status: draft?.slug ? 'ready' : 'missing',
                     };
                 }
                 const saved = core.getEntityRecord( ...args );

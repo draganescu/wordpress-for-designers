@@ -30,6 +30,10 @@ Unless a criterion says otherwise, the fixture in `architecture.md` is loaded an
 - AC-SHELL-07 Turning the inserter or list view toggle on shows a hidden left panel; a hidden right panel stays hidden through selection and edit; after a reload both panels are shown. `[U]`
 - AC-SHELL-08 With both panels hidden, resting the pointer on the left edge of the canvas area shows the left panel and on the right edge shows the right panel. `[U]`
 - AC-SHELL-09 In the artboard list, Cmd/Ctrl + click adds a row to the selection and a second one takes it out; Shift + click selects every row from the one clicked last to the one clicked, in list order; a plain click selects one row again. Each selected row has its artboard outlined on the board. `[U]`
+- AC-SHELL-10 A board opened in a window narrower than 1180 px shows "Designing needs more space" with its text over the whole window, and no header or artboard exists; at 1180 px wide the message goes and the board opens. `[U]`
+- AC-SHELL-11 Narrowing the window below 1180 px while an artboard is in edit shows the message over the whole window; Esc and Cmd/Ctrl + \ do nothing, focus cannot reach the board, and after widening the same artboard is still in edit with both panels shown. `[U]`
+- AC-SHELL-12 At 1180 × 820, 1440 × 900 and 1600 × 900, with a block selected in an artboard in edit, the header controls are in order H1 to H5, H10, H13, H6, H7, H12, H8, H11, H9 inside the window with none overlapping the next, and H14 is at the end of H6; H1 and the tool buttons have the widths they have with nothing in edit; the block toolbar is shown whole; of the document bar only the back button shows, next to H14; with the toolbar's room made smaller than the toolbar, the wheel scrolls the toolbar to its end. At 1180 px the left panel is narrower than 280 px, the right panel narrower than 360 px and the canvas area at least 600 px wide. `[U]`
+- AC-SHELL-13 With a block selected in an artboard in edit, H14 is labelled "Hide block tools" and the document bar's title is not shown; pressing H14 hides the block toolbar, shows the title and changes the label to "Show block tools"; pressing it again shows the toolbar and hides the title; with the toolbar hidden, selecting another block shows it again. With no block selected H14 is not shown and the title is. "Back to the board" is visible in each of these states. `[U]`
 
 ## CANVAS
 
@@ -69,7 +73,7 @@ Unless a criterion says otherwise, the fixture in `architecture.md` is loaded an
 - AC-TIER-08 Zooming while an artboard is Live keeps it in edit at 30% or more; when the zoom settles below 30% edit ends and the artboard stays selected; panning does not leave edit. `[U]`
 - AC-TIER-09 After editing artboards A, B, C, D in turn, D is `live`, C and B are `warm`, A is not. `[U]`
 - AC-TIER-10 A `snapshot` artboard's frame contains no React root and triggers no store subscription callbacks when an entity changes. `[B5]`
-- AC-TIER-11 After a global style change, an artboard that was `snapshot` shows the new style when it next becomes `preview`. `[B5]`
+- AC-TIER-11 After a global style change, an artboard that is `snapshot` shows the new style without becoming `preview`; its old copy is shown until the new one is ready (D51). `[U]`
 - AC-TIER-12 Below 20% zoom an artboard that was never rendered gets its frozen copy without becoming `preview`; no `Skeleton` is left once every such artboard has one. `[U]`
 - AC-TIER-13 An artboard whose content is taller than 2000 px shows all of it as a Preview and as a Snapshot, at the height it has in edit. `[U]`
 
@@ -172,6 +176,11 @@ Unless a criterion says otherwise, the fixture in `architecture.md` is loaded an
 - AC-STYLE-05 History lists revisions; picking one shows the banner and repaints the board; Restore makes it the edited styles; Stop previewing reverts the board. `[U]`
 - AC-STYLE-06 "Style applies to" set to "All {block}" changes that block's global style and every such block on the board; "This block" changes only the selected block. `[B7]`
 - AC-STYLE-07 Choosing a variation from the menu repaints the board once and adds Styles to Review. `[U]`
+- AC-STYLE-08 In the Tokens tab, "Edit" on Colors, Typography and Spacing and the "Background" and "Shadows" rows each open the stock styles screen for it; a change made there repaints the board and adds Styles to Review; the screen's Back control returns to the tokens (D52). `[U]`
+- AC-STYLE-09 The Blocks tab lists the elements in the groups "Elements", "Headings" and "Form controls" before the blocks; an element row opens the stock styles screen for that element; a change made there repaints the board, shows as the row's change count and adds Styles to Review (D53). `[U]`
+- AC-STYLE-10 The variation menu reads "Variation: Default" for the theme's own styles, "Variation: {name}" when the styles are exactly a variation and "Variation: Custom" after any further change; its first item, "Default", returns the styles to the theme's (D54). `[U]`
+- AC-STYLE-11 With "Style applies to" on "All {block}", the stock styles screen's Back control sets it back to "This block" (D58). `[U]`
+- AC-STYLE-12 A stock styles screen that throws shows WordPress's stock error notice in its place; the board, the other tabs and the other stock screens keep working; switching to another tab closes the screen that threw, so its tab shows its list again, and leaves open a screen that did not (D60). `[U]`
 
 ## INDEX
 
@@ -187,8 +196,10 @@ Unless a criterion says otherwise, the fixture in `architecture.md` is loaded an
 - AC-SAVE-03 Save with one item unchecked saves the others and leaves that one changed. `[U]`
 - AC-SAVE-04 When a save request fails, the item stays with the error notice and the button reads "Retry 1 change". `[U]`
 - AC-SAVE-05 Saving a template changes the template on the front end at once; saving a draft page leaves it a draft. `[U]`
-- AC-SAVE-06 Discard all, after confirmation, reverts every edited record and removes unsaved new templates and parts from the board. `[N]`
+- AC-SAVE-06 Discard all, after confirmation, reverts every edited record as one step that Undo and Redo act on, and removes unsaved new templates and parts from the board. `[N]` `[U]`
 - AC-SAVE-07 Closing the tab with unsaved changes triggers the browser's leave warning; with none it does not. `[U]`
+- AC-SAVE-08 Discard on one item, after confirmation, reverts that record alone as one step that Undo and Redo act on, or removes that unsaved new template or part from the board; the other items stay changed. `[U]`
+- AC-SAVE-09 Each item's Discard control shows "Discard" and has the accessible name "Discard changes to {name}". `[U]`
 
 ## STATE
 

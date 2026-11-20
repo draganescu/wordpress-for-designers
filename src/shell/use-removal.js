@@ -6,6 +6,7 @@ import { useCallback } from '@wordpress/element';
 import { useDispatch, useRegistry } from '@wordpress/data';
 import { store as coreStore } from '@wordpress/core-data';
 import { store as boardStore } from '../board-store';
+import { discardEntityEdits } from '../review/discard-entity-edits';
 import { KINDS } from './constants';
 
 /**
@@ -33,8 +34,7 @@ export function removalInfo( artboard ) {
 
 export function useRemoval() {
     const registry = useRegistry();
-    const { saveEntityRecord, deleteEntityRecord, editEntityRecord } =
-        useDispatch( coreStore );
+    const { saveEntityRecord, deleteEntityRecord } = useDispatch( coreStore );
     const { removeArtboard, removeArtboards } = useDispatch( boardStore );
 
     return useCallback(
@@ -42,25 +42,11 @@ export function useRemoval() {
             const postType = KINDS[ artboard.kind ].postType;
             if ( artboard.draft ) {
                 // Never saved: drop the session's edits with the artboard.
-                const edits =
-                    registry
-                        .select( coreStore )
-                        .getEntityRecordEdits(
-                            'postType',
-                            postType,
-                            artboard.entityId
-                        ) ?? {};
-                editEntityRecord(
+                discardEntityEdits(
+                    registry,
                     'postType',
                     postType,
-                    artboard.entityId,
-                    Object.fromEntries(
-                        Object.keys( edits ).map( ( key ) => [
-                            key,
-                            undefined,
-                        ] )
-                    ),
-                    { undoIgnore: true }
+                    artboard.entityId
                 );
                 removeArtboard( artboard.id, { undoable: false } );
                 return;
@@ -110,7 +96,6 @@ export function useRemoval() {
             registry,
             saveEntityRecord,
             deleteEntityRecord,
-            editEntityRecord,
             removeArtboard,
             removeArtboards,
         ]

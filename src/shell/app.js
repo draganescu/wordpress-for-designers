@@ -455,19 +455,32 @@ export function App() {
         ( select ) => select( boardStore ).getWarmIds(),
         []
     );
-    // Artboards whose one render for a frozen copy is over, with or without
-    // a copy to show for it.
-    const [ rendered, setRendered ] = useState( () => new Set() );
+    const styles = useGlobalStyles( serverSettings );
+    // The number of the stylesheet each artboard's frozen copy was made
+    // with. An artboard rendered once for a copy that gave nothing to freeze
+    // has the number of that render.
+    const [ rendered, setRendered ] = useState( () => new Map() );
+    const noteRendered = useCallback(
+        ( id, number ) =>
+            setRendered( ( current ) =>
+                current.get( id ) === number
+                    ? current
+                    : new Map( current ).set( id, number )
+            ),
+        []
+    );
     const failedKey = artboards
         .filter( ( artboard ) => artboard.status === 'failed' )
         .map( ( artboard ) => artboard.id )
         .join( ' ' );
+    // A frozen copy made with an older stylesheet than the settled one does
+    // not count: the artboard is rendered once more to renew it (D51).
+    const settledStyles = styles.settledVersion;
     const hasCopy = useCallback(
         ( id ) =>
-            snapshots.has( id ) ||
-            rendered.has( id ) ||
-            failedKey.split( ' ' ).includes( id ),
-        [ snapshots, rendered, failedKey ]
+            failedKey.split( ' ' ).includes( id ) ||
+            rendered.get( id ) >= settledStyles,
+        [ rendered, failedKey, settledStyles ]
     );
     const { tiers, mounted, source } = useTiers( {
         rects,
@@ -478,7 +491,6 @@ export function App() {
         onMount: ( id ) => counters.mountOrder.push( id ),
         hasCopy,
     } );
-    const styles = useGlobalStyles( serverSettings );
     const usage = useUsageIndex( artboards, styles.merged );
     const stylesPanel = useStylesPanel( {
         styles,
@@ -700,7 +712,8 @@ export function App() {
                 blockStyles={
                     editing.selectedBlock && scope === 'all'
                         ? stylesPanel.blockStylesFor(
-                              editing.selectedBlock.name
+                              editing.selectedBlock.name,
+                              () => setScope( 'block' )
                           )
                         : null
                 }
@@ -977,6 +990,38 @@ export function App() {
                                 let content = null;
                                 const onHeight = ( height ) =>
                                     updateArtboard( artboard.id, { height } );
+                                // The one render of a Snapshot artboard
+                                // that has no frozen copy, or whose copy
+                                // was made with older styles (D51). It
+                                // takes the styles without the highlight
+                                // of the picked token, which a frozen
+                                // copy would keep after the token is
+                                // let go.
+                                const once = tier === 'snapshot' &&
+                                    source === artboard.id &&
+                                    ! hasCopy( artboard.id ) && (
+                                        <ArtboardPreviewOnce
+                                            key="once"
+                                            artboard={ artboard }
+                                            width={ width }
+                                            settings={ styles.editorSettings }
+                                            isBusy={ viewport.isGesturing }
+                                            onSettled={ ( element, height ) => {
+                                                if ( height ) {
+                                                    onHeight( height );
+                                                }
+                                                snapshots.capture(
+                                                    artboard.id,
+                                                    element,
+                                                    renderVersion
+                                                );
+                                                noteRendered(
+                                                    artboard.id,
+                                                    settledStyles
+                                                );
+                                            } }
+                                        />
+                                    );
                                 if ( isMedia ) {
                                     content = (
                                         <ArtboardMedia
@@ -1027,13 +1072,20 @@ export function App() {
                                             width={ width }
                                             settings={ previewSettings }
                                             onHeight={ onHeight }
-                                            onFreeze={ ( element ) =>
-                                                snapshots.capture(
-                                                    artboard.id,
-                                                    element,
-                                                    renderVersion
-                                                )
-                                            }
+                                            onFreeze={ ( element ) => {
+                                                if (
+                                                    snapshots.capture(
+                                                        artboard.id,
+                                                        element,
+                                                        renderVersion
+                                                    )
+                                                ) {
+                                                    noteRendered(
+                                                        artboard.id,
+                                                        styles.version
+                                                    );
+                                                }
+                                            } }
                                         />
                                     );
                                 } else if (
@@ -1041,48 +1093,27 @@ export function App() {
                                     snapshots.has( artboard.id )
                                 ) {
                                     // The frozen copy of its last Preview.
-                                    content = (
+                                    // After a style change it lies over
+                                    // the render that will replace it.
+                                    content = [
+                                        once,
                                         <ArtboardSnapshot
+                                            key="copy"
                                             id={ artboard.id }
                                             store={ snapshots }
-                                        />
-                                    );
-                                } else if (
-                                    tier === 'snapshot' &&
-                                    source === artboard.id &&
-                                    ! rendered.has( artboard.id )
-                                ) {
+                                            isOver={ !! once }
+                                        />,
+                                    ];
+                                } else if ( once ) {
                                     // Never rendered: rendered once here to
                                     // make its frozen copy.
-                                    content = (
-                                        <>
-                                            <ArtboardPreviewOnce
-                                                artboard={ artboard }
-                                                width={ width }
-                                                settings={ previewSettings }
-                                                isBusy={ viewport.isGesturing }
-                                                onSettled={ (
-                                                    element,
-                                                    height
-                                                ) => {
-                                                    if ( height ) {
-                                                        onHeight( height );
-                                                    }
-                                                    snapshots.capture(
-                                                        artboard.id,
-                                                        element,
-                                                        renderVersion
-                                                    );
-                                                    setRendered( ( current ) =>
-                                                        new Set( current ).add(
-                                                            artboard.id
-                                                        )
-                                                    );
-                                                } }
-                                            />
-                                            <Skeleton className="wfd-artboard__skeleton" />
-                                        </>
-                                    );
+                                    content = [
+                                        once,
+                                        <Skeleton
+                                            key="skeleton"
+                                            className="wfd-artboard__skeleton"
+                                        />,
+                                    ];
                                 } else if (
                                     tier === 'preview' ||
                                     ( tier === 'snapshot' &&

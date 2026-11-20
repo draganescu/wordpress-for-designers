@@ -22,6 +22,10 @@ import {
 import { counters } from '../shell/test-hooks';
 
 const EMPTY = { settings: {}, styles: {} };
+// How long the styles have to stay unchanged before frozen copies are
+// renewed from them (decision D51): a dragged control changes them on every
+// animation frame.
+const SETTLE = 300;
 
 /**
  * @param {Object} serverSettings Block editor settings from the server.
@@ -67,7 +71,10 @@ export function useGlobalStyles( serverSettings ) {
     );
 
     // One generation per change, at most one per animation frame while a
-    // control is dragged.
+    // control is dragged. Each stylesheet handed out has a number; the
+    // server's is 1. The number goes up only when the generated CSS differs
+    // from the last: a save, or an edit that writes equal values, gives new
+    // objects and the same CSS, and repaints nothing.
     const [ output, setOutput ] = useState( null );
     useEffect( () => {
         if ( ! merged ) {
@@ -78,16 +85,17 @@ export function useGlobalStyles( serverSettings ) {
             const hasBlockGapSupport =
                 blockGap !== null && blockGap !== undefined;
             counters.styleGenerations++;
-            const [ styles, settings ] = generateGlobalStyles(
-                merged,
-                getBlockTypes(),
-                {
-                    hasBlockGapSupport,
-                    hasFallbackGapSupport: ! hasBlockGapSupport,
-                    disableLayoutStyles: !! serverSettings.disableLayoutStyles,
-                }
+            const [ styles ] = generateGlobalStyles( merged, getBlockTypes(), {
+                hasBlockGapSupport,
+                hasFallbackGapSupport: ! hasBlockGapSupport,
+                disableLayoutStyles: !! serverSettings.disableLayoutStyles,
+            } );
+            const css = JSON.stringify( styles );
+            setOutput( ( last ) =>
+                last?.css === css
+                    ? last
+                    : { styles, css, version: ( last?.version ?? 1 ) + 1 }
             );
-            setOutput( { styles, settings } );
         } );
         return () => window.cancelAnimationFrame( frame );
     }, [ merged, serverSettings ] );
@@ -107,6 +115,15 @@ export function useGlobalStyles( serverSettings ) {
             ],
         };
     }, [ serverSettings, output ] );
+
+    // `settledVersion` is the number of the stylesheet that has stayed
+    // unchanged for a moment.
+    const version = output?.version ?? 1;
+    const [ settledVersion, setSettledVersion ] = useState( version );
+    useEffect( () => {
+        const timer = setTimeout( () => setSettledVersion( version ), SETTLE );
+        return () => clearTimeout( timer );
+    }, [ version ] );
 
     const update = useCallback(
         ( next ) => {
@@ -129,6 +146,8 @@ export function useGlobalStyles( serverSettings ) {
         merged: merged ?? EMPTY,
         hasEdits,
         editorSettings,
+        version,
+        settledVersion,
         update,
         preview,
         setPreview,

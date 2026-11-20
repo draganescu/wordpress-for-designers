@@ -4,7 +4,7 @@
 
 **State.** The Review drawer with three changed items.
 
-**Source.** [U] [D:Review]; the discard confirmation, the five-line limit and the wording of block change lines are [N]
+**Source.** [U] [D:Review]; each item's "Discard" control and what it does are D48 [U] and are not in the image; that control's variant and place, the wording of the discard confirmations, the five-line limit and the wording of block change lines are [N]
 
 ## Regions used (defined in README.md)
 
@@ -14,9 +14,9 @@
 
 | Element | Components and text | Behaviour |
 |---|---|---|
-| Drawer | `Drawer` large (560) from the right, over a dimmed board. Title "Review changes", close `IconButton`. Intro: "Nothing reaches the site until you save. Artboard positions on the board save on their own." One `Card` per changed item with a checked `wpc.CheckboxControl`, the item name, a second line, and its changes. Second line: styles "Site-wide · {n} changes"; template part "Template part · used by {n} templates"; template "Template"; page "Page · {status}"; pattern "Pattern · {status}"; the site's settings (edited through the Site Title, Tagline and Logo blocks) "Site"; a navigation menu (edited through the Navigation block) "Navigation menu"; a new item is prefixed "New ". Footer: `Button` minimal error "Discard all", `Button` outline "Keep editing", `Button` solid "Save {n} changes" / "Save 1 change" counting checked items. | Save sends the checked items. Keep editing and close shut the drawer. Discard all asks for confirmation in an `AlertDialog` ("Discard all changes?", "This can't be undone.", "Cancel", "Discard") and then reverts every edited record. |
+| Drawer | `Drawer` large (560) from the right, over a dimmed board. Title "Review changes", close `IconButton`. Intro: "Nothing reaches the site until you save. Artboard positions on the board save on their own." One `Card` per changed item with a checked `wpc.CheckboxControl`, the item name, a second line, a `Button` minimal "Discard" at the end of the card's header, with the accessible name "Discard changes to {name}" (D48), and its changes. Second line: styles "Site-wide · {n} changes"; template part "Template part · used by {n} templates"; template "Template"; page "Page · {status}"; pattern "Pattern · {status}"; the site's settings (edited through the Site Title, Tagline and Logo blocks) "Site"; a navigation menu (edited through the Navigation block) "Navigation menu"; a new item is prefixed "New ". Footer: `Button` minimal error "Discard all", `Button` outline "Keep editing", `Button` solid "Save {n} changes" / "Save 1 change" counting checked items. | Save sends the checked items. Keep editing and close shut the drawer. Discard all asks for confirmation in an `AlertDialog` ("Discard all changes?", "Cancel", "Discard") and then reverts every edited record, as one step of the content history (D48), and removes every unsaved new template and part from the board. When one of those is among the items the dialog also reads "This can't be undone." Discard on an item asks for confirmation in an `AlertDialog` ("Discard changes to {name}?", "Cancel", "Discard") and then reverts that record alone, as one step of the content history (D48). For an unsaved new template or part the dialog also reads "This can't be undone.", and confirming removes it from the board. The other items and the drawer stay as they are. |
 | Change lines | For global styles, one line per change from `getGlobalStylesChanges`, plus "Shows on {n} artboards". For other items, one line per changed block in the form "{block title}: {what changed}", at most five lines then "and {n} more". | Artboards with changes show "· Changed" in their label and a caution-tone outline while the drawer is open. |
 
 ## Acceptance criteria
 
-AC-SAVE-01, AC-SAVE-02, AC-SAVE-03, AC-SAVE-05
+AC-SAVE-01, AC-SAVE-02, AC-SAVE-03, AC-SAVE-05, AC-SAVE-06, AC-SAVE-08, AC-SAVE-09

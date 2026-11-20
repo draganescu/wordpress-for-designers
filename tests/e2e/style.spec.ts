@@ -269,10 +269,29 @@ test.describe( 'STYLE', () => {
         await expect( stock.getByText( 'Typography' ).first() ).toBeVisible();
         await expect( stock.getByText( 'Color' ).first() ).toBeVisible();
         await expect( rows ).toHaveCount( 0 );
-        await panel
-            .locator( '.wfd-styles__block-back' )
-            .getByRole( 'button' )
+        // The block's title and the back control are shown once: the stock
+        // screen's.
+        const heading = ( name: string ) =>
+            panel.getByRole( 'heading', { name, exact: true } );
+        const back = panel.getByRole( 'button', { name: 'Back', exact: true } );
+        await expect( heading( 'Button' ) ).toHaveCount( 1 );
+        await expect(
+            panel.getByText( 'Button', { exact: true } )
+        ).toHaveCount( 1 );
+        await expect( back ).toHaveCount( 1 );
+
+        // Back on a style variation's screen returns to the block, and on the
+        // block's screen to the list.
+        await stock
+            .getByRole( 'button', { name: 'Outline', exact: true } )
             .click();
+        await expect( heading( 'Outline' ) ).toHaveCount( 1 );
+        await expect( heading( 'Button' ) ).toHaveCount( 0 );
+        await back.click();
+        await expect( heading( 'Button' ) ).toHaveCount( 1 );
+        await expect( heading( 'Outline' ) ).toHaveCount( 0 );
+        await expect( rows ).toHaveCount( 0 );
+        await back.click();
         await expect( stock ).toHaveCount( 0 );
         await expect( rows.first() ).toBeVisible();
     } );
@@ -494,8 +513,20 @@ test.describe( 'STYLE', () => {
         } );
         await menu.click();
         const items = page.getByRole( 'menuitemradio' );
-        await expect.poll( () => items.count() ).toBeGreaterThan( 2 );
-        await expect( items.filter( { hasText: 'Evening' } ) ).toHaveCount( 1 );
+        await expect( items.first() ).toBeVisible();
+        // The theme's whole variations only: its colour-only and type-only
+        // presets are not variations.
+        await expect( items ).toHaveText( [
+            'Default',
+            'Evening',
+            'Noon',
+            'Dusk',
+            'Afternoon',
+            'Twilight',
+            'Morning',
+            'Sunrise',
+            'Midnight',
+        ] );
         await items.filter( { hasText: 'Evening' } ).click();
         await expect(
             right( page ).getByRole( 'button', { name: 'Variation: Evening' } )
@@ -507,6 +538,7 @@ test.describe( 'STYLE', () => {
         expect( ( await counters( page ) ).styleGenerations - before ).toBe(
             1
         );
+
         await expect( page.locator( '[data-wfd-control="H9"]' ) ).toHaveText(
             'Review 1 change'
         );
@@ -514,5 +546,417 @@ test.describe( 'STYLE', () => {
         await expect(
             page.getByRole( 'dialog', { name: 'Review changes' } )
         ).toContainText( 'Styles' );
+    } );
+
+    test( 'AC-STYLE-08 In the Tokens tab, Edit on a group and the Background and Shadows rows open the stock styles screens', async ( {
+        page,
+    } ) => {
+        await setViewport( page, { x: 40, y: 40, zoom: 0.25 } );
+        const panel = right( page );
+        const tokens = panel.getByRole( 'tabpanel' );
+        const back = panel.getByRole( 'button', { name: 'Back', exact: true } );
+        const edit = ( group: string ) =>
+            panel.getByRole( 'button', {
+                name: `Edit ${ group }`,
+                exact: true,
+            } );
+        const row = ( name: string ) =>
+            tokens.locator( '.wfd-row', {
+                has: page.locator( '.wfd-row__name', {
+                    hasText: new RegExp( `^${ name }$` ),
+                } ),
+            } );
+
+        // Each entry opens its stock screen in place of the tokens, and the
+        // screen's own Back control returns to them.
+        const entries: [ ReturnType< typeof edit >, string, string ][] = [
+            [ edit( 'Colors' ), 'Edit', 'Colors' ],
+            [ edit( 'Typography' ), 'Edit', 'Typography' ],
+            [ edit( 'Spacing' ), 'Edit', 'Layout' ],
+            [ row( 'Background' ), 'Background', 'Background' ],
+            [ row( 'Shadows' ), 'Shadows', 'Shadows' ],
+        ];
+        for ( const [ entry, text, title ] of entries ) {
+            await expect( entry ).toHaveText( text );
+            await entry.click();
+            const stock = panel.locator( '.wfd-styles__screen' );
+            await expect( stock ).toBeVisible();
+            await expect(
+                stock
+                    .getByRole( 'heading', { name: title, exact: true } )
+                    .first()
+            ).toBeVisible();
+            await expect( back ).toHaveCount( 1 );
+            await expect( edit( 'Colors' ) ).toHaveCount( 0 );
+            await expect( tokens.locator( '.wfd-row' ) ).toHaveCount( 0 );
+            await back.click();
+            await expect( stock ).toHaveCount( 0 );
+            await expect( edit( 'Colors' ) ).toBeVisible();
+        }
+
+        // A screen under the stock screen goes back to it, not to the tokens.
+        await edit( 'Typography' ).click();
+        // The base text's screen opens (it needs a stock styles package
+        // that matches the WordPress in use).
+        await panel
+            .getByRole( 'button', { name: 'Text', exact: true } )
+            .click();
+        await expect( panel ).toContainText(
+            'Manage the fonts used on the site.'
+        );
+        await back.click();
+        await panel
+            .getByRole( 'button', { name: 'Font size presets' } )
+            .click();
+        await expect(
+            panel.getByRole( 'heading', { name: 'Font size presets' } )
+        ).toBeVisible();
+        await back.click();
+        await expect(
+            panel.getByRole( 'heading', { name: 'Typography', exact: true } )
+        ).toBeVisible();
+        await back.click();
+        await expect( edit( 'Typography' ) ).toBeVisible();
+
+        // A change made in a stock screen repaints the board and is a
+        // Styles change in Review.
+        const index = artboardOf( fixture, 'template' );
+        const contentSize = () =>
+            page
+                .locator( `[data-wfd-artboard="${ index.id }"] iframe` )
+                .first()
+                .evaluate( ( frame: HTMLIFrameElement ) =>
+                    frame.contentDocument?.body
+                        ? frame
+                              .contentWindow!.getComputedStyle(
+                                  frame.contentDocument.body
+                              )
+                              .getPropertyValue(
+                                  '--wp--style--global--content-size'
+                              )
+                              .trim()
+                        : null
+                )
+                .catch( () => null );
+        await expect.poll( contentSize ).toBe( '645px' );
+        await expect( page.locator( '[data-wfd-control="H9"]' ) ).toHaveText(
+            'Review changes'
+        );
+        await edit( 'Spacing' ).click();
+        const width = panel.getByRole( 'spinbutton', {
+            name: 'Content width',
+        } );
+        await width.fill( '500' );
+        await width.press( 'Enter' );
+        await expect.poll( contentSize ).toBe( '500px' );
+        await expect( page.locator( '[data-wfd-control="H9"]' ) ).toHaveText(
+            'Review 1 change'
+        );
+        await page.locator( '[data-wfd-control="H9"]' ).click();
+        await expect(
+            page.getByRole( 'dialog', { name: 'Review changes' } )
+        ).toContainText( 'Styles' );
+    } );
+
+    test( 'AC-STYLE-09 The Blocks tab lists the elements in groups before the blocks, and an element row opens the stock styles screen for it', async ( {
+        page,
+    } ) => {
+        await setViewport( page, { x: 40, y: 40, zoom: 0.25 } );
+        const panel = right( page );
+        await panel.getByRole( 'tab', { name: 'Blocks' } ).click();
+        const list = panel.getByRole( 'tabpanel' );
+        await expect( list.getByRole( 'heading' ) ).toHaveText( [
+            'Elements',
+            'Headings',
+            'Form controls',
+            'Blocks',
+        ] );
+        const names = list.locator( '.wfd-row__name' );
+        await expect( names.nth( 13 ) ).toBeVisible();
+        expect( ( await names.allInnerTexts() ).slice( 0, 14 ) ).toEqual( [
+            'Link',
+            'Caption',
+            'Citation',
+            'All headings',
+            'Heading 1',
+            'Heading 2',
+            'Heading 3',
+            'Heading 4',
+            'Heading 5',
+            'Heading 6',
+            'Input',
+            'Select',
+            'Button (element)',
+            'Paragraph',
+        ] );
+
+        // The search finds an element by name and by its group's title.
+        const search = panel.getByRole( 'searchbox' );
+        await search.fill( 'h1' );
+        await expect( names ).toHaveText( [ 'Heading 1' ] );
+        await search.fill( 'form controls' );
+        await expect( names ).toHaveText( [
+            'Input',
+            'Select',
+            'Button (element)',
+        ] );
+        await expect( list.getByRole( 'heading' ) ).toHaveText( [
+            'Form controls',
+        ] );
+
+        // A row reads as the stock screen it opens does.
+        const stock = panel.locator( '.wfd-styles__block-styles' );
+        await names.filter( { hasText: /^Button \(element\)$/ } ).click();
+        await expect(
+            stock
+                .getByRole( 'heading', {
+                    name: 'Button (element)',
+                    exact: true,
+                } )
+                .first()
+        ).toBeVisible();
+        await stock
+            .getByRole( 'button', { name: 'Back', exact: true } )
+            .click();
+        await search.fill( '' );
+
+        // An element opens its stock screen; a change there repaints the
+        // board, is counted on its row and is a Styles change in Review.
+        const index = artboardOf( fixture, 'template' );
+        const ratio = () =>
+            page
+                .locator( `[data-wfd-artboard="${ index.id }"] iframe` )
+                .first()
+                .evaluate( ( frame: HTMLIFrameElement ) => {
+                    const heading = frame.contentDocument?.querySelector(
+                        'h1, h2, h3, h4, h5, h6'
+                    );
+                    if ( ! heading ) {
+                        return null;
+                    }
+                    const style =
+                        frame.contentWindow!.getComputedStyle( heading );
+                    return Math.round(
+                        parseFloat( style.lineHeight ) /
+                            parseFloat( style.fontSize )
+                    );
+                } )
+                .catch( () => null );
+        await expect.poll( ratio ).toBe( 1 );
+        const row = list.locator( '.wfd-row', {
+            has: page.locator( '.wfd-row__name', {
+                hasText: /^All headings$/,
+            } ),
+        } );
+        await expect( row ).not.toContainText( 'change' );
+        await row.click();
+        await expect(
+            stock.getByRole( 'heading', { name: 'All headings' } ).first()
+        ).toBeVisible();
+        await expect( stock ).toContainText(
+            'Manage the appearance of all headings.'
+        );
+        const lineHeight = stock.getByRole( 'spinbutton', {
+            name: 'Line height',
+        } );
+        await lineHeight.fill( '3' );
+        await lineHeight.press( 'Enter' );
+        await expect.poll( ratio ).toBe( 3 );
+        await expect( page.locator( '[data-wfd-control="H9"]' ) ).toHaveText(
+            'Review 1 change'
+        );
+        await stock
+            .getByRole( 'button', { name: 'Back', exact: true } )
+            .click();
+        await expect( row ).toContainText( '1 change' );
+        await page.locator( '[data-wfd-control="H9"]' ).click();
+        await expect(
+            page.getByRole( 'dialog', { name: 'Review changes' } )
+        ).toContainText( 'Styles' );
+    } );
+
+    test( "AC-STYLE-10 The variation menu reads Default for the theme's own styles, the name for exactly a variation and Custom after any further change; its Default item returns to the theme's styles", async ( {
+        page,
+    } ) => {
+        await setViewport( page, { x: 40, y: 40, zoom: 0.25 } );
+        const panel = right( page );
+        const trigger = panel.getByRole( 'button', { name: /^Variation:/ } );
+        const items = page.getByRole( 'menuitemradio' );
+        const pick = async ( name: string ) => {
+            await trigger.click();
+            await items
+                .filter( { hasText: new RegExp( `^${ name }$` ) } )
+                .click();
+        };
+        const index = artboardOf( fixture, 'template' );
+        const background = () =>
+            styleIn( page, index.id, 'body', 'backgroundColor' );
+        await expect.poll( background ).toBe( 'rgb(255, 255, 255)' );
+
+        // The theme's own styles.
+        await expect( trigger ).toHaveText( 'Variation: Default' );
+        await trigger.click();
+        await expect( items.first() ).toHaveText( 'Default' );
+        await expect( items.first() ).toHaveAttribute( 'aria-checked', 'true' );
+        await page.keyboard.press( 'Escape' );
+
+        // Exactly a variation.
+        await pick( 'Sunrise' );
+        await expect( trigger ).toHaveText( 'Variation: Sunrise' );
+        await expect.poll( background ).not.toBe( 'rgb(255, 255, 255)' );
+        await trigger.click();
+        await expect(
+            items.filter( { hasText: /^Sunrise$/ } )
+        ).toHaveAttribute( 'aria-checked', 'true' );
+        await page.keyboard.press( 'Escape' );
+
+        // A variation with another typeset is neither.
+        await panel
+            .getByRole( 'button', { name: 'Edit Typography', exact: true } )
+            .click();
+        await panel
+            .getByRole( 'button', { name: 'Beiruti & Literata', exact: true } )
+            .click();
+        await expect( trigger ).toHaveText( 'Variation: Custom' );
+        await trigger.click();
+        await expect( items.first() ).toBeVisible();
+        await expect(
+            page.locator( '[role="menuitemradio"][aria-checked="true"]' )
+        ).toHaveCount( 0 );
+
+        // "Default" returns to the theme's own styles.
+        await items.filter( { hasText: /^Default$/ } ).click();
+        await expect( trigger ).toHaveText( 'Variation: Default' );
+        await expect.poll( background ).toBe( 'rgb(255, 255, 255)' );
+        await expect( page.locator( '[data-wfd-control="H9"]' ) ).toHaveText(
+            'Review changes'
+        );
+
+        // The theme's styles with one colour changed are custom too.
+        await panel
+            .getByRole( 'button', { name: 'Back', exact: true } )
+            .click();
+        await setColor( page, 'Accent 1', '#112233' );
+        await expect( trigger ).toHaveText( 'Variation: Custom' );
+    } );
+
+    test( "AC-STYLE-12 A stock styles screen that throws shows WordPress's error notice in its place and is closed when its tab is left; the board, the other tabs and the other stock screens keep working", async ( {
+        page,
+    } ) => {
+        await setViewport( page, { x: 40, y: 40, zoom: 0.25 } );
+        const index = artboardOf( fixture, 'template' );
+        const background = () =>
+            styleIn( page, index.id, 'body', 'backgroundColor' );
+        await expect.poll( background ).toBe( 'rgb(255, 255, 255)' );
+
+        // A block with a broken example: its stock screen throws when it
+        // builds the block's preview.
+        await page.evaluate( () =>
+            ( window as any ).wp.blocks.registerBlockType( 'wfd-test/thrower', {
+                apiVersion: 3,
+                title: 'Thrower',
+                category: 'text',
+                supports: { color: { text: true } },
+                example: { innerBlocks: [ null ] },
+                edit: () => null,
+                save: () => null,
+            } )
+        );
+        const panel = right( page );
+        await panel.getByRole( 'tab', { name: 'Blocks' } ).click();
+        await panel.getByRole( 'searchbox' ).fill( 'Thrower' );
+        await panel
+            .locator( '.wfd-row__name', { hasText: /^Thrower$/ } )
+            .click();
+        const crashed = panel.locator( '.wfd-styles__block-styles' );
+        await expect( crashed ).toContainText( 'The editor has crashed' );
+        await expect(
+            crashed.getByRole( 'button', { name: 'Copy error' } )
+        ).toBeVisible();
+        // The notice fits the panel.
+        expect(
+            await crashed.evaluate( ( element ) => {
+                const notice = element.querySelector(
+                    '.editor-error-boundary'
+                )!;
+                return (
+                    notice.getBoundingClientRect().right <=
+                    element.getBoundingClientRect().right
+                );
+            } )
+        ).toBe( true );
+
+        // Leaving the tab closes the screen that threw: the list is back
+        // and a screen can be opened from it.
+        await panel.getByRole( 'tab', { name: 'History' } ).click();
+        await panel.getByRole( 'tab', { name: 'Blocks' } ).click();
+        await expect( crashed ).toHaveCount( 0 );
+        await panel.getByRole( 'searchbox' ).fill( 'Paragraph' );
+        await panel
+            .locator( '.wfd-row__name', { hasText: /^Paragraph$/ } )
+            .click();
+        const paragraph = panel
+            .locator( '.wfd-styles__block-styles' )
+            .getByRole( 'heading', { name: 'Paragraph', exact: true } )
+            .first();
+        await expect( paragraph ).toBeVisible();
+
+        // The other tabs, another stock screen and the board still work,
+        // and a screen that has not thrown stays open when its tab is left.
+        await panel.getByRole( 'tab', { name: 'Tokens' } ).click();
+        await panel
+            .getByRole( 'button', { name: 'Edit Colors', exact: true } )
+            .click();
+        const stock = panel.locator( '.wfd-styles__screen' );
+        const colors = stock
+            .getByRole( 'heading', { name: 'Colors', exact: true } )
+            .first();
+        await expect( colors ).toBeVisible();
+        await expect( stock ).not.toContainText( 'The editor has crashed' );
+        await panel.getByRole( 'tab', { name: 'Blocks' } ).click();
+        await expect( paragraph ).toBeVisible();
+        await panel.getByRole( 'tab', { name: 'Tokens' } ).click();
+        await expect( colors ).toBeVisible();
+        await stock
+            .getByRole( 'button', { name: 'Back', exact: true } )
+            .click();
+        await setColor( page, 'Base', '#112233' );
+        await expect.poll( background ).toBe( 'rgb(17, 34, 51)' );
+    } );
+
+    test( 'AC-STYLE-11 With "Style applies to" on "All {block}", the stock styles screen\'s Back sets it back to "This block"', async ( {
+        page,
+    } ) => {
+        const hero = artboardOf( fixture, 'pattern' );
+        await enterEdit( page, hero.id );
+        await editorFrame( page, hero.id ).locator( 'h2' ).click();
+        const panel = right( page );
+        const group = panel.getByRole( 'radiogroup', {
+            name: 'Style applies to',
+        } );
+        const thisBlock = group.getByRole( 'radio', { name: 'This block' } );
+        const all = group.getByRole( 'radio', { name: 'All Heading' } );
+        const inspector = panel.locator( '.block-editor-block-inspector' );
+        const title = panel.getByRole( 'heading', {
+            name: 'Heading',
+            exact: true,
+        } );
+        const back = panel.getByRole( 'button', { name: 'Back', exact: true } );
+
+        await all.click();
+        await expect( title ).toHaveCount( 1 );
+        await expect( inspector ).toBeHidden();
+        await back.click();
+        await expect( thisBlock ).toBeChecked();
+        await expect( inspector ).toBeVisible();
+        // The stock screens are gone, WordPress's list of blocks included.
+        await expect( back ).toHaveCount( 0 );
+        await expect( title ).toHaveCount( 0 );
+
+        // "All Heading" opens the block's screen again.
+        await all.click();
+        await expect( all ).toBeChecked();
+        await expect( title ).toHaveCount( 1 );
+        await expect( back ).toHaveCount( 1 );
     } );
 } );

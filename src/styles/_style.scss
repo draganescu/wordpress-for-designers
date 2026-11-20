@@ -1,4 +1,4 @@
-// The Styles panel (S1 to S6, Blocks and History tabs). Layout only.
+// The Styles panel (S1 to S8, Blocks and History tabs). Layout only.
 
 .wfd-styles__tabs {
     padding: 0 var(--wpds-dimension-padding-lg);
@@ -65,10 +65,6 @@
     padding: var(--wpds-dimension-padding-lg);
 }
 
-.wfd-styles__block-back {
-    padding: var(--wpds-dimension-padding-sm) var(--wpds-dimension-padding-lg);
-}
-
 .wfd-styles__history {
     padding-top: var(--wpds-dimension-padding-sm);
 
@@ -84,4 +80,11 @@
 .wfd-styles__history-actions {
     padding: var(--wpds-dimension-padding-lg);
     border-top: var(--wpds-border-width-xs) solid var(--wpds-color-stroke-surface-neutral-weak);
+}
+
+// WordPress's error notice, shown when a stock screen throws (D60), is
+// sized for the editor, where every box is a border box. Here its padding
+// would push it past the panel's edge.
+.wfd-right .editor-error-boundary {
+    box-sizing: border-box;
 }

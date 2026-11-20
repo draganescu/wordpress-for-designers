@@ -54,7 +54,7 @@ Rules:
 - Thresholds use hysteresis so tiers do not flicker: an artboard changes tier at the stated zoom going down, and at the stated zoom plus 2 percentage points going up. `[B5]` for hysteresis, `[N]` for the 2 points
 - An artboard that has never been rendered goes straight to the Preview queue when eligible; until rendered it shows a `Skeleton`. `[N]`
 - A Snapshot artboard that has never been rendered has no frozen copy to show. Such artboards are rendered once each through the same queue, one at a time, nearest to the viewport centre first; the render is frozen as soon as its height stops changing and the artboard stays in the Snapshot tier throughout. Until then it shows a `Skeleton`. `[U]`
-- When a shared thing changes (global styles, a part used by a template, a synced pattern), Live and Preview artboards update; Snapshots are marked stale and re-rendered the next time they become Previews. `[B5]`
+- When a shared thing changes (global styles, a part used by a template, a synced pattern), Live and Preview artboards update and Snapshots are marked stale. After a global styles change each stale Snapshot is rendered again once to renew its frozen copy, as a never-rendered one is (the rule above), with its old copy shown until the new one is frozen, and only once the change has settled (D51). After any other shared change a stale Snapshot is re-rendered the next time it becomes a Preview. `[B5]` `[U]`
 - If zoom changes while an artboard is Live, it leaves edit and becomes a Preview. Panning does not leave edit. `[B8]` `[U]`
 - The hysteresis rule applies to the 20% threshold only. Edit ends when the zoom settles below 30% and is not started again by zooming back in (D37). `[U]`
 - The Live editor is drawn at screen size with only its canvas iframe scaled to the board's zoom, so that WordPress's block tools, which are placed correctly only at screen size, work at every zoom. The plugin adds no element of its own around or inside the canvas for this; it styles the elements WordPress renders (`spike-report.md`, "Editing below 100%"). `[V]`
@@ -65,7 +65,7 @@ Rules:
 |---|---|---|---|---|
 | Nothing selected | Artboards by kind | Styles | Document bar shows the board name | `[U]` `[D:Overview]` |
 | An artboard selected | Artboards by kind, its row highlighted | Artboard settings | Same | `[U]` `[D:Selected]` |
-| An artboard in edit | List view of its blocks when the list view toggle is on (on by default when entering edit); otherwise closed | Tabs: the entity (for example "Template part") and "Block" | Block toolbar shown; document bar shows the artboard's name and kind with a back arrow | `[U]` `[D:Main]` |
+| An artboard in edit | List view of its blocks when the list view toggle is on (on by default when entering edit); otherwise closed | Tabs: the entity (for example "Template part") and "Block" | Document bar shows the artboard's name and kind with a back arrow; while a block is selected the block toolbar is shown in place of the name, until it is hidden with H14, and the back arrow stays (D50) | `[U]` `[D:Main]` |
 | A browser browsing (D55) | Artboards by kind, its row highlighted | Its settings, without "Browse" | Document bar shows "{address} · Browser" with a back arrow | `[U]` |
 | Inserter toggle on (any state) | Inserter, replacing whatever was there | Unchanged | Toggle shows a close icon | `[U]` `[D:Library]` |
 
@@ -119,6 +119,8 @@ Outside an artboard in edit: `[U]`
 | Cmd/Ctrl + Z, Cmd/Ctrl + Shift + Z | Undo, redo layout |
 | Esc | Clear selection |
 
+While the window is narrower than 1180 px and the message of D49 shows, no key reaches the board, the ones marked "always" included. `[U]`
+
 While an artboard is in edit, a click on empty board leaves edit and clears the selection, and a click on another artboard leaves edit and selects it (D38). `[U]`
 
 A drag from empty board selects the artboards its rectangle touches; with Cmd/Ctrl it adds them to the selection. While an artboard is in edit the drag first leaves edit. Esc during the drag cancels it and puts the selection back as it was (D43). Like an artboard drag, the rectangle is drawn by changing the DOM directly; the store hears only when the set of selected artboards changes. `[U]`
@@ -135,7 +137,7 @@ Tab order and the Shift + arrow step are `[N]`.
 
 ## Undo
 
-- Content history is core-data's undo stack. It is active while an artboard is Live. `[B8]`
+- Content history is core-data's undo stack. It is active while an artboard is Live. Discarding saved items' changes from Review, one item or all of them at once, is one step of it (D48). `[B8]` `[U]`
 - Layout history lives in `board-store`: moves, tidying up (D45), device changes, browser resizes (D56), adds and removals from the board, and every change to a note (D46). It lasts for the session. Removing an artboard with the "also delete" box checked is not undoable and clears nothing else. `[B8]` `[U]` `[N]`
 - The header's Undo and Redo act on the active history. Their tooltips name the action and scope, in the form "Undo {action}, in {artboard name}" and "Undo {action}, on the board" (the same with "Redo"). `[U]` `[D:Main]` `[D:Overview]`
 - Action names. On the board: "move artboard", "tidy up", "change device", "add artboard", "remove artboard"; for browsers "resize browser" (D56); for notes "add note", "move note", "edit note", "change note color", "remove note". Moving or removing artboards and notes together is named for artboards. Editing a note's text, from the moment it enters edit until it leaves, is one step. In an artboard the action is always "edit" ("Undo edit, in Header"); WordPress keeps no name for a content change, so the "block spacing" in `images/Main.png` is not built. `[U]`
@@ -144,11 +146,12 @@ Tab order and the Shift + arrow step are `[N]`.
 
 - Inputs: the theme's base global styles, the user's `globalStyles` entity (edited record), and, only while a History revision is being previewed, that revision in place of the user record. `[B7]`
 - One merge and one generate per change, using `mergeGlobalStyles` and `generateGlobalStyles`. The resulting stylesheet and settings are given to every mounted artboard. `[B7]` `[V]`
-- Tokens tab: colours (palette), typography (font sizes and families presets), spacing (spacing scale presets), each row with its use count. Editing a token writes through `setSetting` / `setStyle`. `[B7]` `[D:Styles]` `[V]`
-- Blocks tab: a searchable list of block types; choosing one opens `GlobalStylesUI` at that block's path. A block with user changes shows the count of changed properties. `[B7]` `[D:StylesBlocks]` `[V]`
+- Tokens tab: colours (palette), typography (font sizes and families presets), spacing (spacing scale presets), each row with its use count. Editing a token writes through `setSetting` / `setStyle`. `[B7]` `[D:Styles]` `[V]` Site-wide styles are edited from this tab in the stock screens: "Edit" on a group opens `GlobalStylesUI` at `/colors`, `/typography` or `/layout`, and the "Background" and "Shadows" rows open it at `/background` and `/shadows`, in place of the tab's content (D52). `[U]`
+- Blocks tab: a searchable list of block types; choosing one opens `GlobalStylesUI` at that block's path. A block with user changes shows the count of changed properties. `[B7]` `[D:StylesBlocks]` `[V]` The stock screen's own Back control returns to the list; the plugin adds no back control (D58). `[U]` Before the blocks the list has the elements, in the stock list's three groups; an element opens `GlobalStylesUI` at `/blocks/elements/{element}` and counts its changes from the user record's `styles.elements` (D53). `[U]`
 - History tab: global styles revisions, newest first, plus "Unsaved" when there are edits and "Theme default" last. Picking one previews it on the whole board; Restore makes it the edited record; Stop previewing returns to the edited record. `[B7]` `[D:StylesHistory]` `[U]`
-- Variation menu: lists the theme's style variations; choosing one replaces the user record's values with the variation's, as an edit that appears in Review. `[B7]` `[U]`
-- "Style applies to" in the Block tab: "This block" edits the block's own attributes through the stock inspector. "All {block name}" shows `GlobalStylesUI` at that block's path in place of the stock inspector controls. `[B7]` `[D:Main]` `[N]` for the second sentence's mechanism
+- Variation menu: lists the theme's style variations; choosing one replaces the user record's values with the variation's, as an edit that appears in Review. `[B7]` `[U]` "Default", its first item, replaces them with nothing. The trigger names the variation the user record equals, reads "Default" for a user record with no values and "Custom" otherwise (D54). `[U]`
+- "Style applies to" in the Block tab: "This block" edits the block's own attributes through the stock inspector. "All {block name}" shows `GlobalStylesUI` at that block's path in place of the stock inspector controls. `[B7]` `[D:Main]` `[N]` for the second sentence's mechanism. The stock screen's Back control sets the switch back to "This block" (D58). `[U]`
+- Every stock screen (`GlobalStylesUI`, in the Tokens tab, the Blocks tab and "All {block name}") is drawn inside `ErrorBoundary` of `@wordpress/editor`. If one throws, the stock notice takes its place and nothing else on the board is lost; in the Styles panel a screen that has thrown is closed when its tab is left (D60). The two styles packages are pinned to the releases named in `api-allowlist.md` (D59). `[U]`
 
 ## Usage index
 
