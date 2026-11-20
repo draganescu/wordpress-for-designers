@@ -39,9 +39,9 @@ Checked on 2026-11-19.
 | Styles | Matches | The "Aa" samples are one size (font sizes come from tokens). |
 | StylesBlocks | Matches | None. |
 | StylesHistory | Matches | "Unsaved" and "Theme default" rows show only their name (OQ-8). |
-| Review | Matches | The drawer is the `Drawer` component's full window height, so it covers the right end of the header. "Discard all" is neutral (OQ-4). Change lines are plain text: the swatches and struck-through values in the image have no component in `Review.md`. |
+| Review | Matches | The drawer is the `Drawer` component's full window height, so it covers the right end of the header. "Discard all" is neutral (OQ-4). Change lines are plain text: the swatches and struck-through values in the image have no component in `Review.md`. Each card has a "Discard" button that the image does not show (D48). |
 | ReviewEmpty | Matches | None. |
-| ReviewError | Matches the screen file | The image keeps saved items in the list and counts one; the screen file says saved items leave the list and the button counts checked items. Built as the screen file says (rule 3). |
+| ReviewError | Matches the screen file | The image keeps saved items in the list and counts one; the screen file says saved items leave the list and the button counts checked items. Built as the screen file says (rule 3). The card has a "Discard" button that the image does not show (D48). |
 
 ## Gate
 

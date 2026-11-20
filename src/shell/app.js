@@ -664,7 +664,8 @@ export function App() {
                 blockStyles={
                     editing.selectedBlock && scope === 'all'
                         ? stylesPanel.blockStylesFor(
-                              editing.selectedBlock.name
+                              editing.selectedBlock.name,
+                              () => setScope( 'block' )
                           )
                         : null
                 }
