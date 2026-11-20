@@ -15,17 +15,9 @@ import { createBlock, parse, serialize } from '@wordpress/blocks';
 import { MediaUpload } from '@wordpress/block-editor';
 import { store as boardStore } from '../board-store';
 import { NEW_ARTBOARD_HEIGHT } from '../shell/use-placement';
-import { mediaSize } from '../shell/constants';
+import { KINDS, mediaSize } from '../shell/constants';
 import { DRAG_DATA_TYPE } from './inserter-panel';
 import { MEDIA_QUERY } from './use-inserter-data';
-
-const KIND_OF = {
-    media: 'media',
-    page: 'page',
-    pattern: 'pattern',
-    template: 'template',
-    'template-part': 'template-part',
-};
 
 /**
  * @param {Object}   options
@@ -127,7 +119,7 @@ export function useInserterActions( {
         async ( item, { x, y } ) => {
             const object = {
                 id: window.crypto.randomUUID(),
-                kind: KIND_OF[ item.type ],
+                kind: item.type,
                 entityId: item.id,
                 x: Math.round( x ),
                 y: Math.round( y ),
@@ -190,7 +182,8 @@ export function useInserterActions( {
                 }
                 return;
             }
-            if ( KIND_OF[ item.type ] ) {
+            // Every row but a block's is named for the kind it opens as.
+            if ( KINDS[ item.type ] ) {
                 openOnBoard( item, findSpace( sizeOf( item ) ) );
             }
         },
@@ -261,7 +254,7 @@ export function useInserterActions( {
             event.dataTransfer.dropEffect = 'copy';
             const point = toBoard( event );
             setDropTarget( {
-                kind: KIND_OF[ dragged.current.type ],
+                kind: dragged.current.type,
                 name: dragged.current.name,
                 x: point.x,
                 y: point.y,

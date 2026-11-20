@@ -17,6 +17,7 @@ import {
     mapMarker,
     siteLogo,
 } from '@wordpress/icons';
+import { NEW_ROWS } from '../shell/use-placement';
 
 const blocks = [
     {
@@ -136,18 +137,13 @@ const pages = [
     { id: 13, name: 'Colophon', isOnBoard: false },
 ];
 
-// The purposes whose template is not among `templates` above.
-const purposes = [
-    { slug: 'archive', label: 'Archive' },
-    { slug: 'search', label: 'Search results' },
-    { slug: 'singular', label: 'Single item' },
-    { slug: null, label: 'Custom' },
-];
+// A purpose is offered as new unless its template is among `templates` above.
+const newRows = NEW_ROWS.filter( ( { key } ) => key !== 'template:404' );
 
 const lists = {
     blocks,
     pages,
-    purposes,
+    newRows,
     patterns,
     templates,
     templateParts,

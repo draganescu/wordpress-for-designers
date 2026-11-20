@@ -19,7 +19,7 @@ const TEMPLATE_QUERY = { per_page: -1 };
 /**
  * Template purposes offered as new, with the slug each creates.
  */
-export const PURPOSES = [
+const PURPOSES = [
     { slug: 'archive', label: __( 'Archive', 'wordpress-for-designers' ) },
     {
         slug: 'search',
@@ -49,6 +49,51 @@ const NAMES = {
     // A browser is named by its address, and starts on the homepage (D55).
     browser: '/',
 };
+
+const NEW_GROUP = __( 'New', 'wordpress-for-designers' );
+
+/**
+ * The rows of the inserter that create an artboard (L12, D63), in the order
+ * they are listed: the inserter tab and the group each is in, its name, and
+ * the `choice` that `arm` takes.
+ */
+export const NEW_ROWS = [
+    {
+        key: 'page',
+        tab: 'pages',
+        group: NEW_GROUP,
+        name: __( 'New page', 'wordpress-for-designers' ),
+        choice: { kind: 'page' },
+    },
+    {
+        key: 'browser',
+        tab: 'pages',
+        group: NEW_GROUP,
+        name: __( 'New browser', 'wordpress-for-designers' ),
+        choice: { kind: 'browser' },
+    },
+    {
+        key: 'pattern',
+        tab: 'patterns',
+        group: NEW_GROUP,
+        name: __( 'New pattern', 'wordpress-for-designers' ),
+        choice: { kind: 'pattern' },
+    },
+    ...PURPOSES.map( ( purpose ) => ( {
+        key: 'template:' + ( purpose.slug ?? 'custom' ),
+        tab: 'templates',
+        group: __( 'New template for', 'wordpress-for-designers' ),
+        name: purpose.label,
+        choice: { kind: 'template', purpose },
+    } ) ),
+    {
+        key: 'template-part',
+        tab: 'templates',
+        group: NEW_GROUP,
+        name: __( 'New template part', 'wordpress-for-designers' ),
+        choice: { kind: 'template-part' },
+    },
+];
 
 function partBlock( part, tagName ) {
     return `<!-- wp:template-part ${ JSON.stringify( {
@@ -93,7 +138,7 @@ function uniqueSlug( slug, taken ) {
  * @param {Object}   options
  * @param {string}   options.theme     The active theme's stylesheet.
  * @param {Function} options.enterEdit Enters edit on an artboard.
- * @return {Object} The purposes still on offer, the armed placement and its
+ * @return {Object} The New rows on offer, the armed placement and its
  *                  actions.
  */
 export function usePlacement( { theme, enterEdit } ) {
@@ -115,14 +160,17 @@ export function usePlacement( { theme, enterEdit } ) {
 
     // A purpose whose template is on the site, or on this board and not
     // saved yet, is not offered as new.
-    const purposes = useMemo( () => {
+    const newRows = useMemo( () => {
         const taken = new Set( [
             ...( templates ?? [] ).map( ( template ) => template.slug ),
             ...onBoard
                 .filter( ( a ) => a.kind === 'template' && a.draft )
                 .map( ( a ) => a.draft.slug ),
         ] );
-        return PURPOSES.filter( ( purpose ) => ! taken.has( purpose.slug ) );
+        return NEW_ROWS.filter(
+            ( { choice } ) =>
+                ! choice.purpose || ! taken.has( choice.purpose.slug )
+        );
     }, [ templates, onBoard ] );
 
     const arm = useCallback( ( choice ) => {
@@ -313,5 +361,5 @@ export function usePlacement( { theme, enterEdit } ) {
         ]
     );
 
-    return { purposes, placement, arm, cancel, place };
+    return { newRows, placement, arm, cancel, place };
 }

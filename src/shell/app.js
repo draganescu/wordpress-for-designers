@@ -653,7 +653,7 @@ export function App() {
                 liveArtboardName={ live?.name ?? null }
                 blocks={ inserterData.blocks }
                 pages={ inserterData.pages }
-                purposes={ placing.purposes }
+                newRows={ placing.newRows }
                 onNewClick={ placing.arm }
                 patterns={ inserterData.patterns }
                 templates={ inserterData.templates }
