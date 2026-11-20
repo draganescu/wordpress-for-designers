@@ -9,11 +9,12 @@ import { store as coreStore } from '@wordpress/core-data';
 import { parse, serialize } from '@wordpress/blocks';
 import { getGlobalStylesChanges } from '@wordpress/global-styles-engine';
 import { store as boardStore } from '../board-store';
+import { KINDS } from '../shell/constants';
 import { recordName } from '../shell/use-artboards';
 import { countTemplatesUsing } from '../shell/use-entity-info';
 import { changeLines } from './diff';
 import { discardEntityEdits } from './discard-entity-edits';
-import { changedEntries, rawContent } from './entries';
+import { changedEntries, rawContent, rawTitle } from './entries';
 
 const KIND_OF_TYPE = {
     page: 'page',
@@ -120,11 +121,11 @@ export function useReview() {
                     ];
                 }
                 if (
-                    ( entry.type === 'page' || entry.type === 'pattern' ) &&
+                    KINDS[ entry.type ]?.isNamed &&
                     entry.saved &&
-                    recordName( entry.saved ) !== recordName( entry.edited )
+                    rawTitle( entry.saved ) !== rawTitle( entry.edited )
                 ) {
-                    // The page or pattern was renamed on its label (D62).
+                    // It was renamed on its label (D62).
                     item.lines = [
                         fieldChanged(
                             __( 'Title', 'wordpress-for-designers' )

@@ -32,7 +32,7 @@ import { ArtboardSnapshot, createSnapshotStore } from '../artboard-snapshot';
 import { useTiers } from '../tier-scheduler';
 import { InserterPanel } from '../inserter/inserter-panel';
 import { useInserterActions } from '../inserter/use-inserter-actions';
-import { useInserterData } from '../inserter/use-inserter-data';
+import { useInserterData, withBoardNames } from '../inserter/use-inserter-data';
 import { StylesPanel } from '../styles/styles-panel';
 import { useGlobalStyles } from '../styles/use-global-styles';
 import { useStylesPanel } from '../styles/use-styles-panel';
@@ -614,6 +614,7 @@ export function App() {
 
     let left = null;
     if ( isInserterOpen ) {
+        const named = withBoardNames( inserterData, artboards );
         left = (
             <InserterPanel
                 query={ inserterQuery }
@@ -622,10 +623,10 @@ export function App() {
                 onTabChange={ setInserterTab }
                 liveArtboardName={ live?.name ?? null }
                 blocks={ inserterData.blocks }
-                pages={ inserterData.pages }
+                pages={ named.pages }
                 newRows={ placing.newRows }
                 onNewClick={ placing.arm }
-                patterns={ inserterData.patterns }
+                patterns={ named.patterns }
                 templates={ inserterData.templates }
                 templateParts={ inserterData.templateParts }
                 media={ inserterData.media }
