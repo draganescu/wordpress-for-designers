@@ -3,6 +3,7 @@
  * panel toggles and layout history.
  */
 import { createReduxStore, register } from '@wordpress/data';
+import { KINDS } from '../shell/constants';
 
 export const STORE_NAME = 'wfd/board';
 
@@ -24,6 +25,9 @@ const DEFAULT_STATE = {
     // Where a Shift range in the artboard list starts.
     anchorId: null,
     liveId: null,
+    // The browser being browsed (D55). It counts as the artboard in edit,
+    // and has no editor: at most one of liveId and browsingId is set.
+    browsingId: null,
     warmIds: [],
     isInserterOpen: false,
     isListViewOpen: false,
@@ -31,10 +35,15 @@ const DEFAULT_STATE = {
     past: [],
     future: [],
     removingId: null,
+    // Goes up each time Review has saved something; browsers reload (D55).
+    siteVersion: 0,
+    // How many times Reload was pressed for each browser, by id.
+    browserReloads: {},
 };
 
 /**
- * Restores an earlier artboard list, keeping the heights measured since.
+ * Restores an earlier list of artboards or of notes, keeping the heights
+ * measured since.
  *
  * @param {Array} snapshot The earlier list.
  * @param {Array} current  The current list.
@@ -42,10 +51,12 @@ const DEFAULT_STATE = {
  */
 function restore( snapshot, current ) {
     const heights = new Map( current.map( ( a ) => [ a.id, a.height ] ) );
-    return snapshot.map( ( artboard ) =>
-        heights.has( artboard.id )
-            ? { ...artboard, height: heights.get( artboard.id ) }
-            : artboard
+    return snapshot.map( ( item ) =>
+        // A height set by hand is part of the history (D56); a measured
+        // one stays as it is now. A note has no kind and is measured.
+        ! KINDS[ item.kind ]?.isResized && heights.has( item.id )
+            ? { ...item, height: heights.get( item.id ) }
+            : item
     );
 }
 
@@ -62,6 +73,7 @@ function keepSelection( state, artboards, notes = state.notes ) {
             : state.selectedIds.filter( exists ),
         anchorId: exists( state.anchorId ) ? state.anchorId : null,
         liveId: exists( state.liveId ) ? state.liveId : null,
+        browsingId: exists( state.browsingId ) ? state.browsingId : null,
         warmIds: state.warmIds.filter( exists ),
     };
 }
@@ -158,7 +170,9 @@ function reducer( state = DEFAULT_STATE, action ) {
         }
         case 'SET_LIVE': {
             if ( state.liveId === action.id ) {
-                return state;
+                return action.id && state.browsingId
+                    ? { ...state, browsingId: null }
+                    : state;
             }
             // The two editors that were Live most recently stay warm.
             const warmIds = [ state.liveId, ...state.warmIds ]
@@ -167,10 +181,26 @@ function reducer( state = DEFAULT_STATE, action ) {
             return {
                 ...state,
                 liveId: action.id,
+                browsingId: action.id ? null : state.browsingId,
                 warmIds,
                 selectedIds: action.id ? [ action.id ] : state.selectedIds,
                 anchorId: action.id ?? state.anchorId,
                 isListViewOpen: action.id ? true : state.isListViewOpen,
+            };
+        }
+        case 'SET_BROWSING': {
+            if ( state.browsingId === action.id ) {
+                return state;
+            }
+            // Browsing ends edit; the editor that was Live stays warm.
+            const next = action.id
+                ? reducer( state, { type: 'SET_LIVE', id: null } )
+                : state;
+            return {
+                ...next,
+                browsingId: action.id,
+                selectedIds: action.id ? [ action.id ] : next.selectedIds,
+                anchorId: action.id ?? next.anchorId,
             };
         }
         case 'PATCH':
@@ -263,6 +293,7 @@ const actions = {
     setViewport: ( viewport ) => ( { type: 'SET_VIEWPORT', viewport } ),
     setRemovingId: ( id ) => ( { type: 'SET_REMOVING', id } ),
     setLiveId: ( id ) => ( { type: 'SET_LIVE', id } ),
+    setBrowsingId: ( id ) => ( { type: 'SET_BROWSING', id } ),
     patch: ( patch ) => ( { type: 'PATCH', patch } ),
 
     moveArtboard: ( id, x, y ) =>
@@ -329,8 +360,9 @@ const actions = {
             } );
         },
     /**
-     * Updates artboards outside the history: measured heights, and an
-     * artboard's entity once a new template or part has been saved.
+     * Updates artboards outside the history: measured heights, an
+     * artboard's entity once a new template or part has been saved, and the
+     * address a browser is on and what it shows (D55, D57).
      *
      * @param {string} id    The artboard.
      * @param {Object} patch Fields to change.
@@ -376,6 +408,49 @@ const actions = {
             } );
         },
 
+    /**
+     * Changes a browser's window height, as one step of the history (D56).
+     *
+     * @param {string} id     The browser.
+     * @param {number} height The height in board units.
+     */
+    resizeBrowser: ( id, height ) =>
+        change( 'resize-browser', ( artboards ) =>
+            artboards.some( ( a ) => a.id === id && a.height !== height )
+                ? artboards.map( ( a ) =>
+                      a.id === id ? { ...a, height } : a
+                  )
+                : artboards
+        ),
+    /**
+     * Reloads one browser's page.
+     *
+     * @param {string} id The browser.
+     */
+    reloadBrowser:
+        ( id ) =>
+        ( { select, dispatch } ) => {
+            dispatch( {
+                type: 'PATCH',
+                patch: {
+                    browserReloads: {
+                        ...select.getAllBrowserReloads(),
+                        [ id ]: select.getBrowserReloads( id ) + 1,
+                    },
+                },
+            } );
+        },
+    /**
+     * Tells browsers that the site has changed.
+     */
+    bumpSiteVersion:
+        () =>
+        ( { select, dispatch } ) => {
+            dispatch( {
+                type: 'PATCH',
+                patch: { siteVersion: select.getSiteVersion() + 1 },
+            } );
+        },
     setNoteToolArmed: ( isArmed ) => ( {
         type: 'PATCH',
         patch: { isNoteToolArmed: isArmed },
@@ -526,11 +601,17 @@ const selectors = {
     getSelectedIds: ( state ) => state.selectedIds,
     getSelectionAnchorId: ( state ) => state.anchorId,
     getLiveId: ( state ) => state.liveId,
+    getBrowsingId: ( state ) => state.browsingId,
+    // The artboard in edit: the Live editor, or the browser being browsed.
+    getEditId: ( state ) => state.liveId ?? state.browsingId,
     getWarmIds: ( state ) => state.warmIds,
     isInserterOpen: ( state ) => state.isInserterOpen,
     isListViewOpen: ( state ) => state.isListViewOpen,
     getViewport: ( state ) => state.viewport,
     getRemovingId: ( state ) => state.removingId,
+    getSiteVersion: ( state ) => state.siteVersion,
+    getAllBrowserReloads: ( state ) => state.browserReloads,
+    getBrowserReloads: ( state, id ) => state.browserReloads[ id ] ?? 0,
     getUndoName: ( state ) => state.past[ state.past.length - 1 ]?.name ?? null,
     getRedoName: ( state ) =>
         state.future[ state.future.length - 1 ]?.name ?? null,
@@ -557,10 +638,13 @@ export function toLayout( artboards, notes = [] ) {
         version: 1,
         artboards: artboards
             .filter( ( artboard ) => ! artboard.draft )
-            .map( ( { id, kind, entityId, device, x, y, width, height } ) =>
-                kind === 'media'
-                    ? { id, kind, entityId, x, y, width, height }
-                    : { id, kind, entityId, device, x, y, height }
+            .map( ( artboard ) =>
+                Object.fromEntries(
+                    KINDS[ artboard.kind ].layout.map( ( field ) => [
+                        field,
+                        artboard[ field ],
+                    ] )
+                )
             ),
         // A board with no notes keeps the layout it always had.
         ...( notes.length && {

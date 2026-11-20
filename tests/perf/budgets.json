@@ -1,11 +1,11 @@
 {
-    "bundle.board.js": 1900000,
-    "bundle.board.js.gzip": 465000,
-    "bundle.board.dependencies": 24,
+    "bundle.board.js": 2150000,
+    "bundle.board.js.gzip": 480000,
+    "bundle.board.dependencies": 25,
     "bundle.boards.js": 1150000,
     "bundle.boards.js.gzip": 240000,
     "bundle.boards.dependencies": 18,
-    "bundle.style-board.css": 16500,
+    "bundle.style-board.css": 19500,
     "bundle.style-boards.css": 90000,
 
     "open.rest-requests": 42,
@@ -15,11 +15,11 @@
 
     "select.renders": 12,
     "move.renders": 0,
-    "edit-enter.renders": 36,
+    "edit-enter.renders": 48,
     "type.renders": 264,
     "type.parses": 20,
     "edit-leave.renders": 24,
-    "style-change.renders": 48,
+    "style-change.renders": 60,
     "style-change.style-generations": 1,
 
     "board-9.iframes": 9,

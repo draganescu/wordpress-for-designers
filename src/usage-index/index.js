@@ -4,6 +4,7 @@
  */
 import { useMemo, useRef } from '@wordpress/element';
 import { parse } from '@wordpress/blocks';
+import { KINDS } from '../shell/constants';
 import { counters } from '../shell/test-hooks';
 
 const VAR_IN_STYLE = /var:preset\|(color|spacing)\|([a-z0-9-]+)/g;
@@ -169,7 +170,7 @@ export function useUsageIndex( artboards, merged ) {
             if (
                 next.has( key ) ||
                 ! artboard.record ||
-                artboard.kind === 'media'
+                KINDS[ artboard.kind ].edit !== 'editor'
             ) {
                 continue;
             }

@@ -144,7 +144,70 @@ export function ArtboardSettings( {
     onDeviceChange,
     onEdit,
     onRemove,
+    isBrowsing = false,
+    onReload,
+    onShowsChange,
 } ) {
+    if ( artboard.kind === 'browser' ) {
+        // A browser browses instead of editing, and reloads (D55).
+        return (
+            <div className="wfd-artboard-settings" data-wfd-panel="settings">
+                <EntityCard artboard={ artboard } info={ info } />
+                <DeviceControl
+                    device={ artboard.device }
+                    onChange={ onDeviceChange }
+                />
+                <div className="wfd-shows-control">
+                    <ToggleGroupControl
+                        __next40pxDefaultSize
+                        isBlock
+                        label={ __( 'Shows', 'wordpress-for-designers' ) }
+                        value={ artboard.shows }
+                        onChange={ onShowsChange }
+                    >
+                        <ToggleGroupControlOption
+                            value="unsaved"
+                            label={ __(
+                                'Unsaved changes',
+                                'wordpress-for-designers'
+                            ) }
+                        />
+                        <ToggleGroupControlOption
+                            value="saved"
+                            label={ __(
+                                'Saved site',
+                                'wordpress-for-designers'
+                            ) }
+                        />
+                    </ToggleGroupControl>
+                </div>
+                <Stack
+                    className="wfd-artboard-settings__actions"
+                    direction="row"
+                    gap="md"
+                    wrap="wrap"
+                >
+                    { ! isBrowsing && (
+                        <Button variant="solid" tone="brand" onClick={ onEdit }>
+                            { __( 'Browse', 'wordpress-for-designers' ) }
+                        </Button>
+                    ) }
+                    <Button variant="outline" tone="brand" onClick={ onReload }>
+                        { __( 'Reload', 'wordpress-for-designers' ) }
+                    </Button>
+                    <Button variant="outline" tone="brand" onClick={ onRemove }>
+                        { __( 'Remove from board', 'wordpress-for-designers' ) }
+                    </Button>
+                </Stack>
+                <WeakText className="wfd-artboard-settings__hint">
+                    { __(
+                        'Enter or double-click browses. Delete removes it from the board.',
+                        'wordpress-for-designers'
+                    ) }
+                </WeakText>
+            </div>
+        );
+    }
     if ( artboard.kind === 'media' ) {
         // A media object has no device and cannot be edited.
         return (

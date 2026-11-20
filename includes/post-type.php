@@ -149,13 +149,13 @@ function wfd_layout_error( $layout ) {
 
     $ids = array();
     foreach ( $layout['artboards'] as $artboard ) {
-        // A media object has a width and no device; every other kind has a device and no width.
-        $is_media = is_array( $artboard ) && isset( $artboard['kind'] ) && 'media' === $artboard['kind'];
-        $fields   = $is_media
-            ? array( 'id', 'kind', 'entityId', 'x', 'y', 'width', 'height' )
-            : array( 'id', 'kind', 'entityId', 'device', 'x', 'y', 'height' );
+        $kind   = is_array( $artboard ) && isset( $artboard['kind'] ) && is_string( $artboard['kind'] ) ? $artboard['kind'] : '';
+        $fields = wfd_artboard_fields( $kind );
         if ( ! is_array( $artboard ) || array_diff( array_keys( $artboard ), $fields ) || count( $artboard ) !== count( $fields ) ) {
-            return $is_media
+            if ( 'browser' === $kind ) {
+                return __( 'Each browser must have exactly the fields id, kind, path, device, x, y, height and shows.', 'wordpress-for-designers' );
+            }
+            return 'media' === $kind
                 ? __( 'Each media object must have exactly the fields id, kind, entityId, x, y, width and height.', 'wordpress-for-designers' )
                 : __( 'Each artboard must have exactly the fields id, kind, entityId, device, x, y and height.', 'wordpress-for-designers' );
         }
@@ -163,19 +163,28 @@ function wfd_layout_error( $layout ) {
             return __( 'Each artboard id must be a unique UUID.', 'wordpress-for-designers' );
         }
         $ids[ $artboard['id'] ] = true;
-        if ( ! in_array( $artboard['kind'], array( 'page', 'template', 'template-part', 'pattern', 'media' ), true ) ) {
+        if ( ! in_array( $kind, array( 'page', 'template', 'template-part', 'pattern', 'media', 'browser' ), true ) ) {
             return __( 'The artboard kind is not valid.', 'wordpress-for-designers' );
         }
-        $numeric_entity = in_array( $artboard['kind'], array( 'page', 'pattern', 'media' ), true );
-        if ( $numeric_entity ? ! is_int( $artboard['entityId'] ) : ( ! is_string( $artboard['entityId'] ) || '' === $artboard['entityId'] ) ) {
-            return __( 'The artboard entityId has the wrong type for its kind.', 'wordpress-for-designers' );
+        if ( in_array( 'entityId', $fields, true ) ) {
+            $numeric_entity = in_array( $kind, array( 'page', 'pattern', 'media' ), true );
+            if ( $numeric_entity ? ! is_int( $artboard['entityId'] ) : ( ! is_string( $artboard['entityId'] ) || '' === $artboard['entityId'] ) ) {
+                return __( 'The artboard entityId has the wrong type for its kind.', 'wordpress-for-designers' );
+            }
         }
-        if ( ! $is_media && ! in_array( $artboard['device'], array( 'desktop', 'tablet', 'mobile' ), true ) ) {
+        if ( in_array( 'device', $fields, true ) && ! in_array( $artboard['device'], array( 'desktop', 'tablet', 'mobile' ), true ) ) {
             return __( 'The artboard device is not valid.', 'wordpress-for-designers' );
         }
-        foreach ( $is_media ? array( 'x', 'y', 'width', 'height' ) : array( 'x', 'y', 'height' ) as $number ) {
+        if ( 'browser' === $kind ) {
+            $error = wfd_browser_error( $artboard );
+            if ( true !== $error ) {
+                return $error;
+            }
+            continue;
+        }
+        foreach ( array_intersect( array( 'x', 'y', 'width', 'height' ), $fields ) as $number ) {
             if ( ! wfd_is_number( $artboard[ $number ] ) ) {
-                return $is_media
+                return 'media' === $kind
                     ? __( 'The media object x, y, width and height must be numbers.', 'wordpress-for-designers' )
                     : __( 'The artboard x, y and height must be numbers.', 'wordpress-for-designers' );
             }
@@ -184,6 +193,50 @@ function wfd_layout_error( $layout ) {
     return array_key_exists( 'notes', $layout )
         ? wfd_notes_error( $layout['notes'], $ids )
         : true;
+}
+
+/**
+ * The fields an artboard of a kind is saved with, and no others
+ * (spec/data-model.md). A media object has a width and no device; a browser
+ * (D55) has an address, a height and what it shows, and no entity; every
+ * other kind has an entity and a device. `KINDS` in src/shell/constants.js
+ * holds the same lists.
+ *
+ * @param string $kind The kind.
+ * @return string[]
+ */
+function wfd_artboard_fields( $kind ) {
+    if ( 'media' === $kind ) {
+        return array( 'id', 'kind', 'entityId', 'x', 'y', 'width', 'height' );
+    }
+    if ( 'browser' === $kind ) {
+        return array( 'id', 'kind', 'path', 'device', 'x', 'y', 'height', 'shows' );
+    }
+    return array( 'id', 'kind', 'entityId', 'device', 'x', 'y', 'height' );
+}
+
+/**
+ * Checks what only a browser of a layout has (spec/data-model.md, D55).
+ *
+ * @param array $browser The decoded browser, with exactly its fields.
+ * @return true|string True when valid, otherwise the reason.
+ */
+function wfd_browser_error( $browser ) {
+    if ( ! is_string( $browser['path'] ) || '/' !== substr( $browser['path'], 0, 1 ) || strlen( $browser['path'] ) > 2000 ) {
+        return __( 'The browser path must start with / and have at most 2000 characters.', 'wordpress-for-designers' );
+    }
+    if ( ! wfd_is_number( $browser['x'] ) || ! wfd_is_number( $browser['y'] ) ) {
+        return __( 'The browser x and y must be numbers.', 'wordpress-for-designers' );
+    }
+    // The window is 200 board units tall at least (D56).
+    if ( ! wfd_is_number( $browser['height'] ) || $browser['height'] < 200 ) {
+        return __( 'The browser height must be a number of 200 or more.', 'wordpress-for-designers' );
+    }
+    // What it shows (D57).
+    if ( ! in_array( $browser['shows'], array( 'unsaved', 'saved' ), true ) ) {
+        return __( 'The browser shows must be unsaved or saved.', 'wordpress-for-designers' );
+    }
+    return true;
 }
 
 /**

@@ -5,6 +5,7 @@ import { createRoot } from '@wordpress/element';
 import { getQueryArg } from '@wordpress/url';
 import { ThemeProvider } from '@wordpress/theme';
 import { App } from './app';
+import { SpaceGate } from './space-gate';
 import { StaticScreen } from '../static';
 import './style.scss';
 
@@ -16,7 +17,13 @@ const screen =
 if ( root ) {
     createRoot( root ).render(
         <ThemeProvider>
-            { screen ? <StaticScreen name={ screen } /> : <App /> }
+            { screen ? (
+                <StaticScreen name={ screen } />
+            ) : (
+                <SpaceGate>
+                    <App />
+                </SpaceGate>
+            ) }
         </ThemeProvider>
     );
 }

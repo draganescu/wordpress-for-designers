@@ -30,6 +30,10 @@ Unless a criterion says otherwise, the fixture in `architecture.md` is loaded an
 - AC-SHELL-07 Turning the inserter or list view toggle on shows a hidden left panel; a hidden right panel stays hidden through selection and edit; after a reload both panels are shown. `[U]`
 - AC-SHELL-08 With both panels hidden, resting the pointer on the left edge of the canvas area shows the left panel and on the right edge shows the right panel. `[U]`
 - AC-SHELL-09 In the artboard list, Cmd/Ctrl + click adds a row to the selection and a second one takes it out; Shift + click selects every row from the one clicked last to the one clicked, in list order; a plain click selects one row again. Each selected row has its artboard outlined on the board. `[U]`
+- AC-SHELL-10 A board opened in a window narrower than 1180 px shows "Designing needs more space" with its text over the whole window, and no header or artboard exists; at 1180 px wide the message goes and the board opens. `[U]`
+- AC-SHELL-11 Narrowing the window below 1180 px while an artboard is in edit shows the message over the whole window; Esc and Cmd/Ctrl + \ do nothing, focus cannot reach the board, and after widening the same artboard is still in edit with both panels shown. `[U]`
+- AC-SHELL-12 At 1180 × 820, 1440 × 900 and 1600 × 900, with a block selected in an artboard in edit, the header controls are in order H1 to H5, H10, H13, H6, H7, H12, H8, H11, H9 inside the window with none overlapping the next, and H14 is at the end of H6; H1 and the tool buttons have the widths they have with nothing in edit; the block toolbar is shown whole; of the document bar only the back button shows, next to H14; with the toolbar's room made smaller than the toolbar, the wheel scrolls the toolbar to its end. At 1180 px the left panel is narrower than 280 px, the right panel narrower than 360 px and the canvas area at least 600 px wide. `[U]`
+- AC-SHELL-13 With a block selected in an artboard in edit, H14 is labelled "Hide block tools" and the document bar's title is not shown; pressing H14 hides the block toolbar, shows the title and changes the label to "Show block tools"; pressing it again shows the toolbar and hides the title; with the toolbar hidden, selecting another block shows it again. With no block selected H14 is not shown and the title is. "Back to the board" is visible in each of these states. `[U]`
 
 ## CANVAS
 
@@ -69,7 +73,7 @@ Unless a criterion says otherwise, the fixture in `architecture.md` is loaded an
 - AC-TIER-08 Zooming while an artboard is Live keeps it in edit at 30% or more; when the zoom settles below 30% edit ends and the artboard stays selected; panning does not leave edit. `[U]`
 - AC-TIER-09 After editing artboards A, B, C, D in turn, D is `live`, C and B are `warm`, A is not. `[U]`
 - AC-TIER-10 A `snapshot` artboard's frame contains no React root and triggers no store subscription callbacks when an entity changes. `[B5]`
-- AC-TIER-11 After a global style change, an artboard that was `snapshot` shows the new style when it next becomes `preview`. `[B5]`
+- AC-TIER-11 After a global style change, an artboard that is `snapshot` shows the new style without becoming `preview`; its old copy is shown until the new one is ready (D51). `[U]`
 - AC-TIER-12 Below 20% zoom an artboard that was never rendered gets its frozen copy without becoming `preview`; no `Skeleton` is left once every such artboard has one. `[U]`
 - AC-TIER-13 An artboard whose content is taller than 2000 px shows all of it as a Preview and as a Snapshot, at the height it has in edit. `[U]`
 
@@ -106,7 +110,7 @@ Unless a criterion says otherwise, the fixture in `architecture.md` is loaded an
 
 ## NEW
 
-- AC-NEW-01 The Add artboard menu lists the four kinds with their descriptions; Template has the submenu described in `screens/AddArtboard.md`. `[U]`
+- AC-NEW-01 The Add artboard menu lists the four kinds and Browser (D55) with their descriptions; Template has the submenu described in `screens/AddArtboard.md`. `[U]`
 - AC-NEW-02 After choosing a kind, a placement ghost follows the pointer; Esc cancels and nothing is created. `[U]`
 - AC-NEW-03 Placing a Page creates a draft page titled "Untitled page" whose template is the theme's `blank` template, or else its `page-no-title` template, when the theme has one; placing a Pattern creates a draft synced pattern titled "Untitled pattern". `[U]`
 - AC-NEW-04 Placing a Template or Template part creates no post until it is saved from Review, where it is listed as "New". `[U]`
@@ -142,6 +146,19 @@ Unless a criterion says otherwise, the fixture in `architecture.md` is loaded an
 - AC-MEDIA-02 A media object is selected by a click, moved by dragging and removed with Delete through a dialog with no checkbox; double-click and Enter do not enter edit; its settings show the image's pixel size and only "Remove from board". `[U]`
 - AC-MEDIA-03 The server accepts a media object with exactly its fields and rejects one with a device or without a width; a media object whose image no longer exists is removed from the board on load. `[N]`
 
+## BROWSER
+
+- AC-BROWSER-01 "Browser" in the Add artboard menu arms placement; a click on the board places a Desktop browser there showing the homepage, labelled "/ · Browser · Desktop", selected and not browsing, with a window 900 board units tall, listed under "Browsers" in the left panel; after a reload it is still there. `[U]`
+- AC-BROWSER-02 Outside browsing, a click on a browser's page selects the browser and follows no link, and a drag moves it; Delete opens the remove dialog with no checkbox and Remove takes it off the board. `[U]`
+- AC-BROWSER-03 Double-click starts browsing: following a link in the page changes the address field and the document bar; typing an address of the site and pressing Enter goes there; Esc pressed inside the page ends browsing with the browser selected; after a reload of the board the browser shows the last address. `[U]`
+- AC-BROWSER-04 A change to a page made in an artboard is not shown in a browser on that page set to "Saved site" (D57) until it is saved from Review; after the save the browser shows it without Reload being pressed. `[U]`
+- AC-BROWSER-05 The server accepts a browser with exactly its fields and rejects one with an `entityId`, one without a `path`, one whose `path` does not start with "/", one without a `height`, one whose `height` is below 200 and one whose `shows` is not "unsaved" or "saved". `[N]`
+- AC-BROWSER-06 Dragging a browser's bottom edge down by 200 board units makes its window 200 units taller, and the height is kept after a reload; Undo, whose tooltip reads "Undo resize browser, on the board", puts it back; dragging it up past 200 stops at 200 (D56). `[U]`
+- AC-BROWSER-07 A page scrolled while browsing stays scrolled where it was after Esc ends browsing (D56). `[U]`
+- AC-BROWSER-08 A browser showing unsaved changes shows a change typed into a page's artboard, without a save and without Reload being pressed, and keeps showing it on a link followed to another page and back; a browser on the same page set to "Saved site" does not show it until Review saves it. The page requested without signing in shows the saved content even with that browser's `wfd_preview` argument, and so does the signed-in user's own request with another value (D57). `[U]`
+- AC-BROWSER-09 A browser showing unsaved changes shows an unsaved change to global styles and to a template part (D57). `[U]`
+- AC-BROWSER-10 With a browser showing unsaved changes, when the preview route fails the canvas shows one notice reading "We're having a problem saving."; it is still one notice after the send has been tried again and has failed again; it goes away when a send succeeds (D61). `[U]`
+
 ## NOTE
 
 - AC-NOTE-01 With no artboard in edit, pressing "Add note" and then clicking over an artboard places a Yellow note there, drawn above the artboard, selected, with its text field focused; "Add note" is no longer pressed. Esc after arming places nothing. `[U]`
@@ -159,7 +176,11 @@ Unless a criterion says otherwise, the fixture in `architecture.md` is loaded an
 - AC-STYLE-05 History lists revisions; picking one shows the banner and repaints the board; Restore makes it the edited styles; Stop previewing reverts the board. `[U]`
 - AC-STYLE-06 "Style applies to" set to "All {block}" changes that block's global style and every such block on the board; "This block" changes only the selected block. `[B7]`
 - AC-STYLE-07 Choosing a variation from the menu repaints the board once and adds Styles to Review. `[U]`
+- AC-STYLE-08 In the Tokens tab, "Edit" on Colors, Typography and Spacing and the "Background" and "Shadows" rows each open the stock styles screen for it; a change made there repaints the board and adds Styles to Review; the screen's Back control returns to the tokens (D52). `[U]`
+- AC-STYLE-09 The Blocks tab lists the elements in the groups "Elements", "Headings" and "Form controls" before the blocks; an element row opens the stock styles screen for that element; a change made there repaints the board, shows as the row's change count and adds Styles to Review (D53). `[U]`
+- AC-STYLE-10 The variation menu reads "Variation: Default" for the theme's own styles, "Variation: {name}" when the styles are exactly a variation and "Variation: Custom" after any further change; its first item, "Default", returns the styles to the theme's (D54). `[U]`
 - AC-STYLE-11 With "Style applies to" on "All {block}", the stock styles screen's Back control sets it back to "This block" (D58). `[U]`
+- AC-STYLE-12 A stock styles screen that throws shows WordPress's stock error notice in its place; the board, the other tabs and the other stock screens keep working; switching to another tab closes the screen that threw, so its tab shows its list again, and leaves open a screen that did not (D60). `[U]`
 
 ## INDEX
 

@@ -12,6 +12,7 @@ import { store as boardStore } from '../board-store';
 import { orderedArtboards } from './artboards-panel';
 import { isShortcutsDialogEvent } from './shortcuts-dialog';
 import { noteRect } from './notes';
+import { MIN_BROWSER_HEIGHT, hasDevice } from './constants';
 
 const DRAG_THRESHOLD = 3;
 const ZOOM_STEP = 1.25;
@@ -37,10 +38,9 @@ export function rectOf( artboard, widthOf ) {
     return {
         x: artboard.x,
         y: artboard.y,
-        width:
-            artboard.kind === 'media'
-                ? artboard.width
-                : widthOf( artboard.device ),
+        width: hasDevice( artboard )
+            ? widthOf( artboard.device )
+            : artboard.width,
         height: artboard.height,
     };
 }
@@ -263,23 +263,45 @@ export function useCanvasInteractions( {
                 return;
             }
             const id = idOf( element );
+            if (
+                event.target.closest( '[data-wfd-resize]' ) &&
+                board().getEditId() !== id
+            ) {
+                // The bottom edge of a browser's window (D56).
+                if ( board().getEditId() ) {
+                    latest.current.onLeaveEdit();
+                }
+                actions().selectArtboard( id );
+                area.focus( { preventScroll: true } );
+                const frame = element.querySelector( '.wfd-artboard__frame' );
+                gesture = {
+                    type: 'resize',
+                    id,
+                    frame,
+                    originHeight: board().getArtboard( id ).height,
+                    height: null,
+                    startY: event.clientY,
+                };
+                area.setPointerCapture( event.pointerId );
+                return;
+            }
             if ( board().getEditingNoteId() === id ) {
                 // The text field of the note being edited.
                 return;
             }
-            const liveId = board().getLiveId();
-            if ( liveId === id ) {
+            const editId = board().getEditId();
+            if ( editId === id ) {
                 // The Live artboard's own label and tools.
                 return;
             }
-            if ( liveId ) {
+            if ( editId ) {
                 // Selecting another artboard ends edit.
                 latest.current.onLeaveEdit();
             }
             if ( ! isBody( event.target ) ) {
                 return;
             }
-            if ( ! liveId && ( event.metaKey || event.ctrlKey ) ) {
+            if ( ! editId && ( event.metaKey || event.ctrlKey ) ) {
                 // Cmd/Ctrl + click adds the artboard to the selection or
                 // takes it out.
                 actions().toggleArtboardSelection( id );
@@ -341,7 +363,7 @@ export function useCanvasInteractions( {
         // The selection rectangle (D43). It is kept in board units, so it
         // stays put on the board if the board is scrolled during the drag.
         function startMarquee() {
-            const isEditing = !! board().getLiveId();
+            const isEditing = !! board().getEditId();
             const before = board().getSelectedIds();
             if ( isEditing ) {
                 // Deselecting ends edit.
@@ -405,6 +427,18 @@ export function useCanvasInteractions( {
                 gesture.y = event.clientY;
                 return;
             }
+            if ( gesture.type === 'resize' ) {
+                const { zoom } = viewport.get();
+                gesture.height = Math.max(
+                    MIN_BROWSER_HEIGHT,
+                    Math.round(
+                        gesture.originHeight +
+                            ( event.clientY - gesture.startY ) / zoom
+                    )
+                );
+                gesture.frame.style.height = gesture.height + 'px';
+                return;
+            }
             const dx = event.clientX - gesture.startX;
             const dy = event.clientY - gesture.startY;
             if ( gesture.type === 'empty' || gesture.type === 'marquee' ) {
@@ -458,6 +492,12 @@ export function useCanvasInteractions( {
                 }
                 return;
             }
+            if ( ended.type === 'resize' ) {
+                if ( ended.height !== null ) {
+                    actions().resizeBrowser( ended.id, ended.height );
+                }
+                return;
+            }
             if ( ended.type === 'drag' ) {
                 actions().moveArtboards(
                     ended.items.map( ( { id, x, y } ) => ( { id, x, y } ) )
@@ -472,7 +512,7 @@ export function useCanvasInteractions( {
                 )
             ) {
                 // Deselecting ends edit.
-                if ( board().getLiveId() ) {
+                if ( board().getEditId() ) {
                     latest.current.onLeaveEdit();
                 }
                 actions().clearSelection();
@@ -496,7 +536,7 @@ export function useCanvasInteractions( {
             if (
                 element &&
                 isBody( target ) &&
-                element.dataset.wfdArtboard !== board().getLiveId()
+                element.dataset.wfdArtboard !== board().getEditId()
             ) {
                 latest.current.onEdit( element.dataset.wfdArtboard );
             }
@@ -563,6 +603,11 @@ export function useCanvasInteractions( {
                     actions().undoLayout();
                 }
                 return done();
+            }
+            if ( board().getBrowsingId() ) {
+                // While a browser is browsed the board has those keys only;
+                // Esc is the shell's (see use-editing.js).
+                return;
             }
             if ( mod || event.altKey ) {
                 return;

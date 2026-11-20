@@ -1,6 +1,6 @@
 # Screens
 
-Twenty-four screens. Each has an image in `images/` (except `LockDialog` and `ShortcutsDialog`, which have none) and a file here naming its state, the regions it uses and its own elements. Regions shared by many screens are defined once in this file.
+Twenty-five screens. Each has an image in `images/` (except `LockDialog`, `ShortcutsDialog` and `NeedsSpace`, which have none) and a file here naming its state, the regions it uses and its own elements. Regions shared by many screens are defined once in this file.
 
 Rules for reading the images (see also `CLAUDE.md`, rules 6 and 7):
 
@@ -24,12 +24,15 @@ Left to right:
 | H5 | List view toggle | `IconButton`, `listView`, pressed state | Label "List view" | Shows or hides the list view. Disabled when no artboard is in edit. |
 | H10 | Left panel toggle | `IconButton`, `drawerLeft`, pressed state while the left panel is shown | Labels "Hide left panel" / "Show left panel" | Hides or shows the left panel (D32). Sits after H5. |
 | H13 | Note tool | `IconButton`, `comment`, pressed state while the tool is armed | Label "Add note" | Arms the note tool; pressed again, switches it off (D46). Sits after H10. Disabled while an artboard is in edit. |
-| H6 | Block toolbar | `be.BlockToolbar`, filled from the Live editor through a slot | Stock | Present only while an artboard is in edit and a block is selected. |
-| H7 | Document bar | Centred `Text` on a weak neutral surface; in edit, preceded by an `IconButton` with `arrowLeft` | Board name; in edit "{artboard name} · {Kind}", back button label "Back to the board" | Back button leaves edit. The bar itself is not clickable. `[N]` |
+| H6 | Block toolbar | `be.BlockToolbar`, filled from the Live editor through a slot | Stock | Present only while an artboard is in edit and a block is selected. While it is shown it takes the place of H7's title (D50). When it is wider than its room it scrolls sideways, as the stock toolbar does. |
+| H14 | Block tools toggle | `IconButton`, `previous` while the block toolbar is shown, `next` while it is hidden | Labels "Hide block tools" / "Show block tools" | Hides the block toolbar, which brings H7's title back, and shows it again (D50). Selecting another block shows the toolbar. Present only while the selected block has a toolbar. Sits at the end of H6. |
+| H7 | Document bar | Centred `Text` on a weak neutral surface; in edit, preceded by an `IconButton` with `arrowLeft` | Board name; in edit "{artboard name} · {Kind}", back button label "Back to the board" | Back button leaves edit. The bar itself is not clickable. `[N]` While H6 is shown the bar is only its back button, next to H14 (D50). `[U]` |
 | H12 | Tidy up | `IconButton`, `grid`, minimal neutral | Label "Tidy up" | Arranges everything on the board in one row per kind, in left-panel order (D45), and fits all. Disabled while an artboard is in edit and with fewer than two items on the board. Sits just before H8. |
 | H8 | Zoom menu | `Menu` whose trigger shows the zoom as a percentage with `chevronDown` | Trigger label "Zoom"; items "Zoom in", "Zoom out", "Zoom to 50%", "Zoom to 100%", "Fit all", "Fit selection" | Items act on the viewport. "Fit selection" is disabled with nothing selected. An item that takes the zoom below 30% while an artboard is in edit leaves edit (D37). `[N]` for the item list |
 | H11 | Right panel toggle | `IconButton`, `drawerRight`, pressed state while the right panel is shown | Labels "Hide right panel" / "Show right panel" | Hides or shows the right panel (D32). Sits between H8 and H9. |
 | H9 | Review button | `Button`, solid brand | "Review {n} changes", "Review 1 change"; with none, "Review changes", disabled | Opens the Review drawer. |
+
+Below 1440 px wide the panels make room as D50 says; below 1180 px the board is replaced by `NeedsSpace.md` (D49). `[U]`
 
 Kind names used in labels: "Page", "Template", "Template part", "Pattern". `[D:Overview]`
 
@@ -41,6 +44,18 @@ Media objects (D34): `[U]`
 - The remove dialog has its title and buttons only: no description and no checkbox.
 - If the image cannot be loaded the error state reads "Couldn't load this image."
 - Dragging a row of the Media tab over empty board shows the drop target at the object's size with the label "{file name} · Media"; dropping places it there. Clicking the row places it in the middle of the board in view, moved right past anything it would cover. Both apply only with no artboard in edit; in edit the image goes into the artboard as an Image block (D39).
+
+Browsers (D55): `[U]`
+
+- Kind name "Browser", `globe` icon. A browser's name is its address, for example "/" or "/about/". In the left panel browsers are the group "Browsers", after Media; a row has the `globe` icon, the address and the device word.
+- On the board a browser is a frame like an artboard's at its device width, with a window of its own height (900 board units when placed, D56) showing the page at its address, and the label A1 "{address} · Browser · {Device}". Until the page has loaded the window shows a `Skeleton`. A browser far from view (the Ghost rule) is a sized box; otherwise its page is loaded. Browsers do not count toward the 12 Previews and have no Snapshot.
+- Outside browsing the page takes no pointer input: a click selects the browser, a drag moves it, double-click starts browsing.
+- The window's bottom edge is a resize handle (D56): on a browser not being browsed, hovering it shows the `ns-resize` pointer and dragging it changes the window's height, 200 board units at least, by changing the DOM as the drag goes; the store hears when the drag ends. Outside browsing the page stays where it was scrolled to while browsing.
+- While browsing, the label is A2 with the address in place of "{Name} · {Kind}": an `InputControl` labelled "Address" holding the address, which goes to the typed address on Enter (a missing leading "/" is added); an `IconButton` `rotateRight` labelled "Reload", which reloads the page; then the device menu. The document bar reads "{address} · Browser" with the back button. Undo and Redo act on the layout history. The list view toggle stays disabled, the Blocks tab is not shown and the inserter acts as with no artboard in edit; anything it places ends browsing.
+- Selected alone or browsing, the right panel shows the entity card (the address; description "The site as visitors see it."), the device control E6, a `wpc.ToggleGroupControl` labelled "Shows" with the options "Unsaved changes" and "Saved site" (D57), then `Button` solid "Browse", which starts browsing and is not shown while browsing, `Button` outline "Reload" and `Button` outline "Remove from board", and the hint "Enter or double-click browses. Delete removes it from the board."
+- The remove dialog has its title and buttons only, as for a media object.
+- A link or a typed address that leads off the site does nothing: the window stays on the page it was on.
+- When the board's unsaved changes cannot be sent for the preview (D57), the canvas shows a `Notice`, error tone, at its top left, where the usage and preview banners of the Styles screens are shown: "We're having a problem saving." (D61). There is one notice for as long as sends keep failing, however often the send is tried again; it goes away when a send succeeds.
 
 Notes (D46): `[U]`
 
@@ -57,7 +72,7 @@ Notes (D46): `[U]`
 |---|---|---|---|---|
 | L1 | Panel heading | `Text` heading-md | "Artboards" | |
 | L2 | Add artboard | `IconButton`, `plus`, opens a `Menu` | Label "Add artboard" | See the "New artboard 1" screen. |
-| L3 | Group heading | `Text` heading-sm with a count at the right | "Pages", "Templates", "Template parts", "Patterns", "Media", "Notes" | A group with no artboards is not shown. `[N]` |
+| L3 | Group heading | `Text` heading-sm with a count at the right | "Pages", "Templates", "Template parts", "Patterns", "Media", "Browsers", "Notes" | A group with no artboards is not shown. `[N]` |
 | L4 | Artboard row | `wpc.ItemGroup` / `Item` row: kind icon (`page`, `layout`, `header`, `symbol`), name, device at the right | Device words "Desktop", "Tablet", "Mobile" | Click selects the artboard and scrolls it into view. Cmd/Ctrl + click adds the row to the selection or takes it out; Shift + click selects every row from the one clicked last to this one (D41). Double-click or Enter edits it. Delete or Backspace on a focused row removes the selected artboards, as on the board. Every selected row uses the brand surface. |
 
 Rows are ordered by name within a group, then Desktop, Tablet, Mobile. `[N]`
@@ -83,7 +98,7 @@ Rows are ordered by name within a group, then Desktop, Tablet, Mobile. `[N]`
 
 | ID | Element | Component | Text | Behaviour |
 |---|---|---|---|---|
-| A1 | Artboard label | `Text` body-sm above the artboard's top-left corner | "{Name} · {Kind} · {Device}"; for a media object "{Name} · Media" | Not interactive, except on the Live artboard (A2). |
+| A1 | Artboard label | `Text` body-sm above the artboard's top-left corner | "{Name} · {Kind} · {Device}"; for a media object "{Name} · Media"; for a browser "{address} · Browser · {Device}" (D55) | Not interactive, except on the Live artboard (A2). |
 | A2 | Live artboard label | `Text` in brand colour, "{Name} · {Kind}", followed by a `Menu` trigger showing the device | Menu items "Desktop", "Tablet", "Mobile"; trigger label "Artboard device" | Choosing a device changes this artboard's device. |
 | A3 | Artboard | The tier content at the device width, scaled by the zoom | | Click selects; Cmd/Ctrl + click adds it to the selection or takes it out when no artboard is in edit (D41); drag moves it, and with several selected moves them all; double-click edits. |
 | A4 | Selection outline | 2 px brand stroke around each selected artboard and the Live artboard | | |
@@ -97,11 +112,13 @@ The canvas background is the weak neutral surface. Dragging an artboard moves it
 | ID | Element | Component | Text | Behaviour |
 |---|---|---|---|---|
 | S1 | Heading | `Text` heading-lg | "Styles" | |
-| S2 | Variation menu | `Menu`, trigger shows the active variation | "Variation: {name}"; "Variation: Default" when none | See `architecture.md`, Styles. Hidden when the theme has no variations. `[N]` for both fallbacks |
+| S2 | Variation menu | `Menu`, trigger shows the active variation; first item "Default", then the theme's variations | "Variation: {name}" when the styles are exactly that variation; "Variation: Default" when they are the theme's own; "Variation: Custom" otherwise (D54) | See `architecture.md`, Styles. Hidden when the theme has no variations. `[N]` "Default" returns the styles to the theme's. `[U]` |
 | S3 | Tabs | `Tabs` | "Tokens", "Blocks", "History" | |
-| S4 | Tokens: Colors group | heading-sm "Colors" with "Uses" at the right; rows of `wpc.ColorIndicator`, name, hex in the mono font, use count; "Add color" `Button` minimal | | Clicking a row selects the token (usage highlight) and opens a `Popover` with `wpc.ColorPalette`'s picker to edit it. Clicking the selected row again clears the selection. "Add color" adds a custom colour named "Color 1", "Color 2" and so on, black, and selects it so its picker opens; it is an unsaved Styles change like any other. `[N]` for the popover, `[U]` for Add color |
-| S5 | Tokens: Typography group | heading-sm "Typography" / "Uses"; rows with an "Aa" sample, name, "{family} · {size} / {line height}", use count | | One row per font-size preset and one per font-family preset. A row fills the parts it does not have from the site's base text style (base family, base size, base line height). Clicking selects the token for usage highlight. Editing typography presets is done in the Blocks tab's stock panels, not here. `[N]` `[U]` |
-| S6 | Tokens: Spacing group | heading-sm "Spacing"; one square per spacing preset with its px value under it | | Display only. `[N]` |
+| S4 | Tokens: Colors group | heading-sm "Colors" with an "Edit" `Button` minimal with `chevronRight` and "Uses" at the right; rows of `wpc.ColorIndicator`, name, hex in the mono font, use count; "Add color" `Button` minimal | | Clicking a row selects the token (usage highlight) and opens a `Popover` with `wpc.ColorPalette`'s picker to edit it. Clicking the selected row again clears the selection. "Add color" adds a custom colour named "Color 1", "Color 2" and so on, black, and selects it so its picker opens; it is an unsaved Styles change like any other. "Edit" opens the stock Colors screen (S8). `[N]` for the popover, `[U]` for Add color and Edit |
+| S5 | Tokens: Typography group | heading-sm "Typography" / "Edit" / "Uses"; rows with an "Aa" sample, name, "{family} · {size} / {line height}", use count | | One row per font-size preset and one per font-family preset. A row fills the parts it does not have from the site's base text style (base family, base size, base line height). Clicking selects the token for usage highlight. Typography is edited in the stock Typography screen that "Edit" opens (S8), not in the rows (D52). `[N]` `[U]` |
+| S6 | Tokens: Spacing group | heading-sm "Spacing" / "Edit"; one square per spacing preset with its px value under it | | The squares are display only. `[N]` "Edit" opens the stock Layout screen (S8). `[U]` |
+| S7 | Tokens: Background and Shadows | Two rows after Spacing: icon, name, `chevronRight` | "Background", "Shadows" | A row opens the stock Background or Shadows screen (S8). `[U]` |
+| S8 | Tokens: stock screen | `gs.GlobalStylesUI` at `/colors`, `/typography`, `/layout`, `/background` or `/shadows`, in place of the Tokens tab's content | Stock | Opened by "Edit" in S4 to S6 and by the rows of S7 (D52). Its own Back control returns to the tokens. If the screen throws, `ed.ErrorBoundary` shows its stock notice in its place; switching to another tab closes it, and the tokens are back on return (D60). `[U]` |
 
 ## Region: Right panel, editing `[D:Main]` `[D:AddArtboard2]` `[U]`
 
