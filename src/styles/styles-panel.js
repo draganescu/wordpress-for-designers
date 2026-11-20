@@ -1,9 +1,10 @@
 /**
  * The Styles panel (spec/screens/README.md, region "Right panel, Styles",
- * S1 to S6, and the Blocks and History tabs). Presentational: props in,
- * callbacks out.
+ * S1 to S8, and the Blocks and History tabs). Presentational: props in,
+ * callbacks out. The stock styles screens are rendered for it, and it is
+ * given their paths (src/styles/stock-screens.js).
  */
-import { useState } from '@wordpress/element';
+import { useId, useState } from '@wordpress/element';
 import { __, _n, sprintf, isRTL } from '@wordpress/i18n';
 import {
     ColorIndicator,
@@ -11,7 +12,13 @@ import {
     SearchControl,
 } from '@wordpress/components';
 import { BlockIcon } from '@wordpress/block-editor';
-import { chevronDown, chevronLeft, chevronRight } from '@wordpress/icons';
+import {
+    background,
+    chevronDown,
+    chevronLeft,
+    chevronRight,
+    shadow,
+} from '@wordpress/icons';
 import {
     Button,
     Icon,
@@ -31,22 +38,39 @@ import {
 
 const NO_COLORS = [];
 
+// Values of the menu's items: the theme's own styles, and a variation by its
+// title.
+const DEFAULT_ITEM = 'default';
+const VARIATION_ITEM = 'variation:';
+
 /**
- * S2: the variation menu.
+ * S2: the variation menu (decision D54).
  *
  * @param {Object}      props
  * @param {Array}       props.variations      Theme style variations.
- * @param {string|null} props.activeVariation Title of the active variation.
- * @param {Function}    props.onPickVariation Called with a variation title.
+ * @param {string|null} props.activeVariation Title of the variation the styles are exactly.
+ * @param {boolean}     props.isCustom        Whether the styles are neither a variation nor the theme's own.
+ * @param {Function}    props.onPickVariation Called with a variation title, or null for the theme's own styles.
  */
-function VariationMenu( { variations, activeVariation, onPickVariation } ) {
-    const label = activeVariation
-        ? sprintf(
-              /* translators: %s: name of a theme style variation. */
-              __( 'Variation: %s', 'wordpress-for-designers' ),
-              activeVariation
-          )
-        : __( 'Variation: Default', 'wordpress-for-designers' );
+function VariationMenu( {
+    variations,
+    activeVariation,
+    isCustom,
+    onPickVariation,
+} ) {
+    let label = __( 'Variation: Default', 'wordpress-for-designers' );
+    let value = DEFAULT_ITEM;
+    if ( activeVariation ) {
+        label = sprintf(
+            /* translators: %s: name of a theme style variation. */
+            __( 'Variation: %s', 'wordpress-for-designers' ),
+            activeVariation
+        );
+        value = VARIATION_ITEM + activeVariation;
+    } else if ( isCustom ) {
+        label = __( 'Variation: Custom', 'wordpress-for-designers' );
+        value = '';
+    }
 
     return (
         <Menu.Root>
@@ -58,13 +82,24 @@ function VariationMenu( { variations, activeVariation, onPickVariation } ) {
             </Menu.Trigger>
             <Menu.Popup>
                 <Menu.RadioGroup
-                    value={ activeVariation ?? '' }
-                    onValueChange={ ( title ) => onPickVariation?.( title ) }
+                    value={ value }
+                    onValueChange={ ( next ) =>
+                        onPickVariation?.(
+                            next === DEFAULT_ITEM
+                                ? null
+                                : next.slice( VARIATION_ITEM.length )
+                        )
+                    }
                 >
+                    <Menu.RadioItem value={ DEFAULT_ITEM } closeOnClick>
+                        <Menu.ItemLabel>
+                            { __( 'Default', 'wordpress-for-designers' ) }
+                        </Menu.ItemLabel>
+                    </Menu.RadioItem>
                     { variations.map( ( { title } ) => (
                         <Menu.RadioItem
                             key={ title }
-                            value={ title }
+                            value={ VARIATION_ITEM + title }
                             closeOnClick
                         >
                             <Menu.ItemLabel>{ title }</Menu.ItemLabel>
@@ -154,37 +189,93 @@ function ColorPicker( { token, anchor, onClose, onChangeColor } ) {
 }
 
 /**
- * The Tokens tab: S4, S5, S6.
+ * "Edit" in a Tokens group heading (S4 to S6): opens the stock styles screen
+ * of the group. It is named by its own text and the heading's.
+ *
+ * @param {Object}   props
+ * @param {string}   props.headingId Id of the group's heading.
+ * @param {Function} props.onClick   Called when it is used.
+ */
+function EditGroup( { headingId, onClick } ) {
+    const id = useId();
+    return (
+        <Button
+            id={ id }
+            aria-labelledby={ id + ' ' + headingId }
+            variant="minimal"
+            size="small"
+            onClick={ onClick }
+        >
+            { __( 'Edit', 'wordpress-for-designers' ) }
+            <Button.Icon icon={ isRTL() ? chevronLeft : chevronRight } />
+        </Button>
+    );
+}
+
+/**
+ * The Tokens tab: S4 to S8.
  *
  * @param {Object}      props
  * @param {Array}       props.colors        Colour tokens.
  * @param {Array}       props.typography    Typography tokens.
  * @param {Array}       props.spacing       Spacing presets.
+ * @param {Object}      props.screens       Paths of the stock screens: colors, typography, layout, shadows and, when the theme allows a site background, background.
  * @param {Object|null} props.selectedToken { type, slug } or null.
  * @param {Function}    props.onSelectToken Called with a token or null.
  * @param {Function}    props.onChangeColor Called with ( slug, color ).
  * @param {Function}    props.onAddColor    Called by "Add color".
+ * @param {string|null} props.openScreen    Path of the open stock screen.
+ * @param {Function}    props.onOpenScreen  Called with a stock screen's path.
+ * @param {Function}    props.renderScreen  Renders the open stock screen.
  */
 function TokensTab( {
     colors,
     typography,
     spacing,
+    screens,
     selectedToken,
     onSelectToken,
     onChangeColor,
     onAddColor,
+    openScreen,
+    onOpenScreen,
+    renderScreen,
 } ) {
     const [ pickerSlug, setPickerSlug ] = useState( null );
     const [ pickerAnchor, setPickerAnchor ] = useState( null );
+    const headingId = useId();
     const pickerToken = colors.find( ( token ) => token.slug === pickerSlug );
     const usesLabel = __( 'Uses', 'wordpress-for-designers' );
     const isSelected = ( type, slug ) =>
         selectedToken?.type === type && selectedToken?.slug === slug;
+    const open = ( path ) => {
+        setPickerSlug( null );
+        onOpenScreen?.( path );
+    };
+    const chevron = <Icon icon={ isRTL() ? chevronLeft : chevronRight } />;
+
+    if ( openScreen ) {
+        // S8: the stock screen, with its own Back control.
+        return (
+            <div className="wfd-styles__screen">
+                { renderScreen?.( openScreen ) }
+            </div>
+        );
+    }
 
     return (
         <>
             <section className="wfd-styles__section">
-                <GroupHeading suffix={ usesLabel }>
+                <GroupHeading
+                    id={ headingId + 'colors' }
+                    suffix={ usesLabel }
+                    action={
+                        <EditGroup
+                            headingId={ headingId + 'colors' }
+                            onClick={ () => open( screens.colors ) }
+                        />
+                    }
+                >
                     { __( 'Colors', 'wordpress-for-designers' ) }
                 </GroupHeading>
                 <RowGroup>
@@ -243,7 +334,16 @@ function TokensTab( {
                 </div>
             </section>
             <section className="wfd-styles__section">
-                <GroupHeading suffix={ usesLabel }>
+                <GroupHeading
+                    id={ headingId + 'typography' }
+                    suffix={ usesLabel }
+                    action={
+                        <EditGroup
+                            headingId={ headingId + 'typography' }
+                            onClick={ () => open( screens.typography ) }
+                        />
+                    }
+                >
                     { __( 'Typography', 'wordpress-for-designers' ) }
                 </GroupHeading>
                 <RowGroup>
@@ -295,7 +395,15 @@ function TokensTab( {
                 </RowGroup>
             </section>
             <section className="wfd-styles__section">
-                <GroupHeading>
+                <GroupHeading
+                    id={ headingId + 'spacing' }
+                    action={
+                        <EditGroup
+                            headingId={ headingId + 'spacing' }
+                            onClick={ () => open( screens.layout ) }
+                        />
+                    }
+                >
                     { __( 'Spacing', 'wordpress-for-designers' ) }
                 </GroupHeading>
                 <Stack
@@ -322,6 +430,27 @@ function TokensTab( {
                     ) ) }
                 </Stack>
             </section>
+            <section className="wfd-styles__section">
+                <RowGroup>
+                    { screens.background && (
+                        <Row
+                            icon={ background }
+                            name={ __(
+                                'Background',
+                                'wordpress-for-designers'
+                            ) }
+                            suffix={ chevron }
+                            onClick={ () => open( screens.background ) }
+                        />
+                    ) }
+                    <Row
+                        icon={ shadow }
+                        name={ __( 'Shadows', 'wordpress-for-designers' ) }
+                        suffix={ chevron }
+                        onClick={ () => open( screens.shadows ) }
+                    />
+                </RowGroup>
+            </section>
         </>
     );
 }
@@ -333,15 +462,15 @@ function TokensTab( {
  * @param {Object}      props
  * @param {string}      props.blockQuery         The search text.
  * @param {Function}    props.onBlockQueryChange Called with the search text.
- * @param {Array}       props.blocks             { name, title, icon, changes }.
- * @param {string|null} props.openBlock          Name of the open block.
- * @param {Function}    props.onOpenBlock        Called with a block name.
- * @param {Function}    props.renderBlockStyles  Renders the open block's styles.
+ * @param {Array}       props.blockGroups        [{ title, rows: [{ path, title, icon, changes }] }], the elements' groups first (D53).
+ * @param {string|null} props.openBlock          Path of the open row's stock screen.
+ * @param {Function}    props.onOpenBlock        Called with a path.
+ * @param {Function}    props.renderBlockStyles  Renders the stock screen at a path.
  */
 function BlocksTab( {
     blockQuery,
     onBlockQueryChange,
-    blocks,
+    blockGroups,
     openBlock,
     onOpenBlock,
     renderBlockStyles,
@@ -367,39 +496,48 @@ function BlocksTab( {
                     onChange={ onBlockQueryChange }
                 />
             </div>
-            <RowGroup>
-                { blocks.map( ( { name, title, icon, changes } ) => (
-                    <Row
-                        key={ name }
-                        icon={ <BlockIcon icon={ icon } /> }
-                        name={ title }
-                        suffix={
-                            <span className="wfd-styles__suffix">
-                                { changes > 0 && (
-                                    <span className="wfd-styles__changes">
-                                        { sprintf(
-                                            /* translators: %d: number of changed style properties. */
-                                            _n(
-                                                '%d change',
-                                                '%d changes',
-                                                changes,
-                                                'wordpress-for-designers'
-                                            ),
-                                            changes
-                                        ) }
-                                    </span>
-                                ) }
-                                <Icon
-                                    icon={
-                                        isRTL() ? chevronLeft : chevronRight
+            { blockGroups.map( ( group ) => (
+                <section key={ group.title }>
+                    <GroupHeading>{ group.title }</GroupHeading>
+                    <RowGroup>
+                        { group.rows.map(
+                            ( { path, title, icon, changes } ) => (
+                                <Row
+                                    key={ path }
+                                    icon={ <BlockIcon icon={ icon } /> }
+                                    name={ title }
+                                    suffix={
+                                        <span className="wfd-styles__suffix">
+                                            { changes > 0 && (
+                                                <span className="wfd-styles__changes">
+                                                    { sprintf(
+                                                        /* translators: %d: number of changed style properties. */
+                                                        _n(
+                                                            '%d change',
+                                                            '%d changes',
+                                                            changes,
+                                                            'wordpress-for-designers'
+                                                        ),
+                                                        changes
+                                                    ) }
+                                                </span>
+                                            ) }
+                                            <Icon
+                                                icon={
+                                                    isRTL()
+                                                        ? chevronLeft
+                                                        : chevronRight
+                                                }
+                                            />
+                                        </span>
                                     }
+                                    onClick={ () => onOpenBlock?.( path ) }
                                 />
-                            </span>
-                        }
-                        onClick={ () => onOpenBlock?.( name ) }
-                    />
-                ) ) }
-            </RowGroup>
+                            )
+                        ) }
+                    </RowGroup>
+                </section>
+            ) ) }
             <WeakText className="wfd-styles__help" render={ <p /> }>
                 { __(
                     'Each block opens the same styles panel the Site Editor uses.',
@@ -518,23 +656,28 @@ function HistoryTab( {
  *
  * @param {Object}      props
  * @param {Array}       props.variations         [{ title }]; S2 is hidden when empty.
- * @param {string|null} props.activeVariation    Title, or null for the default.
- * @param {Function}    props.onPickVariation    Called with a title.
+ * @param {string|null} props.activeVariation    Title of the variation the styles are exactly, or null.
+ * @param {boolean}     props.isCustom           Whether the styles are neither a variation nor the theme's own.
+ * @param {Function}    props.onPickVariation    Called with a title, or null for the theme's own styles.
  * @param {string}      props.tab                'tokens', 'blocks' or 'history'.
  * @param {Function}    props.onTabChange        Called with a tab.
  * @param {Array}       props.colors             [{ slug, name, color, uses }].
  * @param {Array}       props.typography         [{ slug, name, family, size, lineHeight, uses, fontFamilyCss }].
  * @param {Array}       props.spacing            [{ slug, px }].
+ * @param {Object}      props.screens            Paths of the stock screens for site-wide styles.
+ * @param {string|null} props.openScreen         Path of the stock screen open in Tokens.
+ * @param {Function}    props.onOpenScreen       Called with a stock screen's path.
+ * @param {Function}    props.renderScreen       Renders the open stock screen.
  * @param {Object|null} props.selectedToken      { type, slug } or null.
  * @param {Function}    props.onSelectToken      Called with a token or null.
  * @param {Function}    props.onChangeColor      Called with ( slug, color ).
  * @param {Function}    props.onAddColor         Called by "Add color".
  * @param {string}      props.blockQuery         Search text of the Blocks tab.
  * @param {Function}    props.onBlockQueryChange Called with the search text.
- * @param {Array}       props.blocks             [{ name, title, icon, changes }].
- * @param {string|null} props.openBlock          Name of the open block.
- * @param {Function}    props.onOpenBlock        Called with a block name.
- * @param {Function}    props.renderBlockStyles  Renders the open block's styles.
+ * @param {Array}       props.blockGroups        [{ title, rows: [{ path, title, icon, changes }] }].
+ * @param {string|null} props.openBlock          Path of the open row's stock screen.
+ * @param {Function}    props.onOpenBlock        Called with a path.
+ * @param {Function}    props.renderBlockStyles  Renders the stock screen at a path.
  * @param {Array}       props.historyRows        [{ id, kind, date, author, changes }].
  * @param {*}           props.selectedHistoryId  Id of the previewed row.
  * @param {Function}    props.onSelectHistory    Called with a row id.
@@ -544,19 +687,24 @@ function HistoryTab( {
 export function StylesPanel( {
     variations = [],
     activeVariation = null,
+    isCustom = false,
     onPickVariation,
     tab = 'tokens',
     onTabChange,
     colors = [],
     typography = [],
     spacing = [],
+    screens = {},
+    openScreen = null,
+    onOpenScreen,
+    renderScreen,
     selectedToken = null,
     onSelectToken,
     onChangeColor,
     onAddColor,
     blockQuery = '',
     onBlockQueryChange,
-    blocks = [],
+    blockGroups = [],
     openBlock = null,
     onOpenBlock,
     renderBlockStyles,
@@ -576,6 +724,7 @@ export function StylesPanel( {
                     <VariationMenu
                         variations={ variations }
                         activeVariation={ activeVariation }
+                        isCustom={ isCustom }
                         onPickVariation={ onPickVariation }
                     />
                 ) }
@@ -600,6 +749,10 @@ export function StylesPanel( {
                         colors={ colors }
                         typography={ typography }
                         spacing={ spacing }
+                        screens={ screens }
+                        openScreen={ openScreen }
+                        onOpenScreen={ onOpenScreen }
+                        renderScreen={ renderScreen }
                         selectedToken={ selectedToken }
                         onSelectToken={ onSelectToken }
                         onChangeColor={ onChangeColor }
@@ -610,7 +763,7 @@ export function StylesPanel( {
                     <BlocksTab
                         blockQuery={ blockQuery }
                         onBlockQueryChange={ onBlockQueryChange }
-                        blocks={ blocks }
+                        blockGroups={ blockGroups }
                         openBlock={ openBlock }
                         onOpenBlock={ onOpenBlock }
                         renderBlockStyles={ renderBlockStyles }

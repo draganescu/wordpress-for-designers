@@ -4,12 +4,12 @@ As of 2026-11-19. This describes what exists; `spec/` says what should exist. Fo
 
 ## Summary
 
-The plugin is built through Milestone 12 of `spec/build-order.md`, plus the decisions taken afterwards (D32 to D50, and D58).
+The plugin is built through Milestone 12 of `spec/build-order.md`, plus the decisions taken afterwards (D32 to D54, and D58 to D60).
 
 | Check | Result |
 |---|---|
-| Acceptance criteria in `spec/acceptance.md` | 132 |
-| End-to-end tests, one per criterion | 132. AC-SHELL-10 to 13 (D49, D50) and AC-STYLE-11 (D58) joined after the runs described next. On 2026-11-20 the whole suite of 127, AC-SAVE-08 and AC-SAVE-09 (D48) included, was run once from a worktree: 126 pass and AC-PERF-03 fails, as it does from any worktree. On 2026-11-19 the suite of 125 was run three times: all pass after two fixes to the tests. AC-CANVAS-03 used an empty-board point that D42's Keyboard shortcuts control now covers; AC-STYLE-07 (and three like it in `ins.spec.ts` and `style.spec.ts`) counted menu rows once instead of waiting for them, and failed one run in three. AC-PERF-03 still fails on a port-8890 environment from a worktree (see working-notes.md) |
+| Acceptance criteria in `spec/acceptance.md` | 136 |
+| End-to-end tests, one per criterion | 136. AC-SHELL-10 to 13 (D49, D50) and AC-STYLE-11 (D58) joined after the runs described next. On 2026-11-20 the whole suite of 127, AC-SAVE-08 and AC-SAVE-09 (D48) included, was run once from a worktree: 126 pass and AC-PERF-03 fails, as it does from any worktree. On 2026-11-19 the suite of 125 was run three times: all pass after two fixes to the tests. AC-CANVAS-03 used an empty-board point that D42's Keyboard shortcuts control now covers; AC-STYLE-07 (and three like it in `ins.spec.ts` and `style.spec.ts`) counted menu rows once instead of waiting for them, and failed one run in three. AC-PERF-03 still fails on a port-8890 environment from a worktree (see working-notes.md). After D51 to D54, D59 and D60 the suite was run from their worktree on its own site: 128 passed and AC-PERF-03 failed, as it does from any worktree (see working-notes.md) |
 | `npm run lint` | Exits 0, no disabled lines |
 | CI | `.github/workflows/tests.yml` runs lint, build and the suite (Chromium, wp-env) on every pull request; CI retries a failed test twice and reports a pass on retry as flaky |
 | Open questions waiting for the product owner | 27 (`spec/open-questions.md`) |
@@ -39,7 +39,7 @@ A "Designer" menu in wp-admin lists boards. A board opens full screen: a header,
 - **Pages** are shown inside their template, which is locked. A page's template can be changed from the right panel.
 - **Creating.** The Add artboard menu places a new page, pattern, template or template part. Pages and patterns are created as drafts at once; templates and parts exist only in the session until saved.
 - **Inserter.** Blocks, Patterns, Templates and Media tabs. A row does the same thing clicked or dragged (D39). With an artboard in edit, a pattern, template part or image goes into its content: at the insertion point on a click, where it is dropped on a drag. With none in edit, a pattern, template, part or image goes onto the board: at the drop point on a drag, in the middle of the view and clear of other artboards on a click. The Blocks tab is shown only while an artboard is in edit.
-- **Styles.** With nothing selected the right panel edits global styles: tokens with use counts, per-block styles, revisions, variations. A change repaints every artboard from one style compile.
+- **Styles.** With nothing selected the right panel edits global styles: tokens with use counts, per-block styles, revisions, variations. A change repaints every artboard from one style compile. Frozen copies are included: once the styles have stayed unchanged for 300 ms, each Snapshot artboard is rendered again, one at a time and nearest the centre first, with its old copy shown until the new one is ready (D51; `settledVersion` in `src/styles/use-global-styles.js`, `hasCopy` in `src/shell/app.js`). Only a change of the generated CSS counts as a style change, so saving Styles renews nothing. Site-wide styles are edited from the Tokens tab in WordPress's stock screens: "Edit" on Colors, Typography and Spacing, and the "Background" and "Shadows" rows (D52). The variation menu lists the theme's whole variations after a "Default" item, and reads "Default" for the theme's own styles, a variation's name for exactly that variation and "Custom" otherwise (D54). The Blocks tab lists the elements (links, captions, headings, form controls) in groups before the blocks; an element row opens its stock screen (D53). What the plugin knows of the stock screens (their paths, the element list, which variations are whole ones) is in `src/styles/stock-screens.js` and nowhere else. `@wordpress/global-styles-ui` is pinned to 2.0.0, because later releases need a function WordPress 7.2 does not have, and `@wordpress/global-styles-engine` to 2.2.0: the plugin is built against the WordPress that has shipped (D59; "The stock styles package" in [working-notes.md](working-notes.md)). A stock screen that throws shows WordPress's error notice in its place and the rest of the board keeps working; switching tabs closes it (D60).
 - **Review.** Nothing reaches the site until "Review changes" is used. It lists each changed item and saves the checked ones. "Discard all" reverts everything, and each item's own "Discard" that item alone, after a confirmation. Either is one step that Undo and Redo act on in an artboard, except for a new template or part, which leaves the board for good; only then does the confirmation say that it can't be undone (D48, OQ-32). Artboard positions save on their own, two seconds after a change.
 - **Locks.** Editing a page or pattern takes WordPress's post lock through the plugin's own route and dialog.
 - **Panels.** Both side panels can be hidden from the header or with Cmd/Ctrl + \. Resting the pointer on the left or right edge of the canvas area brings a hidden panel back.
@@ -183,7 +183,7 @@ Each of these is recorded in the spec; this is the short list to read first.
 
 ## Open questions
 
-Twenty-eight entries are open, OQ-4, OQ-6 to OQ-10 and OQ-12 to OQ-33. The missing numbers were decided by the product owner and removed from the file. None leaves something unbuilt; each records a choice made where the spec was silent or could not be met as written. Grouped:
+Twenty-nine entries are open: OQ-4, OQ-6 to OQ-10 and OQ-12 to OQ-34. The missing numbers were decided by the product owner and removed from the file. None leaves something unbuilt; each records a choice made where the spec was silent or could not be met as written. Grouped:
 
 | About | Entries |
 |---|---|
@@ -192,7 +192,7 @@ Twenty-eight entries are open, OQ-4, OQ-6 to OQ-10 and OQ-12 to OQ-33. The missi
 | The allowlist | OQ-14, OQ-17, OQ-20 |
 | Limits inside WordPress | OQ-13, OQ-21 |
 | Two spec statements that conflict | OQ-12, OQ-18, OQ-19 |
-| Builder's choices to confirm | OQ-6, OQ-23, OQ-24, OQ-25, OQ-26, OQ-27, OQ-28, OQ-29, OQ-30, OQ-31, OQ-32, OQ-33 |
+| Builder's choices to confirm | OQ-6, OQ-23, OQ-24, OQ-25, OQ-26, OQ-27, OQ-28, OQ-29, OQ-30, OQ-31, OQ-32, OQ-33, OQ-34 |
 | Build order | OQ-10 |
 
 ## Sensible next steps

@@ -11,6 +11,8 @@ import {
     quote,
     siteLogo,
 } from '@wordpress/icons';
+import { __ } from '@wordpress/i18n';
+import { blockPath } from './stock-screens';
 
 const variations = [ { title: 'Paper' }, { title: 'Ink' } ];
 
@@ -60,19 +62,44 @@ const spacing = [
 ];
 
 const blocks = [
-    { name: 'core/button', title: 'Button', icon: button, changes: 2 },
-    { name: 'core/heading', title: 'Heading', icon: heading, changes: 1 },
-    { name: 'core/image', title: 'Image', icon: image, changes: 0 },
     {
-        name: 'core/navigation',
+        path: blockPath( 'core/button' ),
+        title: 'Button',
+        icon: button,
+        changes: 2,
+    },
+    {
+        path: blockPath( 'core/heading' ),
+        title: 'Heading',
+        icon: heading,
+        changes: 1,
+    },
+    {
+        path: blockPath( 'core/image' ),
+        title: 'Image',
+        icon: image,
+        changes: 0,
+    },
+    {
+        path: blockPath( 'core/navigation' ),
         title: 'Navigation',
         icon: navigation,
         changes: 0,
     },
-    { name: 'core/paragraph', title: 'Paragraph', icon: paragraph, changes: 0 },
-    { name: 'core/quote', title: 'Quote', icon: quote, changes: 0 },
     {
-        name: 'core/site-title',
+        path: blockPath( 'core/paragraph' ),
+        title: 'Paragraph',
+        icon: paragraph,
+        changes: 0,
+    },
+    {
+        path: blockPath( 'core/quote' ),
+        title: 'Quote',
+        icon: quote,
+        changes: 0,
+    },
+    {
+        path: blockPath( 'core/site-title' ),
         title: 'Site title',
         icon: siteLogo,
         changes: 0,
@@ -124,7 +151,9 @@ const base = {
     spacing,
     selectedToken: null,
     blockQuery: '',
-    blocks,
+    blockGroups: [
+        { title: __( 'Blocks', 'wordpress-for-designers' ), rows: blocks },
+    ],
     openBlock: null,
     historyRows,
     selectedHistoryId: null,
