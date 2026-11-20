@@ -919,7 +919,7 @@ test.describe( 'CANVAS', () => {
             );
         } );
 
-        test( 'AC-CANVAS-11 A second finger undoes a one-finger drag of an artboard or of the selection rectangle, and the two fingers then pan', async ( {
+        test( 'AC-CANVAS-11 A second finger undoes a one-finger drag of an artboard or of the selection rectangle, and the two fingers then pan; a drag the browser cancels is undone too', async ( {
             page,
         } ) => {
             const touch = await fingers( page );
@@ -992,6 +992,23 @@ test.describe( 'CANVAS', () => {
                 .poll( () => selectedIds( page ) )
                 .toEqual( [ hero.id ] );
             await expect( marquee ).toBeHidden();
+
+            // One finger drags the artboard, then the browser takes the
+            // finger away.
+            await setViewport( page, { x: 20, y: 20, zoom: 0.25 } );
+            await touch.down( onHero );
+            await touch.glide( [ onHero ], [ shift( onHero, 40, 30 ) ] );
+            await expect
+                .poll( async () => ( await position( page, hero.id ) ).left )
+                .toBeGreaterThan( before.left );
+            await touch.cancel();
+            await expect
+                .poll( () => position( page, hero.id ) )
+                .toEqual( before );
+            await expect
+                .poll( () => selectedIds( page ) )
+                .toEqual( [ hero.id ] );
+            await expect( undo ).toBeDisabled();
         } );
     } );
 } );

@@ -265,6 +265,11 @@ export function createTouchGestures( {
             isTap = true;
         } else if ( lone && event.pointerId === lone.down.pointerId ) {
             lone = null;
+            if ( event.type === 'pointercancel' ) {
+                // The browser took the finger away: its drag is undone, as
+                // it is when a second finger lands.
+                onCancel();
+            }
         }
         onRelease( event );
         if ( isTap ) {

@@ -389,8 +389,8 @@ export function useCanvasInteractions( {
 
         // Ends the gesture in progress as if it had not started: what it
         // moved goes back and the selection is what it was. Esc does this to
-        // the selection rectangle, and a second finger to what one finger
-        // was doing (./touch-gestures.js).
+        // the selection rectangle, and a second finger or the browser to
+        // what one finger was doing (./touch-gestures.js).
         function cancelGesture() {
             const cancelled = gesture;
             gesture = null;

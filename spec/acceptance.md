@@ -48,7 +48,7 @@ Unless a criterion says otherwise, the fixture in `architecture.md` is loaded an
 - AC-CANVAS-08 On a touch screen, two fingers dragged on the canvas area pan the board by as much as they move, and pinching them zooms the board, no further than its limits, with the board point midway between them staying there; over empty board and over an artboard, which is neither selected nor moved. The page's own zoom and scroll stay as they were. `[U]`
 - AC-CANVAS-09 With an artboard in edit, two fingers inside it pan and pinch the board as elsewhere and it stays in edit; it also stays in edit when the two fingers start on empty board or on another artboard, which is not selected. `[U]`
 - AC-CANVAS-10 One finger: a tap selects an artboard and a tap on empty board clears the selection; dragging an artboard moves it and the move is undoable; dragging from empty board selects the artboards the rectangle touches; a double tap on an artboard edits it. `[U]`; that the drag from empty board selects and does not pan is `[N]`
-- AC-CANVAS-11 A second finger landing while one finger drags an artboard puts the artboard back where it was, and landing while one finger draws the selection rectangle removes the rectangle and puts the selection back as it was; in both cases the two fingers then pan the board. `[U]`
+- AC-CANVAS-11 A second finger landing while one finger drags an artboard puts the artboard back where it was, and landing while one finger draws the selection rectangle removes the rectangle and puts the selection back as it was; in both cases the two fingers then pan the board. A one-finger drag of an artboard that the browser cancels puts the artboard back in the same way, and nothing is left to undo. `[U]`; the cancelled drag is `[N]`
 
 ## KEY
 

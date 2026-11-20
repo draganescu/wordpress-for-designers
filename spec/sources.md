@@ -79,3 +79,5 @@ The list below is generated from every `[N]` tag in the spec. Until the product 
 | 60 | `decisions.md` | 68 | D64 / a drag that starts on empty board draws the selection rectangle (D43) / `[U]`; that a one-finger drag from empty board draws the selection rectangle and does not pan is `[N]` |
 | 61 | `architecture.md` | 152 | What one finger pressed is acted on when it moves or lifts, not when it lands, so the first finger of two selects nothing and leaves edit on nothing. `[N]` |
 | 62 | `acceptance.md` | 50 | AC-CANVAS-10 / dragging from empty board selects the artboards the rectangle touches / `[U]`; that the drag from empty board selects and does not pan is `[N]` |
+| 63 | `architecture.md` | 154 | A one-finger drag that the browser cancels (`pointercancel`) is undone in the same way; nothing of it is committed. `[N]` |
+| 64 | `acceptance.md` | 51 | AC-CANVAS-11 / A one-finger drag of an artboard that the browser cancels puts the artboard back in the same way, and nothing is left to undo. / `[U]`; the cancelled drag is `[N]` |

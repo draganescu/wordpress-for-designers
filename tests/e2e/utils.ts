@@ -341,7 +341,7 @@ export type Point = { x: number; y: number };
 export async function fingers( page: Page ) {
     const session = await page.context().newCDPSession( page );
     const send = (
-        type: 'touchStart' | 'touchMove' | 'touchEnd',
+        type: 'touchStart' | 'touchMove' | 'touchEnd' | 'touchCancel',
         points: Point[]
     ) =>
         session.send( 'Input.dispatchTouchEvent', {
@@ -352,6 +352,8 @@ export async function fingers( page: Page ) {
         down: ( ...points: Point[] ) => send( 'touchStart', points ),
         move: ( ...points: Point[] ) => send( 'touchMove', points ),
         up: () => send( 'touchEnd', [] ),
+        // The browser takes the fingers away.
+        cancel: () => send( 'touchCancel', [] ),
         async tap( point: Point ) {
             await api.down( point );
             await api.up();
