@@ -2,7 +2,7 @@
 
 A seeded WordPress site for demos and videos of WordPress for Designers. It is not part of the plugin and is not in the plugin's package (`tools/package.sh` copies a fixed list of files).
 
-Morrow is a fictional coffee roaster: six coffees, a subscription, a journal. The site is built to show what the plugin is for, so it has dynamic data (a coffee post type with custom fields), synced patterns used on several pages, three style variations that change everything, and six boards.
+Morrow is a fictional coffee roaster: six coffees, a subscription, a journal. The site is built to show what the plugin is for, so it has dynamic data (a coffee post type with custom fields), synced patterns used on several pages, three style variations that change everything, and seven boards.
 
 ## Run it
 
@@ -66,25 +66,26 @@ To try a branch before it is merged, open `https://playground.wordpress.net/#` f
 | Coffee pages, template and live data | The two coffee templates beside browsers on real coffees | Browsers as artboards; a template change reaching every page |
 | Journal | The journal and article templates beside browsers | The same, for articles |
 | Design system | Seven patterns at desktop and phone width, and the packaging | Global styles; variations |
+| Shared patterns | A synced pattern beside the foot of the two pages that use it | A pattern change reaching every page |
 | First Frost, winter campaign | A draft landing page, a mood board of images, notes | A board per project; images and notes on the canvas |
 
-## Scenes to film
+## Scenes
 
-One scene per idea. The caption is the on-screen text.
+One scene per idea, each filmed as its own clip. The captions are the on-screen text.
 
-| # | Board | What happens | Caption |
+| # | Board | What happens | Captions |
 |---|---|---|---|
-| 1 | Site map | Open fitted to all, zoom slowly into Home, pan across to Subscribe | Your whole site on one canvas. Every artboard is the real page. |
-| 2 | Site map, then the Boards list | Zoom out, go back to the list, open First Frost | One board for the site. One for each thing you are working on. |
-| 3 | Homepage, every screen | Edit the hero heading on Desktop; Tablet and Mobile follow | One page, three widths, edited once. |
-| 4 | Design system | Click empty board, change Ember in Colors; switch to Night shift, Paper, Citrus | Change a colour and see everywhere it is used. |
-| 5 | Design system | Open Typography, change the heading font; watch use counts | Styles that show you what they touch. |
-| 6 | Coffee pages | Edit `single-coffee`: move the price above the title; the three browsers update before saving | Design the template. Check it against real data. |
-| 7 | Site map | Edit the synced "Subscribe call to action" on Home; Our story changes too | Change a pattern once. Every page that uses it follows. |
-| 8 | Site map | Copy the pricing tiers on Subscribe, paste into Wholesale | Copy from one page, paste into another, without leaving the canvas. |
-| 9 | Any | Open Review changes, save | Nothing reaches the site until you say so. |
+| 1 | Site map | Opens fitted with the panels hidden, zooms into Home, shows the panels, pans to Subscribe | What if you could see your whole site at once? / Not mockups. Every artboard is the live page / So you design the site, not one page at a time |
+| 2 | Boards list, then First Frost | Opens the campaign board from the list and zooms into the draft | One board for the site. One for each thing you are working on / Like next month's winter campaign / The draft page, the mood board and the notes, side by side |
+| 3 | Homepage, every screen | The hero heading is rewritten on Desktop; Tablet and Mobile follow | One page, at three screen sizes / Edit it once. Every size follows |
+| 4 | Design system | Switches to Night shift, Paper and Citrus | Your site's styles sit next to your designs / Change the look, and every artboard repaints / Try a direction in one click, on the real site |
+| 5 | Design system | Ember is changed to a blue; the board shows where it is used | Every colour shows how many places use it / Change it once, and see everything it touches |
+| 6 | Coffee pages | The title's size is changed in `single-coffee`; two browsers follow before saving | A template shows fields. Browsers show the real pages / Change the template, and every coffee follows, before you save |
+| 7 | Shared patterns | The synced pattern's heading is rewritten; Home and Our story change | This block sits at the foot of several pages / Change it once. Every page follows |
+| 8 | Site map | The pricing tiers are copied from Subscribe and pasted into Wholesale | Built something good on one page? / Copy it. Paste it on another page |
+| 9 | Design system | A variation is tried, reviewed and saved | Try anything. Your site stays as it was / Review what changed, then save |
 
-Reset with the seed command between takes.
+Scene 9 saves to the site. Reset with the seed command afterwards.
 
 ## Changing the demo
 

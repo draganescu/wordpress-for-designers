@@ -75,6 +75,17 @@ return array(
         ),
     ),
     array(
+        'title' => 'Shared patterns',
+        'items' => array(
+            array( 'pattern', 'subscribe-cta', 'desktop', 0, 0, 560 ),
+            array( 'page', 'home', 'desktop', 1640, -5700, 7200 ),
+            array( 'page', 'our-story', 'desktop', 3280, -4140, 5600 ),
+        ),
+        'notes' => array(
+            array( 0, -300, 'yellow', 'One synced pattern, used at the foot of Home and Our story. Edit it here and both pages change.' ),
+        ),
+    ),
+    array(
         'title' => 'Design system',
         'items' => array(
             array( 'pattern', 'announcement-bar', 'desktop', 0, 0, 60 ),
