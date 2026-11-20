@@ -7,8 +7,8 @@
 @import "../inserter/style";
 @import "../review/style";
 
-// Below this width the header and the panels make room (D50). The images in
-// spec/screens were drawn at this width.
+// Below this width the panels make room (D50). The images in spec/screens
+// were drawn at this width.
 $wfd-roomy: wp-breakpoints.$break-huge;
 
 // A panel's width: full from the roomy width up, narrower in step with the
@@ -60,16 +60,19 @@ html.wp-toolbar:has(.wfd-board-page) {
     column-gap: var(--wpds-dimension-gap-lg);
     border-bottom: var(--wpds-border-width-xs) solid var(--wpds-color-stroke-surface-neutral);
 
-    // In edit the block toolbar needs the room: the document bar gets
-    // narrower and moves next to the controls at the end (D50).
-    @media (max-width: #{$wfd-roomy - 1px}) {
+    // While the block toolbar shows it has the title's place, and of the
+    // document bar only the back button is left, next to it (D50).
+    &:has(.wfd-block-tools:not(.is-collapsed, :empty)) {
+        grid-template-columns: minmax(0, max-content) auto minmax(max-content, 1fr);
 
-        &:has(.wfd-header__toolbar) {
-            grid-template-columns: minmax(0, 1fr) auto auto;
+        .wfd-header__document {
+            width: auto;
+            padding: 0;
+            background: none;
+        }
 
-            .wfd-header__document {
-                width: 180px;
-            }
+        .wfd-header__document-name {
+            display: none;
         }
     }
 }
@@ -109,11 +112,34 @@ html.wp-toolbar:has(.wfd-board-page) {
     }
 }
 
-// The stock toolbar inside takes this width and, when it is wider, scrolls
-// sideways by itself.
+// The stock toolbar inside takes the width left for it and, when it is
+// wider, scrolls sideways by itself.
 .wfd-header__toolbar {
     min-width: 0;
     overflow: hidden;
+}
+
+.wfd-slot-toolbar {
+    display: flex;
+    align-items: center;
+    column-gap: var(--wpds-dimension-gap-sm);
+}
+
+.wfd-block-tools {
+    min-width: 0;
+
+    &.is-collapsed {
+        display: none;
+    }
+}
+
+.wfd-block-tools__toggle {
+    flex: none;
+
+    // A block with no toolbar has nothing to hide.
+    .wfd-block-tools:empty + & {
+        display: none;
+    }
 }
 
 .wfd-header__document {
