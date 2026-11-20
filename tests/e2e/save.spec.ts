@@ -400,7 +400,7 @@ test.describe( 'SAVE', () => {
         expect( member.content.raw ).toContain( 'still draft' );
     } );
 
-    test( 'AC-SAVE-06 Discard all, after confirmation, reverts every edited record and removes unsaved new templates and parts', async ( {
+    test( 'AC-SAVE-06 Discard all, after confirmation, reverts every edited record as one step that Undo and Redo act on, and removes unsaved new templates and parts from the board', async ( {
         page,
         requestUtils,
     } ) => {
@@ -414,9 +414,12 @@ test.describe( 'SAVE', () => {
 
         await review( page ).click();
         const panel = drawer( page );
-        await panel.getByRole( 'button', { name: 'Discard all' } ).click();
+        const items = panel.locator( '.wfd-review__item' );
+        const discardAll = panel.getByRole( 'button', { name: 'Discard all' } );
+        await discardAll.click();
         const confirm = page.getByRole( 'alertdialog' );
         await expect( confirm ).toContainText( 'Discard all changes?' );
+        // The new part cannot be brought back.
         await expect( confirm ).toContainText( "This can't be undone." );
         await expect( confirm.getByRole( 'button' ) ).toHaveText( [
             'Cancel',
@@ -424,11 +427,11 @@ test.describe( 'SAVE', () => {
         ] );
         // Cancel keeps everything.
         await confirm.getByRole( 'button', { name: 'Cancel' } ).click();
-        await expect( panel.locator( '.wfd-review__item' ) ).toHaveCount( 3 );
+        await expect( items ).toHaveCount( 3 );
 
-        await panel.getByRole( 'button', { name: 'Discard all' } ).click();
+        await discardAll.click();
         await confirm.getByRole( 'button', { name: 'Discard' } ).click();
-        await expect( panel.locator( '.wfd-review__item' ) ).toHaveCount( 0 );
+        await expect( items ).toHaveCount( 0 );
         await expect( panel ).toContainText( 'No changes to review' );
         await page.keyboard.press( 'Escape' );
         await expect( review( page ) ).toHaveText( 'Review changes' );
@@ -442,11 +445,32 @@ test.describe( 'SAVE', () => {
         ).toBeVisible();
         // The Header shows its saved text again.
         await enterEdit( page, header.id );
-        await expect(
-            editorFrame( page, header.id ).locator( 'p', {
-                hasText: 'Fixture header text',
-            } )
-        ).toHaveText( 'Fixture header text' );
+        const paragraph = editorFrame( page, header.id ).locator( 'p', {
+            hasText: 'Fixture header text',
+        } );
+        await expect( paragraph ).toHaveText( 'Fixture header text' );
+
+        // One Undo brings back the Header and the styles, not the new part;
+        // one Redo discards both again.
+        const undo = page.locator( '[data-wfd-control="H3"]' );
+        const redo = page.locator( '[data-wfd-control="H4"]' );
+        await undo.click();
+        await expect( paragraph ).toHaveText( 'Fixture header text doomed' );
+        await expect( review( page ) ).toHaveText( 'Review 2 changes' );
+        await expect( page.locator( '[data-wfd-artboard]' ) ).toHaveCount( 9 );
+        await redo.click();
+        await expect( paragraph ).toHaveText( 'Fixture header text' );
+        await expect( review( page ) ).toHaveText( 'Review changes' );
+
+        // With saved items only, nothing says it can't be undone.
+        await undo.click();
+        await review( page ).click();
+        await expect( items ).toHaveCount( 2 );
+        await discardAll.click();
+        await expect( confirm ).toContainText( 'Discard all changes?' );
+        await expect( confirm ).not.toContainText( "This can't be undone." );
+        await confirm.getByRole( 'button', { name: 'Discard' } ).click();
+        await expect( panel ).toContainText( 'No changes to review' );
         const saved = await requestUtils.rest< { content: { raw: string } } >( {
             path: `/wp/v2/template-parts/${ fixture.theme }//header`,
             params: { context: 'edit' },
@@ -529,10 +553,13 @@ test.describe( 'SAVE', () => {
         const panel = drawer( page );
         const items = panel.locator( '.wfd-review__item' );
         const confirm = page.getByRole( 'alertdialog' );
+        const discardOf = ( name: string ) =>
+            panel.getByRole( 'button', {
+                name: `Discard changes to ${ name }`,
+                exact: true,
+            } );
         const discard = async ( name: string ) => {
-            await card( page, name )
-                .getByRole( 'button', { name: 'Discard', exact: true } )
-                .click();
+            await discardOf( name ).click();
             await expect( confirm ).toContainText(
                 `Discard changes to ${ name }?`
             );
@@ -542,7 +569,7 @@ test.describe( 'SAVE', () => {
             ] );
         };
         await expect(
-            panel.getByRole( 'button', { name: 'Discard', exact: true } )
+            panel.getByRole( 'button', { name: /^Discard changes to / } )
         ).toHaveCount( 4 );
 
         // The page: its meta edit goes too.
@@ -572,12 +599,7 @@ test.describe( 'SAVE', () => {
         // Cancel keeps everything.
         await confirm.getByRole( 'button', { name: 'Cancel' } ).click();
         await expect( items ).toHaveCount( 3 );
-        await expect(
-            card( page, 'Header' ).getByRole( 'button', {
-                name: 'Discard',
-                exact: true,
-            } )
-        ).toBeFocused();
+        await expect( discardOf( 'Header' ) ).toBeFocused();
 
         await discard( 'Header' );
         await confirm.getByRole( 'button', { name: 'Discard' } ).click();
@@ -639,5 +661,25 @@ test.describe( 'SAVE', () => {
             params: { context: 'edit' },
         } );
         expect( saved.content.raw ).not.toContain( 'doomed' );
+    } );
+
+    test( 'AC-SAVE-09 Each item\'s Discard control shows "Discard" and has the accessible name "Discard changes to {name}"', async ( {
+        page,
+    } ) => {
+        await editText(
+            page,
+            artboardOf( fixture, 'template-part' ).id,
+            'Fixture header text',
+            ' named'
+        );
+        await changeStyles( page );
+        await review( page ).click();
+        for ( const name of [ 'Header', 'Styles' ] ) {
+            const button = card( page, name ).getByRole( 'button' );
+            await expect( button ).toHaveText( 'Discard' );
+            await expect( button ).toHaveAccessibleName(
+                `Discard changes to ${ name }`
+            );
+        }
     } );
 } );
