@@ -69,6 +69,7 @@ import { tidyMoves } from './tidy';
 import { useEditing } from './use-editing';
 import { useEntityInfo } from './use-entity-info';
 import { NEW_ARTBOARD_HEIGHT, usePlacement } from './use-placement';
+import { useRename } from './use-rename';
 import { removalInfo, useRemoval } from './use-removal';
 
 const { boardId, boardsUrl, userId, theme, homeUrl } = window.wfdConfig;
@@ -265,8 +266,6 @@ export function App() {
     const [ isRightHidden, setRightHidden ] = useState( false );
     const togglePanels = useRef( null );
     const [ isShortcutsOpen, setShortcutsOpen ] = useState( false );
-    // The artboard whose page or pattern is being named on its label (D62).
-    const [ renamingId, setRenamingId ] = useState( null );
     const [ inserterQuery, setInserterQuery ] = useState( '' );
     const [ inserterTab, setInserterTab ] = useState( 'blocks' );
     const [ selectedToken, setSelectedToken ] = useState( null );
@@ -306,11 +305,16 @@ export function App() {
         getNames: () => artboardsRef.current,
         onEdit,
         onLeaveEdit: editing.leaveEdit,
-        onRename: ( id ) => startRename( id ),
+        onRename: ( id ) => rename.start( id ),
         onTogglePanels: () => togglePanels.current?.(),
         onToggleShortcuts: () => setShortcutsOpen( ( isOpen ) => ! isOpen ),
         onRemoveMany: ( ids ) => removeMany( ids ),
         isReady: isLoaded,
+    } );
+    const rename = useRename( {
+        artboards,
+        reveal: ( id ) => canvas.reveal( id ),
+        areaRef,
     } );
 
     useEffect( () => {
@@ -391,41 +395,7 @@ export function App() {
     const remove = useRemoval();
     const [ ghost, setGhost ] = useState( null );
     const { removeArtboards } = useDispatch( boardStore );
-    const { invalidateResolution, editEntityRecord } = useDispatch( coreStore );
-
-    // Only a page or a pattern that has loaded is named on the board.
-    const startRename = ( id ) => {
-        const artboard = artboards.find( ( a ) => a.id === id );
-        if (
-            ! artboard ||
-            artboard.status !== 'ready' ||
-            ! KINDS[ artboard.kind ].isNamed
-        ) {
-            return;
-        }
-        if ( liveId !== id && selectedId !== id ) {
-            selectArtboard( id );
-        }
-        canvas.reveal( id );
-        setRenamingId( id );
-    };
-    // The new name is an unsaved edit of the page or pattern; an empty name
-    // is not kept.
-    const endRename = ( artboard, name, refocus ) => {
-        setRenamingId( null );
-        const next = name?.trim();
-        if ( next && next !== artboard.name ) {
-            editEntityRecord(
-                'postType',
-                KINDS[ artboard.kind ].postType,
-                artboard.entityId,
-                { title: next }
-            );
-        }
-        if ( refocus ) {
-            areaRef.current?.focus( { preventScroll: true } );
-        }
-    };
+    const { invalidateResolution } = useDispatch( coreStore );
 
     // An artboard whose entity no longer exists leaves the board.
     const missingIds = artboards
@@ -1205,11 +1175,9 @@ export function App() {
                                             )
                                         }
                                         isRenaming={
-                                            renamingId === artboard.id
+                                            rename.renamingId === artboard.id
                                         }
-                                        onRename={ ( name, refocus ) =>
-                                            endRename( artboard, name, refocus )
-                                        }
+                                        onRename={ rename.end }
                                         onAddress={ ( path ) =>
                                             updateArtboard( artboard.id, {
                                                 path,

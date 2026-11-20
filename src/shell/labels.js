@@ -40,6 +40,22 @@ export function liveLabel( artboard ) {
 }
 
 /**
+ * A label in two parts, around the artboard's name: for a label that shows
+ * the name as a text field (A7).
+ *
+ * @param {Object}  artboard The artboard.
+ * @param {boolean} isShort  Whether the label is "{Name} · {Kind}".
+ * @return {string[]} The text before the name and the text after it.
+ */
+export function labelAroundName( artboard, isShort ) {
+    const mark = '\u0000';
+    return ( isShort ? liveLabel : artboardLabel )( {
+        ...artboard,
+        name: mark,
+    } ).split( mark );
+}
+
+/**
  * "{n} uses", for the artboard label on the Styles screen.
  *
  * @param {number} count Number of uses.

@@ -3,13 +3,7 @@
  * content of its tier.
  */
 import { __, _x } from '@wordpress/i18n';
-import {
-    createContext,
-    useCallback,
-    useEffect,
-    useRef,
-    useState,
-} from '@wordpress/element';
+import { createContext, useEffect, useState } from '@wordpress/element';
 import { chevronDown, rotateRight } from '@wordpress/icons';
 import {
     Button,
@@ -22,9 +16,15 @@ import {
     VisuallyHidden,
 } from '@wordpress/ui';
 import { DEVICES, DEVICE_ORDER, KINDS } from '../shell/constants';
-import { artboardLabel, liveLabel, usesText } from '../shell/labels';
+import {
+    artboardLabel,
+    labelAroundName,
+    liveLabel,
+    usesText,
+} from '../shell/labels';
 import { countRender } from '../shell/test-hooks';
 import { normalizeAddress } from './browser';
+import { NameField } from './name-field';
 
 export { BrowserArtboard, browserTier } from './browser-artboard';
 export { usePreview } from './preview';
@@ -96,59 +96,6 @@ export function ArtboardError( { kind, onRetry } ) {
 }
 
 /**
- * A7: the text field a page or pattern is named in, in place of the name in
- * its artboard's label (D62). Enter or a click elsewhere keeps the name, Esc
- * leaves it as it was.
- *
- * @param {Object}   props
- * @param {string}   props.name   The name as it is.
- * @param {Function} props.onDone Called once, with the name typed and whether
- *                                the board takes focus back, or with null
- *                                when the name is left as it was.
- */
-function NameField( { name, onDone } ) {
-    const [ value, setValue ] = useState( name );
-    const isDone = useRef( false );
-    const finish = ( result, refocus ) => {
-        if ( ! isDone.current ) {
-            isDone.current = true;
-            onDone( result, refocus );
-        }
-    };
-    const select = useCallback( ( input ) => {
-        if ( input ) {
-            input.focus( { preventScroll: true } );
-            input.select();
-        }
-    }, [] );
-    return (
-        <InputControl
-            ref={ select }
-            className="wfd-artboard__name-field"
-            data-wfd-name-field
-            size="compact"
-            label={ __( 'Name', 'wordpress-for-designers' ) }
-            hideLabelFromVision
-            value={ value }
-            onChange={ ( event ) => setValue( event.target.value ) }
-            onBlur={ () => finish( value, false ) }
-            onKeyDown={ ( event ) => {
-                // Keys typed here are the field's own: none reaches the
-                // board or the editor.
-                event.stopPropagation();
-                if ( event.key === 'Enter' ) {
-                    event.preventDefault();
-                    finish( value, true );
-                } else if ( event.key === 'Escape' ) {
-                    event.preventDefault();
-                    finish( null, true );
-                }
-            } }
-        />
-    );
-}
-
-/**
  * The address field of a browser being browsed (D55).
  *
  * @param {Object}   props
@@ -199,34 +146,47 @@ function Label( {
     onAddress,
     onReload,
 } ) {
-    const separator = _x(
-        '·',
-        'separator between parts of an artboard label',
-        'wordpress-for-designers'
-    );
-    const nameField = isRenaming && (
-        <NameField name={ artboard.name } onDone={ onRename } />
-    );
+    // The label's text. While the artboard is named, its name is a text
+    // field and the rest of the label stays as it is (A7).
+    const text = ( isShort, suffix = null ) => {
+        if ( ! isRenaming ) {
+            return (
+                <Text variant="body-sm" className="wfd-artboard__label-text">
+                    { ( isShort ? liveLabel : artboardLabel )( artboard ) }
+                    { suffix }
+                </Text>
+            );
+        }
+        const [ before, after ] = labelAroundName( artboard, isShort );
+        return (
+            <>
+                { before && (
+                    <Text
+                        variant="body-sm"
+                        className="wfd-artboard__label-text"
+                    >
+                        { before }
+                    </Text>
+                ) }
+                <NameField name={ artboard.name } onDone={ onRename } />
+                <Text variant="body-sm" className="wfd-artboard__label-text">
+                    { after }
+                    { suffix }
+                </Text>
+            </>
+        );
+    };
     if ( isLive ) {
-        const isBrowser = KINDS[ artboard.kind ].edit === 'browse';
         return (
             <div className="wfd-artboard__label is-live">
-                { nameField }
-                { isBrowser ? (
+                { KINDS[ artboard.kind ].edit === 'browse' ? (
                     <AddressControls
                         path={ artboard.path }
                         onAddress={ onAddress }
                         onReload={ onReload }
                     />
                 ) : (
-                    <Text
-                        variant="body-sm"
-                        className="wfd-artboard__label-text"
-                    >
-                        { isRenaming
-                            ? separator + ' ' + KINDS[ artboard.kind ].label
-                            : liveLabel( artboard ) }
-                    </Text>
+                    text( true )
                 ) }
                 <Menu.Root>
                     <Menu.Trigger
@@ -270,26 +230,13 @@ function Label( {
             </div>
         );
     }
-    if ( isRenaming ) {
-        return (
-            <div className="wfd-artboard__label">
-                { nameField }
-                <Text variant="body-sm" className="wfd-artboard__label-text">
-                    { separator +
-                        ' ' +
-                        KINDS[ artboard.kind ].label +
-                        ' ' +
-                        separator +
-                        ' ' +
-                        DEVICES[ artboard.device ].label }
-                </Text>
-            </div>
-        );
-    }
-    let text = artboardLabel( artboard );
+    const separator = _x(
+        '·',
+        'separator between parts of an artboard label',
+        'wordpress-for-designers'
+    );
     let suffix = null;
     if ( uses ) {
-        text = liveLabel( artboard );
         suffix = (
             <>
                 { ' ' + separator + ' ' }
@@ -308,13 +255,9 @@ function Label( {
             </>
         );
     }
+    // With the uses of a token shown, the label has no device.
     return (
-        <div className="wfd-artboard__label">
-            <Text variant="body-sm" className="wfd-artboard__label-text">
-                { text }
-                { suffix }
-            </Text>
-        </div>
+        <div className="wfd-artboard__label">{ text( !! uses, suffix ) }</div>
     );
 }
 
