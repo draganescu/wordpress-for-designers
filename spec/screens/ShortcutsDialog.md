@@ -39,6 +39,7 @@ In the keys, "Cmd/Ctrl" below is shown as "⌘" on a Mac and "Ctrl" elsewhere, a
 | Select the next artboard | Tab |
 | Select the previous artboard | Shift + Tab |
 | Edit the selected artboard | Enter |
+| Rename the selected page or pattern | F2 |
 | Move the selected artboards | Arrow keys |
 | Move the selected artboards further | Shift + Arrow keys |
 | Remove the selected artboards | Delete |

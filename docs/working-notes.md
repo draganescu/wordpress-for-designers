@@ -140,6 +140,7 @@ What to do differently:
 - **An iframe's `load` comes too late for its listeners.** A link pressed while the page is still loading is followed without them. A browser's page gets its listeners as soon as the new document exists, found by watching from the old one's `pagehide` (`src/artboard-frame/browser.js`).
 - **`location.href` is not the string WordPress gave.** The web browser writes the host in lower case and in punycode and drops a default port, so a page's address is compared with the home URL by origin and path, not as a prefix.
 - **`wp-polyfill`** must be enqueued in the parent page, or every artboard iframe requests it again (AC-PERF-03).
+- **A text field on the board has to keep some keys to itself.** The canvas area and the document both listen for keys (board shortcuts; Esc and undo while in edit). The name field of an artboard label (D62) stops Enter, Esc and Cmd/Ctrl + Z from spreading, or Esc in it would also leave edit and undo would act on the content history; other keys still reach the document, so the shortcuts marked "always" keep working. A double-click inside a field on the board is ignored by the canvas for the same reason.
 - **`defaultTemplateTypes`** in the editor settings is an object keyed by slug, not an array.
 - **Theme patterns have no `source` field.**
 - **`MediaUploadCheck`** renders nothing when the `mediaUpload` setting is missing, which it is here (OQ-14). `MediaUpload` is used on its own.
@@ -175,6 +176,8 @@ What to do differently:
 - Dragging is done with real `page.mouse` moves in several steps; one jump does not start a drag.
 - After typing `/` for the slash inserter, type slowly and wait for the option before pressing Enter.
 - Click an artboard in the part of its frame that is inside the canvas area. Helpers compute that point.
+- A new artboard is armed with the `armNew` helper (inserter tab, New row). It leaves the inserter on, as a click on a New row does; a test that then needs the artboard list in the left panel turns the inserter off itself.
+- After leaving edit the board can be zoomed in on one artboard; press Shift + 1 before clicking a label or frame of another.
 
 ## Paths taken
 

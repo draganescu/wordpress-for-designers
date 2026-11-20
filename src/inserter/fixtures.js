@@ -17,6 +17,7 @@ import {
     mapMarker,
     siteLogo,
 } from '@wordpress/icons';
+import { NEW_ROWS } from '../shell/use-placement';
 
 const blocks = [
     {
@@ -130,7 +131,24 @@ const media = [
     { id: 205, filename: 'margin-notes.png', width: 1600, height: 900 },
 ];
 
-const lists = { blocks, patterns, templates, templateParts, media };
+const pages = [
+    { id: 11, name: 'About', isOnBoard: true },
+    { id: 12, name: 'Become a member', isOnBoard: false },
+    { id: 13, name: 'Colophon', isOnBoard: false },
+];
+
+// A purpose is offered as new unless its template is among `templates` above.
+const newRows = NEW_ROWS.filter( ( { key } ) => key !== 'template:404' );
+
+const lists = {
+    blocks,
+    pages,
+    newRows,
+    patterns,
+    templates,
+    templateParts,
+    media,
+};
 
 export const fixtures = {
     InserterBlocks: {
@@ -150,6 +168,18 @@ export const fixtures = {
         query: '',
         tab: 'media',
         liveArtboardName: 'Header',
+    },
+    InserterPages: {
+        ...lists,
+        query: '',
+        tab: 'pages',
+        liveArtboardName: null,
+    },
+    AddArtboard: {
+        ...lists,
+        query: '',
+        tab: 'templates',
+        liveArtboardName: null,
     },
     InserterTemplates: {
         ...lists,

@@ -7,6 +7,7 @@ import {
     enterEdit,
     editorFrame,
     artboardOf,
+    armNew,
     type Fixture,
 } from './utils';
 
@@ -105,15 +106,14 @@ test.describe( 'BROWSER', () => {
             `[data-wfd-artboard="${ id }"] iframe.wfd-browser`
         );
 
-    test( 'AC-BROWSER-01 "Browser" in the Add artboard menu arms placement; a click on the board places a Desktop browser there showing the homepage, labelled "/ · Browser · Desktop", selected and not browsing, with a window 900 board units tall, listed under "Browsers" in the left panel; after a reload it is still there', async ( {
+    test( 'AC-BROWSER-01 "New browser" in the inserter\'s Pages tab arms placement; a click on the board places a Desktop browser there showing the homepage, labelled "/ · Browser · Desktop", selected and not browsing, with a window 900 board units tall, listed under "Browsers" in the left panel; after a reload it is still there', async ( {
         page,
         requestUtils,
     } ) => {
         await openBoard( page, fixture.boardId );
         await showBrowser( page );
         const box = await canvasBox( page );
-        await page.locator( '[data-wfd-control="L2"]' ).click();
-        await page.getByRole( 'menuitem', { name: /^Browser/ } ).click();
+        await armNew( page, 'Pages', 'New browser' );
         await page.mouse.move( box.x + 100, box.y + 100 );
         await page.mouse.move( box.x + 120, box.y + 120, { steps: 2 } );
         await expect( page.locator( '[data-wfd-placement]' ) ).toContainText(
@@ -144,6 +144,11 @@ test.describe( 'BROWSER', () => {
         await expect( page$( page, id ).locator( 'body' ) ).toBeVisible();
         // WordPress's toolbar is not shown.
         await expect( page$( page, id ).locator( '#wpadminbar' ) ).toBeHidden();
+        // The inserter stayed on; the artboard list is behind it.
+        await page
+            .locator( '[data-wfd-region="header"]' )
+            .getByRole( 'button', { name: 'Close block inserter' } )
+            .click();
         const left = page.locator( '[data-wfd-region="left"]' );
         await expect( left ).toContainText( 'Browsers' );
         await expect( left.getByText( '/', { exact: true } ) ).toBeVisible();

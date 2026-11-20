@@ -32,14 +32,13 @@ import { ArtboardSnapshot, createSnapshotStore } from '../artboard-snapshot';
 import { useTiers } from '../tier-scheduler';
 import { InserterPanel } from '../inserter/inserter-panel';
 import { useInserterActions } from '../inserter/use-inserter-actions';
-import { useInserterData } from '../inserter/use-inserter-data';
+import { useInserterData, withBoardNames } from '../inserter/use-inserter-data';
 import { StylesPanel } from '../styles/styles-panel';
 import { useGlobalStyles } from '../styles/use-global-styles';
 import { useStylesPanel } from '../styles/use-styles-panel';
 import { ReviewDrawer } from '../review/review-drawer';
 import { useReview } from '../review/use-review';
 import { brandColor, highlightCss, useUsageIndex } from '../usage-index';
-import { AddArtboardMenu } from './add-artboard-menu';
 import {
     ArtboardsPanel,
     ListViewPanel,
@@ -70,6 +69,7 @@ import { tidyMoves } from './tidy';
 import { useEditing } from './use-editing';
 import { useEntityInfo } from './use-entity-info';
 import { NEW_ARTBOARD_HEIGHT, usePlacement } from './use-placement';
+import { useRename } from './use-rename';
 import { removalInfo, useRemoval } from './use-removal';
 
 const { boardId, boardsUrl, userId, theme, homeUrl } = window.wfdConfig;
@@ -305,10 +305,16 @@ export function App() {
         getNames: () => artboardsRef.current,
         onEdit,
         onLeaveEdit: editing.leaveEdit,
+        onRename: ( id ) => rename.start( id ),
         onTogglePanels: () => togglePanels.current?.(),
         onToggleShortcuts: () => setShortcutsOpen( ( isOpen ) => ! isOpen ),
         onRemoveMany: ( ids ) => removeMany( ids ),
         isReady: isLoaded,
+    } );
+    const rename = useRename( {
+        artboards,
+        reveal: ( id ) => canvas.reveal( id ),
+        areaRef,
     } );
 
     useEffect( () => {
@@ -597,9 +603,6 @@ export function App() {
             </>
         );
     }
-    const addMenu = (
-        <AddArtboardMenu { ...placing.menu } onPick={ placing.arm } />
-    );
     const pointOf = ( event ) => {
         const box = areaRef.current.getBoundingClientRect();
         return viewport.toBoard( {
@@ -611,6 +614,7 @@ export function App() {
 
     let left = null;
     if ( isInserterOpen ) {
+        const named = withBoardNames( inserterData, artboards );
         left = (
             <InserterPanel
                 query={ inserterQuery }
@@ -619,7 +623,10 @@ export function App() {
                 onTabChange={ setInserterTab }
                 liveArtboardName={ live?.name ?? null }
                 blocks={ inserterData.blocks }
-                patterns={ inserterData.patterns }
+                pages={ named.pages }
+                newRows={ placing.newRows }
+                onNewClick={ placing.arm }
+                patterns={ named.patterns }
                 templates={ inserterData.templates }
                 templateParts={ inserterData.templateParts }
                 media={ inserterData.media }
@@ -672,7 +679,6 @@ export function App() {
                         focusBoard();
                     }
                 } }
-                addMenu={ addMenu }
             />
         );
     }
@@ -959,13 +965,10 @@ export function App() {
                             emptyState={
                                 artboards.length || placing.placement ? null : (
                                     <EmptyBoard
-                                        addMenu={
-                                            <AddArtboardMenu
-                                                trigger="button"
-                                                { ...placing.menu }
-                                                onPick={ placing.arm }
-                                            />
-                                        }
+                                        onAdd={ () => {
+                                            setLeftHidden( false );
+                                            setInserterOpen( true );
+                                        } }
                                     />
                                 )
                             }
@@ -1172,6 +1175,10 @@ export function App() {
                                                 device
                                             )
                                         }
+                                        isRenaming={
+                                            rename.renamingId === artboard.id
+                                        }
+                                        onRename={ rename.end }
                                         onAddress={ ( path ) =>
                                             updateArtboard( artboard.id, {
                                                 path,

@@ -94,7 +94,6 @@ test.describe( 'A11Y', () => {
         expect( await nameOf( 'H3' ) ).toBe( 'Undo' );
         expect( await nameOf( 'H4' ) ).toBe( 'Redo' );
         expect( await nameOf( 'H5' ) ).toBe( 'List view' );
-        expect( await nameOf( 'L2' ) ).toBe( 'Add artboard' );
         for ( const control of await iconOnlyControls( page ) ) {
             expect( control.name, JSON.stringify( control ) ).not.toBe( '' );
         }

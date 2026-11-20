@@ -7,10 +7,20 @@ import { useSelect } from '@wordpress/data';
 import { store as coreStore } from '@wordpress/core-data';
 import { getBlockTypes, getCategories } from '@wordpress/blocks';
 import { store as boardStore } from '../board-store';
+import { KINDS } from '../shell/constants';
 import { recordName } from '../shell/use-artboards';
 
 const ALL = { per_page: -1 };
 const USER_PATTERNS = { per_page: -1, status: 'publish,draft' };
+// Every page that is not in the trash, by title. Only what a row shows is
+// asked for; an artboard requests its page in full.
+const PAGES = {
+    per_page: -1,
+    status: 'publish,future,draft,pending,private',
+    orderby: 'title',
+    order: 'asc',
+    _fields: 'id,title,slug,status',
+};
 export const MEDIA_QUERY = {
     media_type: 'image',
     per_page: 50,
@@ -37,6 +47,41 @@ function namesContaining( records, needle ) {
 }
 
 /**
+ * The page and pattern lists with the names their artboards show: a name
+ * not saved yet (D62) is listed here as it is everywhere else.
+ *
+ * @param {Object} lists          Lists from useInserterData.
+ * @param {Array}  lists.pages    Pages.
+ * @param {Array}  lists.patterns Pattern groups.
+ * @param {Array}  artboards      The board's artboards with their names.
+ * @return {Object} `pages` and `patterns`.
+ */
+export function withBoardNames( { pages, patterns }, artboards ) {
+    const names = new Map(
+        artboards
+            .filter( ( artboard ) => KINDS[ artboard.kind ].isNamed )
+            .map( ( artboard ) => [
+                `${ artboard.kind }:${ artboard.entityId }`,
+                artboard.name,
+            ] )
+    );
+    const named = ( kind, id, item ) => ( {
+        ...item,
+        name: names.get( `${ kind }:${ id }` ) || item.name,
+    } );
+    return {
+        pages: pages.map( ( page ) => named( 'page', page.id, page ) ),
+        patterns: patterns.map( ( group ) => ( {
+            ...group,
+            // Only a user pattern has a record, and so an artboard.
+            items: group.items.map( ( item ) =>
+                item.record ? named( 'pattern', item.record.id, item ) : item
+            ),
+        } ) ),
+    };
+}
+
+/**
  * @param {string|null} allowedBlocks Comma-separated names of the blocks the
  *                                    Live editor allows at its insertion
  *                                    point; null with no artboard in edit.
@@ -46,6 +91,7 @@ export function useInserterData( allowedBlocks ) {
     const data = useSelect( ( select ) => {
         const core = select( coreStore );
         return {
+            pages: core.getEntityRecords( 'postType', 'page', PAGES ),
             templates: core.getEntityRecords( 'postType', 'wp_template', ALL ),
             parts: core.getEntityRecords( 'postType', 'wp_template_part', ALL ),
             userPatterns: core.getEntityRecords(
@@ -139,6 +185,11 @@ export function useInserterData( allowedBlocks ) {
 
         return {
             blocks,
+            pages: ( data.pages ?? [] ).map( ( page ) => ( {
+                id: page.id,
+                name: recordName( page ),
+                isOnBoard: onBoard( 'page', page.id ),
+            } ) ),
             patterns,
             templates: templates.map( ( template ) => ( {
                 id: template.id,

@@ -181,7 +181,7 @@ test.describe( 'SHELL', () => {
             await expect( inserter.getByRole( 'tab' ) ).toHaveText(
                 isEditing
                     ? [ 'Blocks', 'Patterns', 'Templates', 'Media' ]
-                    : [ 'Patterns', 'Templates', 'Media' ]
+                    : [ 'Pages', 'Patterns', 'Templates', 'Media' ]
             );
             await expect( artboards ).toHaveCount( 0 );
             await header
