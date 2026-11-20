@@ -158,3 +158,17 @@ export function discardTitle( name ) {
         name
     );
 }
+
+/**
+ * The accessible name of an item's "Discard" (D48).
+ *
+ * @param {string} name The item name.
+ * @return {string} The name.
+ */
+export function discardLabel( name ) {
+    return sprintf(
+        /* translators: %s: name of the item whose changes are discarded. */
+        __( 'Discard changes to %s', 'wordpress-for-designers' ),
+        name
+    );
+}

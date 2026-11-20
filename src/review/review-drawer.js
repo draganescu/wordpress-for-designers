@@ -18,6 +18,7 @@ import {
 import { WeakText } from '../shell/primitives';
 import {
     artboardsLine,
+    discardLabel,
     discardTitle,
     moreLine,
     saveErrorMessage,
@@ -59,6 +60,7 @@ function ReviewItem( { item, onToggle, onDiscard, isSaving } ) {
                         variant="minimal"
                         tone="neutral"
                         size="compact"
+                        aria-label={ discardLabel( item.name ) }
                         disabled={ isSaving }
                         onClick={ onDiscard }
                     >
