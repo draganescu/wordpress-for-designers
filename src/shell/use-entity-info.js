@@ -3,6 +3,7 @@
  */
 import { useSelect } from '@wordpress/data';
 import { store as coreStore } from '@wordpress/core-data';
+import { KINDS } from './constants';
 import { serverSettings } from './editor-settings';
 
 const TEMPLATE_QUERY = { per_page: -1 };
@@ -49,7 +50,10 @@ export function useEntityInfo( artboard ) {
             if ( ! artboard ) {
                 return {};
             }
-            if ( artboard.kind === 'page' ) {
+            if (
+                artboard.kind === 'page' ||
+                ! KINDS[ artboard.kind ].postType
+            ) {
                 return {};
             }
             if ( artboard.kind === 'media' ) {

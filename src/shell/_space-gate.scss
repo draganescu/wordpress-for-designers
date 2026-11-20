@@ -1,0 +1,119 @@
+// "Designing needs more space" (D49): the whole window, above everything.
+.wfd-needs-space[open] {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    width: 100%;
+    max-width: none;
+    height: 100%;
+    max-height: none;
+    padding: var(--wpds-dimension-padding-2xl);
+    margin: 0;
+    overflow: auto;
+    color: var(--wpds-color-foreground-content-neutral);
+    background: var(--wpds-color-background-surface-neutral-weak);
+    border: 0;
+    outline: none;
+}
+
+.wfd-squeeze {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    column-gap: var(--wpds-dimension-gap-xs);
+    // As wide as the window gets, so the text under it stays still.
+    min-width: calc(var(--wfd-squeeze-wide) + 2 * var(--wpds-dimension-size-md) + 2 * var(--wpds-dimension-gap-xs));
+    color: var(--wpds-color-foreground-interactive-brand);
+
+    --wfd-squeeze-tight: calc(var(--wpds-dimension-size-lg) * 1.5);
+    --wfd-squeeze-wide: calc(var(--wpds-dimension-size-lg) * 6);
+    --wfd-squeeze-loop: calc(var(--wpds-motion-duration-xl) * 9);
+}
+
+.wfd-squeeze__arrow {
+    flex: none;
+    fill: currentcolor;
+}
+
+.wfd-squeeze__window {
+    display: flex;
+    align-items: flex-start;
+    column-gap: var(--wpds-dimension-gap-sm);
+    box-sizing: border-box;
+    width: var(--wfd-squeeze-tight);
+    height: calc(var(--wpds-dimension-size-lg) * 3);
+    padding: var(--wpds-dimension-padding-md);
+    overflow: hidden;
+    background: var(--wpds-color-background-surface-neutral);
+    border: var(--wpds-border-width-sm) solid var(--wpds-color-stroke-interactive-brand);
+    border-radius: var(--wpds-border-radius-md);
+}
+
+.wfd-squeeze__artboard {
+    flex: 1;
+    min-width: 0;
+    height: 100%;
+    background: var(--wpds-color-background-surface-brand);
+    outline: var(--wpds-border-width-xs) solid var(--wpds-color-stroke-interactive-brand);
+
+    &:nth-child(2) {
+        height: 40%;
+    }
+
+    &:nth-child(3) {
+        height: 70%;
+    }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+
+    .wfd-squeeze__window {
+        animation: wfd-squeeze var(--wfd-squeeze-loop) var(--wpds-motion-easing-expressive) infinite;
+    }
+
+    .wfd-squeeze__arrow {
+        animation: wfd-squeeze-nudge var(--wfd-squeeze-loop) var(--wpds-motion-easing-expressive) infinite;
+    }
+
+    .wfd-squeeze__arrow:last-child {
+        --wfd-squeeze-nudge: var(--wpds-dimension-size-5xs);
+    }
+
+    .wfd-squeeze__arrow:first-child {
+        --wfd-squeeze-nudge: calc(var(--wpds-dimension-size-5xs) * -1);
+    }
+}
+
+// Tight, a push at the edges, room, a breath, and tight again.
+@keyframes wfd-squeeze {
+
+    0%,
+    18%,
+    100% {
+        width: var(--wfd-squeeze-tight);
+    }
+
+    45%,
+    78% {
+        width: var(--wfd-squeeze-wide);
+    }
+}
+
+@keyframes wfd-squeeze-nudge {
+
+    0%,
+    18%,
+    100% {
+        transform: translateX(0);
+    }
+
+    6%,
+    14% {
+        transform: translateX(var(--wfd-squeeze-nudge));
+    }
+
+    10% {
+        transform: translateX(0);
+    }
+}

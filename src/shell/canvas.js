@@ -84,6 +84,27 @@ export function PreviewBanner( { date, time } ) {
 }
 
 /**
+ * The notice shown while the board's unsaved changes cannot be sent for the
+ * preview in browsers (D61).
+ */
+export function SavingBanner() {
+    return (
+        <Notice.Root
+            intent="error"
+            className="wfd-banner"
+            data-wfd-banner="saving"
+        >
+            <Notice.Description>
+                { __(
+                    "We're having a problem saving.",
+                    'wordpress-for-designers'
+                ) }
+            </Notice.Description>
+        </Notice.Root>
+    );
+}
+
+/**
  * The dashed outline shown while placing or dropping an artboard.
  *
  * @param {Object} props

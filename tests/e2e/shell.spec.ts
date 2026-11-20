@@ -3,6 +3,7 @@ import {
     resetFixture,
     boardUrl,
     enterEdit,
+    editorFrame,
     artboardOf,
     type Fixture,
 } from './utils';
@@ -521,5 +522,257 @@ test.describe( 'SHELL', () => {
         await rows.nth( 7 ).click();
         expect( await selectedIds() ).toEqual( [ await idOf( 7 ) ] );
         await expect( outlined ).toHaveCount( 1 );
+    } );
+
+    test( 'AC-SHELL-10 A board opened in a window narrower than 1180 px shows "Designing needs more space" and no board; at 1180 px the message goes and the board opens', async ( {
+        page,
+    } ) => {
+        await page.setViewportSize( { width: 1179, height: 820 } );
+        await page.goto( boardUrl( fixture.boardId ) );
+        const message = page.locator( '[data-wfd-region="needs-space"]' );
+        await expect(
+            message.getByRole( 'heading', {
+                name: 'Designing needs more space',
+            } )
+        ).toBeVisible();
+        await expect( message ).toContainText(
+            'A board needs a wide window to lay out your designs. Make this one wider, turn your tablet sideways or move to a bigger screen, and your board will be right here.'
+        );
+        // The message fills the window and the board was not started.
+        const box = ( await message.boundingBox() )!;
+        expect( box.width ).toBe( 1179 );
+        expect( box.height ).toBe( 820 );
+        await expect(
+            page.locator( '[data-wfd-region="header"]' )
+        ).toHaveCount( 0 );
+        await expect( page.locator( '[data-wfd-artboard]' ) ).toHaveCount( 0 );
+
+        // An iPad Air in landscape.
+        await page.setViewportSize( { width: 1180, height: 820 } );
+        await expect( message ).toHaveCount( 0 );
+        await expect( page.locator( '[data-wfd-artboard]' ) ).toHaveCount( 9 );
+        await expect(
+            page.locator( '[data-wfd-region="header"]' )
+        ).toBeVisible();
+    } );
+
+    test( 'AC-SHELL-11 Narrowing the window below 1180 px covers a board in use with the message; nothing behind it takes the pointer or keys, Esc does not close it, and widening brings the board back as it was', async ( {
+        page,
+    } ) => {
+        const hero = artboardOf( fixture, 'pattern' );
+        await enterEdit( page, hero.id );
+        const live = page.locator( '[data-wfd-tier="live"]' );
+        await expect( live ).toHaveCount( 1 );
+
+        await page.setViewportSize( { width: 1000, height: 800 } );
+        const message = page.locator( '[data-wfd-region="needs-space"]' );
+        await expect(
+            message.getByRole( 'heading', {
+                name: 'Designing needs more space',
+            } )
+        ).toBeVisible();
+
+        // Esc would leave edit and Cmd/Ctrl + \ would hide both panels.
+        await page.keyboard.press( 'Escape' );
+        await page.keyboard.press( 'Escape' );
+        await page.keyboard.press( 'ControlOrMeta+Backslash' );
+        await expect( message ).toBeVisible();
+        // Every point of the window belongs to the message.
+        const hit = await page.evaluate( () =>
+            [
+                [ 30, 30 ],
+                [ 500, 400 ],
+                [ 970, 30 ],
+                [ 120, 700 ],
+            ].every( ( [ x, y ] ) =>
+                document
+                    .elementFromPoint( x, y )
+                    ?.closest( '[data-wfd-region="needs-space"]' )
+            )
+        );
+        expect( hit ).toBe( true );
+        // Focus cannot leave the message.
+        await page.keyboard.press( 'Tab' );
+        await expect( page.locator( '.wfd-shell :focus' ) ).toHaveCount( 0 );
+
+        await page.setViewportSize( { width: 1440, height: 900 } );
+        await expect( message ).toHaveCount( 0 );
+        await expect( live ).toHaveCount( 1 );
+        await expect( live ).toHaveAttribute( 'data-wfd-artboard', hero.id );
+        await expect(
+            page.locator( '[data-wfd-region="left"]' )
+        ).toBeVisible();
+        await expect(
+            page.locator( '[data-wfd-region="right"]' )
+        ).toBeVisible();
+    } );
+
+    test( 'AC-SHELL-12 At 1180, 1440 and 1600 px wide with a block selected in an artboard in edit, the header controls keep their order without overlapping, none is squeezed, the block toolbar is whole with H14 at its end and only the back button of the document bar next to it, a toolbar wider than its room scrolls, and at 1180 px the panels are narrower', async ( {
+        page,
+    } ) => {
+        const header = page.locator( '[data-wfd-region="header"]' );
+        const boxesOf = () =>
+            header.locator( '[data-wfd-control]' ).evaluateAll( ( elements ) =>
+                elements
+                    .map( ( element ) => {
+                        const box = element.getBoundingClientRect();
+                        return {
+                            id: element.getAttribute( 'data-wfd-control' ),
+                            left: box.left,
+                            right: box.right,
+                            width: box.width,
+                        };
+                    } )
+                    .sort( ( a, b ) => a.left - b.left )
+            );
+        const atRest = await boxesOf();
+        const hero = artboardOf( fixture, 'pattern' );
+        await enterEdit( page, hero.id );
+        await editorFrame( page, hero.id )
+            .locator( '[data-type="core/paragraph"]' )
+            .first()
+            .click();
+        const scroller = page.locator(
+            '[data-wfd-control="H6"] .block-editor-block-toolbar'
+        );
+        const hiddenWidth = () =>
+            scroller.evaluate(
+                ( element ) => element.scrollWidth - element.clientWidth
+            );
+
+        for ( const [ width, height ] of [
+            [ 1180, 820 ],
+            [ 1440, 900 ],
+            [ 1600, 900 ],
+        ] ) {
+            await page.setViewportSize( { width, height } );
+            await expect( scroller ).toBeVisible();
+            const all = await boxesOf();
+            const boxOf = ( id: string ) =>
+                all.find( ( box ) => box.id === id )!;
+            // H14 is inside H6.
+            const boxes = all.filter( ( box ) => box.id !== 'H14' );
+            expect( boxes.map( ( box ) => box.id ) ).toEqual( [
+                'H1',
+                'H2',
+                'H3',
+                'H4',
+                'H5',
+                'H10',
+                'H13',
+                'H6',
+                'H7',
+                'H12',
+                'H8',
+                'H11',
+                'H9',
+            ] );
+            for ( const [ index, box ] of boxes.entries() ) {
+                expect( box.left ).toBeGreaterThanOrEqual( 0 );
+                expect( box.right ).toBeLessThanOrEqual( width );
+                if ( index ) {
+                    expect( box.left ).toBeGreaterThanOrEqual(
+                        boxes[ index - 1 ].right
+                    );
+                }
+            }
+            // The controls keep the size they have with nothing in edit.
+            for ( const id of [ 'H1', 'H2', 'H3', 'H4', 'H5', 'H10', 'H13' ] ) {
+                expect( boxOf( id ).width, id ).toBe(
+                    atRest.find( ( box ) => box.id === id )!.width
+                );
+            }
+            // The toolbar is whole, and H14 ends it.
+            expect( await hiddenWidth() ).toBe( 0 );
+            expect(
+                Math.abs( boxOf( 'H14' ).right - boxOf( 'H6' ).right )
+            ).toBeLessThanOrEqual( 1 );
+            // Of the document bar only the back button, next to H14.
+            await expect(
+                header.getByRole( 'button', { name: 'Back to the board' } )
+            ).toBeVisible();
+            await expect( header.getByText( 'Hero · Pattern' ) ).toBeHidden();
+            const gap = boxOf( 'H7' ).left - boxOf( 'H14' ).right;
+            expect( gap ).toBeGreaterThanOrEqual( 0 );
+            expect( gap ).toBeLessThanOrEqual( 16 );
+
+            if ( width === 1180 ) {
+                const left = ( await page
+                    .locator( '[data-wfd-region="left"]' )
+                    .boundingBox() )!;
+                const right = ( await page
+                    .locator( '[data-wfd-region="right"]' )
+                    .boundingBox() )!;
+                expect( left.width ).toBeLessThan( 280 );
+                expect( right.width ).toBeLessThan( 360 );
+                expect(
+                    1180 - left.width - right.width
+                ).toBeGreaterThanOrEqual( 600 );
+            }
+        }
+
+        // With less room than it needs, the wheel takes the toolbar to its
+        // end.
+        await page.addStyleTag( {
+            content: '[data-wfd-control="H6"] { max-width: 200px; }',
+        } );
+        const hidden = await hiddenWidth();
+        expect( hidden ).toBeGreaterThan( 0 );
+        await scroller.hover();
+        await page.mouse.wheel( hidden, 0 );
+        await expect
+            .poll( () =>
+                scroller.evaluate( ( element ) => element.scrollLeft )
+            )
+            .toBeGreaterThanOrEqual( hidden - 1 );
+    } );
+
+    test( 'AC-SHELL-13 H14 hides the block toolbar and shows the title of the document bar, and the other way round; another block selected shows the toolbar again; with no block selected H14 is not shown; "Back to the board" is visible throughout', async ( {
+        page,
+    } ) => {
+        const hero = artboardOf( fixture, 'pattern' );
+        await enterEdit( page, hero.id );
+        const header = page.locator( '[data-wfd-region="header"]' );
+        const back = header.getByRole( 'button', {
+            name: 'Back to the board',
+        } );
+        const title = header.getByText( 'Hero · Pattern' );
+        const toggle = page.locator( '[data-wfd-control="H14"]' );
+        const toolbar = page.locator(
+            '[data-wfd-control="H6"] .block-editor-block-toolbar'
+        );
+        const blocks = editorFrame( page, hero.id );
+
+        // No block is selected.
+        await expect( toggle ).toBeHidden();
+        await expect( title ).toBeVisible();
+        await expect( back ).toBeVisible();
+
+        await blocks.locator( '[data-type="core/paragraph"]' ).first().click();
+        await expect( toolbar ).toBeVisible();
+        await expect( toggle ).toHaveAccessibleName( 'Hide block tools' );
+        await expect( title ).toBeHidden();
+        await expect( back ).toBeVisible();
+
+        await toggle.click();
+        await expect( toolbar ).toBeHidden();
+        await expect( toggle ).toHaveAccessibleName( 'Show block tools' );
+        await expect( title ).toBeVisible();
+        await expect( back ).toBeVisible();
+
+        await toggle.click();
+        await expect( toolbar ).toBeVisible();
+        await expect( toggle ).toHaveAccessibleName( 'Hide block tools' );
+        await expect( title ).toBeHidden();
+        await expect( back ).toBeVisible();
+
+        // Hidden again, then another block.
+        await toggle.click();
+        await expect( toolbar ).toBeHidden();
+        await blocks.locator( '[data-type="core/heading"]' ).first().click();
+        await expect( toolbar ).toBeVisible();
+        await expect( toggle ).toHaveAccessibleName( 'Hide block tools' );
+        await expect( title ).toBeHidden();
+        await expect( back ).toBeVisible();
     } );
 } );

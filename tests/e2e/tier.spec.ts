@@ -577,7 +577,7 @@ test.describe( 'TIER', () => {
         ).toBeAttached();
     } );
 
-    test( 'AC-TIER-11 After a global style change, an artboard that was a snapshot shows the new style when it next becomes a preview', async ( {
+    test( 'AC-TIER-11 After a global style change, an artboard that is a snapshot shows the new style without becoming a preview', async ( {
         page,
         requestUtils,
     } ) => {
@@ -606,6 +606,31 @@ test.describe( 'TIER', () => {
             frame.locator( '.wfd-snapshot__copy iframe' )
         ).toHaveCount( 1 );
 
+        // Watch the artboard: its tier, and whether it is ever left without
+        // a frozen copy.
+        await page.evaluate( ( id ) => {
+            const element = document.querySelector(
+                `[data-wfd-artboard="${ id }"]`
+            )!;
+            const seen = { tiers: [] as string[], withoutCopy: 0 };
+            const note = () => {
+                const tier = element.getAttribute( 'data-wfd-tier' )!;
+                if ( ! seen.tiers.includes( tier ) ) {
+                    seen.tiers.push( tier );
+                }
+                if ( ! element.querySelector( '.wfd-snapshot__copy iframe' ) ) {
+                    seen.withoutCopy++;
+                }
+            };
+            note();
+            new MutationObserver( note ).observe( element, {
+                attributes: true,
+                childList: true,
+                subtree: true,
+            } );
+            ( window as any ).wfdSeen = seen;
+        }, hero.id );
+
         // Change the Accent 1 colour while the artboard is a snapshot.
         await page.evaluate( () => {
             const { select, dispatch } = ( window as any ).wp.data;
@@ -625,19 +650,35 @@ test.describe( 'TIER', () => {
         await expect( page.locator( '[data-wfd-control="H9"]' ) ).toHaveText(
             'Review 1 change'
         );
-        // The snapshot keeps the old colour and is marked stale.
-        await page.waitForTimeout( 400 );
-        expect( await background( '.wfd-snapshot__copy iframe' ) ).toBe(
-            'rgb(255, 238, 88)'
-        );
-        await expect( frame ).toHaveAttribute( 'data-wfd-stale', 'true' );
-
-        await setZoom( page, 0.25 );
-        await expect( frame ).toHaveAttribute( 'data-wfd-tier', 'preview' );
+        // Its frozen copy is renewed in place (D51).
         await expect
-            .poll( () => background( 'iframe' ) )
+            .poll(
+                () =>
+                    frame
+                        .locator( '.wfd-snapshot__copy iframe' )
+                        .first()
+                        .evaluate( ( el: HTMLIFrameElement ) => {
+                            const paragraph = el.contentDocument?.querySelector(
+                                '.has-accent-1-background-color'
+                            );
+                            return paragraph
+                                ? el.contentWindow!.getComputedStyle(
+                                      paragraph
+                                  ).backgroundColor
+                                : null;
+                        } )
+                        .catch( () => null ),
+                { timeout: 30000 }
+            )
             .toBe( 'rgb(10, 11, 12)' );
+        await expect( frame ).toHaveAttribute( 'data-wfd-tier', 'snapshot' );
         await expect( frame ).not.toHaveAttribute( 'data-wfd-stale', 'true' );
+        await expect(
+            frame.locator( '.wfd-snapshot__copy iframe' )
+        ).toHaveCount( 1 );
+        expect(
+            await page.evaluate( () => ( window as any ).wfdSeen )
+        ).toEqual( { tiers: [ 'snapshot' ], withoutCopy: 0 } );
     } );
 
     test( 'AC-TIER-12 Below 20% zoom an artboard that was never rendered gets its frozen copy without becoming a preview', async ( {

@@ -20,6 +20,7 @@ const DESCRIPTIONS = {
         'A section to drop into any page or template.',
         'wordpress-for-designers'
     ),
+    browser: __( 'The site as visitors see it.', 'wordpress-for-designers' ),
 };
 
 /**
@@ -188,6 +189,15 @@ export function AddArtboardMenu( {
                     <Menu.ItemLabel>{ KINDS.pattern.label }</Menu.ItemLabel>
                     <Menu.ItemDescription>
                         { DESCRIPTIONS.pattern }
+                    </Menu.ItemDescription>
+                </Menu.Item>
+                <Menu.Item
+                    prefix={ <Menu.PrefixIcon icon={ KINDS.browser.icon } /> }
+                    onClick={ () => onPick( { kind: 'browser' } ) }
+                >
+                    <Menu.ItemLabel>{ KINDS.browser.label }</Menu.ItemLabel>
+                    <Menu.ItemDescription>
+                        { DESCRIPTIONS.browser }
                     </Menu.ItemDescription>
                 </Menu.Item>
             </Menu.Popup>

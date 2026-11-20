@@ -31,13 +31,21 @@ export function PanelHeader( { title, variant = 'heading-md', children } ) {
 }
 
 /**
- * A group heading with an optional count or label at the right (L3, L9, S4).
+ * A group heading with an optional count or label at the right (L3, L9, S4)
+ * and an optional control before it (S4 to S6).
  *
  * @param {Object}  props
  * @param {Element} props.children The heading text.
  * @param {*}       props.suffix   Count or label at the right.
+ * @param {Element} props.action   A control at the right, before the suffix.
+ * @param {string}  props.id       Id of the heading element.
  */
-export function GroupHeading( { children, suffix } ) {
+export function GroupHeading( { children, suffix, action, id } ) {
+    const label = suffix !== undefined && (
+        <Text variant="body-sm" className="wfd-group-heading__suffix">
+            { suffix }
+        </Text>
+    );
     return (
         <Stack
             className="wfd-group-heading"
@@ -46,13 +54,16 @@ export function GroupHeading( { children, suffix } ) {
             justify="space-between"
             gap="sm"
         >
-            <Text variant="heading-sm" render={ <h3 /> }>
+            <Text variant="heading-sm" render={ <h3 id={ id } /> }>
                 { children }
             </Text>
-            { suffix !== undefined && (
-                <Text variant="body-sm" className="wfd-group-heading__suffix">
-                    { suffix }
-                </Text>
+            { action ? (
+                <Stack direction="row" align="center" gap="lg">
+                    { action }
+                    { label }
+                </Stack>
+            ) : (
+                label
             ) }
         </Stack>
     );

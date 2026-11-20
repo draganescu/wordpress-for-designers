@@ -31,6 +31,15 @@ export function useArtboards() {
         return select( boardStore )
             .getArtboards()
             .map( ( artboard ) => {
+                if ( ! KINDS[ artboard.kind ].postType ) {
+                    // With no entity, a browser: its name is its address.
+                    return {
+                        ...artboard,
+                        record: null,
+                        name: artboard.path,
+                        status: 'ready',
+                    };
+                }
                 const args = [
                     'postType',
                     KINDS[ artboard.kind ].postType,

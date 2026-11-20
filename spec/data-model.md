@@ -64,6 +64,14 @@ A media object has `"kind": "media"`, a numeric `entityId` (the attachment), a `
 { "id": "…", "kind": "media", "entityId": 12, "x": 0, "y": 0, "width": 1200, "height": 800 }
 ```
 
+A browser (D55) has `"kind": "browser"`, a `path`, a `device`, a `height` (the window's height in board units, 200 or more, D56), `shows` (`"unsaved"` or `"saved"`, D57), and no `entityId` or `width`:
+
+```json
+{ "id": "…", "kind": "browser", "path": "/", "device": "desktop", "x": 0, "y": 0, "height": 900, "shows": "unsaved" }
+```
+
+`path` is the address relative to the site's home URL: it starts with `/`, may hold a query and a fragment, and is at most 2000 characters. A new browser has `/`, the homepage, and a window 900 board units tall. `[U]` for the window, `[N]` for the field list and the length
+
 The layout may also have a `notes` list (D46). A layout without it has no notes; a board with no notes is saved without it. Each note has exactly these fields: `[U]`
 
 ```json
@@ -84,6 +92,7 @@ The server validates the JSON against this shape on save and rejects anything el
 |---|---|---|---|
 | Page | A `page` with status `draft`, title "Untitled page", empty content, and as its template the theme's `blank` template if it has one, else its `page-no-title` template if it has one, else none (D36) | At placement | `[U]` |
 | Media | Nothing. The object refers to an image already in the media library | | `[U]` |
+| Browser | Nothing. It shows the site's front end (D55) | | `[U]` |
 | Pattern | A `wp_block` with status `draft`, title "Untitled pattern", empty content, synced | At placement | `[U]` |
 | Template | A `wp_template` for the chosen purpose, with content: the theme's Header part, one empty paragraph, the theme's Footer part | At first save from Review, never before | `[U]` `[D:AddArtboard2]` |
 | Template part | A `wp_template_part` titled "Untitled part", area `uncategorized` (labelled General), empty content | At first save from Review, never before | `[U]` `[V]` |
@@ -104,13 +113,17 @@ Pressing Delete on a selected artboard, or "Remove from board", opens a confirma
 | Template or part created by a user (`has_theme_file` false) | Delete | `[U]` `[V]` |
 | Template or part that ships with the theme (`has_theme_file` true) | Reset to the theme's version (REST update with `source: "theme"`) | `[U]` `[V]` |
 
-A media object has no checkbox: removing it only takes it off the board. `[U]`
+A media object or a browser (D55) has no checkbox: removing it only takes it off the board. `[U]`
 
 A note is removed at once, with no confirmation, and can be brought back with Undo (D46). `[U]`
 
 Pressing Delete with several artboards selected opens no confirmation: every selected artboard leaves the board and no entity is changed (D41). `[U]`
 
 When the entity is deleted, trashed or reset, every other artboard on any board that references it is handled on next load: a missing entity removes the artboard from that board. `[N]`
+
+## Previewing unsaved changes (D57)
+
+The board's unsaved changes are kept on the server for the browser's preview, per user and site, apart from the site's content: one record for each open board page, replaced each time that page sends, removed when it has nothing unsaved, and no longer used an hour after it last sent. An open board with unsaved changes sends them again every ten minutes, so they stay kept while it is open. Uninstalling the plugin deletes every record. It is never published, never shown to anyone else and never reaches Review. A front-end page requested by a user with `edit_theme_options` with the argument `wfd_preview`, holding a nonce the server gave that user, is rendered with those changes in place of the saved content; for anyone else, with any other value, and on a request to the REST API, the argument does nothing. `[U]` for the behaviour, `[N]` for how the record is stored
 
 ## Saving
 

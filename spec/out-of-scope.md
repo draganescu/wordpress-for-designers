@@ -12,7 +12,7 @@ Each item was considered and cut. Do not build any of them, in part or behind a 
 | Custom artboard widths, drag to resize an artboard's width | `[U]` |
 | Touch input other than the board gestures of D62 | `[U]` |
 | Changing an artboard's kind after creation | `[U]` |
-| Draft copies of templates and template parts | `[U]` |
+| Draft copies of templates and template parts. The unsaved content kept on the server for a user's own preview (D57) is not one: it lasts a limited time and never reaches the live site (C13) | `[U]` |
 | Previews or thumbnails in the inserter lists | `[U]` |
 | A per-artboard inserter, toolbar or inspector | `[B8]` `[U]` |
 | A Styles mode or Styles button outside the right panel | `[U]` |
