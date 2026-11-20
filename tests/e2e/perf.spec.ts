@@ -16,7 +16,21 @@ test.describe( 'PERF', () => {
     } ) => {
         const fixture = await resetFixture( requestUtils );
         await openBoard( page, fixture.boardId );
-        await page.waitForTimeout( 1500 );
+        // The board has settled once Previews stop mounting: no render for a
+        // whole second. A slow machine needs longer than a fixed wait gives.
+        await page.waitForFunction(
+            () =>
+                new Promise( ( resolve ) => {
+                    const hooks = ( window as any ).wfdTest;
+                    const before = hooks.counters.renders;
+                    setTimeout(
+                        () => resolve( hooks.counters.renders === before ),
+                        1000
+                    );
+                } ),
+            null,
+            { timeout: 20000 }
+        );
 
         const result = await page.evaluate( async () => {
             const hooks = ( window as any ).wfdTest;
