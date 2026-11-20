@@ -162,7 +162,7 @@ Unless a criterion says otherwise, the fixture in `architecture.md` is loaded an
 - AC-STYLE-08 In the Tokens tab, "Edit" on Colors, Typography and Spacing and the "Background" and "Shadows" rows each open the stock styles screen for it; a change made there repaints the board and adds Styles to Review; the screen's Back control returns to the tokens (D52). `[U]`
 - AC-STYLE-09 The Blocks tab lists the elements in the groups "Elements", "Headings" and "Form controls" before the blocks; an element row opens the stock styles screen for that element; a change made there repaints the board, shows as the row's change count and adds Styles to Review (D53). `[U]`
 - AC-STYLE-10 The variation menu reads "Variation: Default" for the theme's own styles, "Variation: {name}" when the styles are exactly a variation and "Variation: Custom" after any further change; its first item, "Default", returns the styles to the theme's (D54). `[U]`
-- AC-STYLE-12 A stock styles screen that throws shows WordPress's stock error notice in its place; the board, the other tabs and the other stock screens keep working (D60). `[U]`
+- AC-STYLE-12 A stock styles screen that throws shows WordPress's stock error notice in its place; the board, the other tabs and the other stock screens keep working; switching to another tab closes the screen that threw, so its tab shows its list again, and leaves open a screen that did not (D60). `[U]`
 
 ## INDEX
 
