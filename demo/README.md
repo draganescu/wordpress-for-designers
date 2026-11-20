@@ -29,12 +29,20 @@ cd demo && npx wp-env run cli wp rewrite structure '/%postname%/' --hard
 - **The seed deletes all content of the site it runs on** (pages, posts, coffees, patterns, boards, images, menus, and customised templates and styles) and creates it again. Run it again to reset the demo between takes.
 - Stop it with `cd demo && npx wp-env stop`.
 
+## In WordPress Playground
+
+`blueprint.json` at the repository root, which the README's button uses, installs the built plugin from the `playground` branch, then the theme and the demo plugin from `demo/` on `master`, and runs the seed. So a change to the demo reaches the button when it reaches `master`.
+
+The blueprint calls `wfd_demo_seed( array( 'thumbnails' => false ) )`, which keeps only the full size of each image: that is all the demo's content uses, and resizing 29 images in the browser is slow. `wp wfd-demo seed --no-thumbnails` does the same.
+
+To try a branch before it is merged, open `https://playground.wordpress.net/#` followed by the blueprint as JSON, with `master` replaced by the branch name.
+
 ## What is in it
 
 | Folder | Holds |
 |---|---|
 | `theme/morrow/` | The block theme: `theme.json`, templates, the header and footer parts, three style variations in `styles/`, four fonts copied from Twenty Twenty-Five |
-| `plugin/wfd-demo/` | The `coffee` post type with its fields, and the `wp wfd-demo seed` command |
+| `plugin/wfd-demo/` | The `coffee` post type with its fields, the seed (`seed.php`) and its `wp wfd-demo seed` command (`cli.php`) |
 | `plugin/wfd-demo/content/` | Everything the seed creates: `manifest.php` (pages, posts, coffees, patterns, menu), `boards.php` (the boards and their notes), and one block markup file per item |
 | `plugin/wfd-demo/media/` | 18 photographs and 11 generated images |
 | `tools/art.mjs` | Draws the generated images with Chromium |
@@ -88,7 +96,6 @@ Reset with the seed command between takes.
 
 ## Not done
 
-- **WordPress Playground.** `blueprint.json` at the repository root still starts an empty site. Loading this demo in Playground needs the theme, the demo plugin and the media published where a blueprint can fetch them.
 - **Brew guides and Visit** use the least convincing photographs.
 
 ## Image credits
