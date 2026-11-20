@@ -1,0 +1,19 @@
+{
+    "core": "https://wordpress.org/wordpress-7.2-RC2.zip",
+    "phpVersion": "8.2",
+    "testsEnvironment": false,
+    "themes": [
+        "./theme/morrow"
+    ],
+    "plugins": [
+        "..",
+        "./plugin/wfd-demo"
+    ],
+    "port": 8900,
+    "config": {
+        "WP_DEBUG": true,
+        "WP_DEBUG_LOG": true,
+        "WP_DEBUG_DISPLAY": false,
+        "SCRIPT_DEBUG": false
+    }
+}
