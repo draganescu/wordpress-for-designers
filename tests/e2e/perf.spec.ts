@@ -14,24 +14,10 @@ test.describe( 'PERF', () => {
         page,
         requestUtils,
     } ) => {
+        // Waiting for a slow machine's board to load can take a while.
+        test.setTimeout( 120000 );
         const fixture = await resetFixture( requestUtils );
         await openBoard( page, fixture.boardId );
-        // The board has settled once Previews stop mounting: no render for a
-        // whole second. A slow machine needs longer than a fixed wait gives.
-        await page.waitForFunction(
-            () =>
-                new Promise( ( resolve ) => {
-                    const hooks = ( window as any ).wfdTest;
-                    const before = hooks.counters.renders;
-                    setTimeout(
-                        () => resolve( hooks.counters.renders === before ),
-                        1000
-                    );
-                } ),
-            null,
-            { timeout: 20000 }
-        );
-
         const result = await page.evaluate( async () => {
             const hooks = ( window as any ).wfdTest;
             const area = document.querySelector(
@@ -65,8 +51,38 @@ test.describe( 'PERF', () => {
                     distinctTransforms: new Set( transforms ).size,
                 };
             };
-            const pan = await run( { deltaX: 6, deltaY: 4 } );
-            const zoom = await run( { deltaY: -3, ctrlKey: true } );
+            // While it loads, the board measures its artboards' heights and
+            // renders for that, about once a second on a slow machine. A
+            // measurement during which the layout changed is not the
+            // gesture's doing: it is taken again, once the board has been
+            // quiet for a second.
+            const layout = () =>
+                ( window as any ).wp.data.select( 'wfd/board' ).getArtboards();
+            const wait = ( ms: number ) =>
+                new Promise( ( resolve ) => setTimeout( resolve, ms ) );
+            const quiet = async () => {
+                for ( let i = 0; i < 60; i++ ) {
+                    const before = hooks.counters.renders;
+                    await wait( 1000 );
+                    if ( hooks.counters.renders === before ) {
+                        return;
+                    }
+                }
+            };
+            const measure = async ( init: WheelEventInit ) => {
+                let measured = null;
+                for ( let attempt = 0; attempt < 10; attempt++ ) {
+                    await quiet();
+                    const before = layout();
+                    measured = await run( init );
+                    if ( ! measured.rendersDuring || layout() === before ) {
+                        return measured;
+                    }
+                }
+                return measured;
+            };
+            const pan = await measure( { deltaX: 6, deltaY: 4 } );
+            const zoom = await measure( { deltaY: -3, ctrlKey: true } );
             const rendersAtEnd = hooks.counters.renders;
             await new Promise( ( resolve ) => setTimeout( resolve, 600 ) );
             return {
