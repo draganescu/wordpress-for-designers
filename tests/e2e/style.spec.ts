@@ -854,6 +854,18 @@ test.describe( 'STYLE', () => {
         await expect(
             crashed.getByRole( 'button', { name: 'Copy error' } )
         ).toBeVisible();
+        // The notice fits the panel.
+        expect(
+            await crashed.evaluate( ( element ) => {
+                const notice = element.querySelector(
+                    '.editor-error-boundary'
+                )!;
+                return (
+                    notice.getBoundingClientRect().right <=
+                    element.getBoundingClientRect().right
+                );
+            } )
+        ).toBe( true );
 
         // The other tabs, another stock screen and the board still work.
         await panel.getByRole( 'tab', { name: 'Tokens' } ).click();
