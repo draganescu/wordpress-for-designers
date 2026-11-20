@@ -7,6 +7,7 @@ import { useSelect } from '@wordpress/data';
 import { store as coreStore } from '@wordpress/core-data';
 import { getBlockTypes, getCategories } from '@wordpress/blocks';
 import { store as boardStore } from '../board-store';
+import { KINDS } from '../shell/constants';
 import { recordName } from '../shell/use-artboards';
 
 const ALL = { per_page: -1 };
@@ -61,16 +62,12 @@ export function useInserterData( allowedBlocks ) {
             titleEdits: JSON.stringify(
                 select( boardStore )
                     .getArtboards()
-                    .filter(
-                        ( artboard ) =>
-                            artboard.kind === 'page' ||
-                            artboard.kind === 'pattern'
-                    )
+                    .filter( ( artboard ) => KINDS[ artboard.kind ].isNamed )
                     .map( ( artboard ) => [
                         `${ artboard.kind }:${ artboard.entityId }`,
                         core.getEntityRecordEdits(
                             'postType',
-                            artboard.kind === 'page' ? 'page' : 'wp_block',
+                            KINDS[ artboard.kind ].postType,
                             artboard.entityId
                         )?.title,
                     ] )

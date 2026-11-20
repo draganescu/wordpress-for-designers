@@ -399,7 +399,7 @@ export function App() {
         if (
             ! artboard ||
             artboard.status !== 'ready' ||
-            ( artboard.kind !== 'page' && artboard.kind !== 'pattern' )
+            ! KINDS[ artboard.kind ].isNamed
         ) {
             return;
         }
