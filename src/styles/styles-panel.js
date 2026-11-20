@@ -327,15 +327,15 @@ function TokensTab( {
 }
 
 /**
- * The Blocks tab: search, block rows, or one block's styles with a back
- * control.
+ * The Blocks tab: search and block rows, or one block's stock styles screen,
+ * which has its own heading and back control.
  *
  * @param {Object}      props
  * @param {string}      props.blockQuery         The search text.
  * @param {Function}    props.onBlockQueryChange Called with the search text.
  * @param {Array}       props.blocks             { name, title, icon, changes }.
  * @param {string|null} props.openBlock          Name of the open block.
- * @param {Function}    props.onOpenBlock        Called with a name or null.
+ * @param {Function}    props.onOpenBlock        Called with a block name.
  * @param {Function}    props.renderBlockStyles  Renders the open block's styles.
  */
 function BlocksTab( {
@@ -347,24 +347,9 @@ function BlocksTab( {
     renderBlockStyles,
 } ) {
     if ( openBlock ) {
-        const open = blocks.find( ( { name } ) => name === openBlock );
         return (
-            <div className="wfd-styles__block">
-                <div className="wfd-styles__block-back">
-                    <Button
-                        variant="minimal"
-                        tone="neutral"
-                        onClick={ () => onOpenBlock?.( null ) }
-                    >
-                        <Button.Icon
-                            icon={ isRTL() ? chevronRight : chevronLeft }
-                        />
-                        { open?.title ?? openBlock }
-                    </Button>
-                </div>
-                <div className="wfd-styles__block-styles">
-                    { renderBlockStyles?.( openBlock ) }
-                </div>
+            <div className="wfd-styles__block-styles">
+                { renderBlockStyles?.( openBlock ) }
             </div>
         );
     }
@@ -548,7 +533,7 @@ function HistoryTab( {
  * @param {Function}    props.onBlockQueryChange Called with the search text.
  * @param {Array}       props.blocks             [{ name, title, icon, changes }].
  * @param {string|null} props.openBlock          Name of the open block.
- * @param {Function}    props.onOpenBlock        Called with a name or null.
+ * @param {Function}    props.onOpenBlock        Called with a block name.
  * @param {Function}    props.renderBlockStyles  Renders the open block's styles.
  * @param {Array}       props.historyRows        [{ id, kind, date, author, changes }].
  * @param {*}           props.selectedHistoryId  Id of the previewed row.
