@@ -1,0 +1,52 @@
+name: Build the plugin and start WordPress
+description: >
+    Installs the dependencies of a checkout, builds the plugin and starts its
+    wp-env site. Node must be set up first.
+
+inputs:
+    path:
+        description: The folder the repository is checked out in.
+        default: .
+    port:
+        description: The port of the site, when not the one in .wp-env.json.
+        default: ''
+    script-debug:
+        description: >
+            'false' turns SCRIPT_DEBUG off, so that WordPress serves minified
+            scripts and the production build of React.
+        default: ''
+    chromium:
+        description: Whether to install Chromium for Playwright.
+        default: 'true'
+
+runs:
+    using: composite
+    steps:
+        - run: npm ci
+          shell: bash
+          working-directory: ${{ inputs.path }}
+
+        - run: npm run build
+          shell: bash
+          working-directory: ${{ inputs.path }}
+
+        - name: Install Chromium
+          if: inputs.chromium == 'true'
+          run: npx playwright install --with-deps chromium
+          shell: bash
+          working-directory: ${{ inputs.path }}
+
+        - name: Start WordPress
+          shell: bash
+          working-directory: ${{ inputs.path }}
+          env:
+              PORT: ${{ inputs.port }}
+              SCRIPT_DEBUG: ${{ inputs.script-debug }}
+          run: |
+              if [ "$SCRIPT_DEBUG" = "false" ]; then
+                  echo '{ "config": { "SCRIPT_DEBUG": false } }' > .wp-env.override.json
+              fi
+              if [ -n "$PORT" ]; then
+                  export WP_ENV_PORT="$PORT"
+              fi
+              npx wp-env start
