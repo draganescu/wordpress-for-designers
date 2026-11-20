@@ -17,7 +17,7 @@
 
 | Element | Components and text | Behaviour |
 |---|---|---|
-| Blocks tab | `wpc.SearchControl` placeholder "Search blocks"; a row per registered block type that supports styles: `be.BlockIcon`, title, a brand-coloured "{n} changes" / "1 change" when the user styles differ from the theme for that block, `chevronRight`. Help `Text`: "Each block opens the same styles panel the Site Editor uses." | Choosing a row shows `gs.GlobalStylesUI` at that block's path with a back control; back returns to the list. |
+| Blocks tab | `wpc.SearchControl` placeholder "Search blocks"; a row per registered block type that supports styles: `be.BlockIcon`, title, a brand-coloured "{n} changes" / "1 change" when the user styles differ from the theme for that block, `chevronRight`. Help `Text`: "Each block opens the same styles panel the Site Editor uses." | Choosing a row shows `gs.GlobalStylesUI` at that block's path. Its stock header has the block's title and a Back control, and the plugin adds neither; Back returns to the list (D58). |
 
 ## Acceptance criteria
 

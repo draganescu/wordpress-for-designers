@@ -159,6 +159,7 @@ Unless a criterion says otherwise, the fixture in `architecture.md` is loaded an
 - AC-STYLE-05 History lists revisions; picking one shows the banner and repaints the board; Restore makes it the edited styles; Stop previewing reverts the board. `[U]`
 - AC-STYLE-06 "Style applies to" set to "All {block}" changes that block's global style and every such block on the board; "This block" changes only the selected block. `[B7]`
 - AC-STYLE-07 Choosing a variation from the menu repaints the board once and adds Styles to Review. `[U]`
+- AC-STYLE-11 With "Style applies to" on "All {block}", the stock styles screen's Back control sets it back to "This block" (D58). `[U]`
 
 ## INDEX
 
