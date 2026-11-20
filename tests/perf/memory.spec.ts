@@ -1,56 +1,42 @@
-import { test, expect } from '@wordpress/e2e-test-utils-playwright';
-import type { Browser, Page } from '@playwright/test';
-import type { RequestUtils } from '@wordpress/e2e-test-utils-playwright';
+import type { Page } from '@playwright/test';
 import {
     resetFixture,
     openBoard,
     enterEdit,
     artboardOf,
-    type Fixture,
+    viewportOf,
 } from '../e2e/utils';
+import type { View } from './support';
 import {
     VIEWS,
-    collectGarbage,
-    devtools,
     drawn,
+    expect,
+    held,
+    leaveEdit,
     openBoardAt,
-    pageMetrics,
-    processStats,
-    record,
+    test,
+    viewOn,
 } from './support';
 
-/**
- * What the tab holds now, after collecting garbage.
- *
- * @param page    The page.
- * @param browser The browser.
- */
-async function held( page: Page, browser: Browser ) {
-    const client = await devtools( page );
-    await collectGarbage( client );
-    await page.waitForTimeout( 500 );
-    const metrics = await pageMetrics( client );
-    const memory = await processStats( browser );
-    await client.detach();
-    return {
-        tab: memory.tab,
-        heap: metrics.JSHeapUsedSize,
-        documents: metrics.Documents,
-        nodes: metrics.Nodes,
-    };
-}
-
-const leave = ( page: Page ) =>
-    page.getByRole( 'button', { name: 'Back to the board' } ).click();
-
-// Memory is measured once. It varies by a few per cent between runs, so
-// only the ceilings in tests/perf/budgets.json are enforced.
+// Memory is measured once. The figures are sizes of processes and counts
+// that depend on when Chromium collects garbage, so none of them has a
+// budget: the report compares them with the base build's. Only the sizes of
+// the frozen copies, which are exact, are held to tests/perf/budgets.json.
 test.describe( 'Memory', { tag: '@once' }, () => {
     test( 'what each tier costs', async ( {
         browser,
         requestUtils,
-    }, testInfo ) => {
+        record,
+    } ) => {
         const fixture = await resetFixture( requestUtils );
+        // One Live editor, then two more so that two are Warm.
+        const parts = [
+            artboardOf( fixture, 'template-part', 'desktop', 0 ),
+            artboardOf( fixture, 'template-part', 'desktop', 1 ),
+            artboardOf( fixture, 'template-part', 'mobile' ),
+        ];
+        // All nine as Previews, at a zoom the three can be edited at.
+        const editable = viewOn( parts[ 0 ], 0.4 );
 
         /**
          * Opens the fixture board in a tab of its own, so that its memory
@@ -60,7 +46,7 @@ test.describe( 'Memory', { tag: '@once' }, () => {
          * @param after What to do before measuring.
          */
         const measure = async (
-            view: ( typeof VIEWS )[ keyof typeof VIEWS ] | null,
+            view: View | null,
             after?: ( page: Page ) => Promise< number[] >
         ) => {
             const context = await browser.newContext( {
@@ -85,44 +71,32 @@ test.describe( 'Memory', { tag: '@once' }, () => {
         const [ ghosts ] = await measure( VIEWS.far );
         const [ snapshots ] = await measure( null );
         const [ previews, oneEditor, threeEditors ] = await measure(
-            VIEWS.previews,
+            editable,
             async ( page ) => {
                 await expect(
                     page.locator( '[data-wfd-tier="preview"] iframe' )
                 ).toHaveCount( 9 );
-                // One Live editor, then two more so that two are Warm.
-                const parts = [
-                    artboardOf( fixture, 'template-part', 'desktop', 0 ),
-                    artboardOf( fixture, 'template-part', 'desktop', 1 ),
-                    artboardOf( fixture, 'template-part', 'mobile' ),
-                ];
                 await enterEdit( page, parts[ 0 ].id );
                 const one = ( await held( page, browser ) ).tab;
-                await leave( page );
+                await leaveEdit( page );
                 await enterEdit( page, parts[ 1 ].id );
-                await leave( page );
+                await leaveEdit( page );
                 await enterEdit( page, parts[ 2 ].id );
                 const three = ( await held( page, browser ) ).tab;
+                // The board never zoomed to start an edit, which would have
+                // changed the tier of the other artboards.
+                expect( ( await viewportOf( page ) ).zoom ).toBe(
+                    editable.zoom
+                );
                 return [ one, three ];
             }
         );
 
-        record( testInfo, 'memory.board-of-ghosts', ghosts, 'bytes' );
+        record( 'memory.board-of-ghosts', ghosts, 'bytes' );
+        record( 'memory.per-snapshot', ( snapshots - ghosts ) / 9, 'bytes' );
+        record( 'memory.per-preview', ( previews - ghosts ) / 9, 'bytes' );
+        record( 'memory.live-editor', oneEditor - previews, 'bytes' );
         record(
-            testInfo,
-            'memory.per-snapshot',
-            ( snapshots - ghosts ) / 9,
-            'bytes'
-        );
-        record(
-            testInfo,
-            'memory.per-preview',
-            ( previews - ghosts ) / 9,
-            'bytes'
-        );
-        record( testInfo, 'memory.live-editor', oneEditor - previews, 'bytes' );
-        record(
-            testInfo,
             'memory.per-warm-editor',
             ( threeEditors - oneEditor ) / 2,
             'bytes'
@@ -133,7 +107,8 @@ test.describe( 'Memory', { tag: '@once' }, () => {
         page,
         requestUtils,
         browser,
-    }, testInfo ) => {
+        record,
+    } ) => {
         const fixture = await resetFixture( requestUtils );
         await openBoardAt(
             page,
@@ -153,7 +128,7 @@ test.describe( 'Memory', { tag: '@once' }, () => {
         const editEach = async () => {
             for ( const artboard of cycle ) {
                 await enterEdit( page, artboard.id );
-                await leave( page );
+                await leaveEdit( page );
             }
         };
 
@@ -168,26 +143,22 @@ test.describe( 'Memory', { tag: '@once' }, () => {
         await drawn( page );
         const after = await held( page, browser );
 
-        record(
-            testInfo,
-            'leak.documents',
-            after.documents - before.documents,
-            'count'
-        );
-        record( testInfo, 'leak.nodes', after.nodes - before.nodes, 'count' );
-        record( testInfo, 'leak.heap', after.heap - before.heap, 'bytes' );
-        record( testInfo, 'leak.tab-memory', after.tab - before.tab, 'bytes' );
+        record( 'leak.documents', after.documents - before.documents, 'count' );
+        record( 'leak.nodes', after.nodes - before.nodes, 'count' );
+        record( 'leak.heap', after.heap - before.heap, 'bytes' );
+        record( 'leak.tab-memory', after.tab - before.tab, 'bytes' );
     } );
 
     test( 'the weight of a frozen copy', async ( {
         page,
         requestUtils,
-    }, testInfo ) => {
-        const fixture: Fixture = await resetFixture( requestUtils );
+        record,
+    } ) => {
+        const fixture = await resetFixture( requestUtils );
         // A long page: 120 paragraphs under a tall cover.
         const paragraph =
             '<!-- wp:paragraph --><p>A line of a long page, long enough to wrap on a phone.</p><!-- /wp:paragraph -->';
-        await ( requestUtils as RequestUtils ).rest( {
+        await requestUtils.rest( {
             method: 'POST',
             path: `/wp/v2/blocks/${ fixture.patterns.hero }`,
             data: {
@@ -211,19 +182,17 @@ test.describe( 'Memory', { tag: '@once' }, () => {
                     id: frame
                         .closest( '[data-wfd-artboard]' )!
                         .getAttribute( 'data-wfd-artboard' ),
-                    bytes: frame.srcdoc.length,
+                    bytes: new Blob( [ frame.srcdoc ] ).size,
                 } ) )
             );
         expect( sizes ).toHaveLength( 9 );
 
         record(
-            testInfo,
             'snapshot.long-page',
             sizes.find( ( size ) => size.id === hero.id )!.bytes,
             'bytes'
         );
         record(
-            testInfo,
             'snapshot.all-nine',
             sizes.reduce( ( sum, size ) => sum + size.bytes, 0 ),
             'bytes'

@@ -7,6 +7,11 @@ name: Performance
 
 on:
     pull_request:
+        # A change to documents only has nothing to measure.
+        paths-ignore:
+            - 'docs/**'
+            - 'spec/**'
+            - '**/*.md'
     workflow_dispatch:
 
 permissions:
@@ -20,13 +25,10 @@ env:
     # How many times the timing tests run on each build. The report gives
     # the median.
     ROUNDS: 3
+    # One folder of results files per build, one file per run.
     RESULTS: ${{ github.workspace }}/results
-    PERF_APPEND: 1
-    # How many times slower the page's main thread is made for the timing
-    # tests. The runner is already about 1.6 times slower than a recent
-    # laptop. At 4 here the frame indicators were at their worst value on
-    # every run, and a board of 30 artboards came close to never finishing
-    # (docs/performance.md, "Things to know").
+    # Why 2 and not the suite's own 4: docs/performance.md, "On a real
+    # laptop".
     PERF_CPU_THROTTLE: 2
 
 jobs:
@@ -35,8 +37,8 @@ jobs:
         runs-on: ubuntu-latest
         timeout-minutes: 75
         steps:
-            # The suite and its tools always come from head. Base is only
-            # built and served.
+            # The suite, its tools and the action that starts a site always
+            # come from head. Base is only built and served.
             - uses: actions/checkout@v4
               with:
                   path: head
@@ -53,44 +55,30 @@ jobs:
                   cache: npm
                   cache-dependency-path: head/package-lock.json
 
-            - name: Build head
-              working-directory: head
-              run: |
-                  npm ci
-                  npm run build
+            # SCRIPT_DEBUG off: minified WordPress scripts and the production
+            # build of React, as a visitor's site would serve them.
+            - name: Build head and start its WordPress
+              uses: ./head/.github/actions/site
+              with:
+                  path: head
+                  script-debug: 'false'
 
-            - name: Build base
+            - name: Build base and start its WordPress
               if: github.event_name == 'pull_request'
-              working-directory: base
-              run: |
-                  npm ci
-                  npm run build
-
-            - name: Install Chromium
-              working-directory: head
-              run: npx playwright install --with-deps chromium
-
-            # Minified WordPress scripts and the production build of React,
-            # as a visitor's site would serve them.
-            - name: Start WordPress for head
-              working-directory: head
-              run: |
-                  echo '{ "config": { "SCRIPT_DEBUG": false } }' > .wp-env.override.json
-                  npx wp-env start
-
-            - name: Start WordPress for base
-              if: github.event_name == 'pull_request'
-              working-directory: base
-              run: |
-                  echo '{ "config": { "SCRIPT_DEBUG": false } }' > .wp-env.override.json
-                  WP_ENV_PORT=8889 npx wp-env start
+              uses: ./head/.github/actions/site
+              with:
+                  path: base
+                  port: 8889
+                  script-debug: 'false'
+                  chromium: 'false'
 
             - name: Measure the builds
               run: |
-                  mkdir -p "$RESULTS"
-                  node head/tools/perf-bundle.mjs head/build > "$RESULTS/head.jsonl"
+                  mkdir -p "$RESULTS/head"
+                  node head/tools/perf-bundle.mjs head/build > "$RESULTS/head/bundle.jsonl"
                   if [ -d base ]; then
-                      node head/tools/perf-bundle.mjs base/build > "$RESULTS/base.jsonl"
+                      mkdir -p "$RESULTS/base"
+                      node head/tools/perf-bundle.mjs base/build > "$RESULTS/base/bundle.jsonl"
                   fi
 
             # A failure while measuring base does not fail the job: base may
@@ -100,10 +88,10 @@ jobs:
               working-directory: head
               run: |
                   if [ -d ../base ]; then
-                      PERF_RESULTS="$RESULTS/base.jsonl" WP_BASE_URL=http://localhost:8889 \
+                      PERF_RESULTS="$RESULTS/base/once.jsonl" WP_BASE_URL=http://localhost:8889 \
                           npm run test:perf -- --grep @once || true
                   fi
-                  PERF_RESULTS="$RESULTS/head.jsonl" WP_BASE_URL=http://localhost:8888 \
+                  PERF_RESULTS="$RESULTS/head/once.jsonl" WP_BASE_URL=http://localhost:8888 \
                       npm run test:perf -- --grep @once
 
             # Base and head take turns, so that a slow or fast spell of the
@@ -113,10 +101,10 @@ jobs:
               run: |
                   for round in $(seq "$ROUNDS"); do
                       if [ -d ../base ]; then
-                          PERF_RESULTS="$RESULTS/base.jsonl" WP_BASE_URL=http://localhost:8889 \
+                          PERF_RESULTS="$RESULTS/base/timing-$round.jsonl" WP_BASE_URL=http://localhost:8889 \
                               npm run test:perf -- --grep @timing || true
                       fi
-                      PERF_RESULTS="$RESULTS/head.jsonl" WP_BASE_URL=http://localhost:8888 \
+                      PERF_RESULTS="$RESULTS/head/timing-$round.jsonl" WP_BASE_URL=http://localhost:8888 \
                           npm run test:perf -- --grep @timing
                   done
 
@@ -126,8 +114,8 @@ jobs:
               run: |
                   set +e
                   node tools/perf-report.mjs \
-                      --head "$RESULTS/head.jsonl" \
-                      --base "$RESULTS/base.jsonl" \
+                      --head "$RESULTS/head" \
+                      --base "$RESULTS/base" \
                       --budgets tests/perf/budgets.json \
                       --strict > "$RESULTS/report.md"
                   status=$?

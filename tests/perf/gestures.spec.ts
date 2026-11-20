@@ -1,15 +1,18 @@
-import { test, expect } from '@wordpress/e2e-test-utils-playwright';
 import type { Page } from '@playwright/test';
 import { resetFixture } from '../e2e/utils';
 import {
     VIEWS,
     devtools,
     drawn,
+    drawnLayers,
     droppedFrames,
+    expect,
     openBoardAt,
     percentile,
     processStats,
-    record,
+    rasterWork,
+    settle,
+    test,
     throttle,
 } from './support';
 
@@ -66,17 +69,19 @@ async function wheel(
     );
 }
 
-// Pan and zoom on a board of 30 artboards with twelve Previews in view. Runs
-// at device pixel ratio 1 and 2; the results of the second have `@2x` after
-// their names. On a CI runner the page is drawn in software, so these show
-// main-thread and raster cost, not what a laptop's graphics chip does: see
-// docs/performance.md.
+// Pan and zoom on a board of 30 artboards with twelve Previews in view.
+// Here it also runs at device pixel ratio 2, with `@2x` after the names of
+// those results. What the numbers stand for on a machine that draws in
+// software is in docs/performance.md, "On a real laptop".
 test.describe( 'Gestures', { tag: '@timing' }, () => {
     test( 'pan and zoom', async ( {
         page,
         requestUtils,
         browser,
-    }, testInfo ) => {
+        metrics,
+        deviceScaleFactor,
+        record,
+    } ) => {
         const fixture = await resetFixture( requestUtils, { extra: 21 } );
         await openBoardAt(
             page,
@@ -92,21 +97,15 @@ test.describe( 'Gestures', { tag: '@timing' }, () => {
         const client = await devtools( page );
 
         // What the compositor holds for this view.
-        await client.send( 'LayerTree.enable' );
-        const tree = new Promise< { layers?: any[] } >( ( resolve ) =>
-            client.once( 'LayerTree.layerTreeDidChange', resolve )
+        const layers = await drawnLayers( client, () =>
+            wheel( page, { deltaX: 1 }, 2 )
         );
-        await wheel( page, { deltaX: 1 }, 2 );
-        const { layers = [] } = await tree;
-        await client.send( 'LayerTree.disable' );
-        const scale = testInfo.project.use.deviceScaleFactor ?? 1;
-        const drawnLayers = layers.filter( ( layer ) => layer.drawsContent );
-        record( testInfo, 'layers.count', drawnLayers.length, 'count' );
+        const scale = deviceScaleFactor ?? 1;
+        record( 'layers.count', layers.length, 'count' );
         // Four bytes per pixel, were every layer fully drawn.
         record(
-            testInfo,
             'layers.pixels-memory',
-            drawnLayers.reduce(
+            layers.reduce(
                 ( sum, layer ) =>
                     sum + layer.width * layer.height * 4 * scale * scale,
                 0
@@ -114,7 +113,6 @@ test.describe( 'Gestures', { tag: '@timing' }, () => {
             'bytes'
         );
         record(
-            testInfo,
             'gestures.gpu-memory',
             ( await processStats( browser ) ).gpu,
             'bytes'
@@ -123,64 +121,26 @@ test.describe( 'Gestures', { tag: '@timing' }, () => {
         await throttle( client );
 
         const pan = await wheel( page, { deltaX: 12, deltaY: 8 }, 120 );
-        record( testInfo, 'pan.frame-p95', percentile( pan, 0.95 ), 'ms' );
-        record( testInfo, 'pan.frames-dropped', droppedFrames( pan ), 'count' );
-        await page.waitForTimeout( 500 );
+        record( 'pan.frame-p95', percentile( pan, 0.95 ), 'ms' );
+        record( 'pan.frames-dropped', droppedFrames( pan ), 'count' );
+        await settle( page );
 
         const zoom = await wheel( page, { deltaY: -3, ctrlKey: true }, 120 );
-        record( testInfo, 'zoom.frame-p95', percentile( zoom, 0.95 ), 'ms' );
-        record(
-            testInfo,
-            'zoom.frames-dropped',
-            droppedFrames( zoom ),
-            'count'
-        );
-        await page.waitForTimeout( 500 );
+        record( 'zoom.frame-p95', percentile( zoom, 0.95 ), 'ms' );
+        record( 'zoom.frames-dropped', droppedFrames( zoom ), 'count' );
+        await settle( page );
 
-        // Drawing work for a zoom that ends at a new scale: how much there
-        // is, and how long after the last wheel event it goes on (the time
-        // the board looks soft).
-        await browser.startTracing( page, {
-            categories: [ 'cc', 'blink.user_timing' ],
-        } );
-        await page.evaluate( () => performance.mark( 'wfd-perf-zoom-start' ) );
-        await wheel( page, { deltaY: -3, ctrlKey: true }, 20 );
-        await wheel(
+        // Zooming in and back out, twice over 40 frames: the board is drawn
+        // at each scale on the way and drawn sharp once it stops.
+        const { raster, sharpen } = await rasterWork(
             page,
-            { deltaY: -3, ctrlKey: true },
-            20,
-            'wfd-perf-zoom-end'
-        );
-        await page.waitForTimeout( 2500 );
-        const trace = JSON.parse( ( await browser.stopTracing() ).toString() );
-        const events: any[] = trace.traceEvents ?? trace;
-        const at = ( name: string ) =>
-            events.find( ( event ) => event.name === name )?.ts as number;
-        const start = at( 'wfd-perf-zoom-start' );
-        const end = at( 'wfd-perf-zoom-end' );
-        const rasters = events.filter(
-            ( event ) =>
-                event.name === 'RasterTask' &&
-                event.ph === 'X' &&
-                event.ts >= start
-        );
-        record(
-            testInfo,
-            'zoom.raster',
-            rasters.reduce( ( sum, event ) => sum + event.dur, 0 ) / 1000,
-            'ms'
-        );
-        // The drawing that follows the zoom without a pause of a quarter of
-        // a second; anything later is not the zoom's.
-        let sharp = end;
-        for ( const event of rasters
-            .filter( ( raster ) => raster.ts + raster.dur > end )
-            .sort( ( a, b ) => a.ts - b.ts ) ) {
-            if ( event.ts - sharp > 250_000 ) {
-                break;
+            metrics,
+            async ( endMark ) => {
+                await wheel( page, { deltaY: -3, ctrlKey: true }, 20 );
+                await wheel( page, { deltaY: -3, ctrlKey: true }, 20, endMark );
             }
-            sharp = Math.max( sharp, event.ts + event.dur );
-        }
-        record( testInfo, 'zoom.sharpen', ( sharp - end ) / 1000, 'ms' );
+        );
+        record( 'zoom.raster', raster, 'ms' );
+        record( 'zoom.sharpen', sharpen, 'ms' );
     } );
 } );

@@ -1,42 +1,34 @@
-import path from 'path';
-import { defineConfig, devices } from '@playwright/test';
+import { defineConfig } from '@playwright/test';
+import e2e from '../e2e/playwright.config';
 
-process.env.WP_BASE_URL ??= 'http://localhost:8888';
-process.env.WP_ARTIFACTS_PATH ??= path.join( process.cwd(), 'artifacts' );
-
-const base = require( '@wordpress/scripts/config/playwright.config.js' );
-
-const desktop = {
-    ...devices[ 'Desktop Chrome' ],
-    viewport: { width: 1440, height: 900 },
-};
+const [ chromium ] = e2e.projects!;
 
 // The performance suite. It measures and records; it is not part of the
-// acceptance suite in tests/e2e. See docs/performance.md.
+// acceptance suite in tests/e2e, whose site, login and browser it shares.
+// See docs/performance.md.
 export default defineConfig( {
-    ...base,
-    testDir: '.',
-    testMatch: '*.spec.ts',
-    globalSetup: require.resolve( './global-setup.ts' ),
-    // A retried test would record its numbers twice.
+    ...e2e,
+    testDir: __dirname,
+    // A measurement that fails is looked at, not tried again.
     retries: 0,
     timeout: 300_000,
-    use: {
-        ...base.use,
-        viewport: { width: 1440, height: 900 },
-        trace: 'off',
-        video: 'off',
-    },
+    reporter: [
+        ...( e2e.reporter as [ string ][] ),
+        [ require.resolve( './reporter.ts' ) ],
+    ],
+    use: { ...e2e.use, trace: 'off', video: 'off' },
     projects: [
-        {
-            name: 'chromium',
-            use: desktop,
-        },
-        {
-            // A high-density screen: four times the pixels to draw.
-            name: 'chromium-2x',
-            testMatch: 'gestures.spec.ts',
-            use: { ...desktop, deviceScaleFactor: 2 },
-        },
+        chromium,
+        // A high-density screen, four times the pixels to draw. Not on CI,
+        // which draws in software: "On a real laptop", docs/performance.md.
+        ...( process.env.CI
+            ? []
+            : [
+                  {
+                      name: 'chromium-2x',
+                      testMatch: 'gestures.spec.ts',
+                      use: { ...chromium.use, deviceScaleFactor: 2 },
+                  },
+              ] ),
     ],
 } );

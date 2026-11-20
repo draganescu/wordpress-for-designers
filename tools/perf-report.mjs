@@ -3,15 +3,16 @@
  * them with another build's when given one, and checks them against the
  * budgets.
  *
- *     node tools/perf-report.mjs --head head.jsonl [--base base.jsonl]
+ *     node tools/perf-report.mjs --head results [--base results]
  *         [--budgets tests/perf/budgets.json] [--strict]
  *
- * A results file has one JSON line per measurement: name, value, unit. A
- * name measured several times is reported as its median. Exits with 1 when
- * a budget is exceeded or, with --strict, when a budgeted indicator was not
- * measured.
+ * Results are a file with one JSON line per measurement (name, value, unit),
+ * or a folder of such files, one per run. A name measured several times is
+ * reported as its median. Exits with 1 when a budget is exceeded or, with
+ * --strict, when a budgeted indicator was not measured.
  */
 import fs from 'node:fs';
+import path from 'node:path';
 
 const args = process.argv.slice( 2 );
 const option = ( name ) =>
@@ -27,22 +28,31 @@ if ( ! headFile || ! fs.existsSync( headFile ) ) {
 }
 
 /**
- * Reads a results file into a map of name to its measurements.
+ * Reads results into a map of name to its measurements.
  *
- * @param {string} file Path of the file.
+ * @param {string} from Path of a results file, or of a folder of them.
  * @return {Map} Name to `{ unit, values, list }`, in the order first seen.
  */
-function read( file ) {
+function read( from ) {
+    const files = fs.statSync( from ).isDirectory()
+        ? fs
+              .readdirSync( from )
+              .filter( ( file ) => file.endsWith( '.jsonl' ) )
+              .sort()
+              .map( ( file ) => path.join( from, file ) )
+        : [ from ];
     const results = new Map();
-    for ( const line of fs.readFileSync( file, 'utf8' ).split( '\n' ) ) {
-        if ( ! line.trim() ) {
-            continue;
+    for ( const file of files ) {
+        for ( const line of fs.readFileSync( file, 'utf8' ).split( '\n' ) ) {
+            if ( ! line.trim() ) {
+                continue;
+            }
+            const { name, value, unit, list } = JSON.parse( line );
+            if ( ! results.has( name ) ) {
+                results.set( name, { unit, values: [], list } );
+            }
+            results.get( name ).values.push( value );
         }
-        const { name, value, unit, list } = JSON.parse( line );
-        if ( ! results.has( name ) ) {
-            results.set( name, { unit, values: [], list } );
-        }
-        results.get( name ).values.push( value );
     }
     return results;
 }
@@ -76,28 +86,20 @@ function format( value, unit ) {
     return Math.round( value ).toLocaleString( 'en-US' );
 }
 
-// How much a figure must move before the report points at it: by unit, and
-// more for the indicators known to vary between runs of the same code.
-const NOTABLE = { count: 0.02, bytes: 0.05, ms: 0.1 };
-const VARIES = [
-    // Counts while the board opens depend on the order requests come back.
-    [ /^(open|board-\d+)\.(renders|requests|rest-requests)$/, 0.08 ],
-    // Differences between process sizes.
-    [ /^(memory\.|leak\.(heap|tab-memory)$)/, 0.25 ],
-    // Counted, but from frame timings.
-    [ /\.frames-dropped(@2x)?$/, 0.25 ],
-];
-// A timing must also move by a frame: the latencies come in steps of 8 ms.
-const SMALLEST = { count: 0, bytes: 0, ms: 16 };
-const notableFrom = ( name, unit ) =>
-    VARIES.find( ( [ pattern ] ) => pattern.test( name ) )?.[ 1 ] ??
-    NOTABLE[ unit ];
-
 const head = read( headFile );
 const base = baseFile && fs.existsSync( baseFile ) ? read( baseFile ) : null;
-const budgets = budgetsFile
+const { budgets = {}, tolerances = {} } = budgetsFile
     ? JSON.parse( fs.readFileSync( budgetsFile, 'utf8' ) )
     : {};
+
+// How much a figure must move before the report points at it: by unit, or
+// what the budgets file gives for an indicator known to vary more between
+// runs of the same code.
+const NOTABLE = { count: 0.02, bytes: 0.05, ms: 0.1 };
+// A timing must also move by a frame.
+const SMALLEST = { count: 0, bytes: 0, ms: 16 };
+const notableFrom = ( name, unit ) =>
+    tolerances[ name.replace( /@2x$/, '' ) ] ?? NOTABLE[ unit ];
 
 const rows = [];
 const overBudget = [];
@@ -108,7 +110,10 @@ for ( const [ name, { unit, values, list } ] of head ) {
     if ( before ) {
         row.base = median( before.values );
         row.baseList = before.list;
-        const change = row.base ? ( value - row.base ) / row.base : 0;
+        // A difference between two measurements can be below zero.
+        const change = row.base
+            ? ( value - row.base ) / Math.abs( row.base )
+            : 0;
         row.change = change;
         // It has to leave the range the other build was seen in, which
         // for a figure measured several times sets run-to-run variation
@@ -117,8 +122,8 @@ for ( const [ name, { unit, values, list } ] of head ) {
             value > Math.max( ...before.values ) ||
             value < Math.min( ...before.values );
         row.isNotable =
-            ( row.base <= 0
-                ? value > 0 && row.base === 0
+            ( row.base === 0
+                ? value !== 0
                 : Math.abs( change ) >= notableFrom( name, unit ) ) &&
             Math.abs( value - row.base ) >= SMALLEST[ unit ] &&
             isOutside;
@@ -134,6 +139,11 @@ for ( const [ name, { unit, values, list } ] of head ) {
 const unmeasured = Object.keys( budgets ).filter(
     ( name ) => ! head.has( name )
 );
+const onlyOnBase = base
+    ? [ ...base.keys() ].filter( ( name ) => ! head.has( name ) )
+    : [];
+const named = ( names ) =>
+    names.map( ( name ) => `\`${ name }\`` ).join( ', ' ) + '.';
 
 const changeOf = ( row ) => {
     if ( row.change === undefined ) {
@@ -174,12 +184,7 @@ if ( overBudget.length || ( isStrict && unmeasured.length ) ) {
         out.push( table( overBudget ), '' );
     }
     if ( isStrict && unmeasured.length ) {
-        out.push(
-            'Budgeted but not measured: ' +
-                unmeasured.map( ( name ) => `\`${ name }\`` ).join( ', ' ) +
-                '.',
-            ''
-        );
+        out.push( 'Budgeted but not measured: ' + named( unmeasured ), '' );
     }
     out.push(
         'A budget is the most an indicator may be, in `tests/perf/budgets.json`. If the rise is meant, raise the budget in the same pull request.',
@@ -198,6 +203,9 @@ if ( base ) {
             : 'Nothing moved by more than run-to-run variation.',
         ''
     );
+    if ( onlyOnBase.length ) {
+        out.push( 'Measured on base, not on head: ' + named( onlyOnBase ), '' );
+    }
     for ( const row of rows ) {
         if ( row.list && row.baseList ) {
             const added = row.list.filter(
@@ -229,7 +237,7 @@ out.push(
     '',
     table( rows ),
     '',
-    'Timings are the median of the runs made, on a main thread slowed to stand for an older laptop. `@2x` is device pixel ratio 2. What each indicator means is in `docs/performance.md`.',
+    'An indicator measured more than once is the median of its runs. Timings are on a main thread slowed to stand for an older laptop. `@2x` is device pixel ratio 2. What each indicator means is in `docs/performance.md`.',
     '',
     '</details>',
     ''

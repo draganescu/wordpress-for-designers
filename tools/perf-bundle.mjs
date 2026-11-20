@@ -2,9 +2,9 @@
  * Measures what the plugin ships: the size of each built script and style
  * sheet, as it is and gzipped, and the WordPress scripts each entry depends
  * on. Prints one JSON line per measurement, in the format of the
- * performance suite's results file.
+ * performance suite's results files.
  *
- *     node tools/perf-bundle.mjs [build folder] >> artifacts/perf/results.jsonl
+ *     node tools/perf-bundle.mjs [build folder] > artifacts/perf/bundle.jsonl
  */
 import fs from 'node:fs';
 import path from 'node:path';

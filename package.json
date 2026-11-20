@@ -15,7 +15,7 @@
         "wp-env": "wp-env",
         "test:e2e": "WP_BASE_URL=http://localhost:8888 wp-scripts test-playwright --config tests/e2e/playwright.config.ts",
         "test:perf": "wp-scripts test-playwright --config tests/perf/playwright.config.ts",
-        "perf:report": "node tools/perf-report.mjs --head artifacts/perf/results.jsonl --budgets tests/perf/budgets.json"
+        "perf:report": "node tools/perf-bundle.mjs > artifacts/perf/bundle.jsonl && node tools/perf-report.mjs --head artifacts/perf --budgets tests/perf/budgets.json"
     },
     "dependencies": {
         "@wordpress/admin-ui": "^3.2.0",

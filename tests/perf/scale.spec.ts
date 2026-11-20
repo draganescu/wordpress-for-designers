@@ -1,25 +1,17 @@
-import { test } from '@wordpress/e2e-test-utils-playwright';
-import { resetFixture, openBoard } from '../e2e/utils';
-import {
-    appCounters,
-    collectGarbage,
-    devtools,
-    drawn,
-    pageMetrics,
-    processStats,
-    record,
-    trackRequests,
-} from './support';
+import { resetFixture, openBoard, counters } from '../e2e/utils';
+import { drawn, held, test, trackRequests } from './support';
 
-// What a board costs as it grows. A board opens fitted, so the larger ones
-// open as Snapshots.
+// What a board costs to open as it grows. A board opens fitted, so its
+// artboards open as Snapshots. The counts are held to budgets; the memory
+// figures are compared with the base build's and never fail the run.
 test.describe( 'Board size', { tag: '@once' }, () => {
     for ( const size of [ 9, 30, 100 ] ) {
         test( `a board of ${ size } artboards`, async ( {
             page,
             requestUtils,
             browser,
-        }, testInfo ) => {
+            record,
+        } ) => {
             const fixture = await resetFixture( requestUtils, {
                 extra: size - 9,
             } );
@@ -27,27 +19,30 @@ test.describe( 'Board size', { tag: '@once' }, () => {
             await openBoard( page, fixture.boardId, size );
             await drawn( page );
 
-            const client = await devtools( page );
-            await collectGarbage( client );
-            const metrics = await pageMetrics( client );
-            const memory = await processStats( browser );
-            const counts = await appCounters( page );
+            const counts = await counters( page );
+            const memory = await held( page, browser );
             const name = ( what: string ) => `board-${ size }.${ what }`;
 
-            record( testInfo, name( 'renders' ), counts.renders, 'count' );
-            record( testInfo, name( 'rest-requests' ), requests.rest, 'count' );
+            record( name( 'requests' ), requests.total, 'count' );
+            record( name( 'rest-requests' ), requests.rest, 'count' );
+            record( name( 'renders' ), counts.renders, 'count' );
             record(
-                testInfo,
+                name( 'style-generations' ),
+                counts.styleGenerations,
+                'count'
+            );
+            record( name( 'parses' ), counts.parses, 'count' );
+            record(
                 name( 'iframes' ),
                 await page.locator( 'iframe' ).count(),
                 'count'
             );
             // Every document in the tab, the artboards' included.
-            record( testInfo, name( 'documents' ), metrics.Documents, 'count' );
-            record( testInfo, name( 'nodes' ), metrics.Nodes, 'count' );
-            record( testInfo, name( 'heap' ), metrics.JSHeapUsedSize, 'bytes' );
-            record( testInfo, name( 'tab-memory' ), memory.tab, 'bytes' );
-            record( testInfo, name( 'gpu-memory' ), memory.gpu, 'bytes' );
+            record( name( 'documents' ), memory.documents, 'count' );
+            record( name( 'nodes' ), memory.nodes, 'count' );
+            record( name( 'heap' ), memory.heap, 'bytes' );
+            record( name( 'tab-memory' ), memory.tab, 'bytes' );
+            record( name( 'gpu-memory' ), memory.gpu, 'bytes' );
         } );
     }
 } );
