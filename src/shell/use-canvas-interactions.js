@@ -6,7 +6,7 @@
  * them when they end (constraint C22). The selection rectangle (D43) is drawn
  * the same way; the store hears when the set of selected artboards changes.
  *
- * Fingers (D62): one finger is the pointer, two or more pan the board and
+ * Fingers (D64): one finger is the pointer, two or more pan the board and
  * pinch it, through the same viewport.
  */
 import { useEffect, useRef } from '@wordpress/element';

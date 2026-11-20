@@ -104,7 +104,7 @@ function useCanvasProbe( { onHeight, onWheel, onTouch, onKeyDownCapture } ) {
             const wheel = ( event ) =>
                 latest.current.onWheel?.( event, iframe );
             const keyDown = () => latest.current.onKeyDownCapture?.();
-            // Fingers on the canvas: two of them move the board (D62), so
+            // Fingers on the canvas: two of them move the board (D64), so
             // the shell hears of every one. The editor still gets them all.
             const fingers = new Set();
             const touch = ( event ) => {
