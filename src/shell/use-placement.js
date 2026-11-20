@@ -1,6 +1,6 @@
 /**
  * Creating artboards: arm a kind from a New row of the inserter, then click
- * the board to place it (decisions D11 and D60, spec/data-model.md "Creating
+ * the board to place it (decisions D11 and D63, spec/data-model.md "Creating
  * entities").
  */
 import { __ } from '@wordpress/i18n';
@@ -46,6 +46,8 @@ const NAMES = {
     pattern: __( 'Untitled pattern', 'wordpress-for-designers' ),
     template: __( 'Untitled template', 'wordpress-for-designers' ),
     'template-part': __( 'Untitled part', 'wordpress-for-designers' ),
+    // A browser is named by its address, and starts on the homepage (D55).
+    browser: '/',
 };
 
 function partBlock( part, tagName ) {
@@ -109,7 +111,7 @@ export function usePlacement( { theme, enterEdit } ) {
         };
     }, [] );
     const { saveEntityRecord, editEntityRecord } = useDispatch( coreStore );
-    const { addArtboard } = useDispatch( boardStore );
+    const { addArtboard, selectArtboard } = useDispatch( boardStore );
 
     // A purpose whose template is on the site, or on this board and not
     // saved yet, is not offered as new.
@@ -160,6 +162,22 @@ export function usePlacement( { theme, enterEdit } ) {
             }
             const chosen = placement;
             setPlacement( null );
+            if ( chosen.kind === 'browser' ) {
+                // Selected, not browsing (D55).
+                const browser = {
+                    id: window.crypto.randomUUID(),
+                    kind: 'browser',
+                    path: '/',
+                    device: 'desktop',
+                    x: Math.round( point.x ),
+                    y: Math.round( point.y ),
+                    height: NEW_ARTBOARD_HEIGHT,
+                    shows: 'unsaved',
+                };
+                addArtboard( browser );
+                selectArtboard( browser.id );
+                return;
+            }
             const artboard = {
                 id: window.crypto.randomUUID(),
                 kind: chosen.kind,
@@ -290,6 +308,7 @@ export function usePlacement( { theme, enterEdit } ) {
             saveEntityRecord,
             editEntityRecord,
             addArtboard,
+            selectArtboard,
             enterEdit,
         ]
     );

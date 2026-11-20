@@ -61,16 +61,22 @@ export function createSnapshotStore() {
     const snapshots = new Map();
     return {
         /**
-         * Freezes an artboard's Preview.
+         * Freezes an artboard's Preview. A copy of the artboard that is on
+         * screen is replaced where it is (decision D51).
          *
          * @param {string}  id      The artboard.
          * @param {Element} preview The Preview's root element.
          * @param {*}       version What the Preview was rendered from.
+         * @return {boolean} Whether there was a Preview to freeze.
          */
         capture( id, preview, version ) {
-            if ( preview?.querySelector( 'iframe' )?.contentDocument?.body ) {
-                snapshots.set( id, { node: freeze( preview ), version } );
+            if ( ! preview?.querySelector( 'iframe' )?.contentDocument?.body ) {
+                return false;
             }
+            const node = freeze( preview );
+            snapshots.get( id )?.node.replaceWith( node );
+            snapshots.set( id, { node, version } );
+            return true;
         },
         has: ( id ) => snapshots.has( id ),
         /**
@@ -91,11 +97,10 @@ export function createSnapshotStore() {
          */
         mount( id, host ) {
             const snapshot = snapshots.get( id );
-            if ( ! snapshot ) {
-                return () => {};
+            if ( snapshot ) {
+                host.appendChild( snapshot.node );
             }
-            host.appendChild( snapshot.node );
-            return () => snapshot.node.remove();
+            return () => snapshots.get( id )?.node.remove();
         },
         forget: ( id ) => snapshots.delete( id ),
     };
@@ -104,12 +109,18 @@ export function createSnapshotStore() {
 /**
  * Shows an artboard's frozen copy. React renders the empty host only.
  *
- * @param {Object} props
- * @param {string} props.id    The artboard.
- * @param {Object} props.store The snapshot store.
+ * @param {Object}  props
+ * @param {string}  props.id     The artboard.
+ * @param {Object}  props.store  The snapshot store.
+ * @param {boolean} props.isOver Whether it lies over the render that will replace it.
  */
-export function ArtboardSnapshot( { id, store } ) {
+export function ArtboardSnapshot( { id, store, isOver = false } ) {
     const host = useRef();
     useLayoutEffect( () => store.mount( id, host.current ), [ id, store ] );
-    return <div className="wfd-snapshot" ref={ host } />;
+    return (
+        <div
+            className={ 'wfd-snapshot' + ( isOver ? ' is-over' : '' ) }
+            ref={ host }
+        />
+    );
 }

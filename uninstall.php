@@ -1,6 +1,7 @@
 <?php
 /**
- * Uninstall: deletes every board. Site content is untouched.
+ * Uninstall: deletes every board, and the unsaved changes kept for browsers
+ * (D57). Site content is untouched.
  *
  * @package WordPressForDesigners
  */
@@ -19,3 +20,6 @@ $wfd_boards = get_posts(
 foreach ( $wfd_boards as $wfd_board ) {
     wp_delete_post( $wfd_board, true );
 }
+
+// Every user's kept changes, on this site (includes/preview.php).
+delete_metadata( 'user', 0, $GLOBALS['wpdb']->get_blog_prefix() . 'wfd_preview', '', true );

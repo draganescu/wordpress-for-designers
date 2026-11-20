@@ -1,6 +1,6 @@
 /**
  * The inserter in the left panel (spec/screens/README.md, L7 to L12): search,
- * tabs of names and usage lines, the New rows that create artboards (D60),
+ * tabs of names and usage lines, the New rows that create artboards (D63),
  * and a hint. Presentational: the host supplies the lists and receives the
  * clicks and drags. Rows never contain a rendered preview (C17).
  */
@@ -60,6 +60,11 @@ export function getNewRows( purposes ) {
                 key: 'page',
                 name: __( 'New page', 'wordpress-for-designers' ),
                 choice: { kind: 'page' },
+            },
+            {
+                key: 'browser',
+                name: __( 'New browser', 'wordpress-for-designers' ),
+                choice: { kind: 'browser' },
             },
         ],
         pattern: [
@@ -328,7 +333,7 @@ export function InserterPanel( {
     // Blocks go only into an artboard in edit, so with none in edit their
     // tab is not shown and they do not count as search results. Pages and
     // the New rows go only onto the board, so in edit they are the ones left
-    // out (D33, D60).
+    // out (D33, D63).
     const tabs = TABS.filter(
         ( { value } ) => value !== ( isEditing ? 'pages' : 'blocks' )
     );

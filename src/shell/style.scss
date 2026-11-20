@@ -1,8 +1,21 @@
+@use "sass:math";
+@use "@wordpress/base-styles/breakpoints" as wp-breakpoints;
 @use "@wordpress/base-styles/variables" as wp-variables;
 @import "primitives";
+@import "space-gate";
 @import "../styles/style";
 @import "../inserter/style";
 @import "../review/style";
+
+// Below this width the panels make room (D50). The images in spec/screens
+// were drawn at this width.
+$wfd-roomy: wp-breakpoints.$break-huge;
+
+// A panel's width: full from the roomy width up, narrower in step with the
+// window below it, and never less than its floor (D50).
+@function wfd-panel-width($floor, $full) {
+    @return clamp(#{$floor}, #{math.div($full, $wfd-roomy) * 100vw}, #{$full});
+}
 
 html.wp-toolbar:has(.wfd-board-page) {
     padding: 0;
@@ -17,18 +30,21 @@ html.wp-toolbar:has(.wfd-board-page) {
 
 .wfd-shell {
     display: grid;
-    grid-template: "header header header" auto "left main right" minmax(0, 1fr) / 280px minmax(0, 1fr) 360px;
+    grid-template: "header header header" auto "left main right" minmax(0, 1fr) / var(--wfd-left-width) minmax(0, 1fr) var(--wfd-right-width);
+
+    --wfd-left-width: #{wfd-panel-width(240px, 280px)};
+    --wfd-right-width: #{wfd-panel-width(300px, 360px)};
     position: fixed;
     inset: 0;
     color: var(--wpds-color-foreground-content-neutral);
     background: var(--wpds-color-background-surface-neutral);
 
     &.has-no-left {
-        grid-template-columns: 0 minmax(0, 1fr) 360px;
+        grid-template-columns: 0 minmax(0, 1fr) var(--wfd-right-width);
     }
 
     &.has-no-right {
-        grid-template-columns: 280px minmax(0, 1fr) 0;
+        grid-template-columns: var(--wfd-left-width) minmax(0, 1fr) 0;
     }
 
     &.has-no-left.has-no-right {
@@ -43,10 +59,27 @@ html.wp-toolbar:has(.wfd-board-page) {
     align-items: center;
     column-gap: var(--wpds-dimension-gap-lg);
     border-bottom: var(--wpds-border-width-xs) solid var(--wpds-color-stroke-surface-neutral);
+
+    // While the block toolbar shows it has the title's place, and of the
+    // document bar only the back button is left, next to it (D50).
+    &:has(.wfd-block-tools:not(.is-collapsed, :empty)) {
+        grid-template-columns: minmax(0, max-content) auto minmax(max-content, 1fr);
+
+        .wfd-header__document {
+            width: auto;
+            padding: 0;
+            background: none;
+        }
+
+        .wfd-header__document-name {
+            display: none;
+        }
+    }
 }
 
 .wfd-header a.wfd-header__boards {
     display: flex;
+    flex: none;
     align-items: center;
     justify-content: center;
     width: 60px;
@@ -68,14 +101,45 @@ html.wp-toolbar:has(.wfd-board-page) {
 
 .wfd-header__tools {
     display: flex;
+    flex: 1;
     align-items: center;
     column-gap: var(--wpds-dimension-gap-sm);
     min-width: 0;
+
+    // The controls keep their size; only the block toolbar gives way.
+    > :not(.wfd-header__toolbar) {
+        flex: none;
+    }
 }
 
+// The stock toolbar inside takes the width left for it and, when it is
+// wider, scrolls sideways by itself.
 .wfd-header__toolbar {
     min-width: 0;
     overflow: hidden;
+}
+
+.wfd-slot-toolbar {
+    display: flex;
+    align-items: center;
+    column-gap: var(--wpds-dimension-gap-sm);
+}
+
+.wfd-block-tools {
+    min-width: 0;
+
+    &.is-collapsed {
+        display: none;
+    }
+}
+
+.wfd-block-tools__toggle {
+    flex: none;
+
+    // A block with no toolbar has nothing to hide.
+    .wfd-block-tools:empty + & {
+        display: none;
+    }
 }
 
 .wfd-header__document {
@@ -223,6 +287,10 @@ html.wp-toolbar:has(.wfd-board-page) {
     left: var(--wpds-dimension-padding-lg);
     width: var(--wpds-dimension-surface-width-md);
     max-width: calc(100% - 2 * var(--wpds-dimension-padding-lg));
+    // Two banners at once (D61) are one above the other.
+    display: flex;
+    flex-direction: column;
+    row-gap: var(--wpds-dimension-gap-sm);
 }
 
 .wfd-banner__text {
@@ -259,7 +327,7 @@ html.wp-toolbar:has(.wfd-board-page) {
     color: var(--wpds-color-foreground-content-neutral-weak);
 }
 
-// The field a page or pattern is named in (A7, D59).
+// The field a page or pattern is named in (A7, D62).
 .wfd-artboard__name-field {
     width: var(--wpds-dimension-surface-width-xs);
 }
@@ -350,6 +418,7 @@ html.wp-toolbar:has(.wfd-board-page) {
 
 .wfd-entity-card,
 .wfd-device-control,
+.wfd-shows-control,
 .wfd-template-control,
 .wfd-scope-switch,
 .wfd-artboard-settings__actions,
@@ -493,6 +562,14 @@ html.wp-toolbar:has(.wfd-board-page) {
     pointer-events: none;
 }
 
+// A frozen copy made with older styles stays over the render that will
+// replace it (D51).
+.wfd-snapshot.is-over {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+}
+
 // Notes (D46): above every artboard, the Live one included.
 .wfd-note {
     position: absolute;
@@ -562,4 +639,37 @@ html.wp-toolbar:has(.wfd-board-page) {
 
 .wfd-note-colors {
     margin-top: var(--wpds-dimension-gap-lg);
+}
+
+// A browser's window (D55): the page at the device width, as tall as the
+// window (D56). Outside browsing the frame is inert and takes no input.
+.wfd-browser {
+    display: block;
+    width: 100%;
+    height: 100%;
+    border: 0;
+    background: var(--wpds-color-background-surface-neutral);
+}
+
+// While it is browsed, the pointer is the board's when the board pans.
+.wfd-canvas.is-pan-ready .wfd-browser,
+.wfd-canvas.is-panning .wfd-browser {
+    pointer-events: none;
+}
+
+.wfd-artboard__address {
+    width: 320px;
+}
+
+// The bottom edge of a browser's window resizes it (D56): a band 8 px tall
+// at screen size, centred on the edge.
+.wfd-artboard__resize {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    transform: translateY(50%);
+    height: calc(8px / var(--wfd-zoom));
+    cursor: ns-resize;
+    z-index: 1;
 }

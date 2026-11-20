@@ -52,7 +52,7 @@ test.describe( 'NEW', () => {
         await openBoard( page, fixture.boardId );
     } );
 
-    test( 'AC-NEW-01 With no artboard in edit the Pages tab begins with "New page", the Patterns tab with "New pattern" and the Templates tab with "New template for" and "New template part"; in edit none of these rows is shown; the left panel has no "Add artboard" control', async ( {
+    test( 'AC-NEW-01 With no artboard in edit the Pages tab begins with "New page" and "New browser", the Patterns tab with "New pattern" and the Templates tab with "New template for" and "New template part"; in edit none of these rows is shown; the left panel has no "Add artboard" control', async ( {
         page,
     } ) => {
         await expect( page.locator( '[data-wfd-control="L2"]' ) ).toHaveCount(
@@ -78,7 +78,7 @@ test.describe( 'NEW', () => {
             panel.getByRole( 'tab', { name: 'Pages' } )
         ).toHaveAttribute( 'aria-selected', 'true' );
         await expect( headingOf( 0 ) ).toHaveText( 'New' );
-        await expect( rowsOf( 0 ) ).toHaveText( [ 'New page' ] );
+        await expect( rowsOf( 0 ) ).toHaveText( [ 'New page', 'New browser' ] );
         await expect( headingOf( 1 ) ).toContainText( 'Pages' );
 
         await panel.getByRole( 'tab', { name: 'Patterns' } ).click();

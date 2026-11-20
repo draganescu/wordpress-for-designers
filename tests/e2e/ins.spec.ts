@@ -204,7 +204,7 @@ test.describe( 'INS', () => {
         const panel = await openInserter( page, 'Patterns' );
         const list = panel.getByRole( 'tabpanel' );
         const headings = await list.getByRole( 'heading' ).allInnerTexts();
-        // The New rows come first (D60).
+        // The New rows come first (D63).
         expect( headings[ 0 ].toLowerCase() ).toBe( 'new' );
         expect( headings[ 1 ].toLowerCase() ).toBe( 'yours' );
         expect( headings[ 2 ].toLowerCase() ).toBe(

@@ -12,7 +12,7 @@ Each item was considered and cut. Do not build any of them, in part or behind a 
 | Custom artboard widths, drag to resize an artboard's width | `[U]` |
 | Touch input | `[U]` |
 | Changing an artboard's kind after creation | `[U]` |
-| Draft copies of templates and template parts | `[U]` |
+| Draft copies of templates and template parts. The unsaved content kept on the server for a user's own preview (D57) is not one: it lasts a limited time and never reaches the live site (C13) | `[U]` |
 | Previews or thumbnails in the inserter lists | `[U]` |
 | A per-artboard inserter, toolbar or inspector | `[B8]` `[U]` |
 | A Styles mode or Styles button outside the right panel | `[U]` |
@@ -20,8 +20,8 @@ Each item was considered and cut. Do not build any of them, in part or behind a 
 | A modal dialog or form for creating an artboard | `[U]` |
 | Publishing a draft page or pattern from the board (done in wp-admin) | `[N]` |
 | Opening an existing page or pattern as an artboard by any path other than the inserter (D39) | `[U]` |
-| Creating an artboard from anywhere but the inserter's "New" rows (D60) | `[U]` |
-| Renaming a template, a template part or a media object on the board (D59) | `[U]` |
+| Creating an artboard from anywhere but the inserter's "New" rows (D63) | `[U]` |
+| Renaming a template, a template part or a media object on the board (D62) | `[U]` |
 | Replacing the wp-admin dashboard | `[U]` |
 | Board sharing controls, per-user boards | `[U]` |
 | Mounting the post editor or site editor | `[U]` |

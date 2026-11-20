@@ -56,7 +56,7 @@ export function useInserterData( allowedBlocks ) {
         const core = select( coreStore );
         return {
             pages: core.getEntityRecords( 'postType', 'page', PAGES ),
-            // Names not saved yet (D59) show here as everywhere else. Kept
+            // Names not saved yet (D62) show here as everywhere else. Kept
             // as a string so that it compares equal while nothing changes.
             titleEdits: JSON.stringify(
                 select( boardStore )

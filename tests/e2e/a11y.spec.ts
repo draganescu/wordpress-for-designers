@@ -120,6 +120,7 @@ test.describe( 'A11Y', () => {
             hasText: 'Hero paragraph.',
         } );
         await paragraph.click();
+        expect( await nameOf( 'H14' ) ).toBe( 'Hide block tools' );
         await page.keyboard.type( 'x' );
         await expect.poll( () => nameOf( 'H3' ) ).toBe( 'Undo edit, in Hero' );
         await header

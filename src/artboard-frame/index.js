@@ -6,13 +6,15 @@ import { __, _x } from '@wordpress/i18n';
 import {
     createContext,
     useCallback,
+    useEffect,
     useRef,
     useState,
 } from '@wordpress/element';
-import { chevronDown } from '@wordpress/icons';
+import { chevronDown, rotateRight } from '@wordpress/icons';
 import {
     Button,
     Icon,
+    IconButton,
     InputControl,
     Menu,
     Notice,
@@ -22,6 +24,10 @@ import {
 import { DEVICES, DEVICE_ORDER, KINDS } from '../shell/constants';
 import { artboardLabel, liveLabel, usesText } from '../shell/labels';
 import { countRender } from '../shell/test-hooks';
+import { normalizeAddress } from './browser';
+
+export { BrowserArtboard, browserTier } from './browser-artboard';
+export { usePreview } from './preview';
 
 /**
  * The frame element of the artboard a component is rendered in.
@@ -91,7 +97,7 @@ export function ArtboardError( { kind, onRetry } ) {
 
 /**
  * A7: the text field a page or pattern is named in, in place of the name in
- * its artboard's label (D59). Enter or a click elsewhere keeps the name, Esc
+ * its artboard's label (D62). Enter or a click elsewhere keeps the name, Esc
  * leaves it as it was.
  *
  * @param {Object}   props
@@ -142,6 +148,46 @@ function NameField( { name, onDone } ) {
     );
 }
 
+/**
+ * The address field of a browser being browsed (D55).
+ *
+ * @param {Object}   props
+ * @param {string}   props.path      The address the browser is on.
+ * @param {Function} props.onAddress Called with a typed address.
+ * @param {Function} props.onReload  Reloads the page.
+ */
+function AddressControls( { path, onAddress, onReload } ) {
+    const [ typed, setTyped ] = useState( path );
+    useEffect( () => setTyped( path ), [ path ] );
+    return (
+        <>
+            <form
+                className="wfd-artboard__address"
+                onSubmit={ ( event ) => {
+                    event.preventDefault();
+                    onAddress( normalizeAddress( typed ) );
+                } }
+            >
+                <InputControl
+                    label={ __( 'Address', 'wordpress-for-designers' ) }
+                    hideLabelFromVision
+                    size="compact"
+                    value={ typed }
+                    onChange={ ( event ) => setTyped( event.target.value ) }
+                />
+            </form>
+            <IconButton
+                icon={ rotateRight }
+                label={ __( 'Reload', 'wordpress-for-designers' ) }
+                variant="minimal"
+                tone="brand"
+                size="small"
+                onClick={ onReload }
+            />
+        </>
+    );
+}
+
 function Label( {
     artboard,
     isLive,
@@ -150,6 +196,8 @@ function Label( {
     onDeviceChange,
     isRenaming,
     onRename,
+    onAddress,
+    onReload,
 } ) {
     const separator = _x(
         '·',
@@ -160,14 +208,26 @@ function Label( {
         <NameField name={ artboard.name } onDone={ onRename } />
     );
     if ( isLive ) {
+        const isBrowser = KINDS[ artboard.kind ].edit === 'browse';
         return (
             <div className="wfd-artboard__label is-live">
                 { nameField }
-                <Text variant="body-sm" className="wfd-artboard__label-text">
-                    { isRenaming
-                        ? separator + ' ' + KINDS[ artboard.kind ].label
-                        : liveLabel( artboard ) }
-                </Text>
+                { isBrowser ? (
+                    <AddressControls
+                        path={ artboard.path }
+                        onAddress={ onAddress }
+                        onReload={ onReload }
+                    />
+                ) : (
+                    <Text
+                        variant="body-sm"
+                        className="wfd-artboard__label-text"
+                    >
+                        { isRenaming
+                            ? separator + ' ' + KINDS[ artboard.kind ].label
+                            : liveLabel( artboard ) }
+                    </Text>
+                ) }
                 <Menu.Root>
                     <Menu.Trigger
                         render={
@@ -272,6 +332,8 @@ function Label( {
  * @param {Object}   props.frameProps     Pointer handlers for the frame.
  * @param {boolean}  props.hasError       Whether the error state is shown.
  * @param {boolean}  props.isStale        Whether its Snapshot is out of date.
+ * @param {Function} props.onAddress      A browser's typed address (D55).
+ * @param {Function} props.onReload       Reloads a browser's page.
  * @param {Element}  props.children       The tier content.
  */
 export function ArtboardFrame( {
@@ -287,6 +349,8 @@ export function ArtboardFrame( {
     frameProps,
     hasError,
     isStale,
+    onAddress,
+    onReload,
     children,
 } ) {
     countRender();
@@ -317,6 +381,8 @@ export function ArtboardFrame( {
                 onDeviceChange={ onDeviceChange }
                 isRenaming={ isRenaming }
                 onRename={ onRename }
+                onAddress={ onAddress }
+                onReload={ onReload }
             />
             <div
                 className={
@@ -330,6 +396,10 @@ export function ArtboardFrame( {
                     { children }
                 </FrameElementContext.Provider>
             </div>
+            { KINDS[ artboard.kind ].isResized && ! isLive && (
+                // The window's bottom edge resizes it (D56).
+                <div className="wfd-artboard__resize" data-wfd-resize />
+            ) }
         </div>
     );
 }

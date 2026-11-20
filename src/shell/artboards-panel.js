@@ -118,9 +118,9 @@ export function ArtboardsPanel( {
                                 // left to the row's own click.
                                 onKeyDown={ rowKeys(
                                     onRemove,
-                                    artboard.kind === 'media'
-                                        ? null
-                                        : () => onEdit( artboard.id )
+                                    KINDS[ artboard.kind ].edit
+                                        ? () => onEdit( artboard.id )
+                                        : null
                                 ) }
                             />
                         ) ) }

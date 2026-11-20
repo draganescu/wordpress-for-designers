@@ -298,7 +298,7 @@ export function artboardOf(
 }
 
 /**
- * Arms placement of a new artboard from a New row of the inserter (D60). The
+ * Arms placement of a new artboard from a New row of the inserter (D63). The
  * inserter is turned on for it and, unless asked to stay, off again.
  *
  * @param page             The page.

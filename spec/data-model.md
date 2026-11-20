@@ -64,6 +64,14 @@ A media object has `"kind": "media"`, a numeric `entityId` (the attachment), a `
 { "id": "…", "kind": "media", "entityId": 12, "x": 0, "y": 0, "width": 1200, "height": 800 }
 ```
 
+A browser (D55) has `"kind": "browser"`, a `path`, a `device`, a `height` (the window's height in board units, 200 or more, D56), `shows` (`"unsaved"` or `"saved"`, D57), and no `entityId` or `width`:
+
+```json
+{ "id": "…", "kind": "browser", "path": "/", "device": "desktop", "x": 0, "y": 0, "height": 900, "shows": "unsaved" }
+```
+
+`path` is the address relative to the site's home URL: it starts with `/`, may hold a query and a fragment, and is at most 2000 characters. A new browser has `/`, the homepage, and a window 900 board units tall. `[U]` for the window, `[N]` for the field list and the length
+
 The layout may also have a `notes` list (D46). A layout without it has no notes; a board with no notes is saved without it. Each note has exactly these fields: `[U]`
 
 ```json
@@ -82,15 +90,16 @@ The server validates the JSON against this shape on save and rejects anything el
 
 | Kind | What is created | When | Source |
 |---|---|---|---|
-| Page | A `page` with status `draft`, title "Untitled page" (renamed on the board, D59), empty content, and as its template the theme's `blank` template if it has one, else its `page-no-title` template if it has one, else none (D36) | At placement | `[U]` |
+| Page | A `page` with status `draft`, title "Untitled page" (renamed on the board, D62), empty content, and as its template the theme's `blank` template if it has one, else its `page-no-title` template if it has one, else none (D36) | At placement | `[U]` |
 | Media | Nothing. The object refers to an image already in the media library | | `[U]` |
-| Pattern | A `wp_block` with status `draft`, title "Untitled pattern" (renamed on the board, D59), empty content, synced | At placement | `[U]` |
+| Browser | Nothing. It shows the site's front end (D55) | | `[U]` |
+| Pattern | A `wp_block` with status `draft`, title "Untitled pattern" (renamed on the board, D62), empty content, synced | At placement | `[U]` |
 | Template | A `wp_template` for the chosen purpose, with content: the theme's Header part, one empty paragraph, the theme's Footer part | At first save from Review, never before | `[U]` `[D:AddArtboard2]` |
 | Template part | A `wp_template_part` titled "Untitled part", area `uncategorized` (labelled General), empty content | At first save from Review, never before | `[U]` `[V]` |
 
 Until its first save, a new template or template part exists only in the browser session. Its artboard is not written to the board's layout until that save. Closing the tab before saving loses it; the unsaved-changes warning covers this. `[N]`
 
-Template purposes offered, with the slug each creates: Archive `archive`, Search results `search`, Page: 404 `404`, Single item `singular`, Custom (a custom template titled "Untitled template"). A purpose whose template already exists on the site is not offered as new; that template is listed in the Templates tab's "Templates" group (D60). `[U]` `[V]`
+Template purposes offered, with the slug each creates: Archive `archive`, Search results `search`, Page: 404 `404`, Single item `singular`, Custom (a custom template titled "Untitled template"). A purpose whose template already exists on the site is not offered as new; that template is listed in the Templates tab's "Templates" group (D63). `[U]` `[V]`
 
 If the theme has no Header or Footer part, the new template's content is the one empty paragraph. `[N]`
 
@@ -104,7 +113,7 @@ Pressing Delete on a selected artboard, or "Remove from board", opens a confirma
 | Template or part created by a user (`has_theme_file` false) | Delete | `[U]` `[V]` |
 | Template or part that ships with the theme (`has_theme_file` true) | Reset to the theme's version (REST update with `source: "theme"`) | `[U]` `[V]` |
 
-A media object has no checkbox: removing it only takes it off the board. `[U]`
+A media object or a browser (D55) has no checkbox: removing it only takes it off the board. `[U]`
 
 A note is removed at once, with no confirmation, and can be brought back with Undo (D46). `[U]`
 
@@ -112,13 +121,17 @@ Pressing Delete with several artboards selected opens no confirmation: every sel
 
 When the entity is deleted, trashed or reset, every other artboard on any board that references it is handled on next load: a missing entity removes the artboard from that board. `[N]`
 
+## Previewing unsaved changes (D57)
+
+The board's unsaved changes are kept on the server for the browser's preview, per user and site, apart from the site's content: one record for each open board page, replaced each time that page sends, removed when it has nothing unsaved, and no longer used an hour after it last sent. An open board with unsaved changes sends them again every ten minutes, so they stay kept while it is open. Uninstalling the plugin deletes every record. It is never published, never shown to anyone else and never reaches Review. A front-end page requested by a user with `edit_theme_options` with the argument `wfd_preview`, holding a nonce the server gave that user, is rendered with those changes in place of the saved content; for anyone else, with any other value, and on a request to the REST API, the argument does nothing. `[U]` for the behaviour, `[N]` for how the record is stored
+
 ## Saving
 
 - Edits live in core-data as edited entity records until saved. `[B6]`
 - Review changes saves the checked items, one REST request per item. `[B6]` `[U]`
 - A failed save leaves the item checked and listed with its error. `[U]`
 - A page's template, changed from the right panel (D35), is an edit of the page like any other: listed under the page in Review with the line "Template: changed" and saved with it. `[U]`
-- A page's or pattern's name, changed on its artboard label (D59), is an edit of that page or pattern like any other: listed under it in Review with the line "Title: changed" and saved with it. `[U]`
+- A page's or pattern's name, changed on its artboard label (D62), is an edit of that page or pattern like any other: listed under it in Review with the line "Title: changed" and saved with it. `[U]`
 - Saving never changes a page's or pattern's status. Publishing drafts is done in wp-admin. `[N]`
 - Global styles save as the `globalStyles` entity of the active theme. `[B7]`
 - Edits that blocks make to other records (the site's title, tagline and logo; navigation menus) are listed in Review as their own items and saved the same way. `[U]`

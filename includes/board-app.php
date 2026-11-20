@@ -40,6 +40,8 @@ function wfd_print_board_page() {
                 'boardId'        => $board->ID,
                 'editorSettings' => $settings,
                 'theme'          => get_stylesheet(),
+                'homeUrl'        => home_url( '/' ),
+                'preview'        => wfd_preview_config(),
             )
         )
     );
