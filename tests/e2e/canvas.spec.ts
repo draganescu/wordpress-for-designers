@@ -10,6 +10,7 @@ import {
     editorFrame,
     artboardOf,
     fingers,
+    gridOn,
     pointOn,
     pointsOn,
     type Point,
@@ -21,6 +22,15 @@ test.describe( 'CANVAS', () => {
         fixture = await resetFixture( requestUtils );
         await openBoard( page, fixture.boardId );
     } );
+
+    const frameOf = ( page: Page, id: string ) =>
+        page.locator( `[data-wfd-artboard="${ id }"]` );
+    const selectedArtboards = ( page: Page ) =>
+        page.locator( '.wfd-artboard.is-selected' );
+    const selectedIds = ( page: Page ) =>
+        selectedArtboards( page ).evaluateAll( ( els: HTMLElement[] ) =>
+            els.map( ( el ) => el.dataset.wfdArtboard ).sort()
+        );
 
     test( 'AC-CANVAS-01 Each artboard shows the label "{Name} · {Kind} · {Device}"', async ( {
         page,
@@ -125,7 +135,7 @@ test.describe( 'CANVAS', () => {
         const about = page.locator(
             `[data-wfd-artboard="${ fixture.layout.artboards[ 5 ].id }"]`
         );
-        const selected = page.locator( '.wfd-artboard.is-selected' );
+        const selected = selectedArtboards( page );
         const right = page.locator( '[data-wfd-region="right"]' );
         const position = ( el: HTMLElement ) => ( {
             left: parseFloat( el.style.left ),
@@ -315,19 +325,17 @@ test.describe( 'CANVAS', () => {
     } );
 
     // A point of the canvas area with nothing over it: no artboard, and no
-    // control floating over the board.
-    const emptyBoardPoint = ( page: Page ) =>
-        page.locator( '[data-wfd-region="canvas"]' ).evaluate( ( area ) => {
-            const box = area.getBoundingClientRect();
-            for ( let y = box.bottom - 16; y > box.top; y -= 24 ) {
-                for ( let x = box.left + 16; x < box.right; x += 24 ) {
-                    if ( document.elementFromPoint( x, y ) === area ) {
-                        return { x, y };
-                    }
-                }
-            }
+    // control floating over the board. The lowest one, and of those the
+    // leftmost.
+    const emptyBoardPoint = async ( page: Page ) => {
+        const found = await gridOn( page, null );
+        if ( ! found.length ) {
             throw new Error( 'No empty board in view' );
-        } );
+        }
+        return found.reduce( ( lowest, point ) =>
+            point.y > lowest.y ? point : lowest
+        );
+    };
 
     const zoomAtPointerAndPan = async ( page: Page, x: number, y: number ) => {
         const canvas = page.locator( '[data-wfd-region="canvas"]' );
@@ -371,27 +379,19 @@ test.describe( 'CANVAS', () => {
         const ids = fixture.layout.artboards.map( ( { id } ) => id );
         const heroId = fixture.layout.artboards[ 3 ].id;
         const marquee = page.locator( '[data-wfd-marquee]' );
-        const canvas = page.locator( '[data-wfd-region="canvas"]' );
-        const frameOf = ( id: string ) =>
-            page.locator( `[data-wfd-artboard="${ id }"]` );
         const emptyPoint = (): Promise< Point > => emptyBoardPoint( page );
-        // A point inside an artboard's frame that is in view.
+        // A point inside an artboard's frame that is in view, near its top
+        // left.
         const pointIn = async ( id: string ): Promise< Point > => {
-            const c = ( await canvas.boundingBox() )!;
-            const f = ( await frameBox( frameOf( id ) ) )!;
-            const left = Math.max( c.x, f.x );
-            const top = Math.max( c.y, f.y );
-            const right = Math.min( c.x + c.width, f.x + f.width );
-            const bottom = Math.min( c.y + c.height, f.y + f.height );
-            expect( right - left ).toBeGreaterThan( 10 );
-            expect( bottom - top ).toBeGreaterThan( 10 );
-            return { x: left + 5, y: top + 5 };
+            const [ first ] = await gridOn( page, id );
+            expect( first ).toBeTruthy();
+            return first;
         };
         // The artboards whose frame a rectangle between two points touches.
         const touchedBy = async ( a: Point, b: Point ) => {
             const touched: string[] = [];
             for ( const id of ids ) {
-                const f = ( await frameBox( frameOf( id ) ) )!;
+                const f = ( await frameBox( frameOf( page, id ) ) )!;
                 if (
                     f.x < Math.max( a.x, b.x ) &&
                     f.x + f.width > Math.min( a.x, b.x ) &&
@@ -403,18 +403,6 @@ test.describe( 'CANVAS', () => {
             }
             return touched.sort();
         };
-        const selectedIds = async () =>
-            (
-                await page
-                    .locator( '.wfd-artboard.is-selected' )
-                    .evaluateAll( ( nodes ) =>
-                        nodes.map(
-                            ( node ) =>
-                                ( node as HTMLElement ).dataset.wfdArtboard
-                        )
-                    )
-            ).sort();
-
         // A plain drag selects what the rectangle touches, as it is dragged.
         const start = await emptyPoint();
         const end = await pointIn( heroId );
@@ -425,7 +413,7 @@ test.describe( 'CANVAS', () => {
         await page.mouse.down();
         await page.mouse.move( end.x, end.y, { steps: 6 } );
         await expect( marquee ).toBeVisible();
-        await expect.poll( selectedIds ).toEqual( touched );
+        await expect.poll( () => selectedIds( page ) ).toEqual( touched );
         const drawn = ( await marquee.boundingBox() )!;
         expect( drawn.x ).toBeCloseTo( Math.min( start.x, end.x ), 0 );
         expect( drawn.y ).toBeCloseTo( Math.min( start.y, end.y ), 0 );
@@ -436,11 +424,11 @@ test.describe( 'CANVAS', () => {
         const near = { x: start.x + 6, y: start.y - 6 };
         expect( await touchedBy( start, near ) ).toEqual( [] );
         await page.mouse.move( near.x, near.y, { steps: 6 } );
-        await expect.poll( selectedIds ).toEqual( [] );
+        await expect.poll( () => selectedIds( page ) ).toEqual( [] );
         await page.mouse.move( end.x, end.y, { steps: 6 } );
         await page.mouse.up();
         await expect( marquee ).toBeHidden();
-        await expect.poll( selectedIds ).toEqual( touched );
+        await expect.poll( () => selectedIds( page ) ).toEqual( touched );
 
         // Cmd/Ctrl + drag keeps what was selected and adds to it.
         const otherId = ids.find( ( id ) => ! touched.includes( id ) )!;
@@ -452,7 +440,7 @@ test.describe( 'CANVAS', () => {
                     .selectArtboard( id ),
             otherId
         );
-        await expect.poll( selectedIds ).toEqual( [ otherId ] );
+        await expect.poll( () => selectedIds( page ) ).toEqual( [ otherId ] );
         await page.keyboard.down( 'ControlOrMeta' );
         await page.mouse.move( start.x, start.y );
         await page.mouse.down();
@@ -460,7 +448,7 @@ test.describe( 'CANVAS', () => {
         await page.mouse.up();
         await page.keyboard.up( 'ControlOrMeta' );
         await expect
-            .poll( selectedIds )
+            .poll( () => selectedIds( page ) )
             .toEqual( [ otherId, ...touched ].sort() );
 
         // Esc cancels the drag: the selection is as it was before it.
@@ -469,21 +457,21 @@ test.describe( 'CANVAS', () => {
         await page.mouse.down();
         await page.mouse.move( near.x, near.y, { steps: 6 } );
         await expect( marquee ).toBeVisible();
-        await expect.poll( selectedIds ).toEqual( [] );
+        await expect.poll( () => selectedIds( page ) ).toEqual( [] );
         await page.keyboard.press( 'Escape' );
         await expect( marquee ).toBeHidden();
-        await expect.poll( selectedIds ).toEqual( kept );
+        await expect.poll( () => selectedIds( page ) ).toEqual( kept );
         await page.mouse.move( end.x, end.y, { steps: 6 } );
         await expect( marquee ).toBeHidden();
         await page.mouse.up();
-        await expect.poll( selectedIds ).toEqual( kept );
+        await expect.poll( () => selectedIds( page ) ).toEqual( kept );
 
         // A plain drag replaces the selection.
         await page.mouse.move( start.x, start.y );
         await page.mouse.down();
         await page.mouse.move( end.x, end.y, { steps: 6 } );
         await page.mouse.up();
-        await expect.poll( selectedIds ).toEqual( touched );
+        await expect.poll( () => selectedIds( page ) ).toEqual( touched );
 
         // While an artboard is in edit, the drag leaves edit and selects.
         await enterEdit( page, heroId );
@@ -498,7 +486,7 @@ test.describe( 'CANVAS', () => {
             0
         );
         await page.mouse.up();
-        await expect.poll( selectedIds ).toEqual( expected );
+        await expect.poll( () => selectedIds( page ) ).toEqual( expected );
     } );
     test( 'AC-CANVAS-03 Cmd/Ctrl + wheel zooms around the pointer and Space + drag pans, also over an artboard', async ( {
         page,
@@ -682,14 +670,6 @@ test.describe( 'CANVAS', () => {
             x: point.x + dx,
             y: point.y + dy,
         } );
-        const frameOf = ( page: Page, id: string ) =>
-            page.locator( `[data-wfd-artboard="${ id }"]` );
-        const selected = ( page: Page ) =>
-            page.locator( '.wfd-artboard.is-selected' );
-        const selectedIds = ( page: Page ) =>
-            selected( page ).evaluateAll( ( els: HTMLElement[] ) =>
-                els.map( ( el ) => el.dataset.wfdArtboard ).sort()
-            );
         const positions = ( page: Page ) =>
             page
                 .locator( '[data-wfd-artboard]' )
@@ -811,7 +791,7 @@ test.describe( 'CANVAS', () => {
             await panWithTwo( page, touch, index.id, 40, 30 );
             await pinchWithTwo( page, touch, index.id, 1.4 );
             await pinchWithTwo( page, touch, index.id, 0.8 );
-            await expect( selected( page ) ).toHaveCount( 0 );
+            await expect( selectedArtboards( page ) ).toHaveCount( 0 );
             expect( await positions( page ) ).toEqual( before );
 
             // A pinch stops at the lowest zoom.
@@ -886,14 +866,16 @@ test.describe( 'CANVAS', () => {
             await expect
                 .poll( () => selectedIds( page ) )
                 .toEqual( [ hero.id ] );
-            // Long enough after the last tap not to be a double tap.
-            await page.waitForTimeout( 500 );
+            // Too far from the last tap to be a double tap with it.
+            expect(
+                Math.hypot( onIndex.x - onHero.x, onIndex.y - onHero.y )
+            ).toBeGreaterThan( 30 );
             await touch.tap( onIndex );
             await expect
                 .poll( () => selectedIds( page ) )
                 .toEqual( [ index.id ] );
             await touch.tap( onEmpty );
-            await expect( selected( page ) ).toHaveCount( 0 );
+            await expect( selectedArtboards( page ) ).toHaveCount( 0 );
 
             // Drag an artboard by 60 x 40 screen pixels.
             const { zoom } = await viewportOf( page );
@@ -975,7 +957,7 @@ test.describe( 'CANVAS', () => {
             );
             // Nothing was moved or selected.
             expect( await position( page, hero.id ) ).toEqual( before );
-            await expect( selected( page ) ).toHaveCount( 0 );
+            await expect( selectedArtboards( page ) ).toHaveCount( 0 );
             await expect( undo ).toBeDisabled();
 
             // One finger draws the rectangle, then a second one lands.

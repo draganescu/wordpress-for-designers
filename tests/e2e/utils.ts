@@ -384,7 +384,7 @@ export async function fingers( page: Page ) {
  * @param page The page.
  * @param id   The artboard, or null for empty board.
  */
-function gridOn( page: Page, id: string | null ): Promise< Point[] > {
+export function gridOn( page: Page, id: string | null ): Promise< Point[] > {
     return page
         .locator( '[data-wfd-region="canvas"]' )
         .evaluate( ( area, artboardId ) => {
