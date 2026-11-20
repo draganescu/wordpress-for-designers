@@ -10,8 +10,8 @@ Each milestone ends with a gate. The gate is the listed acceptance criteria pass
 | 3 | Board and canvas | `board-store`, `viewport`, artboard frames as Ghosts, selection, move, layout autosave, layout undo, keyboard map, Boards list. | AC-BOARD-*, AC-CANVAS-*, AC-KEY-*, AC-PERF-01 |
 | 4 | Preview tier | `artboard-preview`, editor bootstrap, device widths, the queue. | AC-DEV-*, AC-TIER-03 to 05, AC-DATA-02 |
 | 5 | Live editor | `artboard-editor`, chrome slots, list view, document bar, enter and leave edit, content undo, locks. | AC-EDIT-*, AC-TIER-01, AC-TIER-02, AC-DATA-01, AC-UNDO-* |
-| 6 | Creating and removing | Add artboard menu and placement, entity creation rules, remove dialog. | AC-NEW-*, AC-DEL-* |
-| 7 | Inserter | Four tabs, search, click to insert, drag to board. | AC-INS-* |
+| 6 | Creating and removing | New rows and placement (D49), entity creation rules, remove dialog, naming on the label (D48). | AC-NEW-*, AC-DEL-*, AC-NAME-* |
+| 7 | Inserter | Five tabs, search, click to insert, drag to board. | AC-INS-* |
 | 8 | Styles | Style compile, Tokens, Blocks, History, variation menu, "Style applies to". | AC-STYLE-* |
 | 9 | Usage index | Index, counts, highlights. | AC-INDEX-* |
 | 10 | Review and saving | Review drawer, save, discard, errors, unsaved-changes warning. | AC-SAVE-* |

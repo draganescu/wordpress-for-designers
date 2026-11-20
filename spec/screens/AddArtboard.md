@@ -1,15 +1,15 @@
-# New artboard 1: pick the kind from the menu, then place
+# New artboard 1: pick the kind in the inserter, then place
 
 ![New artboard 1: pick the kind from the menu, then place](images/AddArtboard.png)
 
-**State.** The Add artboard menu is open at its second level and the pointer is over the board.
+**State.** The inserter is on, on its Templates tab; "Archive" under "New template for" was clicked and the pointer is over the board.
 
-**Source.** [U] [D:AddArtboard]
+**Source.** [U] [D:AddArtboard]. The image shows the Add artboard menu that D49 removed: the kind is now picked from a New row of the inserter. The placement ghost is as drawn.
 
 ## Regions used (defined in README.md)
 
-- Header
-- Left panel, artboards by kind (L2 pressed)
+- Header (H2 on)
+- Left panel, inserter
 - Canvas
 - Right panel, Styles
 
@@ -17,8 +17,7 @@
 
 | Element | Components and text | Behaviour |
 |---|---|---|
-| Kind menu | `Menu` from L2 with four items, each an icon, a title and one line: "Page" / "Content at its own address."; "Template" / "The layout many pages or posts share."; "Template part" / "A header, footer or other shared region."; "Pattern" / "A section to drop into any page or template.". Template has a submenu. | Page, Template part and Pattern arm placement at once. |
-| Template submenu | Group label "New template for" with items "Archive", "Search results", "Page: 404", "Single item", "Custom" (existing purposes omitted); separator; group label "Already on the site" listing each existing template: on this board, disabled with "On this board"; otherwise with "Open as artboard". | Choosing an item arms placement for that template. |
+| New rows | L12, in the Pages tab ("New page"), the Patterns tab ("New pattern") and the Templates tab ("New template for": "Archive", "Search results", "Page: 404", "Single item", "Custom", existing purposes omitted; "New": "New template part"). See `InserterPages.md`, `Library.md` and `InserterTemplates.md`. | Clicking a New row arms placement for that kind, and for a template that purpose. Clicking another New row arms that one instead. |
 | Placement ghost | A dashed brand outline at the pointer, sized as the Desktop device at the current zoom, labelled "{Name} · {Kind} · Desktop" and "Click to place". | Click places the artboard there with device Desktop and enters edit (at the current zoom, or fitted first when below 30%, D37). Esc cancels. |
 
 ## Acceptance criteria

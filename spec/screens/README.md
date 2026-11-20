@@ -1,6 +1,6 @@
 # Screens
 
-Twenty-four screens. Each has an image in `images/` (except `LockDialog` and `ShortcutsDialog`, which have none) and a file here naming its state, the regions it uses and its own elements. Regions shared by many screens are defined once in this file.
+Twenty-five screens. Each has an image in `images/` (except `LockDialog`, `ShortcutsDialog` and `InserterPages`, which have none) and a file here naming its state, the regions it uses and its own elements. Regions shared by many screens are defined once in this file.
 
 Rules for reading the images (see also `CLAUDE.md`, rules 6 and 7):
 
@@ -18,7 +18,7 @@ Left to right:
 | ID | Element | Component | Text / label | Behaviour |
 |---|---|---|---|---|
 | H1 | Boards link | `ButtonLink` with the `wordpress` icon, dark square | Label "All boards" | Goes to the Boards screen. If there are unsaved edits, the browser's leave warning applies. |
-| H2 | Inserter toggle | `IconButton`, `plus` icon, solid brand; when on, `close` icon, neutral strong | Labels "Block inserter" / "Close block inserter" | Toggles the inserter in the left panel. |
+| H2 | Inserter toggle | `IconButton`, `plus` icon, solid brand; when on, `close` icon, neutral strong | Labels "Block inserter" / "Close block inserter" | Toggles the inserter in the left panel. The inserter is the one place artboards are added from (D49). |
 | H3 | Undo | `IconButton`, `undo` | Tooltip in the form given in `architecture.md`, Undo; "Undo" when history is empty | Disabled when the active history is empty. |
 | H4 | Redo | `IconButton`, `redo` | Same form with "Redo" | Disabled when nothing to redo. |
 | H5 | List view toggle | `IconButton`, `listView`, pressed state | Label "List view" | Shows or hides the list view. Disabled when no artboard is in edit. |
@@ -56,7 +56,7 @@ Notes (D46): `[U]`
 | ID | Element | Component | Text | Behaviour |
 |---|---|---|---|---|
 | L1 | Panel heading | `Text` heading-md | "Artboards" | |
-| L2 | Add artboard | `IconButton`, `plus`, opens a `Menu` | Label "Add artboard" | See the "New artboard 1" screen. |
+| L2 | Removed by D49 | | | The left panel has no "Add artboard" control: artboards are added from the inserter (H2, L12). |
 | L3 | Group heading | `Text` heading-sm with a count at the right | "Pages", "Templates", "Template parts", "Patterns", "Media", "Notes" | A group with no artboards is not shown. `[N]` |
 | L4 | Artboard row | `wpc.ItemGroup` / `Item` row: kind icon (`page`, `layout`, `header`, `symbol`), name, device at the right | Device words "Desktop", "Tablet", "Mobile" | Click selects the artboard and scrolls it into view. Cmd/Ctrl + click adds the row to the selection or takes it out; Shift + click selects every row from the one clicked last to this one (D41). Double-click or Enter edits it. Delete or Backspace on a focused row removes the selected artboards, as on the board. Every selected row uses the brand surface. |
 
@@ -73,22 +73,24 @@ Rows are ordered by name within a group, then Desktop, Tablet, Mobile. `[N]`
 
 | ID | Element | Component | Text | Behaviour |
 |---|---|---|---|---|
-| L7 | Search | `wpc.SearchControl` | Placeholder "Search" | Filters all four tabs; the tab strip stays. |
-| L8 | Tabs | `Tabs` | "Blocks", "Patterns", "Templates", "Media" | With no artboard in edit the Blocks tab is not shown and Patterns is the first tab (D33). |
+| L7 | Search | `wpc.SearchControl` | Placeholder "Search" | Filters every tab; the tab strip stays. |
+| L8 | Tabs | `Tabs` | "Blocks", "Pages", "Patterns", "Templates", "Media" | With no artboard in edit the Blocks tab is not shown and Pages is the first tab. With an artboard in edit the Pages tab is not shown and Blocks is the first tab (D33, D49). |
 | L9 | Group heading | as L3 | per tab, see each inserter screen | |
 | L10 | Item row | as L4: icon, name, optional second line | per tab | Click and drag do the same thing (D39). With an artboard in edit: click inserts at the editor's insertion point, drag inserts where it is dropped in that artboard; a template row does nothing. With no artboard in edit: click or drag puts the item on the board as an artboard, or a media object for an image. |
 | L11 | Hint | `Text` on a weak neutral surface, pinned to the panel bottom | per tab | |
+| L12 | New row | as L10 with the `plus` icon, in the first groups of the Pages, Patterns and Templates tabs; those group headings have no count | Group "New": "New page", "New pattern", "New template part". Group "New template for": the template purposes. See each inserter screen | Click arms placement of a new artboard of that kind (D49, the "New artboard 1" screen). Not dragged. Shown only with no artboard in edit. The search filters it by its name like any row. |
 
 ## Region: Canvas `[D:Overview]` `[D:Main]` `[U]`
 
 | ID | Element | Component | Text | Behaviour |
 |---|---|---|---|---|
-| A1 | Artboard label | `Text` body-sm above the artboard's top-left corner | "{Name} · {Kind} · {Device}"; for a media object "{Name} · Media" | Not interactive, except on the Live artboard (A2). |
-| A2 | Live artboard label | `Text` in brand colour, "{Name} · {Kind}", followed by a `Menu` trigger showing the device | Menu items "Desktop", "Tablet", "Mobile"; trigger label "Artboard device" | Choosing a device changes this artboard's device. |
+| A1 | Artboard label | `Text` body-sm above the artboard's top-left corner | "{Name} · {Kind} · {Device}"; for a media object "{Name} · Media" | Not interactive, except on the Live artboard (A2), and except that a double-click on the label of a page or pattern artboard renames it (A7). |
+| A2 | Live artboard label | `Text` in brand colour, "{Name} · {Kind}", followed by a `Menu` trigger showing the device | Menu items "Desktop", "Tablet", "Mobile"; trigger label "Artboard device" | Choosing a device changes this artboard's device. A double-click on the label of a page or pattern renames it (A7). |
 | A3 | Artboard | The tier content at the device width, scaled by the zoom | | Click selects; Cmd/Ctrl + click adds it to the selection or takes it out when no artboard is in edit (D41); drag moves it, and with several selected moves them all; double-click edits. |
 | A4 | Selection outline | 2 px brand stroke around each selected artboard and the Live artboard | | |
 | A5 | Keyboard shortcuts | `IconButton`, `keyboard`, on a neutral surface with a subtle shadow, floating over the board at the bottom left of the canvas area | Label "Keyboard shortcuts" | Opens the keyboard shortcuts dialog (D42, `ShortcutsDialog.md`). It stays in its corner while the board pans and zooms, and is there in every state of the board, an artboard in edit included. |
 | A6 | Selection rectangle | A rectangle from where the drag started to the pointer, with a 1 px brand stroke and no fill (D47) | | Shown only while dragging from empty board (D43). Every artboard and media object it touches is selected, as it is dragged. Cmd/Ctrl + drag adds to the selection. Esc cancels the drag and puts the selection back as it was. |
+| A7 | Name field | `InputControl` in the label, in place of the name; its label "Name" is hidden from view | The name, selected | Shown after a double-click on the label of a page or pattern artboard, or F2 with that one artboard selected (D48). Enter or a click elsewhere keeps the new name; Esc leaves the name as it was; an empty name is not kept. The rest of the label stays as it is. The new name is an unsaved edit, saved from Review. |
 
 The canvas background is the weak neutral surface. Dragging an artboard moves it freely; there is no snapping or grid. `[N]` Dragging from empty board selects with a rectangle (A6, D43). `[U]`
 

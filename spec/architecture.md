@@ -27,7 +27,7 @@ Part names in this file are fixed. Use them for the top-level folders under `src
 | `artboard-preview` | Read-only blocks through `BlockPreview` in an iframe at the device width. | `[B5]` `[V]` |
 | `artboard-snapshot` | A frozen copy of the last Preview render with no React root and no store subscription, behind one interface so a bitmap version can replace it. | `[B5]` `[B8]` |
 | `chrome-slots` | Slots in the shell for block toolbar, inspector, list view. Only the Live editor fills them. | `[B4]` `[B6]` |
-| `inserter` | The left-panel lists for Blocks, Patterns, Templates, Media. | `[U]` |
+| `inserter` | The left-panel lists for Blocks, Pages, Patterns, Templates, Media, and the "New" rows that create artboards (D49). | `[U]` |
 | `styles` | Tokens, Blocks and History tabs; one style compile per change; pushes one stylesheet to every mounted artboard. | `[B7]` |
 | `usage-index` | Counts and locates uses of tokens and blocks per artboard from entity content. | `[U]` |
 | `review` | The Review changes drawer. | `[D:Review]` |
@@ -86,7 +86,7 @@ Hiding the panels (D32): `[U]`
 | Content | Typing and block edits in Live | `useEntityBlockEditor` to the core-data edited record | Every artboard that references the entity | Previews re-render; Snapshots go stale | `[B6]` |
 | Styles | Styles panel, variation switch, History preview | `globalStyles` edit, merge, generate once | One style element in every mounted artboard iframe | Once per animation frame while a control is dragged | `[B6]` `[B7]` |
 | Chrome | Selection in the Live editor | SlotFill from the Live tree | Header toolbar, right panel, list view | Only Live fills | `[B6]` |
-| Inserter | Block types, patterns, templates, media | core-data and blocks selectors | Inserter lists | Loaded once, filtered locally | `[B6]` `[U]` |
+| Inserter | Block types, pages, patterns, templates, media | core-data and blocks selectors | Inserter lists | Loaded once, filtered locally | `[B6]` `[U]` |
 | Usage index | Entity records and global styles | Parse block markup, no render | Use counts and highlights in Styles | Rebuilt only for the entity that changed | `[B6]` `[U]` |
 | Save | Dirty entity records | `review` | REST, one request per entity | Explicit | `[B6]` |
 | Layout | Moves, adds, removals, device changes, notes (D46) | `board-store` | `wfd-boards` REST | 2 s debounce | `[B6]` `[U]` |
@@ -110,6 +110,7 @@ Outside an artboard in edit: `[U]`
 | Shift + 2 | Fit the selected artboards |
 | Tab / Shift + Tab | Move selection to the next or previous artboard in left-panel order |
 | Enter | Edit the selected artboard; nothing with several selected |
+| F2 | Rename the selected page or pattern artboard on its label (D48); nothing for another kind or with several selected |
 | Arrow keys | Nudge the selected artboards by 1 unit; with Shift, 10 units |
 | Delete / Backspace | Remove the selected artboard (opens the confirmation); with several selected, take them all off the board with no confirmation (D41) |
 | Cmd/Ctrl + Z, Cmd/Ctrl + Shift + Z | Undo, redo layout |
@@ -124,6 +125,8 @@ Inside an artboard in edit, the block editor's own shortcuts apply unchanged. Es
 Delete and Backspace do the same with focus on a row of the left panel's artboard list. `[U]`
 
 A selected note counts as a selected artboard for Shift + 2, the arrow keys and Delete; Delete takes a note off the board with no confirmation. Enter on one selected note edits its text, and Esc while its text is edited ends that and keeps the note selected. Tab and Shift + Tab step through artboards only. While the note tool is armed, Esc switches it off (D46). `[U]`
+
+While a name is being typed in an artboard label (D48), keys go to that text field: Enter keeps the name, Esc leaves it as it was, and neither does anything else. `[U]`
 
 Tab order and the Shift + arrow step are `[N]`.
 

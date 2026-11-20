@@ -106,14 +106,14 @@ Unless a criterion says otherwise, the fixture in `architecture.md` is loaded an
 
 ## NEW
 
-- AC-NEW-01 The Add artboard menu lists the four kinds with their descriptions; Template has the submenu described in `screens/AddArtboard.md`. `[U]`
-- AC-NEW-02 After choosing a kind, a placement ghost follows the pointer; Esc cancels and nothing is created. `[U]`
+- AC-NEW-01 With no artboard in edit the inserter's Pages tab begins with "New page", its Patterns tab with "New pattern", and its Templates tab with the group "New template for" and the row "New template part"; with an artboard in edit none of these rows is shown; the left panel has no "Add artboard" control. `[U]`
+- AC-NEW-02 After clicking a New row, a placement ghost follows the pointer; Esc cancels and nothing is created. `[U]`
 - AC-NEW-03 Placing a Page creates a draft page titled "Untitled page" whose template is the theme's `blank` template, or else its `page-no-title` template, when the theme has one; placing a Pattern creates a draft synced pattern titled "Untitled pattern". `[U]`
 - AC-NEW-04 Placing a Template or Template part creates no post until it is saved from Review, where it is listed as "New". `[U]`
 - AC-NEW-05 No control changes an artboard's kind. `[U]`
 - AC-NEW-06 A new template's first tab shows the caution notice about having no draft. `[U]`
 - AC-NEW-07 A new template part is saved with the General area. `[U]`
-- AC-NEW-08 A purpose whose template exists is absent from "New template for" and present under "Already on the site". `[D:AddArtboard]`
+- AC-NEW-08 A purpose whose template exists is absent from "New template for" and that template is listed in the "Templates" group. `[U]`
 
 ## DEL
 
@@ -128,13 +128,20 @@ Unless a criterion says otherwise, the fixture in `architecture.md` is loaded an
 
 - AC-INS-01 Blocks tab lists allowed blocks by category; clicking one inserts it at the insertion point of the artboard in edit. `[U]`
 - AC-INS-02 Patterns tab groups user patterns under "Yours" and others by source, each with the correct usage line. `[U]`
-- AC-INS-03 With no artboard in edit the inserter has no Blocks tab: its tabs are Patterns, Templates and Media, and Patterns is selected. Entering edit brings the Blocks tab back. `[U]`
+- AC-INS-03 With no artboard in edit the inserter has no Blocks tab: its tabs are Pages, Patterns, Templates and Media, and Pages is selected. Entering edit brings the Blocks tab back and takes the Pages tab away. `[U]`
 - AC-INS-04 With no artboard in edit, dragging a pattern, template or part to empty board shows the drop target and opens it as a Desktop artboard at the drop point; clicking one opens it as a Desktop artboard in view that covers no other artboard. `[U]`
 - AC-INS-05 Clicking a pattern inserts its blocks into the artboard in edit; dragging one onto the artboard in edit inserts its blocks where it is dropped; dragging one to empty board while in edit adds nothing. `[U]`
 - AC-INS-06 No inserter row contains a rendered preview or iframe. `[U]`
 - AC-INS-07 With an artboard in edit, clicking a template part row inserts a Template Part block and clicking a template row does nothing. `[U]`
 - AC-INS-08 Media tab lists images with dimensions; with an artboard in edit clicking one inserts an Image block for it and dragging one onto the artboard inserts an Image block where it is dropped; Upload adds a file and lists it. `[U]`
 - AC-INS-09 Search filters all tabs. `[U]`
+- AC-INS-10 The Pages tab lists every page of the site that is not in the trash, each with "On this board" or "Not on this board"; clicking a page opens it as a Desktop artboard in view, and dragging one to empty board shows the drop target and opens it at the drop point; either way it is selected and not in edit. `[U]`
+
+## NAME
+
+- AC-NAME-01 Double-clicking the label of a page or pattern artboard puts its name in a text field; Enter keeps the new name, which shows in the label and the left panel at once and in Review with the line "Title: changed"; saving from Review writes it to the site. `[U]`
+- AC-NAME-02 F2 with one page or pattern artboard selected renames it on its label; Esc leaves the name as it was, an empty name is not kept, and a click elsewhere keeps the new name. `[U]`
+- AC-NAME-03 The label of a page artboard in edit is renamed by a double-click, and edit goes on; a double-click on the label of a template or template part artboard, and F2 with one selected, rename nothing. `[U]`
 
 ## MEDIA
 
@@ -179,7 +186,7 @@ Unless a criterion says otherwise, the fixture in `architecture.md` is loaded an
 
 ## STATE
 
-- AC-STATE-01 A board with no artboards shows the empty state and its button opens the Add artboard menu. `[U]`
+- AC-STATE-01 A board with no artboards shows the empty state and its button turns the inserter on. `[U]`
 - AC-STATE-02 An inserter search with no match shows the "No results" state. `[U]`
 - AC-STATE-03 Review with no changes shows its empty state. `[U]`
 - AC-STATE-04 The Boards screen with no boards shows its empty state. `[U]`
