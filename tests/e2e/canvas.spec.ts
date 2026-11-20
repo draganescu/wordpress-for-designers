@@ -673,7 +673,7 @@ test.describe( 'CANVAS', () => {
         );
     } );
 
-    // An iPad Air in landscape, with fingers only (D50). The touches are
+    // An iPad Air in landscape, with fingers only (D62). The touches are
     // Chromium's emulated ones.
     test.describe( 'by touch', () => {
         test.use( { hasTouch: true, viewport: { width: 1180, height: 820 } } );

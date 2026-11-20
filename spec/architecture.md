@@ -96,7 +96,7 @@ Hiding the panels (D32): `[U]`
 
 Each artboard iframe forwards wheel, pinch (ctrl+wheel) and the board shortcuts to the shell. The shell coalesces them to one viewport update per animation frame. While an artboard is Live, plain wheel scrolling over it scrolls the board as elsewhere; keyboard input goes to the editor except the shortcuts marked "always" below. `[B8]`
 
-Touches inside the Live artboard's document are forwarded as well, and the shell counts those fingers with the ones on the canvas area (D50). The editor still receives them. `[U]`
+Touches inside the Live artboard's document are forwarded as well, and the shell counts those fingers with the ones on the canvas area (D62). The editor still receives them. `[U]`
 
 ## Keyboard map
 
@@ -131,7 +131,7 @@ Tab order and the Shift + arrow step are `[N]`.
 
 ## Touch
 
-On the canvas area (D50): `[U]`
+On the canvas area (D62): `[U]`
 
 | Fingers | Action |
 |---|---|

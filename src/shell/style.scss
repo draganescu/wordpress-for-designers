@@ -204,7 +204,7 @@ html.wp-toolbar:has(.wfd-board-page) {
     overflow: clip;
     background: var(--wpds-color-background-surface-neutral-weak);
     outline: none;
-    // Fingers on the board are the app's (D50): the browser neither scrolls
+    // Fingers on the board are the app's (D62): the browser neither scrolls
     // nor zooms the page with them, in an artboard's document included.
     touch-action: none;
 }
