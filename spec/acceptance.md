@@ -45,6 +45,11 @@ Unless a criterion says otherwise, the fixture in `architecture.md` is loaded an
 - AC-CANVAS-06 Dragging from empty board draws a rectangle and selects every artboard it touches while it is dragged, and one it no longer touches is deselected; Cmd/Ctrl + drag adds to the selection; Esc during the drag removes the rectangle and puts the selection back as it was; while an artboard is in edit the drag leaves edit and selects. `[U]`
 - AC-CANVAS-07 "Tidy up" (H12) puts the seeded board in one row per kind, Pages above Templates above Template parts above Patterns, each row top-aligned and in left-panel order with no two items overlapping; Undo, whose tooltip reads "Undo tidy up, on the board", puts every item back where it was. The control is disabled while an artboard is in edit. `[U]`
 
+- AC-CANVAS-08 On a touch screen, two fingers dragged on the canvas area pan the board by as much as they move, and pinching them zooms the board, no further than its limits, with the board point midway between them staying there; over empty board and over an artboard, which is neither selected nor moved. The page's own zoom and scroll stay as they were. `[U]`
+- AC-CANVAS-09 With an artboard in edit, two fingers inside it pan and pinch the board as elsewhere and it stays in edit; it also stays in edit when the two fingers start on empty board or on another artboard, which is not selected. `[U]`
+- AC-CANVAS-10 One finger: a tap selects an artboard and a tap on empty board clears the selection; dragging an artboard moves it and the move is undoable; dragging from empty board selects the artboards the rectangle touches; a double tap on an artboard edits it. `[U]`; that the drag from empty board selects and does not pan is `[N]`
+- AC-CANVAS-11 A second finger landing while one finger drags an artboard puts the artboard back where it was, and landing while one finger draws the selection rectangle removes the rectangle and puts the selection back as it was; in both cases the two fingers then pan the board. A one-finger drag of an artboard that the browser cancels puts the artboard back in the same way, and nothing is left to undo. `[U]`; the cancelled drag is `[N]`
+
 ## KEY
 
 - AC-KEY-01 Every row of the keyboard map in `architecture.md` does what it says with focus on the board. `[U]`
@@ -82,6 +87,7 @@ Unless a criterion says otherwise, the fixture in `architecture.md` is loaded an
 - AC-PERF-01 During a pan or zoom gesture the app commits no React render (measured with a render counter exposed in test builds); the canvas transform changes each frame. `[B5]`
 - AC-PERF-02 Wheel events from inside artboard iframes produce at most one viewport update per animation frame. `[B8]`
 - AC-PERF-03 Editor scripts and styles are requested once per session, not per artboard. `[B4]`
+- AC-PERF-04 A two-finger pan or pinch commits no React render and changes the canvas transform at most once per animation frame. `[B5]` `[U]`
 
 ## DATA
 

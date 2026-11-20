@@ -76,3 +76,8 @@ The list below is generated from every `[N]` tag in the spec. Until the product 
 | 57 | `decisions.md` | 54 | D49 / A board needs a window at least 1180 px wide, the width of an iPad Air in landscape. / `[U]`; 1180 px as the width of an iPad Air is `[N]` |
 | 58 | `decisions.md` | 55 | D50 / Between 1180 and 1439 px the left panel narrows from 280 px to no less than 240 px and the right panel from 360 px to no less than 300 px, in step with the window. / `[U]`; the panel widths of 240 and 300 px are `[N]` |
 | 59 | `screens/NeedsSpace.md` | 7 | **Source.** [U]; the text under the title and the `dialog` surface are [N] |
+| 60 | `decisions.md` | 68 | D64 / a drag that starts on empty board draws the selection rectangle (D43) / `[U]`; that a one-finger drag from empty board draws the selection rectangle and does not pan is `[N]` |
+| 61 | `architecture.md` | 152 | What one finger pressed is acted on when it moves or lifts, not when it lands, so the first finger of two selects nothing and leaves edit on nothing. `[N]` |
+| 62 | `acceptance.md` | 50 | AC-CANVAS-10 / dragging from empty board selects the artboards the rectangle touches / `[U]`; that the drag from empty board selects and does not pan is `[N]` |
+| 63 | `architecture.md` | 154 | A one-finger drag that the browser cancels (`pointercancel`) is undone in the same way; nothing of it is committed. `[N]` |
+| 64 | `acceptance.md` | 51 | AC-CANVAS-11 / A one-finger drag of an artboard that the browser cancels puts the artboard back in the same way, and nothing is left to undo. / `[U]`; the cancelled drag is `[N]` |

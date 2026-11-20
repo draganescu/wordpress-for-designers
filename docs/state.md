@@ -4,17 +4,17 @@ As of 2026-11-20. This describes what exists; `spec/` says what should exist. Fo
 
 ## Summary
 
-The plugin is built through Milestone 12 of `spec/build-order.md`, plus the decisions taken afterwards (D32 to D63).
+The plugin is built through Milestone 12 of `spec/build-order.md`, plus the decisions taken afterwards (D32 to D64).
 
 | Check | Result |
 |---|---|
-| Acceptance criteria in `spec/acceptance.md` | 150 |
-| End-to-end tests, one per criterion | 150. AC-INS-10 and AC-NAME-01 to 03 (D62, D63) joined on 2026-11-20 on their own branch. AC-SHELL-10 to 13 (D49, D50) and AC-STYLE-11 (D58) joined after the runs described next. On 2026-11-20 the whole suite of 127, AC-SAVE-08 and AC-SAVE-09 (D48) included, was run once from a worktree: 126 pass and AC-PERF-03 fails, as it does from any worktree. On 2026-11-19 the suite of 125 was run three times: all pass after two fixes to the tests. AC-CANVAS-03 used an empty-board point that D42's Keyboard shortcuts control now covers; AC-STYLE-07 (and three like it in `ins.spec.ts` and `style.spec.ts`) counted menu rows once instead of waiting for them, and failed one run in three. AC-PERF-03 still fails on a port-8890 environment from a worktree (see working-notes.md). After D51 to D54, D59 and D60 the suite was run from their worktree on its own site: 128 passed and AC-PERF-03 failed, as it does from any worktree (see working-notes.md). On the browser branch (D55 to D57 and D61) the suite was run from its worktree on its own site before the other decisions were merged in: 133 of 134 passed and AC-PERF-03 failed, as it does from any worktree |
+| Acceptance criteria in `spec/acceptance.md` | 155 |
+| End-to-end tests, one per criterion | 155. AC-INS-10 and AC-NAME-01 to 03 (D62, D63) joined on 2026-11-20 on their own branch. AC-CANVAS-08 to 11 and AC-PERF-04 (touch, D64) were added on 2026-11-20 and run with Chromium's emulated touches. With the naming and inserter work merged in, the suite of 155 was run once from the touch worktree on its own site: 154 passed and AC-PERF-03 failed, as it does from any worktree. They, AC-SHELL-10 to 13 (D49, D50) and AC-STYLE-11 (D58) joined after the runs described next. On 2026-11-20 the whole suite of 127, AC-SAVE-08 and AC-SAVE-09 (D48) included, was run once from a worktree: 126 pass and AC-PERF-03 fails, as it does from any worktree. On 2026-11-19 the suite of 125 was run three times: all pass after two fixes to the tests. AC-CANVAS-03 used an empty-board point that D42's Keyboard shortcuts control now covers; AC-STYLE-07 (and three like it in `ins.spec.ts` and `style.spec.ts`) counted menu rows once instead of waiting for them, and failed one run in three. AC-PERF-03 still fails on a port-8890 environment from a worktree (see working-notes.md). After D51 to D54, D59 and D60 the suite was run from their worktree on its own site: 128 passed and AC-PERF-03 failed, as it does from any worktree (see working-notes.md). On the browser branch (D55 to D57 and D61) the suite was run from its worktree on its own site before the other decisions were merged in: 133 of 134 passed and AC-PERF-03 failed, as it does from any worktree |
 | `npm run lint` | Exits 0, no disabled lines |
 | CI | `.github/workflows/tests.yml` runs lint, build and the suite (Chromium, wp-env) on every pull request; CI retries a failed test twice and reports a pass on retry as flaky |
 | Performance | `.github/workflows/perf.yml` measures every pull request that changes more than documents against its base and fails on a broken budget; see [performance.md](performance.md) |
-| Open questions waiting for the product owner | 35 (`spec/open-questions.md`) |
-| Browsers the suite runs in | Chromium only |
+| Open questions waiting for the product owner | 36 (`spec/open-questions.md`) |
+| Browsers the suite runs in | Chromium only, touch included |
 | WordPress it was built and tested on | 7.2-RC2, Twenty Twenty-Five, PHP 8.2, no Gutenberg plugin |
 
 Not done or not verified:
@@ -23,6 +23,7 @@ Not done or not verified:
 - **Clean activation** was checked on the wp-env site with the test helper plugin and test theme also installed, not on a clean WordPress 7.2 final. No PHP messages and no console errors appeared on the Plugins, Boards and board screens.
 - **`spec/shell-check.md`** (the comparison of each screen with its image) was done at Milestone 2. It has not been redone since, so it does not cover D32 to D40.
 - **Firefox and WebKit** were used only in the second spike, on the recipe for editing below 100%, not on the app as built.
+- **Touch on a real tablet.** The touch gestures (D64) were checked only with Chromium's emulated touches. Safari on an iPad was not available; OQ-42 item (10) names what is unverified there. Fingers on a browser's page while it is browsed are not handled or checked (OQ-42 item 11). A double tap on a label names a page or pattern (D62); that was tried once in emulation and has no test (OQ-42 item 15).
 - **`spikes/`** still holds the throwaway code and evidence of both spikes. The second spike's screenshots and logs were not kept; its scripts, results and notes were.
 
 ## What the plugin does now
@@ -46,8 +47,9 @@ A "Designer" menu in wp-admin lists boards. A board opens full screen: a header,
 - **Styles.** With nothing selected the right panel edits global styles: tokens with use counts, per-block styles, revisions, variations. A change repaints every artboard from one style compile. Frozen copies are included: once the styles have stayed unchanged for 300 ms, each Snapshot artboard is rendered again, one at a time and nearest the centre first, with its old copy shown until the new one is ready (D51; `settledVersion` in `src/styles/use-global-styles.js`, `hasCopy` in `src/shell/app.js`). Only a change of the generated CSS counts as a style change, so saving Styles renews nothing. Site-wide styles are edited from the Tokens tab in WordPress's stock screens: "Edit" on Colors, Typography and Spacing, and the "Background" and "Shadows" rows (D52). The variation menu lists the theme's whole variations after a "Default" item, and reads "Default" for the theme's own styles, a variation's name for exactly that variation and "Custom" otherwise (D54). The Blocks tab lists the elements (links, captions, headings, form controls) in groups before the blocks; an element row opens its stock screen (D53). What the plugin knows of the stock screens (their paths, the element list, which variations are whole ones) is in `src/styles/stock-screens.js` and nowhere else. `@wordpress/global-styles-ui` is pinned to 2.0.0, because later releases need a function WordPress 7.2 does not have, and `@wordpress/global-styles-engine` to 2.2.0: the plugin is built against the WordPress that has shipped (D59; "The stock styles package" in [working-notes.md](working-notes.md)). A stock screen that throws shows WordPress's error notice in its place and the rest of the board keeps working; switching tabs closes it (D60).
 - **Review.** Nothing reaches the site until "Review changes" is used. It lists each changed item and saves the checked ones. "Discard all" reverts everything, and each item's own "Discard" that item alone, after a confirmation. Either is one step that Undo and Redo act on in an artboard, except for a new template or part, which leaves the board for good; only then does the confirmation say that it can't be undone (D48, OQ-32). Artboard positions save on their own, two seconds after a change.
 - **Locks.** Editing a page or pattern takes WordPress's post lock through the plugin's own route and dialog.
+- **Touch.** On the canvas area two fingers pan the board and a pinch zooms it about the point between them, over artboards too, the one in edit included; one finger is the pointer (tap, drag, double tap). The page itself does not zoom or scroll under fingers on the canvas area (D64, in `src/shell/touch-gestures.js`, which `src/shell/use-canvas-interactions.js` gives the board's pointer handlers to; the Live editor hands it its canvas document from `src/artboard-editor/index.js`). The file's header says what to delete when WordPress or the browser brings these gestures. OQ-42 lists the builder's choices and what was not checked on a real tablet. Elsewhere in the shell touch is whatever the browser does.
 - **Panels.** Both side panels can be hidden from the header or with Cmd/Ctrl + \. Resting the pointer on the left or right edge of the canvas area brings a hidden panel back.
-- **Window size.** Below 1180 px wide (an iPad Air in landscape) the whole window shows "Designing needs more space" and nothing of the board can be used; a board already open stays mounted behind it and comes back as it was (D49, `src/shell/space-gate.js` and `_space-gate.scss`). From 1180 to 1439 px the panels are narrower (D50, `src/shell/style.scss`). Touch input is cut while the message invites tablets; it is being added separately.
+- **Window size.** Below 1180 px wide (an iPad Air in landscape) the whole window shows "Designing needs more space" and nothing of the board can be used; a board already open stays mounted behind it and comes back as it was (D49, `src/shell/space-gate.js` and `_space-gate.scss`). From 1180 to 1439 px the panels are narrower (D50, `src/shell/style.scss`). The board's touch gestures are D64 (see Touch above).
 - **Block toolbar.** While a block is selected its toolbar is in the header in place of the document bar's title, at every width, with an arrow at its end that hides it and shows it again; "Back to the board" stays visible beside it. It copies the collapsible block toolbar of WordPress's own header, which is not exported (D50, `src/artboard-editor/collapsible-block-toolbar.js`). A toolbar wider than its room scrolls sideways, as the stock toolbar does.
 
 ## Layout of the repository
@@ -179,6 +181,8 @@ git push --follow-tags
 | Wait before unsaved changes are sent | 1 s; after a failed send 2 s doubling to 60 s | `src/artboard-frame/preview.js` |
 | Note width | 240 board units | `src/shell/notes.js` |
 | Narrowest window a board is shown in | 1180 px | `src/shell/space-gate.js`, and `src/shell/style.scss` for the 1440 px width below which the shell makes room |
+| Movement before a finger's press becomes a drag | 10 px (a mouse: 3 px) | `src/shell/touch-gestures.js` (the mouse's in `src/shell/use-canvas-interactions.js`) |
+| Double tap | Two taps within 400 ms and 30 px | `src/shell/touch-gestures.js` |
 | Images listed in the Media tab | 50 most recent | `src/inserter/use-inserter-data.js` |
 | Pages listed in the Pages tab | All that are not in the trash | `src/inserter/use-inserter-data.js` |
 
@@ -195,7 +199,7 @@ Each of these is recorded in the spec; this is the short list to read first.
 
 ## Open questions
 
-Thirty-five entries are open: OQ-4, OQ-6 to OQ-10, OQ-12 to OQ-34 and OQ-36 to OQ-41 (OQ-39 is kept with the product owner's answer). The missing numbers were decided by the product owner and removed from the file. None leaves something unbuilt; each records a choice made where the spec was silent or could not be met as written. Grouped:
+Thirty-six entries are open: OQ-4, OQ-6 to OQ-10, OQ-12 to OQ-34 and OQ-36 to OQ-42 (OQ-39 is kept with the product owner's answer). The missing numbers were decided by the product owner and removed from the file. None leaves something unbuilt but OQ-42, for touch on a browser's page while it is browsed; each records a choice made where the spec was silent or could not be met as written. Grouped:
 
 | About | Entries |
 |---|---|
@@ -204,7 +208,7 @@ Thirty-five entries are open: OQ-4, OQ-6 to OQ-10, OQ-12 to OQ-34 and OQ-36 to O
 | The allowlist | OQ-14, OQ-17, OQ-20 |
 | Limits inside WordPress | OQ-13, OQ-21 |
 | Two spec statements that conflict | OQ-12, OQ-18, OQ-19 |
-| Builder's choices to confirm | OQ-6, OQ-23, OQ-24, OQ-25, OQ-26, OQ-27, OQ-28, OQ-29, OQ-30, OQ-31, OQ-32, OQ-33, OQ-34, OQ-36, OQ-37, OQ-38, OQ-40, OQ-41 |
+| Builder's choices to confirm | OQ-6, OQ-23, OQ-24, OQ-25, OQ-26, OQ-27, OQ-28, OQ-29, OQ-30, OQ-31, OQ-32, OQ-33, OQ-34, OQ-36, OQ-37, OQ-38, OQ-40, OQ-41, OQ-42 |
 | Build order | OQ-10 |
 
 ## Sensible next steps
@@ -213,6 +217,6 @@ These are suggestions, not decisions.
 
 1. Have the product owner go through the open questions; OQ-17, OQ-19 and OQ-21 change what "done" means.
 2. Activate on a clean WordPress 7.2 final with only a block theme, and confirm there are no PHP notices or console errors.
-3. Run the suite in Firefox and WebKit, at least AC-EDIT-09.
+3. Run the suite in Firefox and WebKit, at least AC-EDIT-09, and try the touch gestures on an iPad in Safari.
 4. Redo `spec/shell-check.md` against the screens as they are now.
 5. Decide what to do with `spikes/`.

@@ -7,7 +7,13 @@ import {
     setViewport,
     frameBox,
     enterEdit,
+    editorFrame,
     artboardOf,
+    fingers,
+    gridOn,
+    pointOn,
+    pointsOn,
+    type Point,
 } from './utils';
 
 test.describe( 'CANVAS', () => {
@@ -16,6 +22,15 @@ test.describe( 'CANVAS', () => {
         fixture = await resetFixture( requestUtils );
         await openBoard( page, fixture.boardId );
     } );
+
+    const frameOf = ( page: Page, id: string ) =>
+        page.locator( `[data-wfd-artboard="${ id }"]` );
+    const selectedArtboards = ( page: Page ) =>
+        page.locator( '.wfd-artboard.is-selected' );
+    const selectedIds = ( page: Page ) =>
+        selectedArtboards( page ).evaluateAll( ( els: HTMLElement[] ) =>
+            els.map( ( el ) => el.dataset.wfdArtboard ).sort()
+        );
 
     test( 'AC-CANVAS-01 Each artboard shows the label "{Name} · {Kind} · {Device}"', async ( {
         page,
@@ -120,7 +135,7 @@ test.describe( 'CANVAS', () => {
         const about = page.locator(
             `[data-wfd-artboard="${ fixture.layout.artboards[ 5 ].id }"]`
         );
-        const selected = page.locator( '.wfd-artboard.is-selected' );
+        const selected = selectedArtboards( page );
         const right = page.locator( '[data-wfd-region="right"]' );
         const position = ( el: HTMLElement ) => ( {
             left: parseFloat( el.style.left ),
@@ -310,19 +325,17 @@ test.describe( 'CANVAS', () => {
     } );
 
     // A point of the canvas area with nothing over it: no artboard, and no
-    // control floating over the board.
-    const emptyBoardPoint = ( page: Page ) =>
-        page.locator( '[data-wfd-region="canvas"]' ).evaluate( ( area ) => {
-            const box = area.getBoundingClientRect();
-            for ( let y = box.bottom - 16; y > box.top; y -= 24 ) {
-                for ( let x = box.left + 16; x < box.right; x += 24 ) {
-                    if ( document.elementFromPoint( x, y ) === area ) {
-                        return { x, y };
-                    }
-                }
-            }
+    // control floating over the board. The lowest one, and of those the
+    // leftmost.
+    const emptyBoardPoint = async ( page: Page ) => {
+        const found = await gridOn( page, null );
+        if ( ! found.length ) {
             throw new Error( 'No empty board in view' );
-        } );
+        }
+        return found.reduce( ( lowest, point ) =>
+            point.y > lowest.y ? point : lowest
+        );
+    };
 
     const zoomAtPointerAndPan = async ( page: Page, x: number, y: number ) => {
         const canvas = page.locator( '[data-wfd-region="canvas"]' );
@@ -366,28 +379,19 @@ test.describe( 'CANVAS', () => {
         const ids = fixture.layout.artboards.map( ( { id } ) => id );
         const heroId = fixture.layout.artboards[ 3 ].id;
         const marquee = page.locator( '[data-wfd-marquee]' );
-        const canvas = page.locator( '[data-wfd-region="canvas"]' );
-        type Point = { x: number; y: number };
-        const frameOf = ( id: string ) =>
-            page.locator( `[data-wfd-artboard="${ id }"]` );
         const emptyPoint = (): Promise< Point > => emptyBoardPoint( page );
-        // A point inside an artboard's frame that is in view.
+        // A point inside an artboard's frame that is in view, near its top
+        // left.
         const pointIn = async ( id: string ): Promise< Point > => {
-            const c = ( await canvas.boundingBox() )!;
-            const f = ( await frameBox( frameOf( id ) ) )!;
-            const left = Math.max( c.x, f.x );
-            const top = Math.max( c.y, f.y );
-            const right = Math.min( c.x + c.width, f.x + f.width );
-            const bottom = Math.min( c.y + c.height, f.y + f.height );
-            expect( right - left ).toBeGreaterThan( 10 );
-            expect( bottom - top ).toBeGreaterThan( 10 );
-            return { x: left + 5, y: top + 5 };
+            const [ first ] = await gridOn( page, id );
+            expect( first ).toBeTruthy();
+            return first;
         };
         // The artboards whose frame a rectangle between two points touches.
         const touchedBy = async ( a: Point, b: Point ) => {
             const touched: string[] = [];
             for ( const id of ids ) {
-                const f = ( await frameBox( frameOf( id ) ) )!;
+                const f = ( await frameBox( frameOf( page, id ) ) )!;
                 if (
                     f.x < Math.max( a.x, b.x ) &&
                     f.x + f.width > Math.min( a.x, b.x ) &&
@@ -399,18 +403,6 @@ test.describe( 'CANVAS', () => {
             }
             return touched.sort();
         };
-        const selectedIds = async () =>
-            (
-                await page
-                    .locator( '.wfd-artboard.is-selected' )
-                    .evaluateAll( ( nodes ) =>
-                        nodes.map(
-                            ( node ) =>
-                                ( node as HTMLElement ).dataset.wfdArtboard
-                        )
-                    )
-            ).sort();
-
         // A plain drag selects what the rectangle touches, as it is dragged.
         const start = await emptyPoint();
         const end = await pointIn( heroId );
@@ -421,7 +413,7 @@ test.describe( 'CANVAS', () => {
         await page.mouse.down();
         await page.mouse.move( end.x, end.y, { steps: 6 } );
         await expect( marquee ).toBeVisible();
-        await expect.poll( selectedIds ).toEqual( touched );
+        await expect.poll( () => selectedIds( page ) ).toEqual( touched );
         const drawn = ( await marquee.boundingBox() )!;
         expect( drawn.x ).toBeCloseTo( Math.min( start.x, end.x ), 0 );
         expect( drawn.y ).toBeCloseTo( Math.min( start.y, end.y ), 0 );
@@ -432,11 +424,11 @@ test.describe( 'CANVAS', () => {
         const near = { x: start.x + 6, y: start.y - 6 };
         expect( await touchedBy( start, near ) ).toEqual( [] );
         await page.mouse.move( near.x, near.y, { steps: 6 } );
-        await expect.poll( selectedIds ).toEqual( [] );
+        await expect.poll( () => selectedIds( page ) ).toEqual( [] );
         await page.mouse.move( end.x, end.y, { steps: 6 } );
         await page.mouse.up();
         await expect( marquee ).toBeHidden();
-        await expect.poll( selectedIds ).toEqual( touched );
+        await expect.poll( () => selectedIds( page ) ).toEqual( touched );
 
         // Cmd/Ctrl + drag keeps what was selected and adds to it.
         const otherId = ids.find( ( id ) => ! touched.includes( id ) )!;
@@ -448,7 +440,7 @@ test.describe( 'CANVAS', () => {
                     .selectArtboard( id ),
             otherId
         );
-        await expect.poll( selectedIds ).toEqual( [ otherId ] );
+        await expect.poll( () => selectedIds( page ) ).toEqual( [ otherId ] );
         await page.keyboard.down( 'ControlOrMeta' );
         await page.mouse.move( start.x, start.y );
         await page.mouse.down();
@@ -456,7 +448,7 @@ test.describe( 'CANVAS', () => {
         await page.mouse.up();
         await page.keyboard.up( 'ControlOrMeta' );
         await expect
-            .poll( selectedIds )
+            .poll( () => selectedIds( page ) )
             .toEqual( [ otherId, ...touched ].sort() );
 
         // Esc cancels the drag: the selection is as it was before it.
@@ -465,21 +457,21 @@ test.describe( 'CANVAS', () => {
         await page.mouse.down();
         await page.mouse.move( near.x, near.y, { steps: 6 } );
         await expect( marquee ).toBeVisible();
-        await expect.poll( selectedIds ).toEqual( [] );
+        await expect.poll( () => selectedIds( page ) ).toEqual( [] );
         await page.keyboard.press( 'Escape' );
         await expect( marquee ).toBeHidden();
-        await expect.poll( selectedIds ).toEqual( kept );
+        await expect.poll( () => selectedIds( page ) ).toEqual( kept );
         await page.mouse.move( end.x, end.y, { steps: 6 } );
         await expect( marquee ).toBeHidden();
         await page.mouse.up();
-        await expect.poll( selectedIds ).toEqual( kept );
+        await expect.poll( () => selectedIds( page ) ).toEqual( kept );
 
         // A plain drag replaces the selection.
         await page.mouse.move( start.x, start.y );
         await page.mouse.down();
         await page.mouse.move( end.x, end.y, { steps: 6 } );
         await page.mouse.up();
-        await expect.poll( selectedIds ).toEqual( touched );
+        await expect.poll( () => selectedIds( page ) ).toEqual( touched );
 
         // While an artboard is in edit, the drag leaves edit and selects.
         await enterEdit( page, heroId );
@@ -494,7 +486,7 @@ test.describe( 'CANVAS', () => {
             0
         );
         await page.mouse.up();
-        await expect.poll( selectedIds ).toEqual( expected );
+        await expect.poll( () => selectedIds( page ) ).toEqual( expected );
     } );
     test( 'AC-CANVAS-03 Cmd/Ctrl + wheel zooms around the pointer and Space + drag pans, also over an artboard', async ( {
         page,
@@ -667,5 +659,356 @@ test.describe( 'CANVAS', () => {
         expect( selected.y + selected.height ).toBeLessThanOrEqual(
             canvas.y + canvas.height
         );
+    } );
+
+    // An iPad Air in landscape, with fingers only (D64). The touches are
+    // Chromium's emulated ones.
+    test.describe( 'by touch', () => {
+        test.use( { hasTouch: true, viewport: { width: 1180, height: 820 } } );
+
+        const shift = ( point: Point, dx: number, dy: number ) => ( {
+            x: point.x + dx,
+            y: point.y + dy,
+        } );
+        const positions = ( page: Page ) =>
+            page
+                .locator( '[data-wfd-artboard]' )
+                .evaluateAll( ( els: HTMLElement[] ) =>
+                    els.map( ( el ) => el.style.left + ',' + el.style.top )
+                );
+        const position = ( page: Page, id: string ) =>
+            frameOf( page, id ).evaluate( ( el: HTMLElement ) => ( {
+                left: parseFloat( el.style.left ),
+                top: parseFloat( el.style.top ),
+            } ) );
+        // The browser's own zoom and scroll of the page.
+        const pageView = ( page: Page ) =>
+            page.evaluate( () => ( {
+                scale: window.visualViewport!.scale,
+                x: window.scrollX + window.visualViewport!.offsetLeft,
+                y: window.scrollY + window.visualViewport!.offsetTop,
+            } ) );
+        const PAGE_AT_REST = { scale: 1, x: 0, y: 0 };
+        // A point on the Index template and one on empty board just right
+        // of it: a rectangle between them touches no other artboard.
+        const besideIndex = async ( page: Page, id: string ) => {
+            const box = ( await frameBox( frameOf( page, id ) ) )!;
+            const onIndex = { x: box.x + box.width - 60, y: box.y + 160 };
+            const onEmpty = { x: box.x + box.width + 15, y: box.y + 100 };
+            expect(
+                await page.evaluate(
+                    ( { x, y } ) =>
+                        document
+                            .elementFromPoint( x, y )
+                            ?.getAttribute( 'data-wfd-region' ),
+                    onEmpty
+                )
+            ).toBe( 'canvas' );
+            return { onIndex, onEmpty };
+        };
+
+        // Two fingers that start on an artboard, or on empty board, pan the
+        // board by (dx, dy).
+        const panWithTwo = async (
+            page: Page,
+            touch: Awaited< ReturnType< typeof fingers > >,
+            id: string | null,
+            dx: number,
+            dy: number
+        ) => {
+            const [ a, b ] = await pointsOn( page, id );
+            const before = await viewportOf( page );
+            await touch.down( a );
+            await touch.down( a, b );
+            await touch.glide(
+                [ a, b ],
+                [ shift( a, dx, dy ), shift( b, dx, dy ) ]
+            );
+            await touch.up();
+            await expect
+                .poll( async () => ( await viewportOf( page ) ).x )
+                .toBeCloseTo( before.x + dx, 0 );
+            const after = await viewportOf( page );
+            expect( after.y ).toBeCloseTo( before.y + dy, 0 );
+            expect( after.zoom ).toBeCloseTo( before.zoom, 5 );
+        };
+
+        // Two fingers that start on an artboard, or on empty board, move
+        // apart or together by a factor about the point midway between them.
+        const pinchWithTwo = async (
+            page: Page,
+            touch: Awaited< ReturnType< typeof fingers > >,
+            id: string | null,
+            factor: number
+        ) => {
+            const box = ( await page
+                .locator( '[data-wfd-region="canvas"]' )
+                .boundingBox() )!;
+            const [ a, b ] = await pointsOn( page, id );
+            const middle = { x: ( a.x + b.x ) / 2, y: ( a.y + b.y ) / 2 };
+            const scaled = ( point: Point ) => ( {
+                x: middle.x + ( point.x - middle.x ) * factor,
+                y: middle.y + ( point.y - middle.y ) * factor,
+            } );
+            const before = await viewportOf( page );
+            const local = { x: middle.x - box.x, y: middle.y - box.y };
+            const anchor = {
+                x: ( local.x - before.x ) / before.zoom,
+                y: ( local.y - before.y ) / before.zoom,
+            };
+            await touch.down( a );
+            await touch.down( a, b );
+            await touch.glide( [ a, b ], [ scaled( a ), scaled( b ) ] );
+            await touch.up();
+            await expect
+                .poll( async () => ( await viewportOf( page ) ).zoom )
+                .toBeCloseTo( before.zoom * factor, 3 );
+            // The board point midway between the fingers has not moved.
+            const after = await viewportOf( page );
+            expect( anchor.x * after.zoom + after.x ).toBeCloseTo( local.x, 0 );
+            expect( anchor.y * after.zoom + after.y ).toBeCloseTo( local.y, 0 );
+        };
+
+        test( 'AC-CANVAS-08 Two fingers pan the board and a pinch zooms it about the point between them, over empty board and over an artboard, and the page does not zoom or scroll', async ( {
+            page,
+        } ) => {
+            const touch = await fingers( page );
+            const index = fixture.layout.artboards[ 0 ];
+            await setViewport( page, { x: 20, y: 20, zoom: 0.25 } );
+            await expect( frameOf( page, index.id ) ).toHaveAttribute(
+                'data-wfd-tier',
+                'preview'
+            );
+            const before = await positions( page );
+
+            // Over empty board.
+            await panWithTwo( page, touch, null, 50, -30 );
+            await pinchWithTwo( page, touch, null, 1.5 );
+            await setViewport( page, { x: 20, y: 20, zoom: 0.25 } );
+
+            // Over an artboard: the board moves, the artboard does not, and
+            // nothing is selected.
+            await panWithTwo( page, touch, index.id, 40, 30 );
+            await pinchWithTwo( page, touch, index.id, 1.4 );
+            await pinchWithTwo( page, touch, index.id, 0.8 );
+            await expect( selectedArtboards( page ) ).toHaveCount( 0 );
+            expect( await positions( page ) ).toEqual( before );
+
+            // A pinch stops at the lowest zoom.
+            await setViewport( page, { x: 20, y: 20, zoom: 0.25 } );
+            const [ a, b ] = await pointsOn( page, null );
+            const middle = { x: ( a.x + b.x ) / 2, y: ( a.y + b.y ) / 2 };
+            const near = ( point: Point ) => ( {
+                x: middle.x + ( point.x - middle.x ) / 25,
+                y: middle.y + ( point.y - middle.y ) / 25,
+            } );
+            await touch.down( a );
+            await touch.down( a, b );
+            await touch.glide( [ a, b ], [ near( a ), near( b ) ], 10 );
+            await touch.up();
+            await expect
+                .poll( async () => ( await viewportOf( page ) ).zoom )
+                .toBeCloseTo( 0.02, 5 );
+
+            expect( await pageView( page ) ).toEqual( PAGE_AT_REST );
+        } );
+
+        test( 'AC-CANVAS-09 Two fingers inside the artboard in edit pan and pinch the board, and it stays in edit; so it does when they start on empty board or on another artboard', async ( {
+            page,
+        } ) => {
+            const touch = await fingers( page );
+            const hero = artboardOf( fixture, 'pattern' );
+            const sign = artboardOf( fixture, 'pattern', 'desktop', 1 );
+            const home = {
+                x: 20 - hero.x * 0.4,
+                y: 150 - hero.y * 0.4,
+                zoom: 0.4,
+            };
+            await setViewport( page, home );
+            await enterEdit( page, hero.id );
+            await editorFrame( page, hero.id ).locator( 'h2' ).waitFor();
+            const live = frameOf( page, hero.id );
+
+            // Inside the Live artboard's own document.
+            await panWithTwo( page, touch, hero.id, 30, 20 );
+            await expect( live ).toHaveAttribute( 'data-wfd-tier', 'live' );
+            await pinchWithTwo( page, touch, hero.id, 1.25 );
+            await expect( live ).toHaveAttribute( 'data-wfd-tier', 'live' );
+
+            // Starting on empty board.
+            await setViewport( page, home );
+            await panWithTwo( page, touch, null, -30, 20 );
+            await expect( live ).toHaveAttribute( 'data-wfd-tier', 'live' );
+
+            // Starting on another artboard.
+            await setViewport( page, home );
+            await panWithTwo( page, touch, sign.id, 30, -20 );
+            await expect( live ).toHaveAttribute( 'data-wfd-tier', 'live' );
+            await expect( frameOf( page, sign.id ) ).not.toHaveClass(
+                /is-selected/
+            );
+
+            expect( await pageView( page ) ).toEqual( PAGE_AT_REST );
+        } );
+
+        test( 'AC-CANVAS-10 One finger: a tap selects and a tap on empty board clears, a drag moves an artboard or draws the selection rectangle, a double tap edits', async ( {
+            page,
+        } ) => {
+            const touch = await fingers( page );
+            const index = fixture.layout.artboards[ 0 ];
+            const hero = artboardOf( fixture, 'pattern' );
+            await setViewport( page, { x: 20, y: 20, zoom: 0.25 } );
+
+            // Tap.
+            const onHero = await pointOn( page, hero.id );
+            const { onIndex, onEmpty } = await besideIndex( page, index.id );
+            await touch.tap( onHero );
+            await expect
+                .poll( () => selectedIds( page ) )
+                .toEqual( [ hero.id ] );
+            // Too far from the last tap to be a double tap with it.
+            expect(
+                Math.hypot( onIndex.x - onHero.x, onIndex.y - onHero.y )
+            ).toBeGreaterThan( 30 );
+            await touch.tap( onIndex );
+            await expect
+                .poll( () => selectedIds( page ) )
+                .toEqual( [ index.id ] );
+            await touch.tap( onEmpty );
+            await expect( selectedArtboards( page ) ).toHaveCount( 0 );
+
+            // Drag an artboard by 60 x 40 screen pixels.
+            const { zoom } = await viewportOf( page );
+            const before = await position( page, hero.id );
+            await touch.down( onHero );
+            await touch.glide( [ onHero ], [ shift( onHero, 60, 40 ) ] );
+            await touch.up();
+            const after = await position( page, hero.id );
+            expect( after.left ).toBeCloseTo( before.left + 60 / zoom, -1 );
+            expect( after.top ).toBeCloseTo( before.top + 40 / zoom, -1 );
+            await expect
+                .poll( () => selectedIds( page ) )
+                .toEqual( [ hero.id ] );
+            const undo = page.locator( '[data-wfd-control="H3"]' );
+            await expect( undo ).toBeEnabled();
+            await undo.click();
+            await expect
+                .poll( async () => ( await position( page, hero.id ) ).left )
+                .toBe( before.left );
+
+            // Drag from empty board onto the Index template.
+            const marquee = page.locator( '[data-wfd-marquee]' );
+            await touch.down( onEmpty );
+            await touch.glide( [ onEmpty ], [ onIndex ] );
+            await expect( marquee ).toBeVisible();
+            await expect
+                .poll( () => selectedIds( page ) )
+                .toEqual( [ index.id ] );
+            await touch.up();
+            await expect( marquee ).toBeHidden();
+            await expect
+                .poll( () => selectedIds( page ) )
+                .toEqual( [ index.id ] );
+
+            // Double tap.
+            await touch.tap( onHero );
+            await touch.tap( onHero );
+            await expect( frameOf( page, hero.id ) ).toHaveAttribute(
+                'data-wfd-tier',
+                'live'
+            );
+        } );
+
+        test( 'AC-CANVAS-11 A second finger undoes a one-finger drag of an artboard or of the selection rectangle, and the two fingers then pan; a drag the browser cancels is undone too', async ( {
+            page,
+        } ) => {
+            const touch = await fingers( page );
+            const index = fixture.layout.artboards[ 0 ];
+            const hero = artboardOf( fixture, 'pattern' );
+            await setViewport( page, { x: 20, y: 20, zoom: 0.25 } );
+            const undo = page.locator( '[data-wfd-control="H3"]' );
+            const onHero = await pointOn( page, hero.id );
+            const { onIndex, onEmpty } = await besideIndex( page, index.id );
+
+            // One finger drags the artboard, then a second one lands.
+            const before = await position( page, hero.id );
+            let dragged = shift( onHero, 40, 30 );
+            await touch.down( onHero );
+            await touch.glide( [ onHero ], [ dragged ] );
+            await expect
+                .poll( async () => ( await position( page, hero.id ) ).left )
+                .toBeGreaterThan( before.left );
+            let view = await viewportOf( page );
+            await touch.down( dragged, onEmpty );
+            await expect
+                .poll( () => position( page, hero.id ) )
+                .toEqual( before );
+            await touch.glide(
+                [ dragged, onEmpty ],
+                [ shift( dragged, 30, 20 ), shift( onEmpty, 30, 20 ) ]
+            );
+            await touch.up();
+            await expect
+                .poll( async () => ( await viewportOf( page ) ).x )
+                .toBeCloseTo( view.x + 30, 0 );
+            expect( ( await viewportOf( page ) ).y ).toBeCloseTo(
+                view.y + 20,
+                0
+            );
+            // Nothing was moved or selected.
+            expect( await position( page, hero.id ) ).toEqual( before );
+            await expect( selectedArtboards( page ) ).toHaveCount( 0 );
+            await expect( undo ).toBeDisabled();
+
+            // One finger draws the rectangle, then a second one lands.
+            await setViewport( page, { x: 20, y: 20, zoom: 0.25 } );
+            await touch.tap( onHero );
+            await expect
+                .poll( () => selectedIds( page ) )
+                .toEqual( [ hero.id ] );
+            const marquee = page.locator( '[data-wfd-marquee]' );
+            await touch.down( onEmpty );
+            await touch.glide( [ onEmpty ], [ onIndex ] );
+            await expect( marquee ).toBeVisible();
+            await expect
+                .poll( () => selectedIds( page ) )
+                .toEqual( [ index.id ] );
+            dragged = onIndex;
+            view = await viewportOf( page );
+            await touch.down( dragged, onHero );
+            await expect( marquee ).toBeHidden();
+            await expect
+                .poll( () => selectedIds( page ) )
+                .toEqual( [ hero.id ] );
+            await touch.glide(
+                [ dragged, onHero ],
+                [ shift( dragged, -30, 20 ), shift( onHero, -30, 20 ) ]
+            );
+            await touch.up();
+            await expect
+                .poll( async () => ( await viewportOf( page ) ).x )
+                .toBeCloseTo( view.x - 30, 0 );
+            await expect
+                .poll( () => selectedIds( page ) )
+                .toEqual( [ hero.id ] );
+            await expect( marquee ).toBeHidden();
+
+            // One finger drags the artboard, then the browser takes the
+            // finger away.
+            await setViewport( page, { x: 20, y: 20, zoom: 0.25 } );
+            await touch.down( onHero );
+            await touch.glide( [ onHero ], [ shift( onHero, 40, 30 ) ] );
+            await expect
+                .poll( async () => ( await position( page, hero.id ) ).left )
+                .toBeGreaterThan( before.left );
+            await touch.cancel();
+            await expect
+                .poll( () => position( page, hero.id ) )
+                .toEqual( before );
+            await expect
+                .poll( () => selectedIds( page ) )
+                .toEqual( [ hero.id ] );
+            await expect( undo ).toBeDisabled();
+        } );
     } );
 } );
