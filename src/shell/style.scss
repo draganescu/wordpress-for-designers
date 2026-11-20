@@ -259,6 +259,11 @@ html.wp-toolbar:has(.wfd-board-page) {
     color: var(--wpds-color-foreground-content-neutral-weak);
 }
 
+// The field a page or pattern is named in (A7, D48).
+.wfd-artboard__name-field {
+    width: var(--wpds-dimension-surface-width-xs);
+}
+
 .wfd-artboard__label.is-live .wfd-artboard__label-text,
 .wfd-artboard__label-uses {
     color: var(--wpds-color-foreground-interactive-brand);
@@ -359,10 +364,6 @@ html.wp-toolbar:has(.wfd-board-page) {
 .wfd-artboard-settings__hint {
     display: block;
     margin: 0 var(--wpds-dimension-padding-lg);
-}
-
-.wfd-add-menu {
-    max-width: var(--wpds-dimension-surface-width-sm);
 }
 
 .wfd-remove-dialog__checkbox {

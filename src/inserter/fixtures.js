@@ -130,7 +130,29 @@ const media = [
     { id: 205, filename: 'margin-notes.png', width: 1600, height: 900 },
 ];
 
-const lists = { blocks, patterns, templates, templateParts, media };
+const pages = [
+    { id: 11, name: 'About', isOnBoard: true },
+    { id: 12, name: 'Become a member', isOnBoard: false },
+    { id: 13, name: 'Colophon', isOnBoard: false },
+];
+
+// The purposes whose template is not among `templates` above.
+const purposes = [
+    { slug: 'archive', label: 'Archive' },
+    { slug: 'search', label: 'Search results' },
+    { slug: 'singular', label: 'Single item' },
+    { slug: null, label: 'Custom' },
+];
+
+const lists = {
+    blocks,
+    pages,
+    purposes,
+    patterns,
+    templates,
+    templateParts,
+    media,
+};
 
 export const fixtures = {
     InserterBlocks: {
@@ -150,6 +172,18 @@ export const fixtures = {
         query: '',
         tab: 'media',
         liveArtboardName: 'Header',
+    },
+    InserterPages: {
+        ...lists,
+        query: '',
+        tab: 'pages',
+        liveArtboardName: null,
+    },
+    AddArtboard: {
+        ...lists,
+        query: '',
+        tab: 'templates',
+        liveArtboardName: null,
     },
     InserterTemplates: {
         ...lists,

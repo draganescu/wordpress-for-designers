@@ -179,6 +179,19 @@ test.describe( 'KEY', () => {
         await page.getByRole( 'button', { name: 'Back to the board' } ).click();
         await expect( selected ).toHaveAttribute( 'data-wfd-artboard', id! );
 
+        // F2 names the selected page or pattern on its label; nothing for a
+        // template.
+        await canvas.focus();
+        await page.keyboard.press( 'F2' );
+        const field = page.locator( '[data-wfd-name-field]' );
+        const kind = await selected.getAttribute( 'data-wfd-kind' );
+        await expect( field ).toHaveCount(
+            kind === 'page' || kind === 'pattern' ? 1 : 0
+        );
+        await page.keyboard.press( 'Escape' );
+        await expect( field ).toHaveCount( 0 );
+        await expect( selected ).toHaveAttribute( 'data-wfd-artboard', id! );
+
         // Esc clears the selection.
         await canvas.focus();
         await page.keyboard.press( 'Escape' );
@@ -298,7 +311,7 @@ test.describe( 'KEY', () => {
             } )
         ).toBeVisible();
         const rows = dialog.locator( '[data-wfd-shortcut-row]' );
-        await expect( rows ).toHaveCount( 19 );
+        await expect( rows ).toHaveCount( 20 );
         await expect(
             rows.filter( { hasText: 'Select artboards' } )
         ).toContainText( 'Drag on empty board' );

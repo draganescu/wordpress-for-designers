@@ -204,11 +204,13 @@ test.describe( 'INS', () => {
         const panel = await openInserter( page, 'Patterns' );
         const list = panel.getByRole( 'tabpanel' );
         const headings = await list.getByRole( 'heading' ).allInnerTexts();
-        expect( headings[ 0 ].toLowerCase() ).toBe( 'yours' );
-        expect( headings[ 1 ].toLowerCase() ).toBe(
+        // The New rows come first (D49).
+        expect( headings[ 0 ].toLowerCase() ).toBe( 'new' );
+        expect( headings[ 1 ].toLowerCase() ).toBe( 'yours' );
+        expect( headings[ 2 ].toLowerCase() ).toBe(
             'theme: twenty twenty-five'
         );
-        expect( headings ).toHaveLength( 2 );
+        expect( headings ).toHaveLength( 3 );
 
         const row = ( name: string ) =>
             list.locator( '.wfd-row', {
@@ -222,26 +224,31 @@ test.describe( 'INS', () => {
         await expect( row( 'Unused' ) ).toContainText( 'Not used yet' );
         // Theme patterns sit in the theme's group, after "Yours".
         const groups = list.locator( 'section' );
-        await expect( groups.nth( 0 ).locator( '.wfd-row' ) ).toHaveCount( 4 );
+        await expect( groups.nth( 1 ).locator( '.wfd-row' ) ).toHaveCount( 4 );
         expect(
-            await groups.nth( 1 ).locator( '.wfd-row' ).count()
+            await groups.nth( 2 ).locator( '.wfd-row' ).count()
         ).toBeGreaterThan( 5 );
         await expect(
-            groups.nth( 0 ).locator( '.wfd-group-heading__suffix' )
+            groups.nth( 1 ).locator( '.wfd-group-heading__suffix' )
         ).toHaveText( '4' );
         await expect( panel ).toContainText(
             'Click or drag to the board to open it as an artboard.'
         );
     } );
 
-    test( 'AC-INS-03 With no artboard in edit the inserter has no Blocks tab: its tabs are Patterns, Templates and Media, and Patterns is selected. Entering edit brings the Blocks tab back', async ( {
+    test( 'AC-INS-03 With no artboard in edit the inserter has no Blocks tab: its tabs are Pages, Patterns, Templates and Media, and Pages is selected. Entering edit brings the Blocks tab back and takes the Pages tab away', async ( {
         page,
     } ) => {
         const panel = await openInserter( page );
         const tabs = panel.getByRole( 'tab' );
-        await expect( tabs ).toHaveText( [ 'Patterns', 'Templates', 'Media' ] );
+        await expect( tabs ).toHaveText( [
+            'Pages',
+            'Patterns',
+            'Templates',
+            'Media',
+        ] );
         await expect(
-            panel.getByRole( 'tab', { name: 'Patterns' } )
+            panel.getByRole( 'tab', { name: 'Pages' } )
         ).toHaveAttribute( 'aria-selected', 'true' );
         await expect( panel ).not.toContainText(
             'Edit an artboard to insert blocks.'
@@ -273,6 +280,7 @@ test.describe( 'INS', () => {
             .getByRole( 'button', { name: 'Back to the board' } )
             .click();
         await expect( editing.getByRole( 'tab' ) ).toHaveText( [
+            'Pages',
             'Patterns',
             'Templates',
             'Media',
@@ -329,7 +337,7 @@ test.describe( 'INS', () => {
         const themeRow = panel
             .getByRole( 'tabpanel' )
             .locator( 'section' )
-            .nth( 1 )
+            .nth( 2 )
             .locator( '.wfd-row' )
             .first();
         const themeName = await themeRow
@@ -655,5 +663,125 @@ test.describe( 'INS', () => {
 
         await search.fill( '' );
         await expect.poll( () => rows.count() ).toBeGreaterThan( 10 );
+    } );
+
+    test( 'AC-INS-10 The Pages tab lists every page of the site that is not in the trash, each with "On this board" or "Not on this board"; clicking a page opens it as a Desktop artboard in view, and dragging one to empty board shows the drop target and opens it at the drop point; either way it is selected and not in edit', async ( {
+        page,
+        requestUtils,
+    } ) => {
+        const make = ( title: string, status: string ) =>
+            requestUtils.rest< { id: number } >( {
+                method: 'POST',
+                path: '/wp/v2/pages',
+                data: { title, status, content: '' },
+            } );
+        const colophon = await make( 'Colophon', 'publish' );
+        await make( 'Zine', 'private' );
+        const gone = await make( 'Gone', 'publish' );
+        await requestUtils.rest( {
+            method: 'DELETE',
+            path: `/wp/v2/pages/${ gone.id }`,
+        } );
+        await page.reload();
+        await page.locator( '[data-wfd-artboard]' ).first().waitFor();
+
+        const panel = await openInserter( page );
+        await expect(
+            panel.getByRole( 'tab', { name: 'Pages' } )
+        ).toHaveAttribute( 'aria-selected', 'true' );
+        await expect( panel ).toContainText(
+            'Click or drag to the board to open it as an artboard.'
+        );
+        const group = panel
+            .getByRole( 'tabpanel' )
+            .locator( '.wfd-inserter__group' )
+            .nth( 1 );
+        await expect( group.locator( '.wfd-group-heading' ) ).toHaveText(
+            /Pages\s*4/
+        );
+        // By title; published, draft and private pages, not the trashed one.
+        await expect( group.locator( '.wfd-row__name' ) ).toHaveText( [
+            'About',
+            'Become a member',
+            'Colophon',
+            'Zine',
+        ] );
+        await expect( group.locator( '.wfd-row__second-line' ) ).toHaveText( [
+            'On this board',
+            'On this board',
+            'Not on this board',
+            'Not on this board',
+        ] );
+        const rowOf = ( name: string ) =>
+            group.locator( '.wfd-row', {
+                has: page.locator( '.wfd-row__name', {
+                    hasText: new RegExp( `^${ name }$` ),
+                } ),
+            } );
+
+        // A click: in view, covering nothing, selected, not in edit.
+        await rowOf( 'Colophon' ).click();
+        await expect( page.locator( '[data-wfd-artboard]' ) ).toHaveCount( 10 );
+        const clicked = page.locator( '[data-wfd-artboard]' ).last();
+        await expect( clicked ).toHaveAttribute( 'data-wfd-kind', 'page' );
+        await expect( clicked ).toHaveAttribute( 'data-wfd-device', 'desktop' );
+        await expect( clicked ).toHaveClass( /is-selected/ );
+        await expect( clicked.locator( '.wfd-artboard__label' ) ).toHaveText(
+            'Colophon · Page · Desktop'
+        );
+        await expect( page.locator( '[data-wfd-tier="live"]' ) ).toHaveCount(
+            0
+        );
+        await page.waitForTimeout( 300 );
+        const clickedId =
+            ( await clicked.getAttribute( 'data-wfd-artboard' ) )!;
+        expect( await overlapsAnother( page, clickedId ) ).toBe( false );
+        await expect(
+            clicked.locator( '.wfd-artboard__frame' )
+        ).toBeInViewport();
+        await expect( rowOf( 'Colophon' ) ).toContainText( 'On this board' );
+
+        // A drag: the drop target, then the artboard at the drop point.
+        await page.evaluate( () =>
+            ( window as any ).wfdTest.viewport.panBy( 0, -1200 )
+        );
+        await page.waitForTimeout( 300 );
+        const { box, target } = await dropOnEmptyBoard( page, rowOf( 'Zine' ) );
+        const outline = page.locator( '[data-wfd-placement]' );
+        await expect( outline ).toBeVisible();
+        await expect( outline ).toContainText( 'Zine · Page · Desktop' );
+        await expect( outline ).toContainText( 'Drop to open as an artboard' );
+        await page.mouse.up();
+        await expect( outline ).toHaveCount( 0 );
+        await expect( page.locator( '[data-wfd-artboard]' ) ).toHaveCount( 11 );
+        const dropped = page.locator( '[data-wfd-artboard]' ).last();
+        await expect( dropped ).toHaveAttribute( 'data-wfd-kind', 'page' );
+        await expect( dropped ).toHaveClass( /is-selected/ );
+        await expect( page.locator( '[data-wfd-tier="live"]' ) ).toHaveCount(
+            0
+        );
+        const frame = ( await dropped
+            .locator( '.wfd-artboard__frame' )
+            .boundingBox() )!;
+        expect( Math.abs( frame.x - ( box.x + target.x ) ) ).toBeLessThan( 3 );
+        expect( Math.abs( frame.y - ( box.y + target.y ) ) ).toBeLessThan( 3 );
+
+        // Both are in the board's saved layout.
+        await expect
+            .poll(
+                async () => {
+                    const board = await requestUtils.rest< {
+                        layout: { artboards: { entityId: unknown }[] };
+                    } >( {
+                        path: `/wp/v2/wfd-boards/${ fixture.boardId }`,
+                        params: { context: 'edit' },
+                    } );
+                    return board.layout.artboards.filter(
+                        ( a ) => a.entityId === colophon.id
+                    ).length;
+                },
+                { timeout: 6000 }
+            )
+            .toBe( 1 );
     } );
 } );

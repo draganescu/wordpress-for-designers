@@ -81,14 +81,13 @@ export function ArtboardsPanel( {
     onEdit,
     onEditNote,
     onRemove,
-    addMenu,
 } ) {
     const groups = groupArtboards( artboards );
     return (
         <div className="wfd-artboards-panel" data-wfd-panel="artboards">
-            <PanelHeader title={ __( 'Artboards', 'wordpress-for-designers' ) }>
-                { addMenu }
-            </PanelHeader>
+            <PanelHeader
+                title={ __( 'Artboards', 'wordpress-for-designers' ) }
+            />
             { ! groups.length && (
                 <WeakText className="wfd-artboards-panel__empty">
                     { __( 'No artboards yet.', 'wordpress-for-designers' ) }

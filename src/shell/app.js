@@ -32,7 +32,6 @@ import { useStylesPanel } from '../styles/use-styles-panel';
 import { ReviewDrawer } from '../review/review-drawer';
 import { useReview } from '../review/use-review';
 import { brandColor, highlightCss, useUsageIndex } from '../usage-index';
-import { AddArtboardMenu } from './add-artboard-menu';
 import {
     ArtboardsPanel,
     ListViewPanel,
@@ -254,6 +253,8 @@ export function App() {
     const [ isRightHidden, setRightHidden ] = useState( false );
     const togglePanels = useRef( null );
     const [ isShortcutsOpen, setShortcutsOpen ] = useState( false );
+    // The artboard whose page or pattern is being named on its label (D48).
+    const [ renamingId, setRenamingId ] = useState( null );
     const [ inserterQuery, setInserterQuery ] = useState( '' );
     const [ inserterTab, setInserterTab ] = useState( 'blocks' );
     const [ selectedToken, setSelectedToken ] = useState( null );
@@ -293,6 +294,7 @@ export function App() {
         getNames: () => artboardsRef.current,
         onEdit,
         onLeaveEdit: editing.leaveEdit,
+        onRename: ( id ) => startRename( id ),
         onTogglePanels: () => togglePanels.current?.(),
         onToggleShortcuts: () => setShortcutsOpen( ( isOpen ) => ! isOpen ),
         onRemoveMany: ( ids ) => removeMany( ids ),
@@ -377,7 +379,41 @@ export function App() {
     const remove = useRemoval();
     const [ ghost, setGhost ] = useState( null );
     const { removeArtboards } = useDispatch( boardStore );
-    const { invalidateResolution } = useDispatch( coreStore );
+    const { invalidateResolution, editEntityRecord } = useDispatch( coreStore );
+
+    // Only a page or a pattern that has loaded is named on the board.
+    const startRename = ( id ) => {
+        const artboard = artboards.find( ( a ) => a.id === id );
+        if (
+            ! artboard ||
+            artboard.status !== 'ready' ||
+            ( artboard.kind !== 'page' && artboard.kind !== 'pattern' )
+        ) {
+            return;
+        }
+        if ( liveId !== id && selectedId !== id ) {
+            selectArtboard( id );
+        }
+        canvas.reveal( id );
+        setRenamingId( id );
+    };
+    // The new name is an unsaved edit of the page or pattern; an empty name
+    // is not kept.
+    const endRename = ( artboard, name, refocus ) => {
+        setRenamingId( null );
+        const next = name?.trim();
+        if ( next && next !== artboard.name ) {
+            editEntityRecord(
+                'postType',
+                KINDS[ artboard.kind ].postType,
+                artboard.entityId,
+                { title: next }
+            );
+        }
+        if ( refocus ) {
+            areaRef.current?.focus( { preventScroll: true } );
+        }
+    };
 
     // An artboard whose entity no longer exists leaves the board.
     const missingIds = artboards
@@ -549,9 +585,6 @@ export function App() {
             />
         );
     }
-    const addMenu = (
-        <AddArtboardMenu { ...placing.menu } onPick={ placing.arm } />
-    );
     const pointOf = ( event ) => {
         const box = areaRef.current.getBoundingClientRect();
         return viewport.toBoard( {
@@ -571,6 +604,9 @@ export function App() {
                 onTabChange={ setInserterTab }
                 liveArtboardName={ live?.name ?? null }
                 blocks={ inserterData.blocks }
+                pages={ inserterData.pages }
+                purposes={ placing.purposes }
+                onNewClick={ placing.arm }
                 patterns={ inserterData.patterns }
                 templates={ inserterData.templates }
                 templateParts={ inserterData.templateParts }
@@ -624,7 +660,6 @@ export function App() {
                         focusBoard();
                     }
                 } }
-                addMenu={ addMenu }
             />
         );
     }
@@ -905,13 +940,10 @@ export function App() {
                             emptyState={
                                 artboards.length || placing.placement ? null : (
                                     <EmptyBoard
-                                        addMenu={
-                                            <AddArtboardMenu
-                                                trigger="button"
-                                                { ...placing.menu }
-                                                onPick={ placing.arm }
-                                            />
-                                        }
+                                        onAdd={ () => {
+                                            setLeftHidden( false );
+                                            setInserterOpen( true );
+                                        } }
                                     />
                                 )
                             }
@@ -1079,6 +1111,12 @@ export function App() {
                                                 artboard.id,
                                                 device
                                             )
+                                        }
+                                        isRenaming={
+                                            renamingId === artboard.id
+                                        }
+                                        onRename={ ( name, refocus ) =>
+                                            endRename( artboard, name, refocus )
                                         }
                                     >
                                         { content }

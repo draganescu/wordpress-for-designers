@@ -11,6 +11,15 @@ import { recordName } from '../shell/use-artboards';
 
 const ALL = { per_page: -1 };
 const USER_PATTERNS = { per_page: -1, status: 'publish,draft' };
+// Every page that is not in the trash, by title. Only what a row shows is
+// asked for; an artboard requests its page in full.
+const PAGES = {
+    per_page: -1,
+    status: 'publish,future,draft,pending,private',
+    orderby: 'title',
+    order: 'asc',
+    _fields: 'id,title,slug,status',
+};
 export const MEDIA_QUERY = {
     media_type: 'image',
     per_page: 50,
@@ -46,6 +55,27 @@ export function useInserterData( allowedBlocks ) {
     const data = useSelect( ( select ) => {
         const core = select( coreStore );
         return {
+            pages: core.getEntityRecords( 'postType', 'page', PAGES ),
+            // Names not saved yet (D48) show here as everywhere else. Kept
+            // as a string so that it compares equal while nothing changes.
+            titleEdits: JSON.stringify(
+                select( boardStore )
+                    .getArtboards()
+                    .filter(
+                        ( artboard ) =>
+                            artboard.kind === 'page' ||
+                            artboard.kind === 'pattern'
+                    )
+                    .map( ( artboard ) => [
+                        `${ artboard.kind }:${ artboard.entityId }`,
+                        core.getEntityRecordEdits(
+                            'postType',
+                            artboard.kind === 'page' ? 'page' : 'wp_block',
+                            artboard.entityId
+                        )?.title,
+                    ] )
+                    .filter( ( [ , title ] ) => typeof title === 'string' )
+            ),
             templates: core.getEntityRecords( 'postType', 'wp_template', ALL ),
             parts: core.getEntityRecords( 'postType', 'wp_template_part', ALL ),
             userPatterns: core.getEntityRecords(
@@ -100,9 +130,14 @@ export function useInserterData( allowedBlocks ) {
                     String( artboard.entityId ) === String( id )
             );
 
+        const titleEdits = new Map( JSON.parse( data.titleEdits ) );
+        const nameOf = ( kind, record ) =>
+            titleEdits.get( `${ kind }:${ record.id }` ) ??
+            recordName( record );
+
         const user = ( data.userPatterns ?? [] ).map( ( pattern ) => ( {
             id: `user:${ pattern.id }`,
-            name: recordName( pattern ),
+            name: nameOf( 'pattern', pattern ),
             isOnBoard: onBoard( 'pattern', pattern.id ),
             usedIn: namesContaining( containers, `"ref":${ pattern.id }` ),
             record: pattern,
@@ -139,6 +174,11 @@ export function useInserterData( allowedBlocks ) {
 
         return {
             blocks,
+            pages: ( data.pages ?? [] ).map( ( page ) => ( {
+                id: page.id,
+                name: nameOf( 'page', page ),
+                isOnBoard: onBoard( 'page', page.id ),
+            } ) ),
             patterns,
             templates: templates.map( ( template ) => ( {
                 id: template.id,

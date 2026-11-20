@@ -130,6 +130,7 @@ What to do differently:
 - **Key events from the canvas iframe arrive late.** WordPress re-dispatches them on the iframe element after the editor has handled them. Whether a popover was open has to be recorded at capture time, inside the canvas document as well as the top one, or Esc cannot tell "close the popover" from "leave edit".
 - **Pointer capture retargets `dblclick`** to the capturing element. The canvas uses `elementFromPoint` to find what was double-clicked. For the same reason a button inside an artboard (Retry) needs the canvas to skip capture on it.
 - **`wp-polyfill`** must be enqueued in the parent page, or every artboard iframe requests it again (AC-PERF-03).
+- **A text field on the board has to keep its keys to itself.** The canvas area and the document both listen for keys (board shortcuts; Esc and undo while in edit). The name field of an artboard label (D48) stops every key event from spreading, or Esc in it would also leave edit. A double-click inside a field on the board is ignored by the canvas for the same reason.
 - **`defaultTemplateTypes`** in the editor settings is an object keyed by slug, not an array.
 - **Theme patterns have no `source` field.**
 - **`MediaUploadCheck`** renders nothing when the `mediaUpload` setting is missing, which it is here (OQ-14). `MediaUpload` is used on its own.
@@ -163,6 +164,8 @@ What to do differently:
 - Dragging is done with real `page.mouse` moves in several steps; one jump does not start a drag.
 - After typing `/` for the slash inserter, type slowly and wait for the option before pressing Enter.
 - Click an artboard in the part of its frame that is inside the canvas area. Helpers compute that point.
+- A new artboard is armed with the `armNew` helper (inserter tab, New row). It turns the inserter off again unless told to keep it, so the left panel is as the test found it.
+- After leaving edit the board can be zoomed in on one artboard; press Shift + 1 before clicking a label or frame of another.
 
 ## Paths taken
 

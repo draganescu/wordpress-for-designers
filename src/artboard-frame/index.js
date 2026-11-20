@@ -3,17 +3,23 @@
  * content of its tier.
  */
 import { __, _x } from '@wordpress/i18n';
-import { createContext, useState } from '@wordpress/element';
+import {
+    createContext,
+    useCallback,
+    useRef,
+    useState,
+} from '@wordpress/element';
 import { chevronDown } from '@wordpress/icons';
 import {
     Button,
     Icon,
+    InputControl,
     Menu,
     Notice,
     Text,
     VisuallyHidden,
 } from '@wordpress/ui';
-import { DEVICES, DEVICE_ORDER } from '../shell/constants';
+import { DEVICES, DEVICE_ORDER, KINDS } from '../shell/constants';
 import { artboardLabel, liveLabel, usesText } from '../shell/labels';
 import { countRender } from '../shell/test-hooks';
 
@@ -83,12 +89,84 @@ export function ArtboardError( { kind, onRetry } ) {
     );
 }
 
-function Label( { artboard, isLive, uses, isChanged, onDeviceChange } ) {
+/**
+ * A7: the text field a page or pattern is named in, in place of the name in
+ * its artboard's label (D48). Enter or a click elsewhere keeps the name, Esc
+ * leaves it as it was.
+ *
+ * @param {Object}   props
+ * @param {string}   props.name   The name as it is.
+ * @param {Function} props.onDone Called once, with the name typed and whether
+ *                                the board takes focus back, or with null
+ *                                when the name is left as it was.
+ */
+function NameField( { name, onDone } ) {
+    const [ value, setValue ] = useState( name );
+    const isDone = useRef( false );
+    const finish = ( result, refocus ) => {
+        if ( ! isDone.current ) {
+            isDone.current = true;
+            onDone( result, refocus );
+        }
+    };
+    const select = useCallback( ( input ) => {
+        if ( input ) {
+            input.focus( { preventScroll: true } );
+            input.select();
+        }
+    }, [] );
+    return (
+        <InputControl
+            ref={ select }
+            className="wfd-artboard__name-field"
+            data-wfd-name-field
+            size="compact"
+            label={ __( 'Name', 'wordpress-for-designers' ) }
+            hideLabelFromVision
+            value={ value }
+            onChange={ ( event ) => setValue( event.target.value ) }
+            onBlur={ () => finish( value, false ) }
+            onKeyDown={ ( event ) => {
+                // Keys typed here are the field's own: none reaches the
+                // board or the editor.
+                event.stopPropagation();
+                if ( event.key === 'Enter' ) {
+                    event.preventDefault();
+                    finish( value, true );
+                } else if ( event.key === 'Escape' ) {
+                    event.preventDefault();
+                    finish( null, true );
+                }
+            } }
+        />
+    );
+}
+
+function Label( {
+    artboard,
+    isLive,
+    uses,
+    isChanged,
+    onDeviceChange,
+    isRenaming,
+    onRename,
+} ) {
+    const separator = _x(
+        '·',
+        'separator between parts of an artboard label',
+        'wordpress-for-designers'
+    );
+    const nameField = isRenaming && (
+        <NameField name={ artboard.name } onDone={ onRename } />
+    );
     if ( isLive ) {
         return (
             <div className="wfd-artboard__label is-live">
+                { nameField }
                 <Text variant="body-sm" className="wfd-artboard__label-text">
-                    { liveLabel( artboard ) }
+                    { isRenaming
+                        ? separator + ' ' + KINDS[ artboard.kind ].label
+                        : liveLabel( artboard ) }
                 </Text>
                 <Menu.Root>
                     <Menu.Trigger
@@ -132,11 +210,22 @@ function Label( { artboard, isLive, uses, isChanged, onDeviceChange } ) {
             </div>
         );
     }
-    const separator = _x(
-        '·',
-        'separator between parts of an artboard label',
-        'wordpress-for-designers'
-    );
+    if ( isRenaming ) {
+        return (
+            <div className="wfd-artboard__label">
+                { nameField }
+                <Text variant="body-sm" className="wfd-artboard__label-text">
+                    { separator +
+                        ' ' +
+                        KINDS[ artboard.kind ].label +
+                        ' ' +
+                        separator +
+                        ' ' +
+                        DEVICES[ artboard.device ].label }
+                </Text>
+            </div>
+        );
+    }
     let text = artboardLabel( artboard );
     let suffix = null;
     if ( uses ) {
@@ -178,6 +267,8 @@ function Label( { artboard, isLive, uses, isChanged, onDeviceChange } ) {
  * @param {number}   props.uses           Uses of the selected token, if any.
  * @param {boolean}  props.isChanged      Whether Review marks it as changed.
  * @param {Function} props.onDeviceChange Changes the device from the Live label.
+ * @param {boolean}  props.isRenaming     Whether its name is being typed in the label.
+ * @param {Function} props.onRename       Ends renaming: see NameField.
  * @param {Object}   props.frameProps     Pointer handlers for the frame.
  * @param {boolean}  props.hasError       Whether the error state is shown.
  * @param {boolean}  props.isStale        Whether its Snapshot is out of date.
@@ -191,6 +282,8 @@ export function ArtboardFrame( {
     uses,
     isChanged,
     onDeviceChange,
+    isRenaming,
+    onRename,
     frameProps,
     hasError,
     isStale,
@@ -222,6 +315,8 @@ export function ArtboardFrame( {
                 uses={ uses }
                 isChanged={ isChanged }
                 onDeviceChange={ onDeviceChange }
+                isRenaming={ isRenaming }
+                onRename={ onRename }
             />
             <div
                 className={

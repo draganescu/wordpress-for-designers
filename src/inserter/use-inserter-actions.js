@@ -21,6 +21,7 @@ import { MEDIA_QUERY } from './use-inserter-data';
 
 const KIND_OF = {
     media: 'media',
+    page: 'page',
     pattern: 'pattern',
     template: 'template',
     'template-part': 'template-part',

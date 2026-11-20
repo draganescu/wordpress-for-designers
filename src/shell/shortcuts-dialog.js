@@ -90,6 +90,13 @@ function groups() {
                 ],
                 [
                     __(
+                        'Rename the selected page or pattern',
+                        'wordpress-for-designers'
+                    ),
+                    [ __( 'F2', 'wordpress-for-designers' ) ],
+                ],
+                [
+                    __(
                         'Move the selected artboards',
                         'wordpress-for-designers'
                     ),

@@ -296,3 +296,41 @@ export function artboardOf(
         ( a ) => a.kind === kind && a.device === device
     )[ nth ];
 }
+
+/**
+ * Arms placement of a new artboard from a New row of the inserter (D49). The
+ * inserter is turned on for it and, unless asked to stay, off again.
+ *
+ * @param page             The page.
+ * @param tab              The inserter tab the row is in.
+ * @param row              The row's name, for example "New page".
+ * @param options
+ * @param options.keepOpen Leave the inserter on.
+ */
+export async function armNew(
+    page: Page,
+    tab: 'Pages' | 'Patterns' | 'Templates',
+    row: string,
+    { keepOpen = false } = {}
+) {
+    const header = page.locator( '[data-wfd-region="header"]' );
+    const panel = page.locator( '.wfd-inserter' );
+    const wasOpen = ( await panel.count() ) > 0;
+    if ( ! wasOpen ) {
+        await header
+            .getByRole( 'button', { name: 'Block inserter', exact: true } )
+            .click();
+    }
+    await panel.getByRole( 'tab', { name: tab } ).click();
+    await panel
+        .locator( '[data-wfd-new]' )
+        .filter( { hasText: row } )
+        .first()
+        .click();
+    await page.locator( '[data-wfd-placer]' ).waitFor( { state: 'attached' } );
+    if ( ! wasOpen && ! keepOpen ) {
+        await header
+            .getByRole( 'button', { name: 'Close block inserter' } )
+            .click();
+    }
+}

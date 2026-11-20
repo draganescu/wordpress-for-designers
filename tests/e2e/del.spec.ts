@@ -132,7 +132,7 @@ test.describe( 'DEL', () => {
             )
             .toBe( 'trash' );
 
-        // A user-made template: make one, open it from the menu, delete it.
+        // A user-made template: make one, open it from the inserter, delete it.
         await requestUtils.rest( {
             method: 'POST',
             path: '/wp/v2/templates',
@@ -145,22 +145,21 @@ test.describe( 'DEL', () => {
         } );
         await page.reload();
         await page.locator( '[data-wfd-artboard]' ).first().waitFor();
-        await page.locator( '[data-wfd-control="L2"]' ).click();
-        await page
-            .getByRole( 'menuitem', { name: 'Template', exact: true } )
+        const header = page.locator( '[data-wfd-region="header"]' );
+        await header
+            .getByRole( 'button', { name: 'Block inserter', exact: true } )
             .click();
-        await page.getByRole( 'menuitem', { name: /Made by a user/ } ).click();
-        const canvas = ( await page
-            .locator( '[data-wfd-region="canvas"]' )
-            .boundingBox() )!;
-        await page.mouse.move( canvas.x + 380, canvas.y + 580 );
-        await page.mouse.move( canvas.x + 400, canvas.y + 600, { steps: 2 } );
-        await page.mouse.down();
-        await page.mouse.up();
-        const live = page.locator( '[data-wfd-tier="live"]' );
-        await expect( live ).toHaveAttribute( 'data-wfd-kind', 'template' );
-        const madeId = ( await live.getAttribute( 'data-wfd-artboard' ) )!;
-        await page.getByRole( 'button', { name: 'Back to the board' } ).click();
+        const inserter = page.locator( '.wfd-inserter' );
+        await inserter.getByRole( 'tab', { name: 'Templates' } ).click();
+        await inserter
+            .locator( '.wfd-row', { hasText: 'Made by a user' } )
+            .click();
+        const made = page.locator( '[data-wfd-artboard].is-selected' );
+        await expect( made ).toHaveAttribute( 'data-wfd-kind', 'template' );
+        const madeId = ( await made.getAttribute( 'data-wfd-artboard' ) )!;
+        await header
+            .getByRole( 'button', { name: 'Close block inserter' } )
+            .click();
         dialog = await pressDelete( page, madeId );
         await expect( dialog ).toContainText(
             'The template stays on your site unless you also delete it.'

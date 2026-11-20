@@ -8,6 +8,7 @@ import {
     artboardOf,
     viewportOf,
     setViewport,
+    armNew,
     type Fixture,
 } from './utils';
 
@@ -91,11 +92,7 @@ test.describe( 'SAVE', () => {
         await expect( review( page ) ).toHaveText( 'Review 2 changes' );
 
         // A new template.
-        await page.locator( '[data-wfd-control="L2"]' ).click();
-        await page
-            .getByRole( 'menuitem', { name: 'Template', exact: true } )
-            .click();
-        await page.getByRole( 'menuitem', { name: 'Single item' } ).click();
+        await armNew( page, 'Templates', 'Single item' );
         const canvas = ( await page
             .locator( '[data-wfd-region="canvas"]' )
             .boundingBox() )!;
@@ -109,10 +106,7 @@ test.describe( 'SAVE', () => {
         await expect( review( page ) ).toHaveText( 'Review 3 changes' );
         // A new part.
         await page.getByRole( 'button', { name: 'Back to the board' } ).click();
-        await page.locator( '[data-wfd-control="L2"]' ).click();
-        await page
-            .getByRole( 'menuitem', { name: 'Template part', exact: true } )
-            .click();
+        await armNew( page, 'Templates', 'New template part' );
         await page.mouse.move( canvas.x + 480, canvas.y + 700 );
         await page.mouse.move( canvas.x + 500, canvas.y + 720, { steps: 2 } );
         await page.mouse.down();
@@ -390,10 +384,7 @@ test.describe( 'SAVE', () => {
         const header = artboardOf( fixture, 'template-part' );
         await editText( page, header.id, 'Fixture header text', ' doomed' );
         await changeStyles( page );
-        await page.locator( '[data-wfd-control="L2"]' ).click();
-        await page
-            .getByRole( 'menuitem', { name: 'Template part', exact: true } )
-            .click();
+        await armNew( page, 'Templates', 'New template part' );
         const canvas = ( await page
             .locator( '[data-wfd-region="canvas"]' )
             .boundingBox() )!;

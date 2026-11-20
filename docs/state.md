@@ -1,18 +1,18 @@
 # Current state
 
-As of 2026-11-19. This describes what exists; `spec/` says what should exist. For how the work was done and what to watch for, see [working-notes.md](working-notes.md).
+As of 2026-11-20. This describes what exists; `spec/` says what should exist. For how the work was done and what to watch for, see [working-notes.md](working-notes.md).
 
 ## Summary
 
-The plugin is built through Milestone 12 of `spec/build-order.md`, plus the decisions taken afterwards (D32 to D46).
+The plugin is built through Milestone 12 of `spec/build-order.md`, plus the decisions taken afterwards (D32 to D49).
 
 | Check | Result |
 |---|---|
-| Acceptance criteria in `spec/acceptance.md` | 125 |
-| End-to-end tests, one per criterion | 125. On 2026-11-19 the whole suite was run three times: all pass after two fixes to the tests. AC-CANVAS-03 used an empty-board point that D42's Keyboard shortcuts control now covers; AC-STYLE-07 (and three like it in `ins.spec.ts` and `style.spec.ts`) counted menu rows once instead of waiting for them, and failed one run in three. AC-PERF-03 still fails on a port-8890 environment from a worktree (see working-notes.md) |
+| Acceptance criteria in `spec/acceptance.md` | 129 |
+| End-to-end tests, one per criterion | 129. On 2026-11-19 the whole suite was run three times: all pass after two fixes to the tests. AC-CANVAS-03 used an empty-board point that D42's Keyboard shortcuts control now covers; AC-STYLE-07 (and three like it in `ins.spec.ts` and `style.spec.ts`) counted menu rows once instead of waiting for them, and failed one run in three. AC-PERF-03 still fails on a port-8890 environment from a worktree (see working-notes.md) |
 | `npm run lint` | Exits 0, no disabled lines |
 | CI | `.github/workflows/tests.yml` runs lint, build and the suite (Chromium, wp-env) on every pull request; CI retries a failed test twice and reports a pass on retry as flaky |
-| Open questions waiting for the product owner | 26 (`spec/open-questions.md`) |
+| Open questions waiting for the product owner | 28 (`spec/open-questions.md`) |
 | Browsers the suite runs in | Chromium only |
 | WordPress it was built and tested on | 7.2-RC2, Twenty Twenty-Five, PHP 8.2, no Gutenberg plugin |
 
@@ -37,8 +37,9 @@ A "Designer" menu in wp-admin lists boards. A board opens full screen: a header,
 - **Notes.** "Add note" in the header arms the note tool; the next click on the board places a note there and puts the caret in it (D46). Notes are plain text in Yellow, Green, Blue or Pink, 240 board units wide, drawn above every artboard. They are selected, moved and multi-selected like artboards, Delete removes them with no dialog, double-click or Enter edits the text. They are listed under "Notes" in the left panel and saved in the board's layout (`notes`) by the same 2-second autosave, typing included; they never reach Review. The note itself and its right-panel settings are in `src/shell/notes.js`; the store keeps `notes`, `editingNoteId` and `isNoteToolArmed`. `getSelectedId` gives an artboard only; `getSelectedNoteId` gives a note.
 - **Dragging blocks.** A block that is not being edited moves when pressed anywhere, its text included, and dragged; a click puts the caret in it and dragging then selects text (D40). This is the behaviour of Gutenberg pull request 86911, added as a layer in `src/artboard-editor/drag-anywhere.js`; the top of that file says how to remove it once WordPress has the behaviour.
 - **Pages** are shown inside their template, which is locked. A page's template can be changed from the right panel.
-- **Creating.** The Add artboard menu places a new page, pattern, template or template part. Pages and patterns are created as drafts at once; templates and parts exist only in the session until saved.
-- **Inserter.** Blocks, Patterns, Templates and Media tabs. A row does the same thing clicked or dragged (D39). With an artboard in edit, a pattern, template part or image goes into its content: at the insertion point on a click, where it is dropped on a drag. With none in edit, a pattern, template, part or image goes onto the board: at the drop point on a drag, in the middle of the view and clear of other artboards on a click. The Blocks tab is shown only while an artboard is in edit.
+- **Creating.** Artboards are added from the inserter only (D49); the left panel has no "+". The Pages, Patterns and Templates tabs begin with New rows ("New page", "New pattern", the template purposes under "New template for", "New template part"). A New row arms placement: an outline follows the pointer and the next click on the board places the artboard and enters edit. Pages and patterns are created as drafts at once; templates and parts exist only in the session until saved. The purposes and the creation rules are in `src/shell/use-placement.js`.
+- **Naming.** A page or pattern is named on its artboard's label: double-click the label, or F2 with the artboard selected (D48). Enter or a click elsewhere keeps the name, Esc drops it. The name is an unsaved edit, listed in Review as "Title: changed". The field is `NameField` in `src/artboard-frame/index.js`; `app.js` holds which artboard is being named (`renamingId`).
+- **Inserter.** Blocks, Pages, Patterns, Templates and Media tabs. The Pages tab lists every page of the site that is not in the trash and is shown only with no artboard in edit. A row does the same thing clicked or dragged (D39), except the New rows, which are clicked. With an artboard in edit, a pattern, template part or image goes into its content: at the insertion point on a click, where it is dropped on a drag. With none in edit, a page, pattern, template, part or image goes onto the board: at the drop point on a drag, in the middle of the view and clear of other artboards on a click. The Blocks tab is shown only while an artboard is in edit.
 - **Styles.** With nothing selected the right panel edits global styles: tokens with use counts, per-block styles, revisions, variations. A change repaints every artboard from one style compile.
 - **Review.** Nothing reaches the site until "Review changes" is used. It lists each changed item and saves the checked ones. Artboard positions save on their own, two seconds after a change.
 - **Locks.** Editing a page or pattern takes WordPress's post lock through the plugin's own route and dialog.
@@ -97,9 +98,9 @@ Two entries: `boards` (the Boards list, `src/boards/`) and `board` (the app, `sr
 
 ### Tests (`tests/e2e/`, about 7,000 lines)
 
-Twenty-one spec files, one per acceptance group: `a11y`, `board`, `canvas`, `data`, `del`, `dev`, `edit`, `index`, `ins`, `key`, `media`, `new`, `note`, `perf`, `perm`, `save`, `shell`, `state`, `style`, `tier`, `undo`. `utils.ts` has the shared helpers. `plugin/` is the test helper plugin. `themes/wfd-viewport` is a theme with non-default breakpoints for AC-DEV-02.
+Twenty-two spec files, one per acceptance group: `a11y`, `board`, `canvas`, `data`, `del`, `dev`, `edit`, `index`, `ins`, `key`, `media`, `name`, `new`, `note`, `perf`, `perm`, `save`, `shell`, `state`, `style`, `tier`, `undo`. `utils.ts` has the shared helpers. `plugin/` is the test helper plugin. `themes/wfd-viewport` is a theme with non-default breakpoints for AC-DEV-02.
 
-The app marks elements for the tests with `data-wfd-*` attributes: `region`, `control` (the H and L ids of `spec/screens/README.md`), `artboard`, `tier`, `kind`, `device`, `row`, `group`, `panel`, `placement`, `placer`, `banner`, `stale`, `live-notice`, `lock-dialog`, `template-control`.
+The app marks elements for the tests with `data-wfd-*` attributes: `region`, `control` (the H and L ids of `spec/screens/README.md`), `artboard`, `tier`, `kind`, `device`, `row`, `group`, `panel`, `placement`, `placer`, `banner`, `stale`, `live-notice`, `lock-dialog`, `template-control`, `new` (a New row of the inserter), `name-field`.
 
 ## Running it
 
@@ -166,6 +167,7 @@ git push --follow-tags
 | Widest media object | 1440 px | `src/shell/constants.js` |
 | Note width | 240 board units | `src/shell/notes.js` |
 | Images listed in the Media tab | 50 most recent | `src/inserter/use-inserter-data.js` |
+| Pages listed in the Pages tab | All that are not in the trash | `src/inserter/use-inserter-data.js` |
 
 ## Where the build differs from, or goes beyond, the spec as received
 
@@ -176,11 +178,11 @@ Each of these is recorded in the spec; this is the short list to read first.
 - **Snapshots during gestures.** The spec asks for Snapshots during any pan or zoom; Previews stay mounted instead, because swapping them would break the no-render rule (OQ-19).
 - **Drag from anywhere.** C6 has one stated addition, D40; OQ-26 lists how the layer differs from the pull request.
 - **Accessibility scan.** It covers the plugin's document, not the artboard iframes (OQ-17).
-- **Added after Milestone 12:** showing all of an artboard's content outside edit (D44), hiding the side panels (D32), the Blocks tab hidden outside edit (D33), media objects (D34), the page template select (D35), the new-page template (D36), leaving edit on deselect (D38), inserter rows that act the same clicked or dragged (D39), dragging blocks from anywhere (D40), notes on the board (D46).
+- **Added after Milestone 12:** showing all of an artboard's content outside edit (D44), hiding the side panels (D32), the Blocks tab hidden outside edit (D33), media objects (D34), the page template select (D35), the new-page template (D36), leaving edit on deselect (D38), inserter rows that act the same clicked or dragged (D39), dragging blocks from anywhere (D40), notes on the board (D46), naming pages and patterns on the label (D48), creating from the inserter and the Pages tab (D49).
 
 ## Open questions
 
-Twenty-five entries are open, OQ-4, OQ-6 to OQ-10 and OQ-12 to OQ-30. The missing numbers were decided by the product owner and removed from the file. None leaves something unbuilt; each records a choice made where the spec was silent or could not be met as written. Grouped:
+Twenty-eight entries are open, OQ-4, OQ-6 to OQ-10 and OQ-12 to OQ-33. The missing numbers were decided by the product owner and removed from the file. None leaves something unbuilt; each records a choice made where the spec was silent or could not be met as written. Grouped:
 
 | About | Entries |
 |---|---|
@@ -189,7 +191,7 @@ Twenty-five entries are open, OQ-4, OQ-6 to OQ-10 and OQ-12 to OQ-30. The missin
 | The allowlist | OQ-14, OQ-17, OQ-20 |
 | Limits inside WordPress | OQ-13, OQ-21 |
 | Two spec statements that conflict | OQ-12, OQ-18, OQ-19 |
-| Builder's choices to confirm | OQ-6, OQ-23, OQ-24, OQ-25, OQ-26, OQ-27, OQ-28, OQ-29, OQ-30, OQ-31 |
+| Builder's choices to confirm | OQ-6, OQ-23, OQ-24, OQ-25, OQ-26, OQ-27, OQ-28, OQ-29, OQ-30, OQ-31, OQ-32, OQ-33 |
 | Build order | OQ-10 |
 
 ## Sensible next steps

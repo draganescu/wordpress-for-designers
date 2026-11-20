@@ -1,15 +1,15 @@
 /**
- * The inserter in the left panel (spec/screens/README.md, L7 to L11): search,
- * four tabs of names and usage lines, and a hint. Presentational: the host
- * supplies the lists and receives the clicks and drags. Rows never contain a
- * rendered preview (C17).
+ * The inserter in the left panel (spec/screens/README.md, L7 to L12): search,
+ * tabs of names and usage lines, the New rows that create artboards (D49),
+ * and a hint. Presentational: the host supplies the lists and receives the
+ * clicks and drags. Rows never contain a rendered preview (C17).
  */
 import { useRef, useState, flushSync } from '@wordpress/element';
 import { __, _n, sprintf } from '@wordpress/i18n';
 import { SearchControl } from '@wordpress/components';
 import { BlockIcon } from '@wordpress/block-editor';
 import { Button, EmptyState, Icon, Stack, Tabs, Text } from '@wordpress/ui';
-import { image } from '@wordpress/icons';
+import { image, plus } from '@wordpress/icons';
 import { GroupHeading, RowGroup, Row } from '../shell/primitives';
 import { KINDS } from '../shell/constants';
 
@@ -20,6 +20,7 @@ export const DRAG_DATA_TYPE = 'application/x-wfd-item';
 
 const TABS = [
     { value: 'blocks', label: __( 'Blocks', 'wordpress-for-designers' ) },
+    { value: 'pages', label: __( 'Pages', 'wordpress-for-designers' ) },
     { value: 'patterns', label: __( 'Patterns', 'wordpress-for-designers' ) },
     {
         value: 'templates',
@@ -46,29 +47,78 @@ function filterGroups( groups, needle, key ) {
 }
 
 /**
- * Filters the four inserter lists by a search query: a case-insensitive match
- * on the visible name of each item. Groups left with no items are dropped. An
+ * The rows that create a new artboard (L12), by the group they are in. Each
+ * has the `choice` the host arms placement with.
+ *
+ * @param {Array} purposes Template purposes still on offer, as { slug, label }.
+ * @return {Object} `page`, `pattern`, `purposes` and `templatePart` rows.
+ */
+export function getNewRows( purposes ) {
+    return {
+        page: [
+            {
+                key: 'page',
+                name: __( 'New page', 'wordpress-for-designers' ),
+                choice: { kind: 'page' },
+            },
+        ],
+        pattern: [
+            {
+                key: 'pattern',
+                name: __( 'New pattern', 'wordpress-for-designers' ),
+                choice: { kind: 'pattern' },
+            },
+        ],
+        purposes: ( purposes ?? [] ).map( ( purpose ) => ( {
+            key: 'template:' + ( purpose.slug ?? 'custom' ),
+            name: purpose.label,
+            choice: { kind: 'template', purpose },
+        } ) ),
+        templatePart: [
+            {
+                key: 'template-part',
+                name: __( 'New template part', 'wordpress-for-designers' ),
+                choice: { kind: 'template-part' },
+            },
+        ],
+    };
+}
+
+/**
+ * Filters the inserter lists by a search query: a case-insensitive match on
+ * the visible name of each item. Groups left with no items are dropped. An
  * empty or whitespace-only query keeps every item.
  *
  * @param {Object} lists               The unfiltered lists.
  * @param {Array}  lists.blocks        Block groups.
+ * @param {Array}  lists.pages         Pages.
  * @param {Array}  lists.patterns      Pattern groups.
  * @param {Array}  lists.templates     Templates.
  * @param {Array}  lists.templateParts Template parts.
  * @param {Array}  lists.media         Images.
+ * @param {Object} lists.newRows       New rows from getNewRows, if shown.
  * @param {string} query               The search query.
  * @return {Object} The filtered lists, with `total`, the number of items left
  *                  across all tabs.
  */
 export function filterInserterItems(
-    { blocks, patterns, templates, templateParts, media },
+    { blocks, pages, patterns, templates, templateParts, media, newRows },
     query
 ) {
     const needle = String( query ?? '' )
         .trim()
         .toLowerCase();
+    const named = ( items ) =>
+        ( items ?? [] ).filter( ( item ) => matches( item.name, needle ) );
     const filtered = {
         blocks: filterGroups( blocks, needle, 'title' ),
+        pages: named( pages ),
+        newRows: {
+            page: named( newRows?.page ),
+            pattern: named( newRows?.pattern ),
+            purposes: named( newRows?.purposes ),
+            templatePart: named( newRows?.templatePart ),
+        },
         patterns: filterGroups( patterns, needle, 'name' ),
         templates: ( templates ?? [] ).filter( ( item ) =>
             matches( item.name, needle )
@@ -84,6 +134,11 @@ export function filterInserterItems(
         groups.reduce( ( sum, group ) => sum + group.items.length, 0 );
     filtered.total =
         countGroups( filtered.blocks ) +
+        filtered.pages.length +
+        Object.values( filtered.newRows ).reduce(
+            ( sum, rows ) => sum + rows.length,
+            0
+        ) +
         countGroups( filtered.patterns ) +
         filtered.templates.length +
         filtered.templateParts.length +
@@ -162,6 +217,13 @@ function getHint( tab, liveArtboardName ) {
                       'Edit an artboard to insert blocks.',
                       'wordpress-for-designers'
                   );
+        case 'pages':
+            return isEditing
+                ? undefined
+                : __(
+                      'Click or drag to the board to open it as an artboard.',
+                      'wordpress-for-designers'
+                  );
         case 'patterns':
             return isEditing
                 ? sprintf(
@@ -209,9 +271,9 @@ function getHint( tab, liveArtboardName ) {
     }
 }
 
-function Group( { title, count, children } ) {
+function Group( { title, count, children, ...props } ) {
     return (
-        <section className="wfd-inserter__group">
+        <section className="wfd-inserter__group" { ...props }>
             <GroupHeading suffix={ count }>{ title }</GroupHeading>
             <RowGroup>{ children }</RowGroup>
         </section>
@@ -224,15 +286,18 @@ function Group( { title, count, children } ) {
  * @param {Object}                                props
  * @param {string}                                props.query            The search query.
  * @param {(query: string) => void}               props.onQueryChange    Called with the new query.
- * @param {string}                                props.tab              'blocks', 'patterns', 'templates' or 'media'.
+ * @param {string}                                props.tab              'blocks', 'pages', 'patterns', 'templates' or 'media'.
  * @param {(tab: string) => void}                 props.onTabChange      Called with the new tab.
  * @param {string|null}                           props.liveArtboardName Name of the artboard in edit, or null.
  * @param {Array}                                 props.blocks           [ { category: { slug, title }, items: [ { name, title, icon } ] } ].
+ * @param {Array}                                 props.pages            [ { id, name, isOnBoard } ].
+ * @param {Array}                                 props.purposes         Template purposes offered as new: [ { slug, label } ].
  * @param {Array}                                 props.patterns         [ { source: 'user' } or { source: 'theme', themeName }, with items: [ { id, name, isOnBoard, usedIn } ] ].
  * @param {Array}                                 props.templates        [ { id, name, isOnBoard } ].
  * @param {Array}                                 props.templateParts    [ { id, name, isOnBoard } ].
  * @param {Array}                                 props.media            [ { id, filename, width, height } ].
- * @param {(item: Object) => void}                props.onItemClick      Called with { type, id }; type is 'block', 'pattern', 'template', 'template-part' or 'media'.
+ * @param {(item: Object) => void}                props.onItemClick      Called with { type, id }; type is 'block', 'page', 'pattern', 'template', 'template-part' or 'media'.
+ * @param {(choice: Object) => void}              props.onNewClick       Called with { kind } and, for a template, its purpose, when a New row is clicked.
  * @param {(item: Object, event: Object) => void} props.onItemDragStart  Called with { type, id, name } and the event.
  * @param {(event: Object) => void}               props.onItemDragEnd    Called with the event.
  * @param {(button: Element) => Element}          props.renderUpload     Receives the "Upload" button element, returns what to render.
@@ -244,11 +309,14 @@ export function InserterPanel( {
     onTabChange,
     liveArtboardName = null,
     blocks,
+    pages,
+    purposes,
     patterns,
     templates,
     templateParts,
     media,
     onItemClick,
+    onNewClick,
     onItemDragStart,
     onItemDragEnd,
     renderUpload,
@@ -258,16 +326,20 @@ export function InserterPanel( {
 
     const isEditing = liveArtboardName !== null;
     // Blocks go only into an artboard in edit, so with none in edit their
-    // tab is not shown and they do not count as search results.
-    const tabs = isEditing
-        ? TABS
-        : TABS.filter( ( { value } ) => value !== 'blocks' );
+    // tab is not shown and they do not count as search results. Pages and
+    // the New rows go only onto the board, so in edit they are the ones left
+    // out (D33, D49).
+    const tabs = TABS.filter(
+        ( { value } ) => value !== ( isEditing ? 'pages' : 'blocks' )
+    );
     const activeTab = tabs.some( ( { value } ) => value === tab )
         ? tab
         : tabs[ 0 ].value;
     const filtered = filterInserterItems(
         {
             blocks: isEditing ? blocks : [],
+            pages: isEditing ? [] : pages,
+            newRows: isEditing ? null : getNewRows( purposes ),
             patterns,
             templates,
             templateParts,
@@ -332,7 +404,57 @@ export function InserterPanel( {
         </Button>
     );
 
+    // The rows that create (L12): a group whose heading has no count.
+    const newGroup = ( rows, title ) =>
+        rows.length > 0 && (
+            <Group title={ title } data-wfd-group="new">
+                { rows.map( ( row ) => (
+                    <Row
+                        key={ row.key }
+                        icon={ plus }
+                        name={ row.name }
+                        data-wfd-new={ row.key }
+                        onClick={ () => {
+                            if ( onNewClick ) {
+                                onNewClick( row.choice );
+                            }
+                        } }
+                    />
+                ) ) }
+            </Group>
+        );
+    const newTitle = __( 'New', 'wordpress-for-designers' );
+
     const panels = {
+        pages: (
+            <>
+                { newGroup( filtered.newRows.page, newTitle ) }
+                { filtered.pages.length > 0 && (
+                    <Group
+                        title={ KINDS.page.group }
+                        count={ filtered.pages.length }
+                    >
+                        { filtered.pages.map( ( item ) => (
+                            <Row
+                                key={ item.id }
+                                icon={ KINDS.page.icon }
+                                name={ item.name }
+                                secondLine={ getBoardLine( item.isOnBoard ) }
+                                onClick={ click( 'page', item.id ) }
+                                { ...dragProps(
+                                    {
+                                        type: 'page',
+                                        id: item.id,
+                                        name: item.name,
+                                    },
+                                    KINDS.page.icon
+                                ) }
+                            />
+                        ) ) }
+                    </Group>
+                ) }
+            </>
+        ),
         blocks: filtered.blocks.map( ( group ) => (
             <Group
                 key={ group.category.slug }
@@ -349,43 +471,53 @@ export function InserterPanel( {
                 ) ) }
             </Group>
         ) ),
-        patterns: filtered.patterns.map( ( group ) => {
-            const title = getPatternGroupTitle( group );
-            if ( title === undefined ) {
-                return null;
-            }
-            return (
-                <Group
-                    key={
-                        group.source === 'theme'
-                            ? 'theme:' + group.themeName
-                            : group.source
+        patterns: (
+            <>
+                { newGroup( filtered.newRows.pattern, newTitle ) }
+                { filtered.patterns.map( ( group ) => {
+                    const title = getPatternGroupTitle( group );
+                    if ( title === undefined ) {
+                        return null;
                     }
-                    title={ title }
-                    count={ group.items.length }
-                >
-                    { group.items.map( ( item ) => (
-                        <Row
-                            key={ item.id }
-                            icon={ KINDS.pattern.icon }
-                            name={ item.name }
-                            secondLine={ getPatternUsageLine( item ) }
-                            onClick={ click( 'pattern', item.id ) }
-                            { ...dragProps(
-                                {
-                                    type: 'pattern',
-                                    id: item.id,
-                                    name: item.name,
-                                },
-                                KINDS.pattern.icon
-                            ) }
-                        />
-                    ) ) }
-                </Group>
-            );
-        } ),
+                    return (
+                        <Group
+                            key={
+                                group.source === 'theme'
+                                    ? 'theme:' + group.themeName
+                                    : group.source
+                            }
+                            title={ title }
+                            count={ group.items.length }
+                        >
+                            { group.items.map( ( item ) => (
+                                <Row
+                                    key={ item.id }
+                                    icon={ KINDS.pattern.icon }
+                                    name={ item.name }
+                                    secondLine={ getPatternUsageLine( item ) }
+                                    onClick={ click( 'pattern', item.id ) }
+                                    { ...dragProps(
+                                        {
+                                            type: 'pattern',
+                                            id: item.id,
+                                            name: item.name,
+                                        },
+                                        KINDS.pattern.icon
+                                    ) }
+                                />
+                            ) ) }
+                        </Group>
+                    );
+                } ) }
+            </>
+        ),
         templates: (
             <>
+                { newGroup(
+                    filtered.newRows.purposes,
+                    __( 'New template for', 'wordpress-for-designers' )
+                ) }
+                { newGroup( filtered.newRows.templatePart, newTitle ) }
                 { filtered.templates.length > 0 && (
                     <Group
                         title={ KINDS.template.group }
