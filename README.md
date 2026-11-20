@@ -50,7 +50,7 @@ The screenshots show the demo site, Morrow Coffee Roasters. [demo/README.md](dem
 
 ## Try it
 
-The **Try it in WordPress Playground** button starts a WordPress site in your browser with the latest build of `master` installed, seeds it with the demo site, Morrow Coffee Roasters, and opens the Boards screen with six boards to explore. Nothing is installed on your computer, and the site is discarded when you close the tab.
+The **Try it in WordPress Playground** button starts a WordPress site in your browser with the latest build of `master` installed, seeds it with the demo site, Morrow Coffee Roasters, and opens the Boards screen with seven boards to explore. Nothing is installed on your computer, and the site is discarded when you close the tab.
 
 ## Requirements
 
