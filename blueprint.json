@@ -18,6 +18,38 @@
             "options": {
                 "activate": true
             }
+        },
+        {
+            "step": "installTheme",
+            "themeData": {
+                "resource": "git:directory",
+                "url": "https://github.com/draganescu/wordpress-for-designers",
+                "ref": "master",
+                "refType": "branch",
+                "path": "demo/theme/morrow"
+            },
+            "options": {
+                "activate": true,
+                "targetFolderName": "morrow"
+            }
+        },
+        {
+            "step": "installPlugin",
+            "pluginData": {
+                "resource": "git:directory",
+                "url": "https://github.com/draganescu/wordpress-for-designers",
+                "ref": "master",
+                "refType": "branch",
+                "path": "demo/plugin/wfd-demo"
+            },
+            "options": {
+                "activate": true,
+                "targetFolderName": "wfd-demo"
+            }
+        },
+        {
+            "step": "runPHP",
+            "code": "<?php require '/wordpress/wp-load.php'; wp_set_current_user( 1 ); wfd_demo_seed( array( 'thumbnails' => false ) );"
         }
     ]
 }

@@ -1,0 +1,74 @@
+{
+    "$schema": "https://schemas.wp.org/trunk/theme.json",
+    "version": 3,
+    "title": "Night shift",
+    "settings": {
+        "color": {
+            "palette": [
+                {
+                    "slug": "base",
+                    "name": "Ink",
+                    "color": "#15110F"
+                },
+                {
+                    "slug": "contrast",
+                    "name": "Oat",
+                    "color": "#F4EFE6"
+                },
+                {
+                    "slug": "accent-1",
+                    "name": "Ember",
+                    "color": "#FF6A3D"
+                },
+                {
+                    "slug": "accent-2",
+                    "name": "Butter",
+                    "color": "#F2C14E"
+                },
+                {
+                    "slug": "accent-3",
+                    "name": "Moss",
+                    "color": "#9DBF8E"
+                },
+                {
+                    "slug": "accent-4",
+                    "name": "Char",
+                    "color": "#2A2420"
+                },
+                {
+                    "slug": "accent-5",
+                    "name": "Cobalt",
+                    "color": "#8FA2FF"
+                }
+            ]
+        }
+    },
+    "styles": {
+        "elements": {
+            "button": {
+                "color": {
+                    "background": "var:preset|color|accent-1",
+                    "text": "var:preset|color|base"
+                },
+                ":hover": {
+                    "color": {
+                        "background": "var:preset|color|contrast",
+                        "text": "var:preset|color|base"
+                    }
+                }
+            },
+            "heading": {
+                "typography": {
+                    "letterSpacing": "-0.045em"
+                }
+            }
+        },
+        "blocks": {
+            "core/separator": {
+                "border": {
+                    "width": "0 0 1px 0"
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,50 @@
+{
+    "$schema": "https://schemas.wp.org/trunk/theme.json",
+    "version": 3,
+    "title": "Paper",
+    "settings": {
+        "color": {
+            "palette": [
+                { "slug": "base", "name": "Paper", "color": "#FBFAF7" },
+                { "slug": "contrast", "name": "Ink", "color": "#20201D" },
+                { "slug": "accent-1", "name": "Moss", "color": "#2F4A3A" },
+                { "slug": "accent-2", "name": "Sage", "color": "#C9D8B6" },
+                { "slug": "accent-3", "name": "Ink", "color": "#20201D" },
+                { "slug": "accent-4", "name": "Linen", "color": "#EFEDE6" },
+                { "slug": "accent-5", "name": "Ember", "color": "#B8431F" }
+            ]
+        }
+    },
+    "styles": {
+        "typography": {
+            "fontFamily": "var:preset|font-family|ysabeau-office",
+            "fontSize": "1.1875rem",
+            "fontWeight": "400"
+        },
+        "elements": {
+            "heading": {
+                "typography": {
+                    "fontFamily": "var:preset|font-family|platypi",
+                    "fontWeight": "400",
+                    "letterSpacing": "-0.02em",
+                    "lineHeight": "1.02"
+                }
+            },
+            "button": {
+                "border": { "radius": "4px" },
+                "typography": { "fontWeight": "600" }
+            }
+        },
+        "blocks": {
+            "core/site-title": {
+                "typography": { "fontFamily": "var:preset|font-family|platypi", "fontWeight": "500", "letterSpacing": "-0.02em" }
+            },
+            "core/image": { "border": { "radius": "2px" } },
+            "core/cover": { "border": { "radius": "2px" } },
+            "core/post-featured-image": { "border": { "radius": "2px" } },
+            "core/quote": {
+                "typography": { "fontFamily": "var:preset|font-family|platypi", "fontStyle": "italic", "fontWeight": "400" }
+            }
+        }
+    }
+}

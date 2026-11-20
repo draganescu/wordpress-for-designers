@@ -1,0 +1,3 @@
+# Left out of the source archives GitHub attaches to a release.
+/demo export-ignore
+/docs/screenshots export-ignore

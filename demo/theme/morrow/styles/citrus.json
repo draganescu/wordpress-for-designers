@@ -1,0 +1,34 @@
+{
+    "$schema": "https://schemas.wp.org/trunk/theme.json",
+    "version": 3,
+    "title": "Citrus",
+    "settings": {
+        "color": {
+            "palette": [
+                { "slug": "base", "name": "Butter", "color": "#F6CF57" },
+                { "slug": "contrast", "name": "Cobalt", "color": "#1B2A8F" },
+                { "slug": "accent-1", "name": "Ember", "color": "#E4572E" },
+                { "slug": "accent-2", "name": "Oat", "color": "#FFF6DA" },
+                { "slug": "accent-3", "name": "Cobalt", "color": "#1B2A8F" },
+                { "slug": "accent-4", "name": "Zest", "color": "#F2B632" },
+                { "slug": "accent-5", "name": "Ember", "color": "#E4572E" }
+            ]
+        }
+    },
+    "styles": {
+        "elements": {
+            "heading": {
+                "typography": { "fontWeight": "800", "letterSpacing": "-0.055em", "textTransform": "uppercase" }
+            },
+            "button": {
+                "border": { "radius": "0px" },
+                "color": { "background": "var:preset|color|accent-1", "text": "var:preset|color|accent-2" }
+            }
+        },
+        "blocks": {
+            "core/image": { "border": { "radius": "0px" } },
+            "core/cover": { "border": { "radius": "0px" } },
+            "core/post-featured-image": { "border": { "radius": "0px" } }
+        }
+    }
+}
