@@ -52,6 +52,7 @@ Browsers (D55): `[U]`
 - Selected alone or browsing, the right panel shows the entity card (the address; description "The site as visitors see it."), the device control E6, a `wpc.ToggleGroupControl` labelled "Shows" with the options "Unsaved changes" and "Saved site" (D57), then `Button` solid "Browse", which starts browsing and is not shown while browsing, `Button` outline "Reload" and `Button` outline "Remove from board", and the hint "Enter or double-click browses. Delete removes it from the board."
 - The remove dialog has its title and buttons only, as for a media object.
 - A link or a typed address that leads off the site does nothing: the window stays on the page it was on.
+- When the board's unsaved changes cannot be sent for the preview (D57), the canvas shows a `Notice`, error tone, at its top left, where the usage and preview banners of the Styles screens are shown: "We're having a problem saving." (D61). There is one notice for as long as sends keep failing, however often the send is tried again; it goes away when a send succeeds.
 
 Notes (D46): `[U]`
 

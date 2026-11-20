@@ -153,6 +153,7 @@ Unless a criterion says otherwise, the fixture in `architecture.md` is loaded an
 - AC-BROWSER-07 A page scrolled while browsing stays scrolled where it was after Esc ends browsing (D56). `[U]`
 - AC-BROWSER-08 A browser showing unsaved changes shows a change typed into a page's artboard, without a save and without Reload being pressed, and keeps showing it on a link followed to another page and back; a browser on the same page set to "Saved site" does not show it until Review saves it. The page requested without signing in shows the saved content even with that browser's `wfd_preview` argument, and so does the signed-in user's own request with another value (D57). `[U]`
 - AC-BROWSER-09 A browser showing unsaved changes shows an unsaved change to global styles and to a template part (D57). `[U]`
+- AC-BROWSER-10 With a browser showing unsaved changes, when the preview route fails the canvas shows one notice reading "We're having a problem saving."; it is still one notice after the send has been tried again and has failed again; it goes away when a send succeeds (D61). `[U]`
 
 ## NOTE
 
