@@ -8,6 +8,7 @@ import {
     artboardOf,
     viewportOf,
     setViewport,
+    armNew,
     type Fixture,
 } from './utils';
 
@@ -85,10 +86,7 @@ const placeAt = async ( page: Page, dx: number, dy: number ) => {
  * @param dy
  */
 const placeNewPart = async ( page: Page, dx = 300, dy = 620 ) => {
-    await page.locator( '[data-wfd-control="L2"]' ).click();
-    await page
-        .getByRole( 'menuitem', { name: 'Template part', exact: true } )
-        .click();
+    await armNew( page, 'Templates', 'New template part' );
     await placeAt( page, dx, dy );
 };
 
@@ -121,11 +119,7 @@ test.describe( 'SAVE', () => {
         await expect( review( page ) ).toHaveText( 'Review 2 changes' );
 
         // A new template.
-        await page.locator( '[data-wfd-control="L2"]' ).click();
-        await page
-            .getByRole( 'menuitem', { name: 'Template', exact: true } )
-            .click();
-        await page.getByRole( 'menuitem', { name: 'Single item' } ).click();
+        await armNew( page, 'Templates', 'Single item' );
         await placeAt( page, 300, 620 );
         await expect(
             page.locator( '[data-wfd-tier="live"]' )

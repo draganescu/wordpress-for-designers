@@ -1,13 +1,13 @@
 /**
- * Creating artboards: arm a kind from the Add artboard menu, then click the
- * board to place it (decision D11, spec/data-model.md "Creating entities").
+ * Creating artboards: arm a kind from a New row of the inserter, then click
+ * the board to place it (decisions D11 and D63, spec/data-model.md "Creating
+ * entities").
  */
 import { __ } from '@wordpress/i18n';
 import { useCallback, useEffect, useMemo, useState } from '@wordpress/element';
 import { useDispatch, useRegistry, useSelect } from '@wordpress/data';
 import { store as coreStore } from '@wordpress/core-data';
 import { store as boardStore } from '../board-store';
-import { recordName } from './use-artboards';
 
 /**
  * Height of an artboard before its content has been measured.
@@ -15,6 +15,23 @@ import { recordName } from './use-artboards';
 export const NEW_ARTBOARD_HEIGHT = 900;
 
 const TEMPLATE_QUERY = { per_page: -1 };
+
+/**
+ * Template purposes offered as new, with the slug each creates.
+ */
+const PURPOSES = [
+    { slug: 'archive', label: __( 'Archive', 'wordpress-for-designers' ) },
+    {
+        slug: 'search',
+        label: __( 'Search results', 'wordpress-for-designers' ),
+    },
+    { slug: '404', label: __( 'Page: 404', 'wordpress-for-designers' ) },
+    {
+        slug: 'singular',
+        label: __( 'Single item', 'wordpress-for-designers' ),
+    },
+    { slug: null, label: __( 'Custom', 'wordpress-for-designers' ) },
+];
 
 /**
  * Templates a new page starts on, first one the theme has: blank, then the
@@ -32,6 +49,51 @@ const NAMES = {
     // A browser is named by its address, and starts on the homepage (D55).
     browser: '/',
 };
+
+const NEW_GROUP = __( 'New', 'wordpress-for-designers' );
+
+/**
+ * The rows of the inserter that create an artboard (L12, D63), in the order
+ * they are listed: the inserter tab and the group each is in, its name, and
+ * the `choice` that `arm` takes.
+ */
+export const NEW_ROWS = [
+    {
+        key: 'page',
+        tab: 'pages',
+        group: NEW_GROUP,
+        name: __( 'New page', 'wordpress-for-designers' ),
+        choice: { kind: 'page' },
+    },
+    {
+        key: 'browser',
+        tab: 'pages',
+        group: NEW_GROUP,
+        name: __( 'New browser', 'wordpress-for-designers' ),
+        choice: { kind: 'browser' },
+    },
+    {
+        key: 'pattern',
+        tab: 'patterns',
+        group: NEW_GROUP,
+        name: __( 'New pattern', 'wordpress-for-designers' ),
+        choice: { kind: 'pattern' },
+    },
+    ...PURPOSES.map( ( purpose ) => ( {
+        key: 'template:' + ( purpose.slug ?? 'custom' ),
+        tab: 'templates',
+        group: __( 'New template for', 'wordpress-for-designers' ),
+        name: purpose.label,
+        choice: { kind: 'template', purpose },
+    } ) ),
+    {
+        key: 'template-part',
+        tab: 'templates',
+        group: NEW_GROUP,
+        name: __( 'New template part', 'wordpress-for-designers' ),
+        choice: { kind: 'template-part' },
+    },
+];
 
 function partBlock( part, tagName ) {
     return `<!-- wp:template-part ${ JSON.stringify( {
@@ -76,7 +138,8 @@ function uniqueSlug( slug, taken ) {
  * @param {Object}   options
  * @param {string}   options.theme     The active theme's stylesheet.
  * @param {Function} options.enterEdit Enters edit on an artboard.
- * @return {Object} Menu data, the armed placement and its actions.
+ * @return {Object} The New rows on offer, the armed placement and its
+ *                  actions.
  */
 export function usePlacement( { theme, enterEdit } ) {
     const registry = useRegistry();
@@ -95,32 +158,25 @@ export function usePlacement( { theme, enterEdit } ) {
     const { saveEntityRecord, editEntityRecord } = useDispatch( coreStore );
     const { addArtboard, selectArtboard } = useDispatch( boardStore );
 
-    const menu = useMemo( () => {
-        const boardTemplates = onBoard.filter( ( a ) => a.kind === 'template' );
-        const drafts = boardTemplates.filter( ( a ) => a.draft );
-        return {
-            existingSlugs: [
-                ...( templates ?? [] ).map( ( template ) => template.slug ),
-                ...drafts.map( ( a ) => a.draft.slug ),
-            ],
-            existingTemplates: ( templates ?? [] ).map( ( template ) => ( {
-                id: template.id,
-                name: recordName( template ),
-                isOnBoard: boardTemplates.some(
-                    ( a ) => a.entityId === template.id
-                ),
-            } ) ),
-        };
+    // A purpose whose template is on the site, or on this board and not
+    // saved yet, is not offered as new.
+    const newRows = useMemo( () => {
+        const taken = new Set( [
+            ...( templates ?? [] ).map( ( template ) => template.slug ),
+            ...onBoard
+                .filter( ( a ) => a.kind === 'template' && a.draft )
+                .map( ( a ) => a.draft.slug ),
+        ] );
+        return NEW_ROWS.filter(
+            ( { choice } ) =>
+                ! choice.purpose || ! taken.has( choice.purpose.slug )
+        );
     }, [ templates, onBoard ] );
 
     const arm = useCallback( ( choice ) => {
         let name = NAMES[ choice.kind ];
-        if ( choice.kind === 'template' ) {
-            if ( choice.entityId ) {
-                name = choice.name;
-            } else if ( choice.purpose.slug ) {
-                name = choice.purpose.label;
-            }
+        if ( choice.kind === 'template' && choice.purpose.slug ) {
+            name = choice.purpose.label;
         }
         setPlacement( { ...choice, name } );
     }, [] );
@@ -229,8 +285,6 @@ export function usePlacement( { theme, enterEdit } ) {
                     { throwOnError: true }
                 );
                 artboard.entityId = record.id;
-            } else if ( chosen.entityId ) {
-                artboard.entityId = chosen.entityId;
             } else {
                 // A new template or part exists only in this session until
                 // its first save from Review.
@@ -307,5 +361,5 @@ export function usePlacement( { theme, enterEdit } ) {
         ]
     );
 
-    return { menu, placement, arm, cancel, place };
+    return { newRows, placement, arm, cancel, place };
 }

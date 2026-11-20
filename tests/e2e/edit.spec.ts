@@ -9,6 +9,7 @@ import {
     setViewport,
     postLock,
     tiersOf,
+    armNew,
     type Fixture,
 } from './utils';
 
@@ -139,10 +140,7 @@ test.describe( 'EDIT', () => {
     test( 'AC-EDIT-04 A new empty artboard shows only the stock empty paragraph with its placeholder and add-block button', async ( {
         page,
     } ) => {
-        await page.locator( '[data-wfd-control="L2"]' ).click();
-        await page
-            .getByRole( 'menuitem', { name: 'Pattern', exact: true } )
-            .click();
+        await armNew( page, 'Patterns', 'New pattern' );
         const canvas = ( await page
             .locator( '[data-wfd-region="canvas"]' )
             .boundingBox() )!;

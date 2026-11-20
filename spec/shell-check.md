@@ -26,7 +26,7 @@ Checked on 2026-11-19.
 | ErrorArtboard | Matches | The notice keeps screen size at any zoom, so at 17% it extends past the artboard box; "Retry" is the Notice's action button (OQ-4). |
 | Boards | Matches | The "Settings" sub-item, miniature layouts and "unsaved changes" text are not built, as `Boards.md` says. Search and layout controls are DataViews' own. The "Rename" action is not built (OQ-3). |
 | BoardsEmpty | Matches | None. |
-| AddArtboard | Matches | Kind items have no chevron except Template, which is the only one with a submenu (`AddArtboard.md`). The pressed look of L2 is the Menu trigger's own. |
+| AddArtboard | Not compared since D63 | The image shows the Add artboard menu and L2, which D63 removed. The screen is now the inserter on its Templates tab with "Archive" under "New template for" clicked (`AddArtboard.md`); only the placement ghost is as drawn. |
 | AddArtboard2 | Matches | Edit starts at the board's zoom (D37). |
 | DeleteDialog | Matches | Cancel is the AlertDialog's minimal button and Remove takes the irreversible intent only when the box is checked (OQ-4). |
 | ResetDialog | Matches | Same as DeleteDialog. |

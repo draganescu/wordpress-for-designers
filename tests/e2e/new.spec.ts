@@ -1,19 +1,18 @@
 import { test, expect } from '@wordpress/e2e-test-utils-playwright';
 import type { Page } from '@playwright/test';
-import { resetFixture, openBoard, editorFrame, type Fixture } from './utils';
+import {
+    resetFixture,
+    openBoard,
+    editorFrame,
+    enterEdit,
+    artboardOf,
+    armNew,
+    openInserter,
+    type Fixture,
+} from './utils';
 
-const openMenu = async ( page: Page ) => {
-    await page.locator( '[data-wfd-control="L2"]' ).click();
-    await expect( page.getByRole( 'menu' ).first() ).toBeVisible();
-};
-
-const armTemplate = async ( page: Page, item: string ) => {
-    await openMenu( page );
-    await page
-        .getByRole( 'menuitem', { name: 'Template', exact: true } )
-        .click();
-    await page.getByRole( 'menuitem', { name: item } ).click();
-};
+const armTemplate = ( page: Page, item: string ) =>
+    armNew( page, 'Templates', item );
 
 const placeAt = async ( page: Page, dx = 300, dy = 500 ) => {
     const canvas = ( await page
@@ -44,54 +43,76 @@ test.describe( 'NEW', () => {
         await openBoard( page, fixture.boardId );
     } );
 
-    test( 'AC-NEW-01 The Add artboard menu lists the four kinds and Browser with descriptions; Template has the submenu', async ( {
+    test( 'AC-NEW-01 With no artboard in edit the Pages tab begins with "New page" and "New browser", the Patterns tab with "New pattern" and the Templates tab with "New template for" and "New template part"; in edit none of these rows is shown; the left panel has no "Add artboard" control', async ( {
         page,
     } ) => {
-        await openMenu( page );
-        const menu = page.getByRole( 'menu' ).first();
-        const items = menu.getByRole( 'menuitem' );
-        await expect( items ).toHaveCount( 5 );
-        const expected = [
-            [ 'Page', 'Content at its own address.' ],
-            [ 'Template', 'The layout many pages or posts share.' ],
-            [ 'Template part', 'A header, footer or other shared region.' ],
-            [ 'Pattern', 'A section to drop into any page or template.' ],
-            [ 'Browser', 'The site as visitors see it.' ],
-        ];
-        for ( const [ index, [ title, line ] ] of expected.entries() ) {
-            await expect( items.nth( index ) ).toContainText( title );
-            await expect( items.nth( index ) ).toContainText( line );
-        }
-        await expect( items.nth( 1 ) ).toHaveAttribute(
-            'aria-haspopup',
-            'menu'
+        await expect( page.locator( '[data-wfd-control="L2"]' ) ).toHaveCount(
+            0
         );
-        await items.nth( 1 ).click();
-        const submenu = page.getByRole( 'menu' ).nth( 1 );
-        await expect( submenu ).toContainText( 'New template for' );
-        await expect( submenu ).toContainText( 'Already on the site' );
         await expect(
-            submenu.getByRole( 'menuitem', { name: 'Single item' } )
-        ).toBeVisible();
+            page
+                .locator( '[data-wfd-region="left"]' )
+                .getByRole( 'button', { name: 'Add artboard' } )
+        ).toHaveCount( 0 );
+
+        const panel = await openInserter( page );
+        const groups = panel
+            .getByRole( 'tabpanel' )
+            .locator( '.wfd-inserter__group' );
+        const rowsOf = ( index: number ) =>
+            groups.nth( index ).locator( '.wfd-row__name' );
+        const headingOf = ( index: number ) =>
+            groups.nth( index ).locator( '.wfd-group-heading' );
+
+        // Pages is the first tab and begins with "New page".
         await expect(
-            submenu.getByRole( 'menuitem', { name: 'Custom' } )
-        ).toBeVisible();
-        const index = submenu.getByRole( 'menuitem', { name: /^Index/ } );
-        await expect( index ).toContainText( 'On this board' );
-        await expect( index ).toBeDisabled();
-        await expect(
-            submenu.getByRole( 'menuitem', { name: /^Pages/ } )
-        ).toContainText( 'Open as artboard' );
+            panel.getByRole( 'tab', { name: 'Pages' } )
+        ).toHaveAttribute( 'aria-selected', 'true' );
+        await expect( headingOf( 0 ) ).toHaveText( 'New' );
+        await expect( rowsOf( 0 ) ).toHaveText( [ 'New page', 'New browser' ] );
+        await expect( headingOf( 1 ) ).toContainText( 'Pages' );
+
+        await panel.getByRole( 'tab', { name: 'Patterns' } ).click();
+        await expect( headingOf( 0 ) ).toHaveText( 'New' );
+        await expect( rowsOf( 0 ) ).toHaveText( [ 'New pattern' ] );
+        await expect( headingOf( 1 ) ).toContainText( 'Yours' );
+
+        // Twenty Twenty-Five ships Archive, Search results and 404 templates.
+        await panel.getByRole( 'tab', { name: 'Templates' } ).click();
+        await expect( headingOf( 0 ) ).toHaveText( 'New template for' );
+        await expect( rowsOf( 0 ) ).toHaveText( [ 'Single item', 'Custom' ] );
+        await expect( headingOf( 1 ) ).toHaveText( 'New' );
+        await expect( rowsOf( 1 ) ).toHaveText( [ 'New template part' ] );
+        await expect( headingOf( 2 ) ).toContainText( 'Templates' );
+        await expect( panel.locator( '[data-wfd-new]' ) ).toHaveCount( 3 );
+
+        // A New row has the plus icon and is not dragged.
+        const row = panel.locator( '[data-wfd-new="template-part"]' );
+        await expect( row.locator( 'svg' ) ).toHaveCount( 1 );
+        await expect( row ).not.toHaveAttribute( 'draggable', 'true' );
+
+        // With an artboard in edit no tab has a New row.
+        await page
+            .locator( '[data-wfd-region="header"]' )
+            .getByRole( 'button', { name: 'Close block inserter' } )
+            .click();
+        await enterEdit( page, artboardOf( fixture, 'template-part' ).id );
+        await openInserter( page );
+        for ( const tab of [ 'Blocks', 'Patterns', 'Templates', 'Media' ] ) {
+            await panel.getByRole( 'tab', { name: tab } ).click();
+            await expect(
+                panel.getByRole( 'tab', { name: tab } )
+            ).toHaveAttribute( 'aria-selected', 'true' );
+            await expect( panel.locator( '[data-wfd-new]' ) ).toHaveCount( 0 );
+        }
+        await expect( panel ).not.toContainText( 'New template for' );
     } );
 
-    test( 'AC-NEW-02 After choosing a kind a placement ghost follows the pointer; Esc cancels and nothing is created', async ( {
+    test( 'AC-NEW-02 After clicking a New row a placement ghost follows the pointer; Esc cancels and nothing is created', async ( {
         page,
         requestUtils,
     } ) => {
-        await openMenu( page );
-        await page
-            .getByRole( 'menuitem', { name: 'Page', exact: true } )
-            .click();
+        await armNew( page, 'Pages', 'New page' );
         const canvas = ( await page
             .locator( '[data-wfd-region="canvas"]' )
             .boundingBox() )!;
@@ -132,10 +153,7 @@ test.describe( 'NEW', () => {
         page,
         requestUtils,
     } ) => {
-        await openMenu( page );
-        await page
-            .getByRole( 'menuitem', { name: 'Page', exact: true } )
-            .click();
+        await armNew( page, 'Pages', 'New page' );
         await placeAt( page );
         const live = page.locator( '[data-wfd-tier="live"]' );
         await expect( live ).toHaveAttribute( 'data-wfd-kind', 'page' );
@@ -155,10 +173,7 @@ test.describe( 'NEW', () => {
         expect( pages[ 0 ].template ).toBe( 'page-no-title' );
 
         await page.getByRole( 'button', { name: 'Back to the board' } ).click();
-        await openMenu( page );
-        await page
-            .getByRole( 'menuitem', { name: 'Pattern', exact: true } )
-            .click();
+        await armNew( page, 'Patterns', 'New pattern' );
         await placeAt( page, 500, 600 );
         await expect( live ).toHaveAttribute( 'data-wfd-kind', 'pattern' );
         await expect( page.locator( '[data-wfd-control="H7"]' ) ).toHaveText(
@@ -218,10 +233,7 @@ test.describe( 'NEW', () => {
         expect( await exists( 'templates', 'singular' ) ).toBe( false );
 
         await page.getByRole( 'button', { name: 'Back to the board' } ).click();
-        await openMenu( page );
-        await page
-            .getByRole( 'menuitem', { name: 'Template part', exact: true } )
-            .click();
+        await armNew( page, 'Templates', 'New template part' );
         await placeAt( page, 520, 640 );
         await expect( live ).toHaveAttribute(
             'data-wfd-kind',
@@ -349,10 +361,7 @@ test.describe( 'NEW', () => {
         page,
         requestUtils,
     } ) => {
-        await openMenu( page );
-        await page
-            .getByRole( 'menuitem', { name: 'Template part', exact: true } )
-            .click();
+        await armNew( page, 'Templates', 'New template part' );
         await placeAt( page );
         await expect(
             page.locator( '[data-wfd-tier="live"]' )
@@ -386,33 +395,54 @@ test.describe( 'NEW', () => {
         expect( part.title.raw ).toBe( 'Untitled part' );
     } );
 
-    test( 'AC-NEW-08 A purpose whose template exists is absent from "New template for" and present under "Already on the site"', async ( {
+    test( 'AC-NEW-08 A purpose whose template exists is absent from "New template for" and that template is listed in the "Templates" group', async ( {
         page,
     } ) => {
-        await openMenu( page );
-        await page
-            .getByRole( 'menuitem', { name: 'Template', exact: true } )
-            .click();
-        const submenu = page.getByRole( 'menu' ).nth( 1 );
-        const groups = submenu.getByRole( 'group' );
-        const fresh = groups.nth( 0 );
-        const existing = groups.nth( 1 );
+        const panel = await openInserter( page );
+        await panel.getByRole( 'tab', { name: 'Templates' } ).click();
+        const groups = panel
+            .getByRole( 'tabpanel' )
+            .locator( '.wfd-inserter__group' );
+        const fresh = groups.filter( { hasText: 'New template for' } );
         // Twenty Twenty-Five ships Archive, Search results and 404 templates.
-        await expect( fresh.getByRole( 'menuitem' ) ).toHaveText( [
+        await expect( fresh.locator( '.wfd-row__name' ) ).toHaveText( [
             'Single item',
             'Custom',
         ] );
+        const existing = groups.nth( 2 );
+        await expect( existing.locator( '.wfd-group-heading' ) ).toContainText(
+            'Templates'
+        );
         for ( const name of [
             /All Archives/,
             /Search Results/,
             /Page: 404/,
         ] ) {
             await expect(
-                existing.getByRole( 'menuitem', { name } )
-            ).toBeVisible();
+                existing.locator( '.wfd-row__name' ).filter( { hasText: name } )
+            ).toHaveCount( 1 );
         }
         await expect(
-            existing.getByRole( 'menuitem', { name: 'Single item' } )
+            existing
+                .locator( '.wfd-row__name' )
+                .filter( { hasText: 'Single item' } )
         ).toHaveCount( 0 );
+
+        // A new one placed on this board, not saved yet, is no longer offered.
+        await armTemplate( page, 'Single item' );
+        const canvas = ( await page
+            .locator( '[data-wfd-region="canvas"]' )
+            .boundingBox() )!;
+        await page.mouse.move( canvas.x + 280, canvas.y + 480 );
+        await page.mouse.move( canvas.x + 300, canvas.y + 500, { steps: 3 } );
+        await page.mouse.down();
+        await page.mouse.up();
+        await expect(
+            page.locator( '[data-wfd-tier="live"]' )
+        ).toHaveAttribute( 'data-wfd-kind', 'template' );
+        await page.getByRole( 'button', { name: 'Back to the board' } ).click();
+        await expect( fresh.locator( '.wfd-row__name' ) ).toHaveText( [
+            'Custom',
+        ] );
     } );
 } );

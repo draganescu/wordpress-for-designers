@@ -13,7 +13,6 @@ import { ReviewDrawer } from '../review/review-drawer';
 import { fixtures as reviewFixtures } from '../review/fixtures';
 import { StylesPanel } from '../styles/styles-panel';
 import { fixtures as stylesFixtures } from '../styles/fixtures';
-import { AddArtboardMenu } from '../shell/add-artboard-menu';
 import { ArtboardsPanel, ListViewPanel } from '../shell/artboards-panel';
 import {
     Canvas,
@@ -62,16 +61,11 @@ const ARCHIVE = {
     height: 1120,
 };
 const BOARD_NAME = 'The Slow Margin, redesign';
-const TEMPLATES = [
-    { id: 'front', name: 'Front page', isOnBoard: true },
-    { id: 'single', name: 'Single post', isOnBoard: true },
-    { id: 'index', name: 'Index', isOnBoard: false },
-];
 const find = ( id ) => ARTBOARDS.find( ( artboard ) => artboard.id === id );
 
 /**
  * What differs per screen. Keys: selected, live, left, right, inserter,
- * styles, review, dialog, menu, banner, error, artboards, zoom.
+ * styles, review, dialog, banner, error, artboards, zoom.
  */
 const SCREENS = {
     Overview: { styles: 'Overview' },
@@ -79,7 +73,11 @@ const SCREENS = {
     Selected: { selected: 'front' },
     EmptyBoard: { artboards: [], styles: 'Overview', reviewCount: 0 },
     ErrorArtboard: { styles: 'Overview', error: 'hero' },
-    AddArtboard: { styles: 'Overview', menu: true, placement: ARCHIVE },
+    AddArtboard: {
+        inserter: 'AddArtboard',
+        styles: 'Overview',
+        placement: ARCHIVE,
+    },
     AddArtboard2: {
         artboards: [ ...ARTBOARDS, ARCHIVE ],
         live: 'archive',
@@ -105,6 +103,7 @@ const SCREENS = {
         right: 'block',
         zoom: 1,
     },
+    InserterPages: { inserter: 'InserterPages', styles: 'Overview' },
     InserterTemplates: { inserter: 'InserterTemplates', styles: 'Overview' },
     Library: {
         inserter: 'Library',
@@ -164,21 +163,12 @@ export function StaticScreen( { name } ) {
         screen.zoom,
         screen.live
     );
-    const addMenu = (
-        <AddArtboardMenu
-            existingTemplates={ TEMPLATES }
-            open={ screen.menu || undefined }
-            submenuOpen={ screen.menu || undefined }
-        />
-    );
-
     let left = (
         <ArtboardsPanel
             artboards={ artboards }
             selectedId={ screen.selected }
             onSelect={ () => {} }
             onEdit={ () => {} }
-            addMenu={ addMenu }
         />
     );
     if ( screen.inserter ) {
@@ -285,11 +275,7 @@ export function StaticScreen( { name } ) {
                         banner={ banner }
                         emptyState={
                             artboards.length ? null : (
-                                <EmptyBoard
-                                    addMenu={
-                                        <AddArtboardMenu trigger="button" />
-                                    }
-                                />
+                                <EmptyBoard onAdd={ () => {} } />
                             )
                         }
                         overlay={
