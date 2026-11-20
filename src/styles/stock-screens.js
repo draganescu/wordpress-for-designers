@@ -1,12 +1,13 @@
 /**
  * What the plugin knows about WordPress's stock styles screens, the
- * `GlobalStylesUI` of `@wordpress/global-styles-ui`: where they are rendered,
- * their paths, and three things the package has but does not export (its
+ * `GlobalStylesUI` of `@wordpress/global-styles-ui`: where they are rendered
+ * and what shows when one throws, their paths, and three things the package has but does not export (its
  * element list, what makes a variation a whole one, and when the Background
  * screen is offered). When WordPress exports one of these, or changes a
  * path, this is the only file to change.
  */
 import { __, sprintf } from '@wordpress/i18n';
+import { ErrorBoundary } from '@wordpress/editor';
 import {
     areGlobalStylesEqual,
     getSetting,
@@ -28,7 +29,10 @@ import {
 } from '@wordpress/icons';
 
 /**
- * A stock styles screen and the screens under it.
+ * A stock styles screen and the screens under it. The stock package uses
+ * private functions of the block editor WordPress ships; if a screen throws,
+ * WordPress's own error notice takes its place and nothing else is lost
+ * (decision D60). The key drops the notice when another screen is opened.
  *
  * @param {Object}   props
  * @param {string}   props.path           The screen's path.
@@ -47,22 +51,27 @@ export function StockScreen( {
     serverSettings,
 } ) {
     return (
-        <GlobalStylesUI
-            value={ value }
-            baseValue={ baseValue }
-            onChange={ onChange }
-            path={ path }
-            onPathChange={
-                onLeave &&
-                ( ( next ) => {
-                    if ( next !== path && ! next.startsWith( path + '/' ) ) {
-                        onLeave();
-                    }
-                } )
-            }
-            serverCSS={ serverSettings.styles }
-            serverSettings={ serverSettings }
-        />
+        <ErrorBoundary key={ path }>
+            <GlobalStylesUI
+                value={ value }
+                baseValue={ baseValue }
+                onChange={ onChange }
+                path={ path }
+                onPathChange={
+                    onLeave &&
+                    ( ( next ) => {
+                        if (
+                            next !== path &&
+                            ! next.startsWith( path + '/' )
+                        ) {
+                            onLeave();
+                        }
+                    } )
+                }
+                serverCSS={ serverSettings.styles }
+                serverSettings={ serverSettings }
+            />
+        </ErrorBoundary>
     );
 }
 

@@ -820,4 +820,57 @@ test.describe( 'STYLE', () => {
         await setColor( page, 'Accent 1', '#112233' );
         await expect( trigger ).toHaveText( 'Variation: Custom' );
     } );
+
+    test( "AC-STYLE-12 A stock styles screen that throws shows WordPress's error notice in its place; the board, the other tabs and the other stock screens keep working", async ( {
+        page,
+    } ) => {
+        await setViewport( page, { x: 40, y: 40, zoom: 0.25 } );
+        const index = artboardOf( fixture, 'template' );
+        const background = () =>
+            styleIn( page, index.id, 'body', 'backgroundColor' );
+        await expect.poll( background ).toBe( 'rgb(255, 255, 255)' );
+
+        // A block with a broken example: its stock screen throws when it
+        // builds the block's preview.
+        await page.evaluate( () =>
+            ( window as any ).wp.blocks.registerBlockType( 'wfd-test/thrower', {
+                apiVersion: 3,
+                title: 'Thrower',
+                category: 'text',
+                supports: { color: { text: true } },
+                example: { innerBlocks: [ null ] },
+                edit: () => null,
+                save: () => null,
+            } )
+        );
+        const panel = right( page );
+        await panel.getByRole( 'tab', { name: 'Blocks' } ).click();
+        await panel.getByRole( 'searchbox' ).fill( 'Thrower' );
+        await panel
+            .locator( '.wfd-row__name', { hasText: /^Thrower$/ } )
+            .click();
+        const crashed = panel.locator( '.wfd-styles__block-styles' );
+        await expect( crashed ).toContainText( 'The editor has crashed' );
+        await expect(
+            crashed.getByRole( 'button', { name: 'Copy error' } )
+        ).toBeVisible();
+
+        // The other tabs, another stock screen and the board still work.
+        await panel.getByRole( 'tab', { name: 'Tokens' } ).click();
+        await panel
+            .getByRole( 'button', { name: 'Edit Colors', exact: true } )
+            .click();
+        const stock = panel.locator( '.wfd-styles__screen' );
+        await expect(
+            stock
+                .getByRole( 'heading', { name: 'Colors', exact: true } )
+                .first()
+        ).toBeVisible();
+        await expect( stock ).not.toContainText( 'The editor has crashed' );
+        await stock
+            .getByRole( 'button', { name: 'Back', exact: true } )
+            .click();
+        await setColor( page, 'Base', '#112233' );
+        await expect.poll( background ).toBe( 'rgb(17, 34, 51)' );
+    } );
 } );
