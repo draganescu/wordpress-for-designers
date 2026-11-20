@@ -1,6 +1,6 @@
 /**
  * Creating artboards: arm a kind from a New row of the inserter, then click
- * the board to place it (decisions D11 and D49, spec/data-model.md "Creating
+ * the board to place it (decisions D11 and D60, spec/data-model.md "Creating
  * entities").
  */
 import { __ } from '@wordpress/i18n';

@@ -14,6 +14,7 @@ import { KINDS } from '../shell/constants';
 import { recordName } from '../shell/use-artboards';
 import { countTemplatesUsing } from '../shell/use-entity-info';
 import { changeLines } from './diff';
+import { discardEntityEdits } from './discard-entity-edits';
 
 const TYPES = {
     'root/globalStyles': 'styles',
@@ -192,7 +193,7 @@ export function useReview() {
                     entry.saved &&
                     recordName( entry.saved ) !== recordName( entry.edited )
                 ) {
-                    // The page or pattern was renamed on its label (D48).
+                    // The page or pattern was renamed on its label (D59).
                     item.lines = [
                         fieldChanged(
                             __( 'Title', 'wordpress-for-designers' )
@@ -239,29 +240,6 @@ export function useReview() {
     const core = useDispatch( coreStore );
     const board = useDispatch( boardStore );
 
-    const clearEdits = useCallback(
-        ( entry ) => {
-            const edits =
-                registry
-                    .select( coreStore )
-                    .getEntityRecordEdits( entry.kind, entry.name, entry.id ) ??
-                {};
-            const keys = Object.keys( edits );
-            if ( keys.length ) {
-                core.editEntityRecord(
-                    entry.kind,
-                    entry.name,
-                    entry.id,
-                    Object.fromEntries(
-                        keys.map( ( key ) => [ key, undefined ] )
-                    ),
-                    { undoIgnore: true }
-                );
-            }
-        },
-        [ registry, core ]
-    );
-
     const saveOne = useCallback(
         async ( entry ) => {
             if ( ! entry.isNew ) {
@@ -290,17 +268,17 @@ export function useReview() {
                 data,
                 { throwOnError: true }
             );
-            clearEdits( entry );
             // From now on the artboard is part of the board's layout.
             board.updateArtboard( entry.artboardId, {
                 entityId: created.id,
                 draft: undefined,
             } );
+            discardEntityEdits( registry, entry.kind, entry.name, entry.id );
             const args = [ entry.kind, entry.name, created.id ];
             core.invalidateResolution( 'getEntityRecord', args );
             core.invalidateResolution( 'getEditedEntityRecord', args );
         },
-        [ core, board, clearEdits ]
+        [ registry, core, board ]
     );
 
     const save = useCallback( async () => {
@@ -321,20 +299,48 @@ export function useReview() {
         setIsSaving( false );
     }, [ entries, unchecked, saveOne ] );
 
-    const discardAll = useCallback( () => {
-        for ( const entry of entries ) {
-            clearEdits( entry );
-        }
-        // Unsaved new templates and parts leave the board.
-        const drafts = entries
-            .filter( ( entry ) => entry.isNew )
-            .map( ( entry ) => entry.artboardId );
-        if ( drafts.length ) {
-            board.removeArtboards( drafts );
-        }
-        setFailed( new Set() );
-        setUnchecked( new Set() );
-    }, [ entries, clearEdits, board ] );
+    // Discards the changes of the given entries. An unsaved new template or
+    // part leaves the board, which is not undoable; the rest revert,
+    // together one step of the content history (D48).
+    const discard = useCallback(
+        ( list ) => {
+            let isStepStarted = false;
+            for ( const entry of list ) {
+                const isInStep = discardEntityEdits(
+                    registry,
+                    entry.kind,
+                    entry.name,
+                    entry.id,
+                    { undoable: ! entry.isNew, continued: isStepStarted }
+                );
+                isStepStarted = isStepStarted || isInStep;
+            }
+            const drafts = list
+                .filter( ( entry ) => entry.isNew )
+                .map( ( entry ) => entry.artboardId );
+            if ( drafts.length ) {
+                board.removeArtboards( drafts );
+            }
+            const without = ( current ) => {
+                const next = new Set( current );
+                list.forEach( ( entry ) => next.delete( entry.key ) );
+                return next.size === current.size ? current : next;
+            };
+            setFailed( without );
+            setUnchecked( without );
+        },
+        [ registry, board ]
+    );
+
+    const discardAll = useCallback(
+        () => discard( entries ),
+        [ discard, entries ]
+    );
+
+    const discardOne = useCallback(
+        ( key ) => discard( entries.filter( ( entry ) => entry.key === key ) ),
+        [ discard, entries ]
+    );
 
     const toggle = useCallback( ( key ) => {
         setUnchecked( ( current ) => {
@@ -375,6 +381,7 @@ export function useReview() {
             onClose: () => setIsOpen( false ),
             items,
             onToggleItem: toggle,
+            onDiscardItem: discardOne,
             onSave: save,
             onDiscardAll: discardAll,
             isSaving,

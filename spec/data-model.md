@@ -82,15 +82,15 @@ The server validates the JSON against this shape on save and rejects anything el
 
 | Kind | What is created | When | Source |
 |---|---|---|---|
-| Page | A `page` with status `draft`, title "Untitled page" (renamed on the board, D48), empty content, and as its template the theme's `blank` template if it has one, else its `page-no-title` template if it has one, else none (D36) | At placement | `[U]` |
+| Page | A `page` with status `draft`, title "Untitled page" (renamed on the board, D59), empty content, and as its template the theme's `blank` template if it has one, else its `page-no-title` template if it has one, else none (D36) | At placement | `[U]` |
 | Media | Nothing. The object refers to an image already in the media library | | `[U]` |
-| Pattern | A `wp_block` with status `draft`, title "Untitled pattern" (renamed on the board, D48), empty content, synced | At placement | `[U]` |
+| Pattern | A `wp_block` with status `draft`, title "Untitled pattern" (renamed on the board, D59), empty content, synced | At placement | `[U]` |
 | Template | A `wp_template` for the chosen purpose, with content: the theme's Header part, one empty paragraph, the theme's Footer part | At first save from Review, never before | `[U]` `[D:AddArtboard2]` |
 | Template part | A `wp_template_part` titled "Untitled part", area `uncategorized` (labelled General), empty content | At first save from Review, never before | `[U]` `[V]` |
 
 Until its first save, a new template or template part exists only in the browser session. Its artboard is not written to the board's layout until that save. Closing the tab before saving loses it; the unsaved-changes warning covers this. `[N]`
 
-Template purposes offered, with the slug each creates: Archive `archive`, Search results `search`, Page: 404 `404`, Single item `singular`, Custom (a custom template titled "Untitled template"). A purpose whose template already exists on the site is not offered as new; that template is listed in the Templates tab's "Templates" group (D49). `[U]` `[V]`
+Template purposes offered, with the slug each creates: Archive `archive`, Search results `search`, Page: 404 `404`, Single item `singular`, Custom (a custom template titled "Untitled template"). A purpose whose template already exists on the site is not offered as new; that template is listed in the Templates tab's "Templates" group (D60). `[U]` `[V]`
 
 If the theme has no Header or Footer part, the new template's content is the one empty paragraph. `[N]`
 
@@ -118,7 +118,7 @@ When the entity is deleted, trashed or reset, every other artboard on any board 
 - Review changes saves the checked items, one REST request per item. `[B6]` `[U]`
 - A failed save leaves the item checked and listed with its error. `[U]`
 - A page's template, changed from the right panel (D35), is an edit of the page like any other: listed under the page in Review with the line "Template: changed" and saved with it. `[U]`
-- A page's or pattern's name, changed on its artboard label (D48), is an edit of that page or pattern like any other: listed under it in Review with the line "Title: changed" and saved with it. `[U]`
+- A page's or pattern's name, changed on its artboard label (D59), is an edit of that page or pattern like any other: listed under it in Review with the line "Title: changed" and saved with it. `[U]`
 - Saving never changes a page's or pattern's status. Publishing drafts is done in wp-admin. `[N]`
 - Global styles save as the `globalStyles` entity of the active theme. `[B7]`
 - Edits that blocks make to other records (the site's title, tagline and logo; navigation menus) are listed in Review as their own items and saved the same way. `[U]`

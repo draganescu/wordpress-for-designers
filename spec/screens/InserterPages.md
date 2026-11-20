@@ -4,7 +4,7 @@ No image.
 
 **State.** Inserter on, Pages tab, nothing in edit.
 
-**Source.** [U] (D49)
+**Source.** [U] (D60)
 
 ## Regions used (defined in README.md)
 

@@ -253,7 +253,7 @@ export function App() {
     const [ isRightHidden, setRightHidden ] = useState( false );
     const togglePanels = useRef( null );
     const [ isShortcutsOpen, setShortcutsOpen ] = useState( false );
-    // The artboard whose page or pattern is being named on its label (D48).
+    // The artboard whose page or pattern is being named on its label (D59).
     const [ renamingId, setRenamingId ] = useState( null );
     const [ inserterQuery, setInserterQuery ] = useState( '' );
     const [ inserterTab, setInserterTab ] = useState( 'blocks' );
@@ -699,7 +699,8 @@ export function App() {
                 blockStyles={
                     editing.selectedBlock && scope === 'all'
                         ? stylesPanel.blockStylesFor(
-                              editing.selectedBlock.name
+                              editing.selectedBlock.name,
+                              () => setScope( 'block' )
                           )
                         : null
                 }

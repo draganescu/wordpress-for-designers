@@ -18,7 +18,7 @@ Left to right:
 | ID | Element | Component | Text / label | Behaviour |
 |---|---|---|---|---|
 | H1 | Boards link | `ButtonLink` with the `wordpress` icon, dark square | Label "All boards" | Goes to the Boards screen. If there are unsaved edits, the browser's leave warning applies. |
-| H2 | Inserter toggle | `IconButton`, `plus` icon, solid brand; when on, `close` icon, neutral strong | Labels "Block inserter" / "Close block inserter" | Toggles the inserter in the left panel. The inserter is the one place artboards are added from (D49). |
+| H2 | Inserter toggle | `IconButton`, `plus` icon, solid brand; when on, `close` icon, neutral strong | Labels "Block inserter" / "Close block inserter" | Toggles the inserter in the left panel. The inserter is the one place artboards are added from (D60). |
 | H3 | Undo | `IconButton`, `undo` | Tooltip in the form given in `architecture.md`, Undo; "Undo" when history is empty | Disabled when the active history is empty. |
 | H4 | Redo | `IconButton`, `redo` | Same form with "Redo" | Disabled when nothing to redo. |
 | H5 | List view toggle | `IconButton`, `listView`, pressed state | Label "List view" | Shows or hides the list view. Disabled when no artboard is in edit. |
@@ -56,7 +56,7 @@ Notes (D46): `[U]`
 | ID | Element | Component | Text | Behaviour |
 |---|---|---|---|---|
 | L1 | Panel heading | `Text` heading-md | "Artboards" | |
-| L2 | Removed by D49 | | | The left panel has no "Add artboard" control: artboards are added from the inserter (H2, L12). |
+| L2 | Removed by D60 | | | The left panel has no "Add artboard" control: artboards are added from the inserter (H2, L12). |
 | L3 | Group heading | `Text` heading-sm with a count at the right | "Pages", "Templates", "Template parts", "Patterns", "Media", "Notes" | A group with no artboards is not shown. `[N]` |
 | L4 | Artboard row | `wpc.ItemGroup` / `Item` row: kind icon (`page`, `layout`, `header`, `symbol`), name, device at the right | Device words "Desktop", "Tablet", "Mobile" | Click selects the artboard and scrolls it into view. Cmd/Ctrl + click adds the row to the selection or takes it out; Shift + click selects every row from the one clicked last to this one (D41). Double-click or Enter edits it. Delete or Backspace on a focused row removes the selected artboards, as on the board. Every selected row uses the brand surface. |
 
@@ -74,11 +74,11 @@ Rows are ordered by name within a group, then Desktop, Tablet, Mobile. `[N]`
 | ID | Element | Component | Text | Behaviour |
 |---|---|---|---|---|
 | L7 | Search | `wpc.SearchControl` | Placeholder "Search" | Filters every tab; the tab strip stays. |
-| L8 | Tabs | `Tabs` | "Blocks", "Pages", "Patterns", "Templates", "Media" | With no artboard in edit the Blocks tab is not shown and Pages is the first tab. With an artboard in edit the Pages tab is not shown and Blocks is the first tab (D33, D49). |
+| L8 | Tabs | `Tabs` | "Blocks", "Pages", "Patterns", "Templates", "Media" | With no artboard in edit the Blocks tab is not shown and Pages is the first tab. With an artboard in edit the Pages tab is not shown and Blocks is the first tab (D33, D60). |
 | L9 | Group heading | as L3 | per tab, see each inserter screen | |
 | L10 | Item row | as L4: icon, name, optional second line | per tab | Click and drag do the same thing (D39). With an artboard in edit: click inserts at the editor's insertion point, drag inserts where it is dropped in that artboard; a template row does nothing. With no artboard in edit: click or drag puts the item on the board as an artboard, or a media object for an image. |
 | L11 | Hint | `Text` on a weak neutral surface, pinned to the panel bottom | per tab | |
-| L12 | New row | as L10 with the `plus` icon, in the first groups of the Pages, Patterns and Templates tabs; those group headings have no count | Group "New": "New page", "New pattern", "New template part". Group "New template for": the template purposes. See each inserter screen | Click arms placement of a new artboard of that kind (D49, the "New artboard 1" screen). Not dragged. Shown only with no artboard in edit. The search filters it by its name like any row. |
+| L12 | New row | as L10 with the `plus` icon, in the first groups of the Pages, Patterns and Templates tabs; those group headings have no count | Group "New": "New page", "New pattern", "New template part". Group "New template for": the template purposes. See each inserter screen | Click arms placement of a new artboard of that kind (D60, the "New artboard 1" screen). Not dragged. Shown only with no artboard in edit. The search filters it by its name like any row. |
 
 ## Region: Canvas `[D:Overview]` `[D:Main]` `[U]`
 
@@ -90,7 +90,7 @@ Rows are ordered by name within a group, then Desktop, Tablet, Mobile. `[N]`
 | A4 | Selection outline | 2 px brand stroke around each selected artboard and the Live artboard | | |
 | A5 | Keyboard shortcuts | `IconButton`, `keyboard`, on a neutral surface with a subtle shadow, floating over the board at the bottom left of the canvas area | Label "Keyboard shortcuts" | Opens the keyboard shortcuts dialog (D42, `ShortcutsDialog.md`). It stays in its corner while the board pans and zooms, and is there in every state of the board, an artboard in edit included. |
 | A6 | Selection rectangle | A rectangle from where the drag started to the pointer, with a 1 px brand stroke and no fill (D47) | | Shown only while dragging from empty board (D43). Every artboard and media object it touches is selected, as it is dragged. Cmd/Ctrl + drag adds to the selection. Esc cancels the drag and puts the selection back as it was. |
-| A7 | Name field | `InputControl` in the label, in place of the name; its label "Name" is hidden from view | The name, selected | Shown after a double-click on the label of a page or pattern artboard, or F2 with that one artboard selected (D48). Enter or a click elsewhere keeps the new name; Esc leaves the name as it was; an empty name is not kept. The rest of the label stays as it is. The new name is an unsaved edit, saved from Review. |
+| A7 | Name field | `InputControl` in the label, in place of the name; its label "Name" is hidden from view | The name, selected | Shown after a double-click on the label of a page or pattern artboard, or F2 with that one artboard selected (D59). Enter or a click elsewhere keeps the new name; Esc leaves the name as it was; an empty name is not kept. The rest of the label stays as it is. The new name is an unsaved edit, saved from Review. |
 
 The canvas background is the weak neutral surface. Dragging an artboard moves it freely; there is no snapping or grid. `[N]` Dragging from empty board selects with a rectangle (A6, D43). `[U]`
 
@@ -112,7 +112,7 @@ The canvas background is the weak neutral surface. Dragging an artboard moves it
 | E1 | Tabs | `Tabs` | First tab is the artboard's kind ("Page", "Template", "Template part", "Pattern"); second is "Block" | "Block" is selected when a block is selected. |
 | E2 | Block tab: block card | Stock, from `be.BlockInspector` | | |
 | E3 | Block tab: scope switch | `wpc.ToggleGroupControl` | Label "Style applies to"; options "This block", "All {block title}"; help "Switch to change every {block title} block on the site." | See `architecture.md`, Styles. |
-| E4 | Block tab: controls | `be.BlockInspector` filled through a slot, or `gs.GlobalStylesUI` when E3 is on "All" | Stock | |
+| E4 | Block tab: controls | `be.BlockInspector` filled through a slot, or `gs.GlobalStylesUI` when E3 is on "All" | Stock | With E3 on "All", the stock screen's Back control sets E3 back to "This block" (D58). `[U]` |
 | E5 | Kind tab: entity card | kind icon, `Text` heading-md name, `Text` weak description | Description by kind, see the "New artboard 2" and "Selected" screens | |
 | E6 | Kind tab: device | `wpc.ToggleGroupControl` | Label "Artboard device"; "Desktop", "Tablet", "Mobile" | Changes this artboard's device. |
 | E8 | Kind tab: page template | `wpc.SelectControl`, pages only, after E6 | Label "Template"; first option "Default template", then the site's custom templates by title | Changes the page's template (D35). The same control is in the artboard settings of a selected page, after the device control. |

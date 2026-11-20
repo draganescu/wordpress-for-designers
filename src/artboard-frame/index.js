@@ -91,7 +91,7 @@ export function ArtboardError( { kind, onRetry } ) {
 
 /**
  * A7: the text field a page or pattern is named in, in place of the name in
- * its artboard's label (D48). Enter or a click elsewhere keeps the name, Esc
+ * its artboard's label (D59). Enter or a click elsewhere keeps the name, Esc
  * leaves it as it was.
  *
  * @param {Object}   props

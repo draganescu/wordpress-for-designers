@@ -118,7 +118,7 @@ export function PlacementOutline( { rect, label, hint } ) {
 }
 
 /**
- * The empty board. Its button turns the inserter on (D49).
+ * The empty board. Its button turns the inserter on (D60).
  *
  * @param {Object}   props
  * @param {Function} props.onAdd Called when "Add artboard" is pressed.

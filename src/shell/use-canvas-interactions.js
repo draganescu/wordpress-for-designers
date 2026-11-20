@@ -506,7 +506,7 @@ export function useCanvasInteractions( {
                 target.closest( '.wfd-artboard__label' ) &&
                 ! target.closest( 'button' )
             ) {
-                // The label of a page or pattern names it (D48).
+                // The label of a page or pattern names it (D59).
                 latest.current.onRename( element.dataset.wfdArtboard );
                 return;
             }

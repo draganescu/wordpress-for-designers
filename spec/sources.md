@@ -24,7 +24,7 @@ The list below is generated from every `[N]` tag in the spec. Until the product 
 | 4 | `acceptance.md` | 20 | AC-BOARD-06 Reopening a board restores the user's last pan and zoom; a board never opened by this browser opens fitted to all artboards. `[N]` |
 | 5 | `acceptance.md` | 34 | AC-CANVAS-04 The H8 menu items change zoom as named; "Fit all" shows every artboard. `[N]` |
 | 6 | `acceptance.md` | 112 | AC-INS-03 With no artboard in edit, clicking a block row inserts nothing and the hint reads "Edit an artboard to insert blocks." `[N]` |
-| 7 | `acceptance.md` | 144 | AC-SAVE-06 Discard all, after confirmation, reverts every edited record and removes unsaved new templates and parts from the board. `[N]` |
+| 7 | `acceptance.md` | 144 | AC-SAVE-06 Discard all, after confirmation, reverts every edited record as one step that Undo and Redo act on, and removes unsaved new templates and parts from the board. `[N]` `[U]` |
 | 8 | `acceptance.md` | 154 | AC-STATE-06 An artboard whose entity no longer exists is removed from the board on load. `[N]` |
 | 9 | `acceptance.md` | 160 | AC-A11Y-03 The automated accessibility scan used by WordPress's end-to-end utilities reports no violations on the Overview, Main, Styles and Review states. `[N]` |
 | 10 | `api-allowlist.md` | 49 | Use WordPress public functions only. The ones this plugin needs: `register_post_type`, `add_menu_page`, `add_submenu_page`, `current_user_can`, `get_block_editor_settings`, `WP_Block_Editor_Context`, `block_editor_rest_api_preload`, `wp_enqueue_script`, `wp... |
@@ -71,5 +71,5 @@ The list below is generated from every `[N]` tag in the spec. Until the product 
 | 52 | `screens/README.md` | 80 | S6 / Tokens: Spacing group / heading-sm "Spacing"; one square per spacing preset with its px value under it / / Display only. `[N]` |
 | 53 | `screens/README.md` | 92 | E7 / Kind tab: live notice / `Notice`, caution tone, templates and parts only / "Templates have no draft. Saving this one puts it live on every {purpose} of the site." for templates; "Template parts have no draft. Saving this one puts it live everywhere it ... |
 | 54 | `screens/ResetDialog.md` | 7 | **Source.** [U]; hiding the checkbox is [N] |
-| 55 | `screens/Review.md` | 7 | **Source.** [U] [D:Review]; the discard confirmation, the five-line limit and the wording of block change lines are [N] |
+| 55 | `screens/Review.md` | 7 | **Source.** [U] [D:Review]; each item's "Discard" control and what it does are D48 [U] and are not in the image; that control's variant and place, the wording of the discard confirmations, the five-line limit and the wording of block change lines are [N] |
 | 56 | `screens/Selected.md` | 7 | **Source.** [U] [N] for this panel's content |

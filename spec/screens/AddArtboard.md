@@ -4,7 +4,7 @@
 
 **State.** The inserter is on, on its Templates tab; "Archive" under "New template for" was clicked and the pointer is over the board.
 
-**Source.** [U] [D:AddArtboard]. The image shows the Add artboard menu that D49 removed: the kind is now picked from a New row of the inserter. The placement ghost is as drawn.
+**Source.** [U] [D:AddArtboard]. The image shows the Add artboard menu that D60 removed: the kind is now picked from a New row of the inserter. The placement ghost is as drawn.
 
 ## Regions used (defined in README.md)
 
