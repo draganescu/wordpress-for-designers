@@ -680,8 +680,17 @@ export async function rasterWork(
         sharp = Math.max( sharp, event.ts + event.dur );
     }
     if ( stop - sharp < RASTER_PAUSE * 1000 ) {
+        // What the board held by then, for whoever reads the failure.
+        const { waiting, placeholders } = await page.evaluate(
+            inPage( () => ( {
+                waiting: artboardsShown().waiting,
+                placeholders: document.querySelectorAll(
+                    '.wfd-artboard__skeleton'
+                ).length,
+            } ) )
+        );
         throw new Error(
-            `Drawing had not stopped ${ RASTER_WATCH } ms after the gesture.`
+            `Drawing had not stopped ${ RASTER_WATCH } ms after the gesture: ${ waiting } artboards were waiting for their content and ${ placeholders } showed a placeholder.`
         );
     }
     return {

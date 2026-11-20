@@ -11,7 +11,6 @@ import {
     percentile,
     processStats,
     rasterWork,
-    settle,
     test,
     throttle,
 } from './support';
@@ -120,15 +119,20 @@ test.describe( 'Gestures', { tag: '@timing' }, () => {
 
         await throttle( client );
 
+        // After each gesture the board is waited for, not only the app. A
+        // frame that takes longer than the app waits before it calls the
+        // viewport settled re-tiers the board part of the way through:
+        // artboards leave it and come back, and their frozen copies load
+        // again. See "Things to know", docs/performance.md.
         const pan = await wheel( page, { deltaX: 12, deltaY: 8 }, 120 );
         record( 'pan.frame-p95', percentile( pan, 0.95 ), 'ms' );
         record( 'pan.frames-dropped', droppedFrames( pan ), 'count' );
-        await settle( page );
+        await drawn( page );
 
         const zoom = await wheel( page, { deltaY: -3, ctrlKey: true }, 120 );
         record( 'zoom.frame-p95', percentile( zoom, 0.95 ), 'ms' );
         record( 'zoom.frames-dropped', droppedFrames( zoom ), 'count' );
-        await settle( page );
+        await drawn( page );
 
         // Zooming in and back out, twice over 40 frames: the board is drawn
         // at each scale on the way and drawn sharp once it stops.
