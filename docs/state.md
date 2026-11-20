@@ -4,12 +4,12 @@ As of 2026-11-19. This describes what exists; `spec/` says what should exist. Fo
 
 ## Summary
 
-The plugin is built through Milestone 12 of `spec/build-order.md`, plus the decisions taken afterwards (D32 to D48, and D58).
+The plugin is built through Milestone 12 of `spec/build-order.md`, plus the decisions taken afterwards (D32 to D50, and D58).
 
 | Check | Result |
 |---|---|
-| Acceptance criteria in `spec/acceptance.md` | 128 |
-| End-to-end tests, one per criterion | 128. AC-STYLE-11 (D58) joined after the run described next. On 2026-11-20 the whole suite of 127, AC-SAVE-08 and AC-SAVE-09 (D48) included, was run once from a worktree: 126 pass and AC-PERF-03 fails, as it does from any worktree. On 2026-11-19 the suite of 125 was run three times: all pass after two fixes to the tests. AC-CANVAS-03 used an empty-board point that D42's Keyboard shortcuts control now covers; AC-STYLE-07 (and three like it in `ins.spec.ts` and `style.spec.ts`) counted menu rows once instead of waiting for them, and failed one run in three. AC-PERF-03 still fails on a port-8890 environment from a worktree (see working-notes.md) |
+| Acceptance criteria in `spec/acceptance.md` | 132 |
+| End-to-end tests, one per criterion | 132. AC-SHELL-10 to 13 (D49, D50) and AC-STYLE-11 (D58) joined after the runs described next. On 2026-11-20 the whole suite of 127, AC-SAVE-08 and AC-SAVE-09 (D48) included, was run once from a worktree: 126 pass and AC-PERF-03 fails, as it does from any worktree. On 2026-11-19 the suite of 125 was run three times: all pass after two fixes to the tests. AC-CANVAS-03 used an empty-board point that D42's Keyboard shortcuts control now covers; AC-STYLE-07 (and three like it in `ins.spec.ts` and `style.spec.ts`) counted menu rows once instead of waiting for them, and failed one run in three. AC-PERF-03 still fails on a port-8890 environment from a worktree (see working-notes.md) |
 | `npm run lint` | Exits 0, no disabled lines |
 | CI | `.github/workflows/tests.yml` runs lint, build and the suite (Chromium, wp-env) on every pull request; CI retries a failed test twice and reports a pass on retry as flaky |
 | Open questions waiting for the product owner | 27 (`spec/open-questions.md`) |
@@ -43,6 +43,8 @@ A "Designer" menu in wp-admin lists boards. A board opens full screen: a header,
 - **Review.** Nothing reaches the site until "Review changes" is used. It lists each changed item and saves the checked ones. "Discard all" reverts everything, and each item's own "Discard" that item alone, after a confirmation. Either is one step that Undo and Redo act on in an artboard, except for a new template or part, which leaves the board for good; only then does the confirmation say that it can't be undone (D48, OQ-32). Artboard positions save on their own, two seconds after a change.
 - **Locks.** Editing a page or pattern takes WordPress's post lock through the plugin's own route and dialog.
 - **Panels.** Both side panels can be hidden from the header or with Cmd/Ctrl + \. Resting the pointer on the left or right edge of the canvas area brings a hidden panel back.
+- **Window size.** Below 1180 px wide (an iPad Air in landscape) the whole window shows "Designing needs more space" and nothing of the board can be used; a board already open stays mounted behind it and comes back as it was (D49, `src/shell/space-gate.js` and `_space-gate.scss`). From 1180 to 1439 px the panels are narrower (D50, `src/shell/style.scss`). Touch input is cut while the message invites tablets; it is being added separately.
+- **Block toolbar.** While a block is selected its toolbar is in the header in place of the document bar's title, at every width, with an arrow at its end that hides it and shows it again; "Back to the board" stays visible beside it. It copies the collapsible block toolbar of WordPress's own header, which is not exported (D50, `src/artboard-editor/collapsible-block-toolbar.js`). A toolbar wider than its room scrolls sideways, as the stock toolbar does.
 
 ## Layout of the repository
 
@@ -84,7 +86,7 @@ Two entries: `boards` (the Boards list, `src/boards/`) and `board` (the app, `sr
 | `tier-scheduler/` | Tier of each artboard; Previews mounted nearest first through a priority queue |
 | `artboard-frame/` | One artboard: position, label, outline, error state, media image |
 | `artboard-preview/` | The Preview tier; finding a page's template |
-| `artboard-editor/` | The Live editor; `coalesce.js` groups typing into undo steps; `drag-anywhere.js` is the removable drag-from-anywhere layer (D40) |
+| `artboard-editor/` | The Live editor; `collapsible-block-toolbar.js` is the header's block toolbar and its arrow (D50); `coalesce.js` groups typing into undo steps; `drag-anywhere.js` is the removable drag-from-anywhere layer (D40) |
 | `artboard-snapshot/` | The frozen copy of a Preview |
 | `chrome-slots/` | Slots for the block toolbar, inspector and list view |
 | `inserter/` | The inserter panel, its data and actions |
@@ -165,6 +167,7 @@ git push --follow-tags
 | Viewport height that `vh` units resolve against in an artboard | 900 px | `src/artboard-frame/viewport-units.js` |
 | Widest media object | 1440 px | `src/shell/constants.js` |
 | Note width | 240 board units | `src/shell/notes.js` |
+| Narrowest window a board is shown in | 1180 px | `src/shell/space-gate.js`, and `src/shell/style.scss` for the 1440 px width below which the shell makes room |
 | Images listed in the Media tab | 50 most recent | `src/inserter/use-inserter-data.js` |
 
 ## Where the build differs from, or goes beyond, the spec as received
@@ -180,7 +183,7 @@ Each of these is recorded in the spec; this is the short list to read first.
 
 ## Open questions
 
-Twenty-seven entries are open, OQ-4, OQ-6 to OQ-10 and OQ-12 to OQ-32. The missing numbers were decided by the product owner and removed from the file. None leaves something unbuilt; each records a choice made where the spec was silent or could not be met as written. Grouped:
+Twenty-eight entries are open, OQ-4, OQ-6 to OQ-10 and OQ-12 to OQ-33. The missing numbers were decided by the product owner and removed from the file. None leaves something unbuilt; each records a choice made where the spec was silent or could not be met as written. Grouped:
 
 | About | Entries |
 |---|---|
@@ -189,7 +192,7 @@ Twenty-seven entries are open, OQ-4, OQ-6 to OQ-10 and OQ-12 to OQ-32. The missi
 | The allowlist | OQ-14, OQ-17, OQ-20 |
 | Limits inside WordPress | OQ-13, OQ-21 |
 | Two spec statements that conflict | OQ-12, OQ-18, OQ-19 |
-| Builder's choices to confirm | OQ-6, OQ-23, OQ-24, OQ-25, OQ-26, OQ-27, OQ-28, OQ-29, OQ-30, OQ-31, OQ-32 |
+| Builder's choices to confirm | OQ-6, OQ-23, OQ-24, OQ-25, OQ-26, OQ-27, OQ-28, OQ-29, OQ-30, OQ-31, OQ-32, OQ-33 |
 | Build order | OQ-10 |
 
 ## Sensible next steps

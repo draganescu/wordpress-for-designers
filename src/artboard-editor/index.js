@@ -18,12 +18,12 @@ import {
     BlockEditorProvider,
     BlockInspector,
     BlockList,
-    BlockToolbar,
     store as blockEditorStore,
     useBlockEditingMode,
 } from '@wordpress/block-editor';
 import { getBlockType, getBlockTypes } from '@wordpress/blocks';
 import { ListView } from '../adapter/experimental';
+import { CollapsibleBlockToolbar } from './collapsible-block-toolbar';
 import { BlockToolbarFill, InspectorFill, ListViewFill } from '../chrome-slots';
 import { usePageTemplateId } from '../artboard-preview/use-page-template';
 import { FrameElementContext } from '../artboard-frame';
@@ -309,7 +309,7 @@ function Editor( {
                         <BlockEditorKeyboardShortcuts.Register />
                         <DragAnywhere />
                         <BlockToolbarFill>
-                            <BlockToolbar hideDragHandle />
+                            <CollapsibleBlockToolbar />
                         </BlockToolbarFill>
                         <InspectorFill>
                             <BlockInspector />

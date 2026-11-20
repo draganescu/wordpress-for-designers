@@ -711,7 +711,17 @@ test.describe( 'EDIT', () => {
             .locator( '[data-wfd-panel="editing"]' )
             .getByRole( 'tab', { name: 'Pattern' } )
             .click();
-        await page.locator( '[data-wfd-control="H7"]' ).click();
+        // An empty part of the header, between the document bar and H12.
+        const bar = ( await page
+            .locator( '[data-wfd-control="H7"]' )
+            .boundingBox() )!;
+        const tidy = ( await page
+            .locator( '[data-wfd-control="H12"]' )
+            .boundingBox() )!;
+        await page.mouse.click(
+            ( bar.x + bar.width + tidy.x ) / 2,
+            bar.y + bar.height / 2
+        );
         await expect( artboard ).toHaveAttribute( 'data-wfd-tier', 'live' );
     } );
 

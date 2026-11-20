@@ -121,6 +121,8 @@ What to do differently:
 - **The board scrolled.** The editor calls `scrollIntoView` on its selection. A box with `overflow: hidden` can still be scrolled by script, and the canvas area was. It is now `overflow: clip`.
 - **Typing undid one keystroke at a time.** `block-editor` decides whether a change continues the last one from a `lastAction` value shared by every block-editor store on the page. With several editors mounted it is overwritten between keystrokes. `src/artboard-editor/coalesce.js` makes that decision for the Live editor. Page content is still affected in one case (OQ-13).
 - **`BlockPreview` caps its height at 2000 px** with inline max-heights. A rule in `src/shell/style.scss` lifts the cap inside `.wfd-preview` (D44); AC-TIER-13 is the alarm.
+- **The block toolbar scrolls itself.** In the header slot WordPress's `.block-editor-block-toolbar` takes the width it is given and scrolls sideways inside it, with no scrollbar, and it is a new element for each selected block. The plugin's box around it never overflows, so measure and scroll the stock element (AC-SHELL-12).
+- **A modal of `@wordpress/ui` hides the rest of the body from assistive technology.** While a `Dialog`, `AlertDialog` or `Drawer` is open, every other child of the body has `aria-hidden="true"`, the board's root included. Anything that must stay readable above one has to be its own child of the body, as the needs-space message is.
 - **Viewport-height units have no fixed meaning in an artboard.** The iframe is as tall as its content, so `100vh` content grows each time the iframe is fitted to it, without end. `src/artboard-frame/viewport-units.js` rewrites those lengths to pixels of a 900 px viewport in the styles passed to the canvas, and overrides the ones in inline styles and in the canvas's other style sheets with generated rules (OQ-30, AC-DEV-05). 900 is not a limit on content: it is only what `100vh` means.
 - **A block's stock styles screen has its own heading and Back.** The Blocks tab of the Styles panel adds neither (D58). The stock Back moves the stock navigation up to its own block list at `/blocks`; `GlobalStylesUI` reports the new path through `onPathChange`, and the panel then shows its own list instead (`blockStylesFor` in `src/styles/use-styles-panel.js`). Where the stock Back leads is not documented by WordPress; AC-STYLE-04 is the alarm. Under "All {block}" in the Block tab the same report sets "Style applies to" back to "This block" (D58); AC-STYLE-11 is the alarm there.
 - **`PostLockedModal` cannot be used without `EditorProvider`.** It reads everything from the `core/editor` store. The plugin has its own lock route and dialog (D31).
@@ -154,6 +156,8 @@ What to do differently:
 - `@wordpress/no-unknown-ds-tokens` rejects a raw token string in JavaScript; the brand colour is read from a probe element.
 - The i18n rules reject strings with leading or trailing spaces; separators are their own translatable string.
 - In zsh, quote globs passed to `grep` (`--include='*.js'`).
+- The build writes a right-to-left copy of each style sheet and flips `direction: ltr` to `rtl` in it. To keep something left to right, set `dir="ltr"` on the element.
+- In zsh, `$VAR:spec/file` applies the `:s` modifier. Write `${VAR}:spec/file`.
 
 ### Tests
 

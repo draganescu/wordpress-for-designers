@@ -62,7 +62,7 @@ Rules:
 |---|---|---|---|---|
 | Nothing selected | Artboards by kind | Styles | Document bar shows the board name | `[U]` `[D:Overview]` |
 | An artboard selected | Artboards by kind, its row highlighted | Artboard settings | Same | `[U]` `[D:Selected]` |
-| An artboard in edit | List view of its blocks when the list view toggle is on (on by default when entering edit); otherwise closed | Tabs: the entity (for example "Template part") and "Block" | Block toolbar shown; document bar shows the artboard's name and kind with a back arrow | `[U]` `[D:Main]` |
+| An artboard in edit | List view of its blocks when the list view toggle is on (on by default when entering edit); otherwise closed | Tabs: the entity (for example "Template part") and "Block" | Document bar shows the artboard's name and kind with a back arrow; while a block is selected the block toolbar is shown in place of the name, until it is hidden with H14, and the back arrow stays (D50) | `[U]` `[D:Main]` |
 | Inserter toggle on (any state) | Inserter, replacing whatever was there | Unchanged | Toggle shows a close icon | `[U]` `[D:Library]` |
 
 The list view toggle is disabled when no artboard is in edit. `[N]`
@@ -114,6 +114,8 @@ Outside an artboard in edit: `[U]`
 | Delete / Backspace | Remove the selected artboard (opens the confirmation); with several selected, take them all off the board with no confirmation (D41) |
 | Cmd/Ctrl + Z, Cmd/Ctrl + Shift + Z | Undo, redo layout |
 | Esc | Clear selection |
+
+While the window is narrower than 1180 px and the message of D49 shows, no key reaches the board, the ones marked "always" included. `[U]`
 
 While an artboard is in edit, a click on empty board leaves edit and clears the selection, and a click on another artboard leaves edit and selects it (D38). `[U]`
 
