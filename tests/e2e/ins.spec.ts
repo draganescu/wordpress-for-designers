@@ -7,21 +7,9 @@ import {
     enterEdit,
     editorFrame,
     artboardOf,
+    openInserter,
     type Fixture,
 } from './utils';
-
-const openInserter = async ( page: Page, tab?: string ) => {
-    await page
-        .locator( '[data-wfd-region="header"]' )
-        .getByRole( 'button', { name: 'Block inserter', exact: true } )
-        .click();
-    const panel = page.locator( '.wfd-inserter' );
-    await expect( panel ).toBeVisible();
-    if ( tab ) {
-        await panel.getByRole( 'tab', { name: tab } ).click();
-    }
-    return panel;
-};
 
 const dropOnEmptyBoard = async (
     page: Page,
@@ -732,10 +720,11 @@ test.describe( 'INS', () => {
         await expect( page.locator( '[data-wfd-tier="live"]' ) ).toHaveCount(
             0
         );
-        await page.waitForTimeout( 300 );
         const clickedId =
             ( await clicked.getAttribute( 'data-wfd-artboard' ) )!;
-        expect( await overlapsAnother( page, clickedId ) ).toBe( false );
+        await expect
+            .poll( () => overlapsAnother( page, clickedId ) )
+            .toBe( false );
         await expect(
             clicked.locator( '.wfd-artboard__frame' )
         ).toBeInViewport();
@@ -745,7 +734,14 @@ test.describe( 'INS', () => {
         await page.evaluate( () =>
             ( window as any ).wfdTest.viewport.panBy( 0, -1200 )
         );
-        await page.waitForTimeout( 300 );
+        // The board is at rest again.
+        await expect
+            .poll( () =>
+                page.evaluate( () =>
+                    ( window as any ).wfdTest.viewport.isGesturing()
+                )
+            )
+            .toBe( false );
         const { box, target } = await dropOnEmptyBoard( page, rowOf( 'Zine' ) );
         const outline = page.locator( '[data-wfd-placement]' );
         await expect( outline ).toBeVisible();

@@ -7,21 +7,12 @@ import {
     enterEdit,
     artboardOf,
     armNew,
+    openInserter,
     type Fixture,
 } from './utils';
 
 const armTemplate = ( page: Page, item: string ) =>
     armNew( page, 'Templates', item );
-
-const openInserter = async ( page: Page ) => {
-    await page
-        .locator( '[data-wfd-region="header"]' )
-        .getByRole( 'button', { name: 'Block inserter', exact: true } )
-        .click();
-    const panel = page.locator( '.wfd-inserter' );
-    await expect( panel ).toBeVisible();
-    return panel;
-};
 
 const placeAt = async ( page: Page, dx = 300, dy = 500 ) => {
     const canvas = ( await page
@@ -121,7 +112,7 @@ test.describe( 'NEW', () => {
         page,
         requestUtils,
     } ) => {
-        await armNew( page, 'Pages', 'New page', { keepOpen: true } );
+        await armNew( page, 'Pages', 'New page' );
         const canvas = ( await page
             .locator( '[data-wfd-region="canvas"]' )
             .boundingBox() )!;

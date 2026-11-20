@@ -1,4 +1,5 @@
 import { test, expect } from '@wordpress/e2e-test-utils-playwright';
+import type { RequestUtils } from '@wordpress/e2e-test-utils-playwright';
 import type { Page } from '@playwright/test';
 import {
     resetFixture,
@@ -12,9 +13,9 @@ const review = ( page: Page ) => page.locator( '[data-wfd-control="H9"]' );
 const field = ( page: Page ) => page.locator( '[data-wfd-name-field]' );
 const labelOf = ( page: Page, id: string ) =>
     page.locator( `[data-wfd-artboard="${ id }"] .wfd-artboard__label` );
-const titleOf = async ( requestUtils: any, path: string ) =>
+const titleOf = async ( requestUtils: RequestUtils, path: string ) =>
     (
-        await requestUtils.rest( {
+        await requestUtils.rest< { title: { raw: string } } >( {
             path,
             params: { context: 'edit' },
         } )
@@ -101,15 +102,9 @@ test.describe( 'NAME', () => {
         // Review lists both with the line, and saving writes the names.
         await review( page ).click();
         const drawer = page.getByRole( 'dialog', { name: 'Review changes' } );
-        const cards = drawer.locator( '.wfd-review__item' );
-        const cardOf = ( name: string ) =>
-            (
-                ( cards as any ).filter( { hasText: name } ) as typeof cards
-             ).first();
         await expect( drawer ).toContainText( 'Our story' );
         await expect( drawer ).toContainText( 'Masthead' );
         await expect( drawer.getByText( 'Title: changed' ) ).toHaveCount( 2 );
-        await expect( cardOf( 'Our story' ) ).toBeVisible();
         await drawer.getByRole( 'button', { name: 'Save 2 changes' } ).click();
         await expect
             .poll( () =>
@@ -232,9 +227,9 @@ test.describe( 'NAME', () => {
         const canvas = page.locator( '[data-wfd-region="canvas"]' );
         await canvas.focus();
         await page.keyboard.press( 'Shift+Digit1' );
-        await page.waitForTimeout( 300 );
         for ( const kind of [ 'template', 'template-part' ] as const ) {
             const artboard = artboardOf( fixture, kind );
+            await expect( labelOf( page, artboard.id ) ).toBeInViewport();
             await labelOf( page, artboard.id )
                 .locator( '.wfd-artboard__label-text' )
                 .dblclick();

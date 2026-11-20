@@ -1,6 +1,12 @@
 import { test, expect } from '@wordpress/e2e-test-utils-playwright';
 import type { Page } from '@playwright/test';
-import { resetFixture, openBoard, artboardOf, type Fixture } from './utils';
+import {
+    resetFixture,
+    openBoard,
+    artboardOf,
+    openInserter,
+    type Fixture,
+} from './utils';
 
 const statusOf = async ( requestUtils: any, path: string ) => {
     try {
@@ -145,19 +151,15 @@ test.describe( 'DEL', () => {
         } );
         await page.reload();
         await page.locator( '[data-wfd-artboard]' ).first().waitFor();
-        const header = page.locator( '[data-wfd-region="header"]' );
-        await header
-            .getByRole( 'button', { name: 'Block inserter', exact: true } )
-            .click();
-        const inserter = page.locator( '.wfd-inserter' );
-        await inserter.getByRole( 'tab', { name: 'Templates' } ).click();
+        const inserter = await openInserter( page, 'Templates' );
         await inserter
             .locator( '.wfd-row', { hasText: 'Made by a user' } )
             .click();
         const made = page.locator( '[data-wfd-artboard].is-selected' );
         await expect( made ).toHaveAttribute( 'data-wfd-kind', 'template' );
         const madeId = ( await made.getAttribute( 'data-wfd-artboard' ) )!;
-        await header
+        await page
+            .locator( '[data-wfd-region="header"]' )
             .getByRole( 'button', { name: 'Close block inserter' } )
             .click();
         dialog = await pressDelete( page, madeId );

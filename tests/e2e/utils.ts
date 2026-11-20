@@ -298,39 +298,44 @@ export function artboardOf(
 }
 
 /**
- * Arms placement of a new artboard from a New row of the inserter (D63). The
- * inserter is turned on for it and, unless asked to stay, off again.
+ * Turns the inserter on, if it is off, and gives its panel.
  *
- * @param page             The page.
- * @param tab              The inserter tab the row is in.
- * @param row              The row's name, for example "New page".
- * @param options
- * @param options.keepOpen Leave the inserter on.
+ * @param page The page.
+ * @param tab  A tab to switch to.
+ */
+export async function openInserter( page: Page, tab?: string ) {
+    const panel = page.locator( '.wfd-inserter' );
+    if ( ( await panel.count() ) === 0 ) {
+        await page
+            .locator( '[data-wfd-region="header"]' )
+            .getByRole( 'button', { name: 'Block inserter', exact: true } )
+            .click();
+    }
+    await panel.waitFor();
+    if ( tab ) {
+        await panel.getByRole( 'tab', { name: tab } ).click();
+    }
+    return panel;
+}
+
+/**
+ * Arms placement of a new artboard from a New row of the inserter (D63). The
+ * inserter is turned on for it and stays on, as it does for a user.
+ *
+ * @param page The page.
+ * @param tab  The inserter tab the row is in.
+ * @param row  The row's name, for example "New page".
  */
 export async function armNew(
     page: Page,
     tab: 'Pages' | 'Patterns' | 'Templates',
-    row: string,
-    { keepOpen = false } = {}
+    row: string
 ) {
-    const header = page.locator( '[data-wfd-region="header"]' );
-    const panel = page.locator( '.wfd-inserter' );
-    const wasOpen = ( await panel.count() ) > 0;
-    if ( ! wasOpen ) {
-        await header
-            .getByRole( 'button', { name: 'Block inserter', exact: true } )
-            .click();
-    }
-    await panel.getByRole( 'tab', { name: tab } ).click();
+    const panel = await openInserter( page, tab );
     await panel
         .locator( '[data-wfd-new]' )
         .filter( { hasText: row } )
         .first()
         .click();
     await page.locator( '[data-wfd-placer]' ).waitFor( { state: 'attached' } );
-    if ( ! wasOpen && ! keepOpen ) {
-        await header
-            .getByRole( 'button', { name: 'Close block inserter' } )
-            .click();
-    }
 }

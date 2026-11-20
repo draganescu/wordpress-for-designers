@@ -144,6 +144,11 @@ test.describe( 'BROWSER', () => {
         await expect( page$( page, id ).locator( 'body' ) ).toBeVisible();
         // WordPress's toolbar is not shown.
         await expect( page$( page, id ).locator( '#wpadminbar' ) ).toBeHidden();
+        // The inserter stayed on; the artboard list is behind it.
+        await page
+            .locator( '[data-wfd-region="header"]' )
+            .getByRole( 'button', { name: 'Close block inserter' } )
+            .click();
         const left = page.locator( '[data-wfd-region="left"]' );
         await expect( left ).toContainText( 'Browsers' );
         await expect( left.getByText( '/', { exact: true } ) ).toBeVisible();

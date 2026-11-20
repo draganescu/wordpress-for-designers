@@ -179,15 +179,12 @@ test.describe( 'KEY', () => {
         await page.getByRole( 'button', { name: 'Back to the board' } ).click();
         await expect( selected ).toHaveAttribute( 'data-wfd-artboard', id! );
 
-        // F2 names the selected page or pattern on its label; nothing for a
-        // template.
+        // F2 names the selected page on its label.
+        await expect( selected ).toHaveAttribute( 'data-wfd-kind', 'page' );
         await canvas.focus();
         await page.keyboard.press( 'F2' );
         const field = page.locator( '[data-wfd-name-field]' );
-        const kind = await selected.getAttribute( 'data-wfd-kind' );
-        await expect( field ).toHaveCount(
-            kind === 'page' || kind === 'pattern' ? 1 : 0
-        );
+        await expect( field ).toBeFocused();
         await page.keyboard.press( 'Escape' );
         await expect( field ).toHaveCount( 0 );
         await expect( selected ).toHaveAttribute( 'data-wfd-artboard', id! );
