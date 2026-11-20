@@ -130,6 +130,39 @@ export async function counters( page: Page ): Promise< Record< string, any > > {
 }
 
 /**
+ * Waits until the board has finished what it does by itself after it opens:
+ * no artboard is still waiting for its first render, and React has rendered
+ * nothing for a while. A board that opens below the Preview tier renders its
+ * artboards one at a time for several seconds, so a fixed wait can end in
+ * the middle of that.
+ *
+ * @param page  The page.
+ * @param quiet How long React has to have rendered nothing, in ms.
+ */
+export async function boardAtRest( page: Page, quiet = 1000 ) {
+    await page.waitForFunction(
+        ( wait ) => {
+            const hooks = ( window as any ).wfdTest;
+            const state = ( ( window as any ).wfdAtRest ??= {
+                renders: -1,
+                since: 0,
+            } );
+            const now = performance.now();
+            if (
+                hooks.counters.renders !== state.renders ||
+                document.querySelector( '.wfd-artboard__skeleton' )
+            ) {
+                state.renders = hooks.counters.renders;
+                state.since = now;
+            }
+            return now - state.since >= wait;
+        },
+        quiet,
+        { polling: 100, timeout: 60000 }
+    );
+}
+
+/**
  * Sets the zoom, keeping a canvas point fixed, and waits for the app to settle.
  *
  * @param page  The page.

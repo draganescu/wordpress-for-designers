@@ -2,6 +2,7 @@ import { test, expect } from '@wordpress/e2e-test-utils-playwright';
 import {
     resetFixture,
     openBoard,
+    boardAtRest,
     counters,
     setViewport,
     enterEdit,
@@ -19,7 +20,7 @@ test.describe( 'PERF', () => {
     } ) => {
         const fixture = await resetFixture( requestUtils );
         await openBoard( page, fixture.boardId );
-        await page.waitForTimeout( 1500 );
+        await boardAtRest( page );
 
         const result = await page.evaluate( async () => {
             const hooks = ( window as any ).wfdTest;
@@ -239,7 +240,7 @@ test.describe( 'PERF', () => {
             const fixture = await resetFixture( requestUtils );
             await openBoard( page, fixture.boardId );
             await setViewport( page, { x: 20, y: 20, zoom: 0.25 } );
-            await page.waitForTimeout( 1500 );
+            await boardAtRest( page );
             const touch = await fingers( page );
             const [ a, b ] = await pointsOn( page, null );
 
