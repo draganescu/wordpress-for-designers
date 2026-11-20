@@ -7,3 +7,8 @@
 .wfd-review__empty {
     margin: var(--wpds-dimension-padding-3xl) auto;
 }
+
+// The item's own "Discard" keeps its width beside a long name.
+.wfd-review__discard {
+    flex-shrink: 0;
+}
