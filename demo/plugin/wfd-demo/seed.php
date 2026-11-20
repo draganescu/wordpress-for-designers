@@ -1,6 +1,6 @@
 <?php
 /**
- * The seed command of the demo site.
+ * The seed of the demo site.
  *
  * @package wfd-demo
  */
@@ -10,7 +10,21 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Seeds Morrow Coffee Roasters.
  */
-class WFD_Demo_Command {
+class WFD_Demo_Seeder {
+
+    /**
+     * What went wrong without stopping the seed.
+     *
+     * @var array
+     */
+    public $warnings = array();
+
+    /**
+     * Whether WordPress makes the smaller sizes of each image.
+     *
+     * @var bool
+     */
+    private $thumbnails = true;
 
     /**
      * Attachment ids and URLs by file name.
@@ -46,16 +60,12 @@ class WFD_Demo_Command {
      * Every page, post, coffee, pattern, board, image, navigation menu and
      * customisation of a template, part or the styles is deleted first.
      *
-     * ## OPTIONS
-     *
-     * [--yes]
-     * : Do not ask before deleting.
-     *
-     * @param array $args  Positional arguments.
-     * @param array $assoc Named arguments.
+     * @param array $options `thumbnails`: false to keep only the full size of
+     *                       each image, which is all the demo's content uses.
+     * @return string What was created.
      */
-    public function seed( $args, $assoc ) {
-        WP_CLI::confirm( 'This deletes all content of this site and seeds the demo. Go on?', $assoc );
+    public function run( $options = array() ) {
+        $this->thumbnails = ! isset( $options['thumbnails'] ) || $options['thumbnails'];
 
         require_once ABSPATH . 'wp-admin/includes/image.php';
         require_once ABSPATH . 'wp-admin/includes/file.php';
@@ -75,7 +85,7 @@ class WFD_Demo_Command {
 
         flush_rewrite_rules();
 
-        WP_CLI::success( sprintf( 'Seeded %d images, %d patterns, %d pages, %d posts, %d coffees and %d boards.', count( $this->media ), count( $this->patterns ), count( $this->pages ), count( $manifest['posts'] ), count( $manifest['coffees'] ), count( $boards ) ) );
+        return sprintf( 'Seeded %d images, %d patterns, %d pages, %d posts, %d coffees and %d boards.', count( $this->media ), count( $this->patterns ), count( $this->pages ), count( $manifest['posts'] ), count( $manifest['coffees'] ), count( $boards ) );
     }
 
     /**
@@ -137,6 +147,11 @@ class WFD_Demo_Command {
         }
         $alts = require WFD_DEMO_DIR . '/content/alts.php';
 
+        if ( ! $this->thumbnails ) {
+            add_filter( 'intermediate_image_sizes_advanced', '__return_empty_array' );
+            add_filter( 'big_image_size_threshold', '__return_false' );
+        }
+
         foreach ( array_merge( glob( WFD_DEMO_DIR . '/media/*.jpg' ), glob( WFD_DEMO_DIR . '/media/*.png' ) ) as $path ) {
             $name = basename( $path );
             $tmp  = wp_tempnam( $name );
@@ -150,7 +165,7 @@ class WFD_Demo_Command {
                 ucfirst( str_replace( '-', ' ', pathinfo( $name, PATHINFO_FILENAME ) ) )
             );
             if ( is_wp_error( $id ) ) {
-                WP_CLI::warning( $name . ': ' . $id->get_error_message() );
+                $this->warnings[] = $name . ': ' . $id->get_error_message();
                 continue;
             }
             update_post_meta( $id, '_wp_attachment_image_alt', isset( $alts[ $name ] ) ? $alts[ $name ] : '' );
@@ -190,7 +205,7 @@ class WFD_Demo_Command {
             '#' . preg_quote( WFD_DEMO_HOST, '#' ) . 'media/([a-z0-9-]+\.(?:jpg|png))#',
             function ( $match ) {
                 if ( ! isset( $this->media[ $match[1] ] ) ) {
-                    WP_CLI::warning( 'No image ' . $match[1] );
+                    $this->warnings[] = 'No image ' . $match[1];
                     return $match[0];
                 }
                 return $this->media[ $match[1] ]['url'];
@@ -203,7 +218,7 @@ class WFD_Demo_Command {
             function ( $match ) {
                 $index = (int) $match[1] - WFD_DEMO_REF - 1;
                 if ( ! isset( $this->refs[ $index ] ) ) {
-                    WP_CLI::warning( 'No pattern ' . $match[1] );
+                    $this->warnings[] = 'No pattern ' . $match[1];
                     return $match[0];
                 }
                 return '"ref":' . $this->refs[ $index ];
@@ -376,7 +391,7 @@ class WFD_Demo_Command {
                     );
                 } elseif ( 'media' === $kind ) {
                     if ( ! isset( $this->media[ $what ] ) ) {
-                        WP_CLI::warning( 'No image ' . $what );
+                        $this->warnings[] = 'No image ' . $what;
                         continue;
                     }
                     $image    = $this->media[ $what ];
@@ -397,7 +412,7 @@ class WFD_Demo_Command {
                         $entity = $theme . '//' . $what;
                     }
                     if ( ! $entity ) {
-                        WP_CLI::warning( 'Nothing called ' . $what );
+                        $this->warnings[] = 'Nothing called ' . $what;
                         continue;
                     }
                     $artboard += array(
@@ -430,7 +445,7 @@ class WFD_Demo_Command {
 
             $error = function_exists( 'wfd_layout_error' ) ? wfd_layout_error( $layout ) : true;
             if ( true !== $error ) {
-                WP_CLI::warning( $board['title'] . ': ' . $error );
+                $this->warnings[] = $board['title'] . ': ' . $error;
             }
 
             $time += 60;
@@ -447,4 +462,15 @@ class WFD_Demo_Command {
         }
         return $ids;
     }
+}
+
+/**
+ * Deletes the site's content and seeds the demo site.
+ *
+ * @param array $options See WFD_Demo_Seeder::run().
+ * @return string What was created.
+ */
+function wfd_demo_seed( $options = array() ) {
+    $seeder = new WFD_Demo_Seeder();
+    return $seeder->run( $options );
 }

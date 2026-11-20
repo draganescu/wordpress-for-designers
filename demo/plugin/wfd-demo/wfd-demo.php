@@ -58,7 +58,9 @@ add_action(
     }
 );
 
+require_once __DIR__ . '/seed.php';
+
 if ( defined( 'WP_CLI' ) && WP_CLI ) {
-    require_once __DIR__ . '/seed.php';
+    require_once __DIR__ . '/cli.php';
     WP_CLI::add_command( 'wfd-demo', 'WFD_Demo_Command' );
 }
