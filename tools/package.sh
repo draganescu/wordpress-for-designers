@@ -23,4 +23,13 @@ find dist -name .DS_Store -delete
 
 ( cd dist && zip -q -r -X "$SLUG.zip" "$SLUG" )
 
+# The package holds these four and nothing else. The demo site, the docs, the
+# spec and the tests never belong in it.
+EXPECTED="build includes uninstall.php wordpress-for-designers.php"
+ACTUAL=$(unzip -Z1 "dist/$SLUG.zip" | cut -d/ -f2 | sort -u | grep -v '^$' | tr '\n' ' ' | sed 's/ $//')
+if [ "$ACTUAL" != "$EXPECTED" ]; then
+    echo "Unexpected contents in dist/$SLUG.zip: $ACTUAL" >&2
+    exit 1
+fi
+
 echo "dist/$SLUG.zip"
