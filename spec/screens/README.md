@@ -24,14 +24,15 @@ Left to right:
 | H5 | List view toggle | `IconButton`, `listView`, pressed state | Label "List view" | Shows or hides the list view. Disabled when no artboard is in edit. |
 | H10 | Left panel toggle | `IconButton`, `drawerLeft`, pressed state while the left panel is shown | Labels "Hide left panel" / "Show left panel" | Hides or shows the left panel (D32). Sits after H5. |
 | H13 | Note tool | `IconButton`, `comment`, pressed state while the tool is armed | Label "Add note" | Arms the note tool; pressed again, switches it off (D46). Sits after H10. Disabled while an artboard is in edit. |
-| H6 | Block toolbar | `be.BlockToolbar`, filled from the Live editor through a slot | Stock | Present only while an artboard is in edit and a block is selected. When it is wider than its room it scrolls sideways (D50). |
-| H7 | Document bar | Centred `Text` on a weak neutral surface; in edit, preceded by an `IconButton` with `arrowLeft` | Board name; in edit "{artboard name} · {Kind}", back button label "Back to the board" | Back button leaves edit. The bar itself is not clickable. `[N]` |
+| H6 | Block toolbar | `be.BlockToolbar`, filled from the Live editor through a slot | Stock | Present only while an artboard is in edit and a block is selected. While it is shown it takes the place of H7's title (D50). When it is wider than its room it scrolls sideways, as the stock toolbar does. |
+| H14 | Block tools toggle | `IconButton`, `previous` while the block toolbar is shown, `next` while it is hidden | Labels "Hide block tools" / "Show block tools" | Hides the block toolbar, which brings H7's title back, and shows it again (D50). Selecting another block shows the toolbar. Present only while the selected block has a toolbar. Sits at the end of H6. |
+| H7 | Document bar | Centred `Text` on a weak neutral surface; in edit, preceded by an `IconButton` with `arrowLeft` | Board name; in edit "{artboard name} · {Kind}", back button label "Back to the board" | Back button leaves edit. The bar itself is not clickable. `[N]` While H6 is shown the bar is only its back button, next to H14 (D50). `[U]` |
 | H12 | Tidy up | `IconButton`, `grid`, minimal neutral | Label "Tidy up" | Arranges everything on the board in one row per kind, in left-panel order (D45), and fits all. Disabled while an artboard is in edit and with fewer than two items on the board. Sits just before H8. |
 | H8 | Zoom menu | `Menu` whose trigger shows the zoom as a percentage with `chevronDown` | Trigger label "Zoom"; items "Zoom in", "Zoom out", "Zoom to 50%", "Zoom to 100%", "Fit all", "Fit selection" | Items act on the viewport. "Fit selection" is disabled with nothing selected. An item that takes the zoom below 30% while an artboard is in edit leaves edit (D37). `[N]` for the item list |
 | H11 | Right panel toggle | `IconButton`, `drawerRight`, pressed state while the right panel is shown | Labels "Hide right panel" / "Show right panel" | Hides or shows the right panel (D32). Sits between H8 and H9. |
 | H9 | Review button | `Button`, solid brand | "Review {n} changes", "Review 1 change"; with none, "Review changes", disabled | Opens the Review drawer. |
 
-Below 1440 px wide the header and the panels make room as D50 says; below 1180 px the board is replaced by `NeedsSpace.md` (D49). `[U]`
+Below 1440 px wide the panels make room as D50 says; below 1180 px the board is replaced by `NeedsSpace.md` (D49). `[U]`
 
 Kind names used in labels: "Page", "Template", "Template part", "Pattern". `[D:Overview]`
 

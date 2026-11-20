@@ -74,5 +74,5 @@ The list below is generated from every `[N]` tag in the spec. Until the product 
 | 55 | `screens/Review.md` | 7 | **Source.** [U] [D:Review]; the discard confirmation, the five-line limit and the wording of block change lines are [N] |
 | 56 | `screens/Selected.md` | 7 | **Source.** [U] [N] for this panel's content |
 | 57 | `decisions.md` | 54 | D49 / A board needs a window at least 1180 px wide, the width of an iPad Air in landscape. / `[U]`; 1180 px as the width of an iPad Air is `[N]` |
-| 58 | `decisions.md` | 55 | D50 / Between 1180 and 1439 px the shell makes room. / `[U]`; the widths of 240, 300 and 180 px are `[N]` |
+| 58 | `decisions.md` | 55 | D50 / Between 1180 and 1439 px the left panel narrows from 280 px to no less than 240 px and the right panel from 360 px to no less than 300 px, in step with the window. / `[U]`; the panel widths of 240 and 300 px are `[N]` |
 | 59 | `screens/NeedsSpace.md` | 7 | **Source.** [U]; the text under the title and the `dialog` surface are [N] |
