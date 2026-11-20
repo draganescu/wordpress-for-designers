@@ -133,15 +133,22 @@ export function ReviewDrawer( {
     const isEmpty = items.length === 0;
     const checkedCount = items.filter( ( item ) => item.isChecked ).length;
     const hasFailed = items.some( ( item ) => item.hasError );
+    const hasNew = items.some( ( item ) => item.isNew );
 
     // One confirmation serves every item's "Discard" (D48). It lives here,
     // not in the item, because the item is gone once it is discarded: focus
     // then goes to the close button instead of being lost, and back to the
-    // item's button after Cancel. Only removing an unsaved new template or
-    // part cannot be undone, and only then does the confirmation say so.
+    // item's button after Cancel.
     const [ pending, setPending ] = useState( null );
     const [ isConfirming, setIsConfirming ] = useState( false );
     const closeButton = useRef( null );
+    // Said by a confirmation only when something in it cannot be undone:
+    // an unsaved new template or part leaving the board. Reverting saved
+    // items is a step of the content history.
+    const cannotBeUndone = __(
+        "This can't be undone.",
+        'wordpress-for-designers'
+    );
 
     return (
         <Drawer.Root
@@ -210,12 +217,7 @@ export function ReviewDrawer( {
                         intent={ pending?.isNew ? 'irreversible' : 'default' }
                         title={ discardTitle( pending?.name ?? '' ) }
                         description={
-                            pending?.isNew
-                                ? __(
-                                      "This can't be undone.",
-                                      'wordpress-for-designers'
-                                  )
-                                : undefined
+                            pending?.isNew ? cannotBeUndone : undefined
                         }
                         cancelButtonText={ __(
                             'Cancel',
@@ -250,15 +252,14 @@ export function ReviewDrawer( {
                                 ) }
                             </AlertDialog.Trigger>
                             <AlertDialog.Popup
-                                intent="irreversible"
+                                intent={ hasNew ? 'irreversible' : 'default' }
                                 title={ __(
                                     'Discard all changes?',
                                     'wordpress-for-designers'
                                 ) }
-                                description={ __(
-                                    "This can't be undone.",
-                                    'wordpress-for-designers'
-                                ) }
+                                description={
+                                    hasNew ? cannotBeUndone : undefined
+                                }
                                 cancelButtonText={ __(
                                     'Cancel',
                                     'wordpress-for-designers'

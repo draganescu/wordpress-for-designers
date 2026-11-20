@@ -283,18 +283,20 @@ export function useReview() {
     }, [ entries, unchecked, saveOne ] );
 
     // Discards the changes of the given entries. An unsaved new template or
-    // part leaves the board, which is never undoable; the rest revert, as
-    // one step of the content history when `undoable` is set (D48).
+    // part leaves the board, which is not undoable; the rest revert,
+    // together one step of the content history (D48).
     const discard = useCallback(
-        ( list, { undoable = false } = {} ) => {
+        ( list ) => {
+            let isStepStarted = false;
             for ( const entry of list ) {
-                discardEntityEdits(
+                const isInStep = discardEntityEdits(
                     registry,
                     entry.kind,
                     entry.name,
                     entry.id,
-                    { undoable: undoable && ! entry.isNew }
+                    { undoable: ! entry.isNew, continued: isStepStarted }
                 );
+                isStepStarted = isStepStarted || isInStep;
             }
             const drafts = list
                 .filter( ( entry ) => entry.isNew )
@@ -319,11 +321,7 @@ export function useReview() {
     );
 
     const discardOne = useCallback(
-        ( key ) =>
-            discard(
-                entries.filter( ( entry ) => entry.key === key ),
-                { undoable: true }
-            ),
+        ( key ) => discard( entries.filter( ( entry ) => entry.key === key ) ),
         [ discard, entries ]
     );
 
