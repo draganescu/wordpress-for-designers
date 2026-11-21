@@ -2606,4 +2606,146 @@ test.describe( 'TOOL', () => {
         ).toBe( 'not_agents' );
         await expect( review( page ) ).toHaveText( 'Review 2 changes' );
     } );
+
+    test( 'AC-TOOL-20 After every tool has been called nothing on the site is saved, published, trashed or deleted; the only new items are the drafts of a new page and pattern', async ( {
+        page,
+        requestUtils,
+    } ) => {
+        test.setTimeout( 240000 );
+        const fixture = await resetFixture( requestUtils );
+        await openBoard( page, fixture.boardId );
+        await boardAtRest( page );
+        await page.evaluate( () => ( window as any ).wfdAgent.ready() );
+        await page.waitForTimeout( 2000 );
+
+        // Every item of the site, except boards, whose layout saves itself.
+        const site = async () => {
+            const { stdout } = await wp( [
+                'post',
+                'list',
+                '--post_type=page,post,wp_block,wp_template,wp_template_part,wp_navigation,wp_global_styles,attachment',
+                '--post_status=any,trash,auto-draft',
+                '--fields=ID,post_type,post_status,post_title,post_name,post_modified_gmt,post_content',
+                '--format=json',
+                '--posts_per_page=-1',
+            ] );
+            return new Map< number, string >(
+                JSON.parse( stdout ).map( ( post: any ) => [
+                    Number( post.ID ),
+                    JSON.stringify( post ),
+                ] )
+            );
+        };
+        const before = await site();
+        expect( before.size ).toBeGreaterThan( 4 );
+
+        const hero = artboardOf( fixture, 'pattern' );
+        const header = artboardOf( fixture, 'template-part' );
+        const footer = artboardOf( fixture, 'template-part', 'desktop', 1 );
+        const called = new Set< string >();
+        const ok = async ( name: string, input: object = {} ) => {
+            const envelope = await callTool( page, name, input );
+            expect(
+                envelope.ok,
+                `${ name }: ${ JSON.stringify( envelope ) }`
+            ).toBe( true );
+            called.add( name );
+            return envelope.result;
+        };
+
+        await ok( 'board-get' );
+        await ok( 'board-select', { artboards: [ hero.id ] } );
+        await ok( 'artboard-update', { artboard: hero.id, device: 'tablet' } );
+        await ok( 'artboard-add', {
+            kind: 'page',
+            entityId: fixture.pages.about,
+        } );
+        await ok( 'artboard-add', { kind: 'browser', path: '/' } );
+        const newPage = await ok( 'artboard-new', { kind: 'page' } );
+        const newPattern = await ok( 'artboard-new', { kind: 'pattern' } );
+        await ok( 'artboard-new', { kind: 'template-part' } );
+        await ok( 'artboard-new', { kind: 'template', purpose: 'singular' } );
+        await ok( 'artboard-edit', { artboard: header.id } );
+        await ok( 'blocks-get', { artboard: header.id } );
+        await ok( 'block-update', {
+            artboard: header.id,
+            path: [ 0, 0 ],
+            attributes: { content: 'Changed and not saved' },
+        } );
+        await ok( 'blocks-insert', {
+            artboard: header.id,
+            markup: '<!-- wp:heading --><h2 class="wp-block-heading">Inserted</h2><!-- /wp:heading -->',
+        } );
+        await ok( 'blocks-move', {
+            artboard: header.id,
+            path: [ 1 ],
+            parent: [ 0 ],
+            index: 0,
+        } );
+        await ok( 'blocks-remove', {
+            artboard: header.id,
+            paths: [ [ 0, 1 ] ],
+        } );
+        // A page and a pattern, which take a post lock.
+        await ok( 'blocks-insert', {
+            artboard: hero.id,
+            markup: '<!-- wp:paragraph --><p>Not saved.</p><!-- /wp:paragraph -->',
+        } );
+        await ok( 'edit-leave' );
+        const styles = await ok( 'styles-get' );
+        await ok( 'token-set', {
+            kind: 'color',
+            slug: 'accent-1',
+            value: '#123456',
+        } );
+        await ok( 'styles-set', {
+            kind: 'style',
+            path: 'color.background',
+            value: '#fafafa',
+        } );
+        await ok( 'styles-set-variation', { name: styles.variations[ 0 ] } );
+        await ok( 'token-show-uses', { kind: 'color', slug: 'accent-1' } );
+        await ok( 'token-show-uses' );
+        const listed = await ok( 'review-list' );
+        const mine = listed.items.find(
+            ( item: any ) => item.type === 'styles' && item.author === 'agent'
+        );
+        expect( mine ).toBeTruthy();
+        await ok( 'review-discard', { key: mine.key } );
+        await ok( 'artboard-remove', { artboards: [ footer.id ] } );
+        await ok( 'board-refresh' );
+
+        const declared = await page.evaluate( async () =>
+            ( await ( window as any ).wfdAgent.ready() ).tools.map(
+                ( tool: any ) => tool.name
+            )
+        );
+        expect( [ ...called ].sort() ).toEqual( [ ...declared ].sort() );
+
+        // The layout has saved itself by now; nothing else may have.
+        await page.waitForTimeout( 3500 );
+        const after = await site();
+        for ( const [ id, item ] of before ) {
+            expect( after.get( id ), `item ${ id }` ).toBe( item );
+        }
+        const added = [ ...after.keys() ]
+            .filter( ( id ) => ! before.has( id ) )
+            .map( ( id ) => JSON.parse( after.get( id )! ) );
+        expect(
+            added
+                .map(
+                    ( post ) =>
+                        `${ post.post_type } ${ post.post_status } ${ post.post_title } "${ post.post_content }"`
+                )
+                .sort()
+        ).toEqual( [
+            'page draft Untitled page ""',
+            'wp_block draft Untitled pattern ""',
+        ] );
+        expect( added.map( ( post ) => Number( post.ID ) ).sort() ).toEqual(
+            [ newPage.entityId, newPattern.entityId ].sort()
+        );
+        // What was changed waits in Review.
+        await expect( review( page ) ).not.toHaveText( 'Review changes' );
+    } );
 } );

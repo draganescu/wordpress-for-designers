@@ -152,6 +152,19 @@ What to do differently:
 - **`EditorSnackbars`** is on the allowlist but logs a deprecation in 7.2-RC2. It is not used.
 - **The empty paragraph's add-block button** appears only when typing has stopped. In a test, move the pointer first.
 
+### The agent surface
+
+- **Seam functions must read the stores when they are called.** `src/shell/app.js` fills the seams on every render, so a closure over render-time values is one render old. Two tool calls in a batch run closer together than React renders. Where it matters the seam reads the registry (`readArtboards( registry.select )`), or waits for the render (`whenStylesCurrent`, `whenListed`).
+- **A block editor's inner blocks arrive late.** After an artboard enters edit, its template parts, synced patterns and page content fill in their blocks a moment after the editor mounts. `editorOf` in `src/agent/blocks.js` waits until the number of blocks has stopped changing.
+- **`getBlocks()` gives a controlling block an empty `innerBlocks`.** Read the tree block by block with `getBlocks( clientId )` (D79).
+- **The editor's block appender has `data-block` and no `data-type`.** It is not a block; `documentBlocks` leaves it out with the preview copies.
+- **WP-CLI takes `--path` for itself** before any command runs (OQ-44). No tool field may be named after a global WP-CLI parameter if it is to be given as a flag.
+- **An option read twice in one WP-CLI process is read from a cache.** The relay reads its records with `$wpdb` (`wfd_agent_read`), and deletes the cached value before it writes.
+- **Decoding a call record as arrays turns `{}` into `[]`.** Call records and the body of the result route are decoded as objects.
+- **Removing the last block of an editor leaves an empty paragraph.** WordPress does that; a test that expects no block is wrong.
+- **Tests run `wp wfd` through `node_modules/.bin/wp-env run cli`** (`tests/e2e/agent-utils.ts`), about 0.9 s a command. Its standard output is the command's alone. The reset route of the test helper deletes every `wfd_agent_` option, so each test starts on a site no agent has used; a test that wants the board to poll runs `wp wfd status` before it opens the board.
+- **AC-AGENT-08 deactivates the plugin and runs its uninstall procedure** with `wp plugin uninstall --skip-delete`, then activates it again. Never drop `--skip-delete`: the plugin folder is the repository.
+
 ### `@wordpress/ui`
 
 - `Button` has only the tones brand and neutral; `AlertDialog` always draws Cancel and Confirm (OQ-4, OQ-9).

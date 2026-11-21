@@ -1,19 +1,19 @@
 # Current state
 
-As of 2026-11-20. This describes what exists; `spec/` says what should exist. For how the work was done and what to watch for, see [working-notes.md](working-notes.md).
+As of 2026-11-21. This describes what exists; `spec/` says what should exist. For how the work was done and what to watch for, see [working-notes.md](working-notes.md).
 
 ## Summary
 
-The plugin is built through Milestone 12 of `spec/build-order.md`, plus the decisions taken afterwards (D32 to D64).
+The plugin is built through Milestone 18 of `spec/build-order.md`: Milestones 1 to 12 with the decisions taken afterwards (D32 to D64), and the agent surface (D65 to D79, Milestones 13 to 18), built on 2026-11-21 on the branch `agent-surface`.
 
 | Check | Result |
 |---|---|
-| Acceptance criteria in `spec/acceptance.md` | 155 |
-| End-to-end tests, one per criterion | 155. AC-INS-10 and AC-NAME-01 to 03 (D62, D63) joined on 2026-11-20 on their own branch. AC-CANVAS-08 to 11 and AC-PERF-04 (touch, D64) were added on 2026-11-20 and run with Chromium's emulated touches. With the naming and inserter work merged in, the suite of 155 was run once from the touch worktree on its own site: 154 passed and AC-PERF-03 failed, as it does from any worktree. They, AC-SHELL-10 to 13 (D49, D50) and AC-STYLE-11 (D58) joined after the runs described next. On 2026-11-20 the whole suite of 127, AC-SAVE-08 and AC-SAVE-09 (D48) included, was run once from a worktree: 126 pass and AC-PERF-03 fails, as it does from any worktree. On 2026-11-19 the suite of 125 was run three times: all pass after two fixes to the tests. AC-CANVAS-03 used an empty-board point that D42's Keyboard shortcuts control now covers; AC-STYLE-07 (and three like it in `ins.spec.ts` and `style.spec.ts`) counted menu rows once instead of waiting for them, and failed one run in three. AC-PERF-03 still fails on a port-8890 environment from a worktree (see working-notes.md). After D51 to D54, D59 and D60 the suite was run from their worktree on its own site: 128 passed and AC-PERF-03 failed, as it does from any worktree (see working-notes.md). On the browser branch (D55 to D57 and D61) the suite was run from its worktree on its own site before the other decisions were merged in: 133 of 134 passed and AC-PERF-03 failed, as it does from any worktree |
+| Acceptance criteria in `spec/acceptance.md` | 210: the 155 of Milestones 1 to 12 and 55 for the agent surface (AC-AGENT, AC-CLI, AC-TOOL, AC-MARK, AC-FLOW) |
+| End-to-end tests, one per criterion | 210. The agent surface's 55 are in `agent`, `cli`, `tool`, `mark` and `flow`; at each gate of Milestones 14 to 18 the new criteria and the whole suite were run on the site of port 8888 (171, 180, 189, 196 and 210 tests), see "The agent surface" below. Before that: 155. AC-INS-10 and AC-NAME-01 to 03 (D62, D63) joined on 2026-11-20 on their own branch. AC-CANVAS-08 to 11 and AC-PERF-04 (touch, D64) were added on 2026-11-20 and run with Chromium's emulated touches. With the naming and inserter work merged in, the suite of 155 was run once from the touch worktree on its own site: 154 passed and AC-PERF-03 failed, as it does from any worktree. They, AC-SHELL-10 to 13 (D49, D50) and AC-STYLE-11 (D58) joined after the runs described next. On 2026-11-20 the whole suite of 127, AC-SAVE-08 and AC-SAVE-09 (D48) included, was run once from a worktree: 126 pass and AC-PERF-03 fails, as it does from any worktree. On 2026-11-19 the suite of 125 was run three times: all pass after two fixes to the tests. AC-CANVAS-03 used an empty-board point that D42's Keyboard shortcuts control now covers; AC-STYLE-07 (and three like it in `ins.spec.ts` and `style.spec.ts`) counted menu rows once instead of waiting for them, and failed one run in three. AC-PERF-03 still fails on a port-8890 environment from a worktree (see working-notes.md). After D51 to D54, D59 and D60 the suite was run from their worktree on its own site: 128 passed and AC-PERF-03 failed, as it does from any worktree (see working-notes.md). On the browser branch (D55 to D57 and D61) the suite was run from its worktree on its own site before the other decisions were merged in: 133 of 134 passed and AC-PERF-03 failed, as it does from any worktree |
 | `npm run lint` | Exits 0, no disabled lines |
 | CI | `.github/workflows/tests.yml` runs lint, build and the suite (Chromium, wp-env) on every pull request; CI retries a failed test twice and reports a pass on retry as flaky |
 | Performance | `.github/workflows/perf.yml` measures every pull request that changes more than documents against its base and fails on a broken budget; see [performance.md](performance.md) |
-| Open questions waiting for the product owner | 36 (`spec/open-questions.md`) |
+| Open questions waiting for the product owner | 42 (`spec/open-questions.md`): the 36 of before and OQ-44 to OQ-49 for the agent surface. OQ-43 is kept with its answer (D79) |
 | Browsers the suite runs in | Chromium only, touch included |
 | WordPress it was built and tested on | 7.2-RC2, Twenty Twenty-Five, PHP 8.2, no Gutenberg plugin |
 
@@ -52,6 +52,19 @@ A "Designer" menu in wp-admin lists boards. A board opens full screen: a header,
 - **Window size.** Below 1180 px wide (an iPad Air in landscape) the whole window shows "Designing needs more space" and nothing of the board can be used; a board already open stays mounted behind it and comes back as it was (D49, `src/shell/space-gate.js` and `_space-gate.scss`). From 1180 to 1439 px the panels are narrower (D50, `src/shell/style.scss`). The board's touch gestures are D64 (see Touch above).
 - **Block toolbar.** While a block is selected its toolbar is in the header in place of the document bar's title, at every width, with an arrow at its end that hides it and shows it again; "Back to the board" stays visible beside it. It copies the collapsible block toolbar of WordPress's own header, which is not exported (D50, `src/artboard-editor/collapsible-block-toolbar.js`). A toolbar wider than its room scrolls sideways, as the stock toolbar does.
 
+## The agent surface
+
+Built in Milestones 14 to 18 from `spec/agent/`. An agent that can run WP-CLI commands works on an open board with `wp wfd`; a script on the board page can do the same through `window.wfdAgent`.
+
+- **Nothing until an agent is there (C27).** The board's main script holds only a stub, `src/shell/agent-stub.js`: `window.wfdAgent = { ready }` and the check for a session. On a site where no `wp wfd` command has run it sends nothing. After the first command a board asks `wfd/v1/agent/poll` every 10 seconds, and every second while a session is active (120 seconds after the last command). The surface itself is `build/agent.js`, a chunk requested when a session is found or `ready()` is called.
+- **The relay.** `includes/agent.php`: the two routes, the queue in options (`wfd_agent_seen`, `wfd_agent_listener_{client}`, `wfd_agent_call_{id}`), the hourly cleanup and what deactivation and uninstall remove. A call is claimed by one page with one conditional `UPDATE` (OQ-45).
+- **`wp wfd`.** `includes/agent-cli.php`, loaded under WP-CLI only: `status`, `tools` (the runbook, verbatim, then the tool list), `call` and `batch`. A field named `path` cannot be given as `--path=`, because WP-CLI takes that flag for itself; use `--input` (OQ-44).
+- **The 21 tools.** Declared once in `includes/agent-tools.json`; one function each in `src/agent/tools/`. `npm run build` first runs `tools/check-agent-tools.mjs`, which fails when the two lists differ. A tool calls the function a control of the UI calls; those functions reach it through the seams of `src/shell/seams.js`, which `src/shell/app.js` fills on every render, and `src/artboard-frame/rects.js`.
+- **Blocks** are changed only in the artboard in edit: a block tool puts its artboard in edit as the designer would, waits for the editor's blocks, and works on that editor's own block-editor store (`src/agent/blocks.js`). A path in an artboard that is not in edit is read from what is drawn, with the rule of D79.
+- **Authorship and marks.** `src/agent/authorship.js` records who changed each unsaved item; `src/agent/marks.js` says what to mark; the header (`data-wfd-agent`), the artboard frames (`data-wfd-agent-working`, `data-wfd-agent-changed`) and the Review cards draw it. Nothing of it is inside an editing canvas.
+- **For adapters.** The action `wfd_board_enqueue_assets` and the filter `wfd_agent_runbook`. No adapter is built here, and nothing under `src/` or `includes/` names a harness (C32).
+- **Not verified.** The relay was run on the wp-env site (MySQL) only, not on a site with SQLite or with a persistent object cache. No harness adapter has used the surface. `subscribe()` of the page interface has no test of its own.
+
 ## Layout of the repository
 
 ```
@@ -60,7 +73,7 @@ spec/                         The specification (source of truth)
 docs/                         This folder
 wordpress-for-designers.php   Plugin header, loads includes/
 uninstall.php                 Deletes all boards and the changes kept for previews
-includes/                     PHP, seven files
+includes/                     PHP, nine files, and the agent tools' declarations (agent-tools.json)
 src/                          JavaScript and SCSS, built by wp-scripts into build/
 tests/e2e/                    Playwright tests, test helper plugin, test theme
 tests/perf/                   The performance suite and its budgets
@@ -70,7 +83,7 @@ spikes/                       Throwaway spike code and evidence
 
 Ignored by git: `node_modules/`, `build/`, `artifacts/`, `test-results/`, `playwright-report/`.
 
-### PHP (`includes/`, about 1,300 lines with the two root files)
+### PHP (`includes/`, about 2,050 lines with the two root files)
 
 | File | Holds |
 |---|---|
@@ -80,9 +93,11 @@ Ignored by git: `node_modules/`, `build/`, `artifacts/`, `test-results/`, `playw
 | `board-app.php` | The full-screen board page, without wp-admin chrome |
 | `bootstrap.php` | Editor settings, REST preload, block definitions and editor assets for the board page |
 | `lock.php` | `wfd/v1/lock/{id}`: take or refresh, take over, release |
+| `agent.php` | The agent relay: `wfd/v1/agent/poll` and `wfd/v1/agent/result`, the queue in options, the cleanup event |
+| `agent-cli.php` | `wp wfd`, loaded under WP-CLI only |
 | `preview.php` | The server side of the preview of unsaved changes (D57): `wfd/v1/preview`, the records it keeps, and the front-end swaps for the `wfd_preview` argument |
 
-### JavaScript (`src/`, about 10,300 lines, plus 640 of SCSS)
+### JavaScript (`src/`, about 12,800 lines, plus 660 of SCSS)
 
 Two entries: `boards` (the Boards list, `src/boards/`) and `board` (the app, `src/shell/index.js`).
 
@@ -103,6 +118,7 @@ Two entries: `boards` (the Boards list, `src/boards/`) and `board` (the app, `sr
 | `review/` | The Review drawer, change lines, saving, discarding; `entries.js` lists the unsaved changes for Review and for the preview |
 | `lock/` | Client side of the post lock |
 | `adapter/` | `private.js` is empty. `experimental.js` is the only place experimental WordPress exports are imported |
+| `agent/` | The agent surface, a chunk of its own: the call runner (`index.js`), input check, references, block paths, targets, authorship, marks and the 21 tool functions in `tools/` |
 | `static/` | Every screen with fixed data and no behaviour, shown with `&wfd-screen=Name` in a test build |
 
 ### Tests (`tests/e2e/`, about 7,000 lines)
