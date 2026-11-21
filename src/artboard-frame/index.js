@@ -28,6 +28,7 @@ import { NameField } from './name-field';
 
 export { BrowserArtboard, browserTier } from './browser-artboard';
 export { usePreview } from './preview';
+export { PaintWatch } from './paint-watch';
 
 /**
  * The frame element of the artboard a component is rendered in.

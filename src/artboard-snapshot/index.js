@@ -57,6 +57,42 @@ function freeze( preview ) {
     return copy;
 }
 
+/**
+ * Calls back once every iframe in a frozen copy has loaded its document.
+ *
+ * @param {Element}  node     The frozen copy.
+ * @param {Function} callback Called once.
+ */
+function whenLoaded( node, callback ) {
+    const iframes = [ ...node.querySelectorAll( 'iframe' ) ];
+    let left = iframes.length;
+    let isDone = false;
+    const done = () => {
+        if ( ! isDone ) {
+            isDone = true;
+            callback();
+        }
+    };
+    if ( ! left ) {
+        done();
+        return;
+    }
+    iframes.forEach( ( iframe ) =>
+        iframe.addEventListener(
+            'load',
+            () => {
+                left -= 1;
+                if ( ! left ) {
+                    done();
+                }
+            },
+            { once: true }
+        )
+    );
+    // A copy that never loads is shown anyway.
+    window.setTimeout( done, 2000 );
+}
+
 export function createSnapshotStore() {
     const snapshots = new Map();
     return {
@@ -74,8 +110,18 @@ export function createSnapshotStore() {
                 return false;
             }
             const node = freeze( preview );
-            snapshots.get( id )?.node.replaceWith( node );
+            const old = snapshots.get( id )?.node;
             snapshots.set( id, { node, version } );
+            if ( old?.isConnected ) {
+                // An iframe shows nothing until its document has loaded, so
+                // the copy on screen stays until the new one has.
+                node.classList.add( 'is-loading' );
+                old.after( node );
+                whenLoaded( node, () => {
+                    node.classList.remove( 'is-loading' );
+                    old.remove();
+                } );
+            }
             return true;
         },
         has: ( id ) => snapshots.has( id ),
@@ -98,9 +144,10 @@ export function createSnapshotStore() {
         mount( id, host ) {
             const snapshot = snapshots.get( id );
             if ( snapshot ) {
+                snapshot.node.classList.remove( 'is-loading' );
                 host.appendChild( snapshot.node );
             }
-            return () => snapshots.get( id )?.node.remove();
+            return () => host.replaceChildren();
         },
         forget: ( id ) => snapshots.delete( id ),
     };
