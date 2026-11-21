@@ -41,6 +41,15 @@ The two styles packages are pinned in `package.json` to the releases named in th
 
 Prefer `@wordpress/ui` when both it and `@wordpress/components` have a component (C4). Call `useEnableWpCompatOverlaySlot()` once at the app root, because the two libraries are mixed and `@wordpress/ui` is bundled. `[V]`
 
+The agent surface (D65) uses these members of stores the table already allows, through the Live editor's registry and the page's registry. They are listed so the use is deliberate; none is a new import. `[N]`; if one is missing in the WordPress built against, apply `CLAUDE.md`, rule 4.
+
+| Store | Selectors | Actions |
+|---|---|---|
+| `core/block-editor` (`store` of `@wordpress/block-editor`) | `getBlocks`, `getBlock`, `getBlockName`, `getBlockAttributes`, `getBlockRootClientId`, `getBlockIndex`, `getBlockEditingMode`, `canInsertBlockType`, `canRemoveBlocks`, `canMoveBlocks` | `updateBlockAttributes`, `insertBlocks`, `removeBlocks`, `moveBlockToPosition` |
+| `@wordpress/data` | `registry.batch` | |
+
+The surface's chunk is loaded with the build's own dynamic `import()`. No package is added for the agent surface: not a schema validator, not an MCP or WebMCP library, not an AI SDK (C25, C26). `[U]`
+
 ## Not allowed
 
 - `@wordpress/edit-post`, `@wordpress/edit-site`, `@wordpress/interface`, `@wordpress/lazy-editor`'s `Editor` and `Preview`, `EditorProvider` from `@wordpress/editor` (C5).
@@ -53,6 +62,8 @@ Prefer `@wordpress/ui` when both it and `@wordpress/components` have a component
 
 Use WordPress public functions only. The ones this plugin needs: `register_post_type`, `add_menu_page`, `add_submenu_page`, `current_user_can`, `get_block_editor_settings`, `WP_Block_Editor_Context`, `block_editor_rest_api_preload`, `wp_enqueue_script`, `wp_enqueue_style`, `wp_add_inline_script`, `wp_set_script_translations`, `iframe_header`, `iframe_footer`, `wp_check_post_lock`, `wp_set_post_lock`, `register_rest_field`, `register_rest_route`, `rest_ensure_response`. `[V]` Another public function may be used without an open question; a private or `_`-prefixed one may not. `[N]`
 
+For the agent surface (D65) the plugin also uses `WP_CLI::add_command` and WP-CLI's own output functions, under WP-CLI only; `add_option`, `get_option`, `update_option` and `delete_option`; `$wpdb` with `prepare` and `esc_like`, to find and read the relay's own option rows without a cache; `wp_schedule_event`, `wp_next_scheduled`, `wp_clear_scheduled_hook` and `register_deactivation_hook`; `wp_generate_uuid4`; `do_action` and `apply_filters`. `[N]`
+
 ## Build and test tooling
 
 `@wordpress/scripts` for build, lint and unit tests; `@wordpress/env` for the local WordPress; `@wordpress/e2e-test-utils-playwright` with Playwright for end-to-end tests; `@wordpress/theme-build-tools` for token linting. No other dev dependency without an open question. `[N]`
@@ -62,3 +73,5 @@ Use WordPress public functions only. The ones this plugin needs: `register_post_
 - `EntitiesSavedStates` comes from `@wordpress/editor` and must work without `EditorProvider`. Settled: it does (`spike-report.md`). `PostLockedModal` does not and was replaced by the plugin lock route and dialog (D31). `[U]`
 - Editing with block tools positioned correctly. Settled: correct at 30% zoom and more with the structure and CSS in `spike-report.md`, "Editing below 100%" (C18, D37). `[U]`
 - A frozen Snapshot that keeps exact appearance with no React root. Outcome unknown.
+
+The end-to-end tests of the agent surface run `wp wfd` in the test environment's WP-CLI container (`wp-env run cli`), started from the test with Node's own `child_process`. No dev dependency is added for this. `[N]`
