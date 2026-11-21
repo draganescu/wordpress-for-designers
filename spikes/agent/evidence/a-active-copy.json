@@ -1,0 +1,39 @@
+{
+    "postTitlesDrawn": 2,
+    "postTitlesVisible": 1,
+    "before": {
+        "documentBlocks": 53,
+        "notInStore": [
+            "1.1.0.0.2.0 core/paragraph",
+            "1.1.0.1.2.0 core/paragraph"
+        ],
+        "treeBlocks": 46,
+        "storeBlocksAtTheirTreePath": 46,
+        "storeBlocksAtAnotherPath": [
+            "1.1.0.1 core/group",
+            "1.1.0.1.0 core/post-featured-image",
+            "1.1.0.1.1 core/post-title",
+            "1.1.0.1.2 core/post-content",
+            "1.1.0.1.3 core/post-date"
+        ],
+        "treeBlocksWithNoElement": []
+    },
+    "after": {
+        "documentBlocks": 53,
+        "notInStore": [
+            "1.1.0.0.2.0 core/paragraph",
+            "1.1.0.1.2.0 core/paragraph"
+        ],
+        "treeBlocks": 46,
+        "storeBlocksAtTheirTreePath": 46,
+        "storeBlocksAtAnotherPath": [
+            "1.1.0.1 core/group",
+            "1.1.0.1.0 core/post-featured-image",
+            "1.1.0.1.1 core/post-title",
+            "1.1.0.1.2 core/post-content",
+            "1.1.0.1.3 core/post-date"
+        ],
+        "treeBlocksWithNoElement": []
+    },
+    "errors": []
+}

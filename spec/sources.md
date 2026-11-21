@@ -95,3 +95,4 @@ The list below is generated from every `[N]` tag in the spec. From row 65 on, fo
 | 74 | `acceptance.md` | all | The conventions of the agent groups, and the criteria tagged `[N]` in AGENT, CLI, TOOL and MARK. `[N]` |
 | 75 | `api-allowlist.md` | all | The block-editor store members listed for the agent surface, the PHP functions listed for it, and running `wp wfd` in the test environment's WP-CLI container. `[N]` |
 | 76 | `screens/AgentConnected.md, AgentWorking.md, AgentReview.md` | all | The wording, components and place of G1 to G4. `[N]` |
+| 77 | `decisions.md` | D79 | A preview copy drawn by a Post Template, a Comment Template or a read-only Content is not a block for paths, references and targets; pointing at one points at the nearest real block around it. `[N]` |

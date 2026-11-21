@@ -1,0 +1,1 @@
+"use strict";(globalThis.webpackChunkwordpress_for_designers||=[]).push([[682],{99(e,r,s){var d=s(143),o=s(715);window.wfdSpikeChunkRuns=(window.wfdSpikeChunkRuns??0)+1;const n={version:1,marker:"wfd-spike-agent-chunk-body",artboards:()=>(0,d.select)("wfd/board").getArtboards().length,blockEditorStore:o.store.name};s.d(r,["default",0,n])}}]);

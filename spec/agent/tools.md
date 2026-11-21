@@ -8,6 +8,7 @@ Read `surface.md` first for what a reference is, how a tool call runs and how it
 
 - A tool is one entry of the declaration file (`surface.md`, Declarations): a `name`, a `description`, an `input` JSON Schema and a function. The schema of each tool is an object with exactly the fields listed for it below, `additionalProperties: false`, and the fields marked "yes" under Required in `required`. `[U]` for the shape (D74)
 - A tool does what the named control of the UI does, through the same function the control calls, and nothing more. The "Same as" column names that control or decision; its rules apply to the tool unchanged, including undo: a tool's change is a step of the history the control's change would be a step of. `[U]` (D72, D73, C26)
+- Where the block editor joins changes into one undo step, a tool's changes are joined too: two changes in a row to the same attribute of the same block are one step, as typing is. `[V]` by Milestone 13, spike (c)
 - A tool returns a JSON value, in one piece, when its effect is in the stores. It never waits for a save, a render or the designer. `[U]` (C30)
 - No tool saves, publishes, deletes or trashes anything on the site, takes over a lock, or opens or answers a dialog (C28). `[U]`
 - Where a field is called an *artboard*, its value is an artboard's `id` or a reference string that names an artboard or a block in it (`surface.md`, References). Where a field is called a *path*, its value is a block path (`surface.md`, Block paths).

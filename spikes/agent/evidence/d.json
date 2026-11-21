@@ -1,0 +1,41 @@
+{
+    "mainScript": "/wp-content/plugins/wfd-agent-spike/chunk-build/board.js?ver=6de278fa5563a151fe48",
+    "before": {
+        "waitedMs": 31743,
+        "requests": [
+            "/wp-content/plugins/wfd-agent-spike/chunk-build/board.js?ver=6de278fa5563a151fe48"
+        ],
+        "stub": [
+            "ready"
+        ],
+        "chunkRuns": 0,
+        "chunkScriptTags": 0
+    },
+    "asked": {
+        "samePromise": true,
+        "version": 1,
+        "marker": "wfd-spike-agent-chunk-body",
+        "artboards": 9,
+        "blockEditorStore": "core/block-editor",
+        "chunkRuns": 1
+    },
+    "after": {
+        "requests": [
+            "/wp-content/plugins/wfd-agent-spike/chunk-build/board.js?ver=6de278fa5563a151fe48",
+            "/wp-content/plugins/wfd-agent-spike/chunk-build/agent.js?ver=330fe6553d939472cac1"
+        ],
+        "chunkRequests": 1,
+        "response": {
+            "status": 200,
+            "type": "text/javascript"
+        }
+    },
+    "files": {
+        "chunkBytes": 344,
+        "mainBytes": 1309025,
+        "markerInMain": false,
+        "markerInChunk": true
+    },
+    "errors": [],
+    "pass": true
+}
