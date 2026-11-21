@@ -29,3 +29,4 @@ require_once WFD_DIR . 'includes/menu.php';
 require_once WFD_DIR . 'includes/board-app.php';
 require_once WFD_DIR . 'includes/lock.php';
 require_once WFD_DIR . 'includes/preview.php';
+require_once WFD_DIR . 'includes/agent.php';

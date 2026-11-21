@@ -57,7 +57,24 @@ function wfd_test_wipe() {
     foreach ( $posts as $id ) {
         wp_delete_post( $id, true );
     }
+    // The site becomes one no agent has used (constraint C27).
+    global $wpdb;
+    $options = $wpdb->get_col( $wpdb->prepare( "SELECT option_name FROM $wpdb->options WHERE option_name LIKE %s", $wpdb->esc_like( 'wfd_agent_' ) . '%' ) );
+    foreach ( $options as $option ) {
+        delete_option( $option );
+    }
+    wp_clear_scheduled_hook( 'wfd_agent_cleanup' );
+    delete_option( 'wfd_test_runbook' );
 }
+
+// Text a test adds to the runbook through the plugin's filter (AC-CLI-02).
+add_filter(
+    'wfd_agent_runbook',
+    function ( $text ) {
+        $more = get_option( 'wfd_test_runbook' );
+        return $more ? $text . "\n\n" . $more : $text;
+    }
+);
 
 /**
  * Block markup used by the fixture pages and patterns.

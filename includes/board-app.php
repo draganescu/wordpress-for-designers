@@ -42,6 +42,7 @@ function wfd_print_board_page() {
                 'theme'          => get_stylesheet(),
                 'homeUrl'        => home_url( '/' ),
                 'preview'        => wfd_preview_config(),
+                'agent'          => wfd_agent_config(),
             )
         )
     );

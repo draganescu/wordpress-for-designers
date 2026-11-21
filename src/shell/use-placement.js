@@ -125,6 +125,26 @@ export function newTemplateContent( parts ) {
         .join( '\n\n' );
 }
 
+/**
+ * The New rows on offer. A purpose whose template is on the site, or on this
+ * board and not saved yet, is not offered as new.
+ *
+ * @param {Array} templates The site's template records.
+ * @param {Array} onBoard   The board's artboards.
+ * @return {Array} Rows of NEW_ROWS.
+ */
+export function rowsOnOffer( templates, onBoard ) {
+    const taken = new Set( [
+        ...templates.map( ( template ) => template.slug ),
+        ...onBoard
+            .filter( ( a ) => a.kind === 'template' && a.draft )
+            .map( ( a ) => a.draft.slug ),
+    ] );
+    return NEW_ROWS.filter(
+        ( { choice } ) => ! choice.purpose || ! taken.has( choice.purpose.slug )
+    );
+}
+
 function uniqueSlug( slug, taken ) {
     let candidate = slug;
     let n = 2;
@@ -158,28 +178,24 @@ export function usePlacement( { theme, enterEdit } ) {
     const { saveEntityRecord, editEntityRecord } = useDispatch( coreStore );
     const { addArtboard, selectArtboard } = useDispatch( boardStore );
 
-    // A purpose whose template is on the site, or on this board and not
-    // saved yet, is not offered as new.
-    const newRows = useMemo( () => {
-        const taken = new Set( [
-            ...( templates ?? [] ).map( ( template ) => template.slug ),
-            ...onBoard
-                .filter( ( a ) => a.kind === 'template' && a.draft )
-                .map( ( a ) => a.draft.slug ),
-        ] );
-        return NEW_ROWS.filter(
-            ( { choice } ) =>
-                ! choice.purpose || ! taken.has( choice.purpose.slug )
-        );
-    }, [ templates, onBoard ] );
+    const newRows = useMemo(
+        () => rowsOnOffer( templates ?? [], onBoard ),
+        [ templates, onBoard ]
+    );
 
-    const arm = useCallback( ( choice ) => {
+    // A choice with the name its artboard starts with.
+    const named = useCallback( ( choice ) => {
         let name = NAMES[ choice.kind ];
         if ( choice.kind === 'template' && choice.purpose.slug ) {
             name = choice.purpose.label;
         }
-        setPlacement( { ...choice, name } );
+        return { ...choice, name };
     }, [] );
+
+    const arm = useCallback(
+        ( choice ) => setPlacement( named( choice ) ),
+        [ named ]
+    );
 
     const cancel = useCallback( () => setPlacement( null ), [] );
 
@@ -199,17 +215,15 @@ export function usePlacement( { theme, enterEdit } ) {
     }, [ placement ] );
 
     /**
-     * Places the armed artboard with its top-left corner at a board point.
+     * Creates what a named choice stands for and places its artboard with
+     * its top-left corner at a board point.
      *
-     * @param {Object} point The point in board units.
+     * @param {Object} chosen The choice, with its name.
+     * @param {Object} point  The point in board units.
+     * @return {Promise<string>} The new artboard's id.
      */
-    const place = useCallback(
-        async ( point ) => {
-            if ( ! placement ) {
-                return;
-            }
-            const chosen = placement;
-            setPlacement( null );
+    const create = useCallback(
+        async ( chosen, point ) => {
             if ( chosen.kind === 'browser' ) {
                 // Selected, not browsing (D55).
                 const browser = {
@@ -224,7 +238,7 @@ export function usePlacement( { theme, enterEdit } ) {
                 };
                 addArtboard( browser );
                 selectArtboard( browser.id );
-                return;
+                return browser.id;
             }
             const artboard = {
                 id: window.crypto.randomUUID(),
@@ -347,10 +361,10 @@ export function usePlacement( { theme, enterEdit } ) {
                 );
             }
             addArtboard( artboard );
-            enterEdit( artboard.id );
+            await enterEdit( artboard.id );
+            return artboard.id;
         },
         [
-            placement,
             registry,
             theme,
             saveEntityRecord,
@@ -361,5 +375,21 @@ export function usePlacement( { theme, enterEdit } ) {
         ]
     );
 
-    return { newRows, placement, arm, cancel, place };
+    /**
+     * Places the armed artboard with its top-left corner at a board point.
+     *
+     * @param {Object} point The point in board units.
+     */
+    const place = useCallback(
+        ( point ) => {
+            if ( ! placement ) {
+                return;
+            }
+            setPlacement( null );
+            return create( placement, point );
+        },
+        [ placement, create ]
+    );
+
+    return { newRows, placement, arm, cancel, place, named, create };
 }

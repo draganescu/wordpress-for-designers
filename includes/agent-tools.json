@@ -1,0 +1,482 @@
+[
+    {
+        "name": "board-get",
+        "description": "Read the open board: its artboards, notes, selection and which artboard is in edit.",
+        "input": {
+            "type": "object",
+            "properties": {},
+            "additionalProperties": false
+        }
+    },
+    {
+        "name": "board-select",
+        "description": "Select artboards on the board and bring them into view.",
+        "input": {
+            "type": "object",
+            "properties": {
+                "artboards": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "minItems": 1
+                }
+            },
+            "required": [
+                "artboards"
+            ],
+            "additionalProperties": false
+        }
+    },
+    {
+        "name": "board-refresh",
+        "description": "Read the site again after something outside the board changed it.",
+        "input": {
+            "type": "object",
+            "properties": {},
+            "additionalProperties": false
+        }
+    },
+    {
+        "name": "artboard-add",
+        "description": "Open something that exists on the site as an artboard on the board, or add a browser.",
+        "input": {
+            "type": "object",
+            "properties": {
+                "kind": {
+                    "type": "string",
+                    "enum": [
+                        "page",
+                        "pattern",
+                        "template",
+                        "template-part",
+                        "media",
+                        "browser"
+                    ]
+                },
+                "entityId": {
+                    "type": [
+                        "number",
+                        "string"
+                    ]
+                },
+                "path": {
+                    "type": "string",
+                    "pattern": "^/"
+                },
+                "device": {
+                    "type": "string",
+                    "enum": [
+                        "desktop",
+                        "tablet",
+                        "mobile"
+                    ]
+                }
+            },
+            "required": [
+                "kind"
+            ],
+            "additionalProperties": false
+        }
+    },
+    {
+        "name": "artboard-new",
+        "description": "Create a new page, pattern, template part or template and place its artboard.",
+        "input": {
+            "type": "object",
+            "properties": {
+                "kind": {
+                    "type": "string",
+                    "enum": [
+                        "page",
+                        "pattern",
+                        "template-part",
+                        "template"
+                    ]
+                },
+                "purpose": {
+                    "type": "string",
+                    "enum": [
+                        "archive",
+                        "search",
+                        "404",
+                        "singular",
+                        "custom"
+                    ]
+                },
+                "x": {
+                    "type": "number"
+                },
+                "y": {
+                    "type": "number"
+                }
+            },
+            "required": [
+                "kind"
+            ],
+            "additionalProperties": false
+        }
+    },
+    {
+        "name": "artboard-update",
+        "description": "Change an artboard's device or position.",
+        "input": {
+            "type": "object",
+            "properties": {
+                "artboard": {
+                    "type": "string"
+                },
+                "device": {
+                    "type": "string",
+                    "enum": [
+                        "desktop",
+                        "tablet",
+                        "mobile"
+                    ]
+                },
+                "x": {
+                    "type": "number"
+                },
+                "y": {
+                    "type": "number"
+                }
+            },
+            "required": [
+                "artboard"
+            ],
+            "additionalProperties": false
+        }
+    },
+    {
+        "name": "artboard-remove",
+        "description": "Take artboards off the board. Nothing on the site is deleted.",
+        "input": {
+            "type": "object",
+            "properties": {
+                "artboards": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "minItems": 1
+                }
+            },
+            "required": [
+                "artboards"
+            ],
+            "additionalProperties": false
+        }
+    },
+    {
+        "name": "artboard-edit",
+        "description": "Put an artboard in edit.",
+        "input": {
+            "type": "object",
+            "properties": {
+                "artboard": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "artboard"
+            ],
+            "additionalProperties": false
+        }
+    },
+    {
+        "name": "edit-leave",
+        "description": "Leave edit and keep the artboard selected.",
+        "input": {
+            "type": "object",
+            "properties": {},
+            "additionalProperties": false
+        }
+    },
+    {
+        "name": "blocks-get",
+        "description": "Read the blocks of an artboard: names, text, attributes and paths.",
+        "input": {
+            "type": "object",
+            "properties": {
+                "artboard": {
+                    "type": "string"
+                },
+                "path": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer",
+                        "minimum": 0
+                    }
+                },
+                "depth": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 10
+                }
+            },
+            "required": [
+                "artboard"
+            ],
+            "additionalProperties": false
+        }
+    },
+    {
+        "name": "block-update",
+        "description": "Change the attributes of one block, its text included.",
+        "input": {
+            "type": "object",
+            "properties": {
+                "artboard": {
+                    "type": "string"
+                },
+                "path": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer",
+                        "minimum": 0
+                    }
+                },
+                "attributes": {
+                    "type": "object"
+                }
+            },
+            "required": [
+                "artboard",
+                "attributes"
+            ],
+            "additionalProperties": false
+        }
+    },
+    {
+        "name": "blocks-insert",
+        "description": "Insert blocks, given as block markup, or insert a pattern.",
+        "input": {
+            "type": "object",
+            "properties": {
+                "artboard": {
+                    "type": "string"
+                },
+                "parent": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer",
+                        "minimum": 0
+                    }
+                },
+                "index": {
+                    "type": "integer",
+                    "minimum": 0
+                },
+                "markup": {
+                    "type": "string"
+                },
+                "pattern": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "artboard"
+            ],
+            "additionalProperties": false
+        }
+    },
+    {
+        "name": "blocks-remove",
+        "description": "Remove blocks.",
+        "input": {
+            "type": "object",
+            "properties": {
+                "artboard": {
+                    "type": "string"
+                },
+                "paths": {
+                    "type": "array",
+                    "items": {
+                        "type": "array",
+                        "items": {
+                            "type": "integer",
+                            "minimum": 0
+                        }
+                    },
+                    "minItems": 1
+                }
+            },
+            "required": [
+                "artboard"
+            ],
+            "additionalProperties": false
+        }
+    },
+    {
+        "name": "blocks-move",
+        "description": "Move a block to another place in the artboard.",
+        "input": {
+            "type": "object",
+            "properties": {
+                "artboard": {
+                    "type": "string"
+                },
+                "path": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer",
+                        "minimum": 0
+                    }
+                },
+                "parent": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer",
+                        "minimum": 0
+                    }
+                },
+                "index": {
+                    "type": "integer",
+                    "minimum": 0
+                }
+            },
+            "required": [
+                "artboard",
+                "index"
+            ],
+            "additionalProperties": false
+        }
+    },
+    {
+        "name": "styles-get",
+        "description": "Read the site's style tokens, their use counts and the style variations.",
+        "input": {
+            "type": "object",
+            "properties": {},
+            "additionalProperties": false
+        }
+    },
+    {
+        "name": "token-set",
+        "description": "Change a colour of the palette.",
+        "input": {
+            "type": "object",
+            "properties": {
+                "kind": {
+                    "type": "string",
+                    "enum": [
+                        "color"
+                    ]
+                },
+                "slug": {
+                    "type": "string"
+                },
+                "value": {
+                    "type": "string",
+                    "pattern": "^#([0-9a-fA-F]{6}|[0-9a-fA-F]{8})$"
+                }
+            },
+            "required": [
+                "kind",
+                "slug",
+                "value"
+            ],
+            "additionalProperties": false
+        }
+    },
+    {
+        "name": "styles-set",
+        "description": "Change any global style or setting, for the site or for one block type.",
+        "input": {
+            "type": "object",
+            "properties": {
+                "kind": {
+                    "type": "string",
+                    "enum": [
+                        "setting",
+                        "style"
+                    ]
+                },
+                "path": {
+                    "type": "string"
+                },
+                "value": {
+                    "type": [
+                        "string",
+                        "number",
+                        "boolean",
+                        "object",
+                        "array",
+                        "null"
+                    ]
+                },
+                "block": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "kind",
+                "path",
+                "value"
+            ],
+            "additionalProperties": false
+        }
+    },
+    {
+        "name": "styles-set-variation",
+        "description": "Switch the site to one of the theme's style variations, or back to the theme's own styles.",
+        "input": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "name"
+            ],
+            "additionalProperties": false
+        }
+    },
+    {
+        "name": "token-show-uses",
+        "description": "Show on the board where a token is used, or stop showing it.",
+        "input": {
+            "type": "object",
+            "properties": {
+                "kind": {
+                    "type": "string",
+                    "enum": [
+                        "color",
+                        "font-size",
+                        "font-family"
+                    ]
+                },
+                "slug": {
+                    "type": "string"
+                }
+            },
+            "additionalProperties": false
+        }
+    },
+    {
+        "name": "review-list",
+        "description": "List the unsaved changes waiting in Review, and who made each.",
+        "input": {
+            "type": "object",
+            "properties": {},
+            "additionalProperties": false
+        }
+    },
+    {
+        "name": "review-discard",
+        "description": "Discard one unsaved item that only the agent changed.",
+        "input": {
+            "type": "object",
+            "properties": {
+                "key": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "key"
+            ],
+            "additionalProperties": false
+        }
+    }
+]

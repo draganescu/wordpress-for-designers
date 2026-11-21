@@ -5,7 +5,7 @@
     "description": "An infinite canvas of real WordPress pages, templates, template parts and patterns.",
     "license": "GPL-2.0-or-later",
     "scripts": {
-        "build": "wp-scripts build",
+        "build": "node tools/check-agent-tools.mjs && wp-scripts build",
         "start": "wp-scripts start",
         "lint": "npm run lint:js && npm run lint:css",
         "lint:js": "wp-scripts lint-js src tests tools eslint.config.cjs webpack.config.js",

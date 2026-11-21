@@ -9,7 +9,7 @@ import {
     useState,
     useMemo,
 } from '@wordpress/element';
-import { useDispatch, useSelect } from '@wordpress/data';
+import { useDispatch, useRegistry, useSelect } from '@wordpress/data';
 import { store as coreStore, useEntityRecord } from '@wordpress/core-data';
 import { ShortcutProvider } from '@wordpress/keyboard-shortcuts';
 import { SlotFillProvider, Popover } from '@wordpress/components';
@@ -32,7 +32,12 @@ import { ArtboardSnapshot, createSnapshotStore } from '../artboard-snapshot';
 import { useTiers } from '../tier-scheduler';
 import { InserterPanel } from '../inserter/inserter-panel';
 import { useInserterActions } from '../inserter/use-inserter-actions';
-import { useInserterData, withBoardNames } from '../inserter/use-inserter-data';
+import {
+    MEDIA_QUERY,
+    USER_PATTERNS,
+    useInserterData,
+    withBoardNames,
+} from '../inserter/use-inserter-data';
 import { StylesPanel } from '../styles/styles-panel';
 import { useGlobalStyles } from '../styles/use-global-styles';
 import { useStylesPanel } from '../styles/use-styles-panel';
@@ -63,12 +68,21 @@ import { Shell } from './shell';
 import { useDeviceWidths } from './device-widths';
 import { bootEditor, serverSettings } from './editor-settings';
 import { counters, countRender, expose } from './test-hooks';
-import { useArtboards } from './use-artboards';
+import {
+    selectArtboards as readArtboards,
+    useArtboards,
+} from './use-artboards';
+import { actionsSeam, editSeam } from './seams';
+import { windowHasRoom } from './space-gate';
 import { rectOf, useCanvasInteractions } from './use-canvas-interactions';
 import { tidyMoves } from './tidy';
 import { useEditing } from './use-editing';
 import { useEntityInfo } from './use-entity-info';
-import { NEW_ARTBOARD_HEIGHT, usePlacement } from './use-placement';
+import {
+    NEW_ARTBOARD_HEIGHT,
+    rowsOnOffer,
+    usePlacement,
+} from './use-placement';
 import { useRename } from './use-rename';
 import { removalInfo, useRemoval } from './use-removal';
 
@@ -182,6 +196,7 @@ function contentTooltip( name, isUndo ) {
 export function App() {
     countRender();
     useEnableWpCompatOverlaySlot();
+    const registry = useRegistry();
     const isLoaded = useBoard();
     useLayoutAutosave();
     const preview = usePreview();
@@ -344,6 +359,43 @@ export function App() {
         };
     }, [ isLoaded, viewport, setViewport, widthOf ] );
 
+    // A clicked item lands in the middle of the board in view, moved right
+    // past anything it would cover, and is brought into view.
+    const findSpace = ( size ) => {
+        const box = areaRef.current.getBoundingClientRect();
+        const rect = {
+            width: widthOf( 'desktop' ),
+            height: NEW_ARTBOARD_HEIGHT,
+            ...size,
+        };
+        const middle = viewport.toBoard( {
+            x: box.width / 2,
+            y: box.height / 2,
+        } );
+        const start = Math.round( middle.x - rect.width / 2 );
+        rect.x = start;
+        rect.y = Math.round( middle.y - rect.height / 2 );
+        const others = readArtboards( registry.select ).map( ( artboard ) =>
+            rectOf( artboard, widthOf )
+        );
+        const covered = () =>
+            others.find(
+                ( other ) =>
+                    rect.x < other.x + other.width &&
+                    other.x < rect.x + rect.width &&
+                    rect.y < other.y + other.height &&
+                    other.y < rect.y + rect.height
+            );
+        for ( let other = covered(); other; other = covered() ) {
+            rect.x = other.x + other.width + PLACEMENT_GAP;
+        }
+        if ( rect.x !== start ) {
+            viewport.panBy( ( start - rect.x ) * viewport.get().zoom, 0 );
+        }
+        return { x: rect.x, y: rect.y };
+    };
+    const findSpaceRef = useRef( findSpace );
+    findSpaceRef.current = findSpace;
     const inserterData = useInserterData( editing.allowedBlocks );
     const inserter = useInserterActions( {
         lookup: inserterData.lookup,
@@ -355,46 +407,16 @@ export function App() {
                 y: event.clientY - box.top,
             } );
         },
-        // A clicked item lands in the middle of the board in view, moved
-        // right past anything it would cover, and is brought into view.
-        findSpace: ( size ) => {
-            const box = areaRef.current.getBoundingClientRect();
-            const rect = {
-                width: widthOf( 'desktop' ),
-                height: NEW_ARTBOARD_HEIGHT,
-                ...size,
-            };
-            const middle = viewport.toBoard( {
-                x: box.width / 2,
-                y: box.height / 2,
-            } );
-            const start = Math.round( middle.x - rect.width / 2 );
-            rect.x = start;
-            rect.y = Math.round( middle.y - rect.height / 2 );
-            const others = artboards.map( ( artboard ) =>
-                rectOf( artboard, widthOf )
-            );
-            const covered = () =>
-                others.find(
-                    ( other ) =>
-                        rect.x < other.x + other.width &&
-                        other.x < rect.x + rect.width &&
-                        rect.y < other.y + other.height &&
-                        other.y < rect.y + rect.height
-                );
-            for ( let other = covered(); other; other = covered() ) {
-                rect.x = other.x + other.width + PLACEMENT_GAP;
-            }
-            if ( rect.x !== start ) {
-                viewport.panBy( ( start - rect.x ) * viewport.get().zoom, 0 );
-            }
-            return { x: rect.x, y: rect.y };
-        },
+        findSpace: ( size ) => findSpaceRef.current( size ),
     } );
+    const inserterRef = useRef( inserter );
+    inserterRef.current = inserter;
+    const inserterDataRef = useRef( inserterData );
+    inserterDataRef.current = inserterData;
     const placing = usePlacement( { theme, enterEdit: onEdit } );
     const remove = useRemoval();
     const [ ghost, setGhost ] = useState( null );
-    const { removeArtboards } = useDispatch( boardStore );
+    const { removeArtboards, bumpSiteVersion } = useDispatch( boardStore );
     const { invalidateResolution } = useDispatch( coreStore );
 
     // An artboard whose entity no longer exists leaves the board.
@@ -406,7 +428,9 @@ export function App() {
     // change to the site. One never saved is dropped with its edits, as
     // when it is removed alone.
     const removeMany = ( ids ) => {
-        const leaving = artboards.filter( ( a ) => ids.includes( a.id ) );
+        const leaving = readArtboards( registry.select ).filter( ( a ) =>
+            ids.includes( a.id )
+        );
         leaving
             .filter( ( a ) => a.draft )
             .forEach( ( a ) => remove( a, false ) );
@@ -418,6 +442,9 @@ export function App() {
             { undoable: true }
         );
     };
+
+    const removeManyRef = useRef( removeMany );
+    removeManyRef.current = removeMany;
 
     useEffect( () => {
         if ( missingIds ) {
@@ -497,6 +524,27 @@ export function App() {
         onMount: ( id ) => counters.mountOrder.push( id ),
         hasCopy,
     } );
+    // The Board actions seam of the agent surface (spec/agent/surface.md,
+    // Seams): what the board shows, read from the stores as they are now.
+    const tiersRef = useRef( tiers );
+    tiersRef.current = tiers;
+    const readBoard = () => {
+        const board = registry.select( boardStore );
+        return {
+            id: board.getBoardId(),
+            title: board.getTitle(),
+            artboards: orderedArtboards( readArtboards( registry.select ) ),
+            notes: board.getNotes(),
+            selection: board.getSelectedIds(),
+            edit: board.getEditId(),
+            zoom: board.getViewport().zoom,
+            tierOf: ( id ) => tiersRef.current.get( id ) || 'ghost',
+            widthOf: ( artboard ) =>
+                hasDevice( artboard )
+                    ? widthOf( artboard.device )
+                    : artboard.width,
+        };
+    };
     const usage = useUsageIndex( artboards, styles.merged );
     const stylesPanel = useStylesPanel( {
         styles,
@@ -764,6 +812,162 @@ export function App() {
             />
         );
     }
+
+    // The seams of the agent surface (spec/agent/surface.md, Seams). Each
+    // function is the one a control calls, and reads the stores as they are
+    // when it is called.
+    const whenListed = async ( isListed ) => {
+        // The inserter's lists are drawn from the stores a moment later.
+        for ( let tries = 0; tries < 40 && ! isListed(); tries++ ) {
+            await new Promise( ( resolve ) => setTimeout( resolve, 50 ) );
+        }
+    };
+    editSeam.current = {
+        bridgeRef: editing.bridgeRef,
+        // A click on the row, then Enter (L4, D6). A held lock opens no
+        // dialog.
+        enter: async ( id ) => {
+            const result = await editing.enterEdit( id, { quiet: true } );
+            if ( result === 'entered' ) {
+                canvas.reveal( id );
+            }
+            return result;
+        },
+        leave: editing.leaveEdit,
+    };
+    actionsSeam.current = {
+        board: readBoard,
+        // While the designer cannot use the board either (D49, and an open
+        // dialog or drawer).
+        isBlocked: () =>
+            ! windowHasRoom() ||
+            review.isOpen ||
+            !! editing.lockDialog ||
+            !! removing ||
+            isShortcutsOpen,
+        // A click on a row (L4); several rows selected together, then "Fit
+        // selection" (D41, H8).
+        selectRows: ( ids ) => {
+            if ( ids.length === 1 ) {
+                selectArtboard( ids[ 0 ] );
+                canvas.reveal( ids[ 0 ] );
+            } else {
+                selectArtboards( ids );
+                canvas.zoom( 'fit-selection' );
+            }
+        },
+        // Reads every saved record again; unsaved changes stay on top.
+        refresh: async () => {
+            const core = registry.dispatch( coreStore );
+            const onBoard = () => registry.select( boardStore ).getArtboards();
+            const argsOf = ( artboard ) => [
+                'postType',
+                KINDS[ artboard.kind ].postType,
+                artboard.entityId,
+            ];
+            registry.batch( () => {
+                core.invalidateResolutionForStore();
+                // A new template or part has nothing saved to read.
+                for ( const artboard of onBoard().filter( ( a ) => a.draft ) ) {
+                    for ( const selector of [
+                        'getEntityRecord',
+                        'getEditedEntityRecord',
+                    ] ) {
+                        core.startResolution( selector, argsOf( artboard ) );
+                        core.finishResolution( selector, argsOf( artboard ) );
+                    }
+                }
+            } );
+            const saved = onBoard().filter(
+                ( a ) => KINDS[ a.kind ].postType && ! a.draft
+            );
+            await Promise.all(
+                saved.map( ( artboard ) =>
+                    registry
+                        .resolveSelect( coreStore )
+                        .getEntityRecord( ...argsOf( artboard ) )
+                        .catch( () => null )
+                )
+            );
+            // An artboard whose entity no longer exists leaves the board.
+            const gone = saved.filter( ( artboard ) => {
+                const error = registry
+                    .select( coreStore )
+                    .getResolutionError(
+                        'getEntityRecord',
+                        argsOf( artboard )
+                    );
+                return ( error?.data?.status ?? error?.status ) === 404;
+            } );
+            if ( gone.length ) {
+                removeArtboards( gone.map( ( artboard ) => artboard.id ) );
+            }
+            bumpSiteVersion();
+        },
+        // A click on an inserter row with no artboard in edit (D39). Gives
+        // the new artboard's id, or null when the item is not on the site.
+        openExisting: async ( kind, entityId ) => {
+            const core = registry.resolveSelect( coreStore );
+            const record = await core
+                .getEntityRecord( 'postType', KINDS[ kind ].postType, entityId )
+                .catch( () => null );
+            if ( ! record || record.status === 'trash' ) {
+                return null;
+            }
+            let id = entityId;
+            if ( kind === 'pattern' ) {
+                id = `user:${ entityId }`;
+                await core
+                    .getEntityRecords( 'postType', 'wp_block', USER_PATTERNS )
+                    .catch( () => null );
+                await whenListed( () =>
+                    inserterDataRef.current.lookup.patterns.has( id )
+                );
+            } else if ( kind === 'media' ) {
+                await core
+                    .getEntityRecords( 'postType', 'attachment', MEDIA_QUERY )
+                    .catch( () => null );
+                await whenListed( () =>
+                    inserterDataRef.current.lookup.images.has( id )
+                );
+            }
+            return inserterRef.current.openInSpace( { type: kind, id } );
+        },
+        // A New row of the inserter and the click that places it (D63).
+        // Gives the new artboard's id, or null when the row is not offered.
+        createNew: async ( kind, purpose, point ) => {
+            const templates =
+                ( await registry
+                    .resolveSelect( coreStore )
+                    .getEntityRecords( 'postType', 'wp_template', {
+                        per_page: -1,
+                    } )
+                    .catch( () => null ) ) ?? [];
+            const row = rowsOnOffer(
+                templates,
+                registry.select( boardStore ).getArtboards()
+            ).find(
+                ( { choice } ) =>
+                    choice.kind === kind &&
+                    ( kind !== 'template' ||
+                        ( choice.purpose.slug ?? 'custom' ) === purpose )
+            );
+            if ( ! row ) {
+                return null;
+            }
+            return placing.create(
+                placing.named( row.choice ),
+                point ?? findSpaceRef.current( null )
+            );
+        },
+        // The device control (E6) and a drag of the artboard (A3).
+        setDevice: setArtboardDevice,
+        move: ( id, x, y ) => moveArtboards( [ { id, x, y } ] ),
+        // A browser's address field (D55).
+        setAddress: ( id, path ) => updateArtboard( id, { path } ),
+        // Delete with several artboards selected (D41).
+        remove: ( ids ) => removeManyRef.current( ids ),
+    };
 
     return (
         <SlotFillProvider>
