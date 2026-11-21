@@ -10,6 +10,7 @@ import {
     setViewport,
     tiersOf,
     boardAtRest,
+    counters,
     frameBox,
     artboardOf,
     openInserter,
@@ -1706,7 +1707,18 @@ test.describe( 'TOOL', () => {
         // The rows of the Tokens tab.
         const tokens = fitted.filter( ( t: any ) => t.kind === 'token' );
         const rows = page.locator( '[data-wfd-token]' );
-        expect( tokens.length ).toBe( await rows.count() );
+        const panel = ( await page
+            .locator( '[data-wfd-region="right"]' )
+            .boundingBox() )!;
+        const boxes = await rows.evaluateAll( ( els ) =>
+            els.map( ( el ) => el.getBoundingClientRect().toJSON() )
+        );
+        expect( tokens.length ).toBe(
+            boxes.filter(
+                ( box ) =>
+                    box.bottom > panel.y && box.top < panel.y + panel.height
+            ).length
+        );
         expect( tokens.length ).toBeGreaterThan( 5 );
         const base = tokens.find(
             ( t: any ) => t.ref === 'wfd-ref-t_color_base'
@@ -1726,8 +1738,13 @@ test.describe( 'TOOL', () => {
                 t.ref.startsWith( 'wfd-ref-t_font-size_' )
             )
         ).toBe( true );
+        // A row scrolled out of the panel is not listed; scrolled in, it is.
+        await page
+            .locator( '[data-wfd-token^="font-family:"]' )
+            .first()
+            .scrollIntoViewIfNeeded();
         expect(
-            tokens.some( ( t: any ) =>
+            ( await targetsOf() ).some( ( t: any ) =>
                 t.ref.startsWith( 'wfd-ref-t_font-family_' )
             )
         ).toBe( true );
@@ -1866,6 +1883,51 @@ test.describe( 'TOOL', () => {
             ).result
         ).toEqual( { selection: [ header.id ] } );
 
+        // A token's reference, where a tool takes a slug.
+        await callTool( page, 'edit-leave' );
+        const accent = (
+            await callTool( page, 'styles-get' )
+        ).result.colors.find( ( c: any ) => c.slug === 'accent-1' );
+        expect( accent.ref ).toBe( 'wfd-ref-t_color_accent-1' );
+        for ( const [ slug, value ] of [
+            [ accent.ref, '#112233' ],
+            [ '#' + accent.ref, '#445566' ],
+        ] ) {
+            const set = await callTool( page, 'token-set', {
+                kind: 'color',
+                slug,
+                value,
+            } );
+            expect( set.ok ).toBe( true );
+            expect( set.result ).toMatchObject( { slug: 'accent-1', value } );
+        }
+        expect(
+            ( await callTool( page, 'token-show-uses', { slug: accent.ref } ) )
+                .ok
+        ).toBe( true );
+        await callTool( page, 'token-show-uses' );
+        expect(
+            (
+                await callTool( page, 'token-set', {
+                    kind: 'color',
+                    slug: 'wfd-ref-t_font-size_large',
+                    value: '#000000',
+                } )
+            ).error.code
+        ).toBe( 'invalid_args' );
+        expect(
+            (
+                await callTool( page, 'token-set', {
+                    kind: 'color',
+                    slug: 'wfd-ref-t_color_no-such-colour',
+                    value: '#000000',
+                } )
+            ).error
+        ).toEqual( {
+            code: 'not_found',
+            message: 'Token no-such-colour was not found.',
+        } );
+
         // Strings that do not parse.
         for ( const artboard of [
             'wfd-ref-x_nothing',
@@ -1910,5 +1972,638 @@ test.describe( 'TOOL', () => {
             code: 'not_found',
             message: 'Block [9,9] was not found.',
         } );
+    } );
+
+    test( 'AC-TOOL-15 styles-get returns the rows of the Tokens tab with their names, values and use counts, and the variation the menu shows', async ( {
+        page,
+        requestUtils,
+    } ) => {
+        const fixture = await resetFixture( requestUtils );
+        await openBoard( page, fixture.boardId );
+        await boardAtRest( page );
+        const got = await callTool( page, 'styles-get' );
+        expect( got.ok ).toBe( true );
+        const styles = got.result;
+        expect( Object.keys( styles ) ).toEqual( [
+            'variation',
+            'variations',
+            'colors',
+            'fontSizes',
+            'fontFamilies',
+            'spacing',
+        ] );
+
+        // The colour rows.
+        const colorRows = await page
+            .locator( '[data-wfd-token^="color:"]' )
+            .evaluateAll( ( rows ) =>
+                rows.map( ( row ) => ( {
+                    slug: row.getAttribute( 'data-wfd-token' )!.slice( 6 ),
+                    name: row.querySelector( '.wfd-row__name' )!.textContent,
+                    value: row.querySelector( '.wfd-styles__hex' )!.textContent,
+                    uses: Number(
+                        row.querySelector( '.wfd-styles__uses' )!.textContent
+                    ),
+                } ) )
+            );
+        expect( colorRows.length ).toBeGreaterThan( 3 );
+        expect( styles.colors ).toEqual(
+            colorRows.map( ( row ) => ( {
+                ...row,
+                ref: `wfd-ref-t_color_${ row.slug }`,
+            } ) )
+        );
+        expect(
+            styles.colors.find( ( c: any ) => c.slug === 'accent-1' ).uses
+        ).toBeGreaterThanOrEqual( 3 );
+
+        // The typography rows: font sizes, then font families.
+        const typeRows = async ( kind: string ) =>
+            page.locator( `[data-wfd-token^="${ kind }:"]` ).evaluateAll(
+                ( rows, prefix ) =>
+                    rows.map( ( row ) => ( {
+                        slug: row
+                            .getAttribute( 'data-wfd-token' )!
+                            .slice( prefix.length + 1 ),
+                        name: row.querySelector( '.wfd-row__name' )!
+                            .textContent,
+                        line: row.querySelector( '.wfd-row__second-line' )!
+                            .textContent,
+                        uses: Number(
+                            row.querySelector( '.wfd-row__suffix' )!.textContent
+                        ),
+                    } ) ),
+                kind
+            );
+        const sizes = await typeRows( 'font-size' );
+        expect( styles.fontSizes ).toHaveLength( sizes.length );
+        styles.fontSizes.forEach( ( size: any, index: number ) => {
+            expect( size.slug ).toBe( sizes[ index ].slug );
+            expect( size.name ).toBe( sizes[ index ].name );
+            expect( size.uses ).toBe( sizes[ index ].uses );
+            expect( sizes[ index ].line ).toContain( `· ${ size.value } /` );
+            expect( size.ref ).toBe( `wfd-ref-t_font-size_${ size.slug }` );
+        } );
+        const families = await typeRows( 'font-family' );
+        expect( styles.fontFamilies ).toHaveLength( families.length );
+        expect( families.length ).toBeGreaterThan( 0 );
+        styles.fontFamilies.forEach( ( family: any, index: number ) => {
+            expect( family.slug ).toBe( families[ index ].slug );
+            expect( family.name ).toBe( families[ index ].name );
+            expect( family.uses ).toBe( families[ index ].uses );
+            expect( typeof family.value ).toBe( 'string' );
+            expect( family.ref ).toBe(
+                `wfd-ref-t_font-family_${ family.slug }`
+            );
+        } );
+        // One square per spacing preset.
+        expect( styles.spacing ).toHaveLength(
+            await page.locator( '.wfd-styles__spacing > *' ).count()
+        );
+        for ( const size of styles.spacing ) {
+            expect( Object.keys( size ) ).toEqual( [
+                'slug',
+                'name',
+                'value',
+            ] );
+        }
+
+        // The variation menu.
+        const trigger = page.getByRole( 'button', { name: /^Variation: / } );
+        await expect( trigger ).toHaveText( 'Variation: Default' );
+        expect( styles.variation ).toBe( 'Default' );
+        await trigger.click();
+        await page.getByRole( 'menuitemradio' ).first().waitFor();
+        const items = await page.getByRole( 'menuitemradio' ).allInnerTexts();
+        await page.keyboard.press( 'Escape' );
+        expect( items[ 0 ] ).toBe( 'Default' );
+        expect( styles.variations ).toEqual( items.slice( 1 ) );
+        expect( styles.variations.length ).toBeGreaterThan( 0 );
+        expect( styles ).not.toHaveProperty( 'changed' );
+    } );
+
+    test( 'AC-TOOL-16 token-set repaints the artboards that use the colour with one style compile, saves nothing, and lists Styles in Review', async ( {
+        page,
+        requestUtils,
+    } ) => {
+        const fixture = await resetFixture( requestUtils );
+        await openBoard( page, fixture.boardId );
+        await boardAtRest( page );
+        const hero = artboardOf( fixture, 'pattern' );
+        await setViewport( page, {
+            x: 40 - hero.x * 0.3,
+            y: 60 - hero.y * 0.3,
+            zoom: 0.3,
+        } );
+        await expect( frame( page, hero.id ) ).toHaveAttribute(
+            'data-wfd-tier',
+            'preview'
+        );
+        const background = () =>
+            page
+                .locator( `[data-wfd-artboard="${ hero.id }"] iframe` )
+                .first()
+                .evaluate( ( el: HTMLIFrameElement ) => {
+                    const p = el.contentDocument!.querySelector(
+                        'p.has-accent-1-background-color'
+                    )!;
+                    return el.contentWindow!.getComputedStyle( p )
+                        .backgroundColor;
+                } );
+        await expect.poll( background ).not.toBe( 'rgb(18, 52, 86)' );
+        await boardAtRest( page );
+        const before = ( await counters( page ) ).styleGenerations;
+
+        const set = await callTool( page, 'token-set', {
+            kind: 'color',
+            slug: 'accent-1',
+            value: '#123456',
+        } );
+        expect( set.ok ).toBe( true );
+        expect( set.result ).toMatchObject( {
+            slug: 'accent-1',
+            name: 'Accent 1',
+            value: '#123456',
+            ref: 'wfd-ref-t_color_accent-1',
+        } );
+        expect( typeof set.result.uses ).toBe( 'number' );
+        await expect.poll( background ).toBe( 'rgb(18, 52, 86)' );
+        await page.waitForTimeout( 500 );
+        expect( ( await counters( page ) ).styleGenerations - before ).toBe(
+            1
+        );
+        await expect( review( page ) ).toHaveText( 'Review 1 change' );
+        await expect(
+            page.locator( '[data-wfd-token="color:accent-1"] .wfd-styles__hex' )
+        ).toHaveText( '#123456' );
+        // Nothing is saved.
+        const saved = await page.evaluate( () => {
+            const { select } = ( window as any ).wp.data;
+            const id =
+                select( 'core' ).__experimentalGetCurrentGlobalStylesId();
+            return JSON.stringify(
+                select( 'core' ).getEntityRecord( 'root', 'globalStyles', id )
+                    .settings
+            );
+        } );
+        expect( saved ).not.toContain( '#123456' );
+        expect( ( await callTool( page, 'styles-get' ) ).result.changed ).toBe(
+            'agent'
+        );
+
+        expect(
+            (
+                await callTool( page, 'token-set', {
+                    kind: 'color',
+                    slug: 'accent-1',
+                    value: 'red',
+                } )
+            ).error.code
+        ).toBe( 'invalid_args' );
+        expect(
+            (
+                await callTool( page, 'token-set', {
+                    kind: 'color',
+                    slug: 'no-such-colour',
+                    value: '#000000',
+                } )
+            ).error
+        ).toEqual( {
+            code: 'not_found',
+            message: 'Token no-such-colour was not found.',
+        } );
+        await expect( review( page ) ).toHaveText( 'Review 1 change' );
+    } );
+
+    test( 'AC-TOOL-17 styles-set changes a style for the site and for one block type, and a setting', async ( {
+        page,
+        requestUtils,
+    } ) => {
+        const fixture = await resetFixture( requestUtils );
+        await openBoard( page, fixture.boardId );
+        await boardAtRest( page );
+        const hero = artboardOf( fixture, 'pattern' );
+        await setViewport( page, {
+            x: 40 - hero.x * 0.3,
+            y: 60 - hero.y * 0.3,
+            zoom: 0.3,
+        } );
+        await expect( frame( page, hero.id ) ).toHaveAttribute(
+            'data-wfd-tier',
+            'preview'
+        );
+        const edited = () =>
+            page.evaluate( () => {
+                const { select } = ( window as any ).wp.data;
+                const id =
+                    select( 'core' ).__experimentalGetCurrentGlobalStylesId();
+                const record = select( 'core' ).getEditedEntityRecord(
+                    'root',
+                    'globalStyles',
+                    id
+                );
+                return { settings: record.settings, styles: record.styles };
+            } );
+        const inPreview = ( read: string ) =>
+            page
+                .locator( `[data-wfd-artboard="${ hero.id }"] iframe` )
+                .first()
+                .evaluate( ( el: HTMLIFrameElement, what ) => {
+                    const doc = el.contentDocument!;
+                    const view = el.contentWindow!;
+                    if ( what === 'body' ) {
+                        return view.getComputedStyle( doc.body )
+                            .backgroundColor;
+                    }
+                    if ( what === 'heading' ) {
+                        return view.getComputedStyle(
+                            doc.querySelector( 'h2' )!
+                        ).color;
+                    }
+                    return view
+                        .getComputedStyle( doc.body )
+                        .getPropertyValue( what )
+                        .trim();
+                }, read );
+
+        // A style for the site.
+        expect(
+            await callTool( page, 'styles-set', {
+                kind: 'style',
+                path: 'color.background',
+                value: '#101820',
+            } )
+        ).toEqual( { ok: true, result: { changed: true } } );
+        expect( ( await edited() ).styles.color.background ).toBe( '#101820' );
+        await expect
+            .poll( () => inPreview( 'body' ) )
+            .toBe( 'rgb(16, 24, 32)' );
+
+        // A style for one block type.
+        expect(
+            (
+                await callTool( page, 'styles-set', {
+                    kind: 'style',
+                    path: 'color.text',
+                    value: '#ff0000',
+                    block: 'core/heading',
+                } )
+            ).ok
+        ).toBe( true );
+        const after = await edited();
+        expect( after.styles.blocks[ 'core/heading' ].color.text ).toBe(
+            '#ff0000'
+        );
+        // The site's style is still there.
+        expect( after.styles.color.background ).toBe( '#101820' );
+        await expect
+            .poll( () => inPreview( 'heading' ) )
+            .toBe( 'rgb(255, 0, 0)' );
+
+        // A setting.
+        expect(
+            (
+                await callTool( page, 'styles-set', {
+                    kind: 'setting',
+                    path: 'color.palette.custom',
+                    value: [
+                        {
+                            slug: 'tool-teal',
+                            name: 'Tool teal',
+                            color: '#008080',
+                        },
+                    ],
+                } )
+            ).ok
+        ).toBe( true );
+        expect( ( await edited() ).settings.color.palette.custom ).toEqual( [
+            { slug: 'tool-teal', name: 'Tool teal', color: '#008080' },
+        ] );
+        await expect
+            .poll( () => inPreview( '--wp--preset--color--tool-teal' ) )
+            .toBe( '#008080' );
+        expect(
+            ( await callTool( page, 'styles-get' ) ).result.colors.some(
+                ( c: any ) => c.slug === 'tool-teal' && c.value === '#008080'
+            )
+        ).toBe( true );
+        await expect( review( page ) ).toHaveText( 'Review 1 change' );
+
+        expect(
+            (
+                await callTool( page, 'styles-set', {
+                    kind: 'style',
+                    path: 'color.text',
+                    value: '#000',
+                    block: 'no/such-block',
+                } )
+            ).error.code
+        ).toBe( 'invalid_args' );
+    } );
+
+    test( "AC-TOOL-18 styles-set-variation makes the menu read that variation, and Default the theme's own", async ( {
+        page,
+        requestUtils,
+    } ) => {
+        const fixture = await resetFixture( requestUtils );
+        await openBoard( page, fixture.boardId );
+        await boardAtRest( page );
+        const trigger = page.getByRole( 'button', { name: /^Variation: / } );
+        await expect( trigger ).toHaveText( 'Variation: Default' );
+        const { variations } = ( await callTool( page, 'styles-get' ) ).result;
+        const name = variations[ 0 ];
+
+        expect(
+            await callTool( page, 'styles-set-variation', { name } )
+        ).toEqual( { ok: true, result: { variation: name } } );
+        await expect( trigger ).toHaveText( `Variation: ${ name }` );
+        expect(
+            ( await callTool( page, 'styles-get' ) ).result.variation
+        ).toBe( name );
+        await expect( review( page ) ).toHaveText( 'Review 1 change' );
+
+        expect(
+            await callTool( page, 'styles-set-variation', { name: 'Default' } )
+        ).toEqual( { ok: true, result: { variation: 'Default' } } );
+        await expect( trigger ).toHaveText( 'Variation: Default' );
+
+        expect(
+            await callTool( page, 'styles-set-variation', {
+                name: 'No such variation',
+            } )
+        ).toEqual( {
+            ok: false,
+            error: {
+                code: 'not_found',
+                message: 'Variation No such variation was not found.',
+            },
+        } );
+        await expect( trigger ).toHaveText( 'Variation: Default' );
+    } );
+
+    test( "AC-TOOL-19 token-show-uses shows the banner, the label counts and the outlines, returns the banner's numbers, and clears them", async ( {
+        page,
+        requestUtils,
+    } ) => {
+        const fixture = await resetFixture( requestUtils );
+        await openBoard( page, fixture.boardId );
+        await boardAtRest( page );
+        const hero = artboardOf( fixture, 'pattern' );
+        const about = artboardOf( fixture, 'page', 'desktop', 0 );
+        const member = artboardOf( fixture, 'page', 'desktop', 1 );
+        const header = artboardOf( fixture, 'template-part' );
+        await setViewport( page, { x: -300, y: -120, zoom: 0.25 } );
+        await expect(
+            page.locator( `[data-wfd-artboard="${ hero.id }"] iframe` )
+        ).toBeAttached();
+        const label = ( id: string ) =>
+            frame( page, id ).locator( '.wfd-artboard__label' );
+        const banner = page.locator( '[data-wfd-banner="usage"]' );
+        const outline = () =>
+            page
+                .locator( `[data-wfd-artboard="${ hero.id }"] iframe` )
+                .first()
+                .evaluate( ( el: HTMLIFrameElement ) => {
+                    const p = el.contentDocument!.querySelector(
+                        'p.has-accent-1-background-color'
+                    )!;
+                    const style = el.contentWindow!.getComputedStyle( p );
+                    return `${ style.outlineStyle } ${ style.outlineWidth }`;
+                } );
+
+        const shown = await callTool( page, 'token-show-uses', {
+            kind: 'color',
+            slug: 'accent-1',
+        } );
+        expect( shown.ok ).toBe( true );
+        expect( shown.result.places ).toBe( 3 );
+        expect( [ ...shown.result.artboards ].sort() ).toEqual(
+            [ hero.id, about.id, member.id ].sort()
+        );
+        await expect( banner ).toContainText(
+            'Showing where Accent 1 is used: 3 places on 3 artboards'
+        );
+        await expect( label( hero.id ) ).toHaveText( 'Hero · Pattern · 1 use' );
+        await expect( label( header.id ) ).toHaveText(
+            'Header · Template part · Desktop'
+        );
+        await expect.poll( outline ).toBe( 'solid 2px' );
+        await expect(
+            page.locator( '[data-wfd-token="color:accent-1"]' )
+        ).toHaveAttribute( 'aria-current', 'true' );
+        // The colour picker is not opened, and no artboard is selected.
+        await expect( page.getByRole( 'dialog' ) ).toHaveCount( 0 );
+        expect(
+            ( await callTool( page, 'board-get' ) ).result.selection
+        ).toEqual( [] );
+
+        // With no fields the selected token is cleared.
+        expect( await callTool( page, 'token-show-uses' ) ).toEqual( {
+            ok: true,
+            result: { places: 0, artboards: [] },
+        } );
+        await expect( banner ).toHaveCount( 0 );
+        await expect( label( hero.id ) ).toHaveText(
+            'Hero · Pattern · Desktop'
+        );
+        await expect.poll( outline ).not.toContain( 'solid' );
+
+        // By a token's reference alone.
+        const byRef = await callTool( page, 'token-show-uses', {
+            slug: '#wfd-ref-t_color_accent-1',
+        } );
+        expect( byRef.result.places ).toBe( 3 );
+        await expect( banner ).toContainText( '3 places on 3 artboards' );
+        await callTool( page, 'token-show-uses' );
+
+        expect(
+            ( await callTool( page, 'token-show-uses', { kind: 'color' } ) )
+                .error.code
+        ).toBe( 'invalid_args' );
+        expect(
+            ( await callTool( page, 'token-show-uses', { slug: 'accent-1' } ) )
+                .error.code
+        ).toBe( 'invalid_args' );
+        expect(
+            (
+                await callTool( page, 'token-show-uses', {
+                    kind: 'font-size',
+                    slug: 'no-such-size',
+                } )
+            ).error
+        ).toEqual( {
+            code: 'not_found',
+            message: 'Token no-such-size was not found.',
+        } );
+        await expect( banner ).toHaveCount( 0 );
+    } );
+
+    test( 'AC-TOOL-21 review-list returns the items of the Review drawer with the same names and lines, each with its author', async ( {
+        page,
+        requestUtils,
+    } ) => {
+        const fixture = await resetFixture( requestUtils );
+        await openBoard( page, fixture.boardId );
+        await boardAtRest( page );
+        const header = artboardOf( fixture, 'template-part' );
+        expect( ( await callTool( page, 'review-list' ) ).result ).toEqual( {
+            items: [],
+        } );
+
+        // The designer changes a pattern; the agent a part and a colour.
+        await editPattern( page, fixture.patterns.hero );
+        await callTool( page, 'block-update', {
+            artboard: header.id,
+            path: [ 0, 0 ],
+            attributes: { content: 'Changed by the agent' },
+        } );
+        await callTool( page, 'blocks-insert', {
+            artboard: header.id,
+            markup: '<!-- wp:heading --><h2 class="wp-block-heading">Added</h2><!-- /wp:heading -->',
+        } );
+        await callTool( page, 'token-set', {
+            kind: 'color',
+            slug: 'accent-1',
+            value: '#123456',
+        } );
+        await callTool( page, 'edit-leave' );
+        await expect( review( page ) ).toHaveText( 'Review 3 changes' );
+
+        const listed = ( await callTool( page, 'review-list' ) ).result.items;
+        for ( const item of listed ) {
+            expect( Object.keys( item ) ).toEqual( [
+                'key',
+                'type',
+                'name',
+                'isNew',
+                'lines',
+                'author',
+            ] );
+        }
+        const authors = Object.fromEntries(
+            listed.map( ( item: any ) => [ item.type, item.author ] )
+        );
+        expect( authors ).toEqual( {
+            styles: 'agent',
+            'template-part': 'agent',
+            pattern: 'you',
+        } );
+        expect(
+            listed.find( ( item: any ) => item.type === 'pattern' ).key
+        ).toBe( `postType/wp_block/${ fixture.patterns.hero }` );
+        expect(
+            listed.find( ( item: any ) => item.type === 'template-part' ).key
+        ).toBe( `postType/wp_template_part/${ header.entityId }` );
+
+        // The drawer's cards.
+        await review( page ).click();
+        const cards = await page
+            .locator( '.wfd-review__item' )
+            .evaluateAll( ( items ) =>
+                items.map( ( item ) => ( {
+                    name: item.querySelector( 'label' )!.textContent,
+                    lines: [
+                        ...item.querySelectorAll( '.wfd-review__lines li' ),
+                    ].map( ( line ) => line.textContent ),
+                } ) )
+            );
+        expect( cards ).toHaveLength( 3 );
+        expect(
+            listed.map( ( item: any ) => ( {
+                name: item.name,
+                lines: item.lines,
+            } ) )
+        ).toEqual( cards );
+        expect(
+            listed.find( ( item: any ) => item.type === 'template-part' ).lines
+        ).toContain( 'Heading: added' );
+        expect( listed.every( ( item: any ) => item.isNew === false ) ).toBe(
+            true
+        );
+    } );
+
+    test( 'AC-TOOL-22 review-discard discards an item only the agent changed, and refuses one the designer also changed', async ( {
+        page,
+        requestUtils,
+    } ) => {
+        const fixture = await resetFixture( requestUtils );
+        await openBoard( page, fixture.boardId );
+        await boardAtRest( page );
+        const header = artboardOf( fixture, 'template-part' );
+        const hero = artboardOf( fixture, 'pattern' );
+        const heroKey = `postType/wp_block/${ fixture.patterns.hero }`;
+        const headerKey = `postType/wp_template_part/${ header.entityId }`;
+
+        // The designer changes the pattern, then the agent does too.
+        await editPattern( page, fixture.patterns.hero );
+        await page.waitForTimeout( 1200 );
+        await callTool( page, 'blocks-insert', {
+            artboard: hero.id,
+            markup: '<!-- wp:paragraph --><p>And the agent.</p><!-- /wp:paragraph -->',
+        } );
+        // Only the agent changes the part.
+        await callTool( page, 'block-update', {
+            artboard: header.id,
+            path: [ 0, 0 ],
+            attributes: { content: 'Changed by the agent' },
+        } );
+        await expect( review( page ) ).toHaveText( 'Review 2 changes' );
+        const authors = async () =>
+            Object.fromEntries(
+                ( await callTool( page, 'review-list' ) ).result.items.map(
+                    ( item: any ) => [ item.key, item.author ]
+                )
+            );
+        expect( await authors() ).toEqual( {
+            [ heroKey ]: 'both',
+            [ headerKey ]: 'agent',
+        } );
+
+        expect(
+            await callTool( page, 'review-discard', { key: heroKey } )
+        ).toEqual( {
+            ok: false,
+            error: {
+                code: 'not_agents',
+                message: 'Hero also has changes made by the designer.',
+            },
+        } );
+        await expect( review( page ) ).toHaveText( 'Review 2 changes' );
+
+        expect(
+            await callTool( page, 'review-discard', { key: headerKey } )
+        ).toEqual( { ok: true, result: { discarded: headerKey } } );
+        await expect( review( page ) ).toHaveText( 'Review 1 change' );
+        await expect(
+            editorFrame( page, header.id ).locator( 'p' )
+        ).toHaveText( 'Fixture header text' );
+        await expect( page.getByRole( 'alertdialog' ) ).toHaveCount( 0 );
+        expect( await authors() ).toEqual( { [ heroKey ]: 'both' } );
+
+        expect(
+            ( await callTool( page, 'review-discard', { key: headerKey } ) )
+                .error
+        ).toEqual( {
+            code: 'not_found',
+            message: `Review item ${ headerKey } was not found.`,
+        } );
+
+        // An item only the designer changed.
+        await callTool( page, 'edit-leave' );
+        await page.waitForTimeout( 1200 );
+        await page.evaluate( ( id ) => {
+            ( window as any ).wp.data
+                .dispatch( 'core' )
+                .editEntityRecord( 'postType', 'page', id, {
+                    title: 'About, renamed',
+                } );
+        }, fixture.pages.about );
+        const aboutKey = `postType/page/${ fixture.pages.about }`;
+        expect( ( await authors() )[ aboutKey ] ).toBe( 'you' );
+        expect(
+            ( await callTool( page, 'review-discard', { key: aboutKey } ) )
+                .error.code
+        ).toBe( 'not_agents' );
+        await expect( review( page ) ).toHaveText( 'Review 2 changes' );
     } );
 } );
