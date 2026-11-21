@@ -23,8 +23,13 @@ function isDrawn( iframe ) {
     if ( ! doc || doc.readyState !== 'complete' ) {
         return false;
     }
+    // The block list is there once its root is. An artboard with no blocks
+    // has an empty root, which is all it will ever draw.
     const root = doc.querySelector( '.is-root-container' );
-    if ( ! root?.firstElementChild || ! root.getBoundingClientRect().height ) {
+    if (
+        ! root ||
+        ( root.firstElementChild && ! root.getBoundingClientRect().height )
+    ) {
         return false;
     }
     return [ ...doc.querySelectorAll( 'link[rel="stylesheet"]' ) ].every(
