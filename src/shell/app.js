@@ -5,7 +5,6 @@ import { __, sprintf } from '@wordpress/i18n';
 import {
     useCallback,
     useEffect,
-    useReducer,
     useRef,
     useState,
     useMemo,
@@ -24,9 +23,9 @@ import {
     ArtboardError,
     ArtboardFrame,
     ArtboardMedia,
+    TierContent,
     BrowserArtboard,
     browserTier,
-    PaintWatch,
     usePreview,
 } from '../artboard-frame';
 import { ArtboardPreview, ArtboardPreviewOnce } from '../artboard-preview';
@@ -180,20 +179,6 @@ function contentTooltip( name, isUndo ) {
         name
     );
 }
-
-// The tier changes that hand over from one content to the next, and the
-// iframes of the content each tier changes to.
-const HANDOVERS = {
-    snapshot: [ 'preview' ],
-    preview: [ 'live', 'warm', 'snapshot' ],
-};
-const PAINTED = {
-    preview: '.wfd-preview:not(.is-over) iframe',
-    live: 'iframe[name="editor-canvas"]',
-    warm: 'iframe[name="editor-canvas"]',
-    snapshot:
-        '.wfd-snapshot:not(.is-over) .wfd-snapshot__copy:not(.is-loading) iframe',
-};
 
 export function App() {
     countRender();
@@ -513,26 +498,6 @@ export function App() {
         onMount: ( id ) => counters.mountOrder.push( id ),
         hasCopy,
     } );
-    // The tier each artboard's content was last drawn in. A change from one
-    // of these tiers to another leaves the old content over the new until
-    // the new is drawn, so the change shows no empty frame.
-    const drawnRef = useRef( new Map() );
-    const [ , redraw ] = useReducer( ( count ) => count + 1, 0 );
-    const outgoingOf = ( id, tier, canHandOver ) => {
-        const drawn = drawnRef.current.get( id );
-        if ( drawn === tier ) {
-            return null;
-        }
-        if ( canHandOver && HANDOVERS[ drawn ]?.includes( tier ) ) {
-            return drawn;
-        }
-        drawnRef.current.set( id, tier );
-        return null;
-    };
-    const handedOver = useCallback( ( id, tier ) => {
-        drawnRef.current.set( id, tier );
-        redraw();
-    }, [] );
     const usage = useUsageIndex( artboards, styles.merged );
     const stylesPanel = useStylesPanel( {
         styles,
@@ -1026,219 +991,219 @@ export function App() {
                                 const width = hasDevice( artboard )
                                     ? widthOf( artboard.device )
                                     : artboard.width;
-                                let content = null;
-                                const onHeight = ( height ) =>
-                                    updateArtboard( artboard.id, { height } );
                                 const hasFailed = artboard.status === 'failed';
                                 const hasCopyNow = snapshots.has( artboard.id );
-                                // What the artboard showed before stays
+                                // What the artboard showed before may stay
                                 // over what it now shows until that is
-                                // drawn.
-                                const outgoing = outgoingOf(
-                                    artboard.id,
-                                    tier,
+                                // drawn (D65).
+                                const canHandOver =
                                     ! isMedia &&
-                                        ! isBrowser &&
-                                        ! hasFailed &&
-                                        // A frozen copy is needed on
-                                        // either side of a Snapshot.
-                                        ( tier === 'live' ||
-                                            tier === 'warm' ||
-                                            hasCopyNow )
-                                );
-                                // The one render of a Snapshot artboard
-                                // that has no frozen copy, or whose copy
-                                // was made with older styles (D51). It
-                                // takes the styles without the highlight
-                                // of the picked token, which a frozen
-                                // copy would keep after the token is
-                                // let go.
-                                const once = tier === 'snapshot' &&
-                                    source === artboard.id &&
-                                    ! hasCopy( artboard.id ) && (
-                                        <ArtboardPreviewOnce
-                                            key="once"
+                                    ! isBrowser &&
+                                    ! hasFailed &&
+                                    // A frozen copy is needed on either
+                                    // side of a Snapshot.
+                                    ( tier === 'live' ||
+                                        tier === 'warm' ||
+                                        hasCopyNow );
+                                const onHeight = ( height ) =>
+                                    updateArtboard( artboard.id, { height } );
+                                const contentFor = ( outgoing ) => {
+                                    let content = null;
+                                    // The one render of a Snapshot artboard
+                                    // that has no frozen copy, or whose copy
+                                    // was made with older styles (D51). It
+                                    // takes the styles without the highlight
+                                    // of the picked token, which a frozen
+                                    // copy would keep after the token is
+                                    // let go.
+                                    const once = tier === 'snapshot' &&
+                                        source === artboard.id &&
+                                        ! hasCopy( artboard.id ) && (
+                                            <ArtboardPreviewOnce
+                                                key="once"
+                                                artboard={ artboard }
+                                                width={ width }
+                                                settings={
+                                                    styles.editorSettings
+                                                }
+                                                isBusy={ viewport.isGesturing }
+                                                onSettled={ (
+                                                    element,
+                                                    height
+                                                ) => {
+                                                    if ( height ) {
+                                                        onHeight( height );
+                                                    }
+                                                    snapshots.capture(
+                                                        artboard.id,
+                                                        element,
+                                                        renderVersion
+                                                    );
+                                                    noteRendered(
+                                                        artboard.id,
+                                                        settledStyles
+                                                    );
+                                                } }
+                                            />
+                                        );
+                                    // The Preview and the frozen copy keep
+                                    // their keys in every tier, so that one
+                                    // left over another is the same element
+                                    // and is not loaded again.
+                                    const previewOf = ( isOver ) => (
+                                        <ArtboardPreview
+                                            key="preview"
                                             artboard={ artboard }
                                             width={ width }
-                                            settings={ styles.editorSettings }
-                                            isBusy={ viewport.isGesturing }
-                                            onSettled={ ( element, height ) => {
-                                                if ( height ) {
-                                                    onHeight( height );
+                                            settings={ previewSettings }
+                                            onHeight={ onHeight }
+                                            isOver={ isOver }
+                                            onFreeze={ ( element ) => {
+                                                if (
+                                                    snapshots.capture(
+                                                        artboard.id,
+                                                        element,
+                                                        renderVersion
+                                                    )
+                                                ) {
+                                                    noteRendered(
+                                                        artboard.id,
+                                                        styles.version
+                                                    );
                                                 }
-                                                snapshots.capture(
-                                                    artboard.id,
-                                                    element,
-                                                    renderVersion
-                                                );
-                                                noteRendered(
-                                                    artboard.id,
-                                                    settledStyles
-                                                );
                                             } }
                                         />
                                     );
-                                // The Preview and the frozen copy keep
-                                // their keys in every tier, so that one
-                                // left over another is the same element
-                                // and is not loaded again.
-                                const previewOf = ( isOver ) => (
-                                    <ArtboardPreview
-                                        key="preview"
-                                        artboard={ artboard }
-                                        width={ width }
-                                        settings={ previewSettings }
-                                        onHeight={ onHeight }
-                                        isOver={ isOver }
-                                        onFreeze={ ( element ) => {
-                                            if (
-                                                snapshots.capture(
-                                                    artboard.id,
-                                                    element,
-                                                    renderVersion
-                                                )
-                                            ) {
-                                                noteRendered(
-                                                    artboard.id,
-                                                    styles.version
-                                                );
-                                            }
-                                        } }
-                                    />
-                                );
-                                const copyOf = ( isOver ) => (
-                                    <ArtboardSnapshot
-                                        key="copy"
-                                        id={ artboard.id }
-                                        store={ snapshots }
-                                        isOver={ isOver }
-                                    />
-                                );
-                                let incoming = false;
-                                if ( isMedia ) {
-                                    content = (
-                                        <ArtboardMedia
-                                            record={ artboard.record }
+                                    const copyOf = ( isOver ) => (
+                                        <ArtboardSnapshot
+                                            key="copy"
+                                            id={ artboard.id }
+                                            store={ snapshots }
+                                            isOver={ isOver }
                                         />
                                     );
-                                } else if ( isBrowser && tier !== 'ghost' ) {
-                                    content = (
-                                        <BrowserArtboard
-                                            artboard={ artboard }
-                                            isBrowsing={ tier === 'live' }
-                                            homeUrl={ homeUrl }
-                                            preview={ preview }
-                                            onEscape={ editing.leaveEdit }
-                                            onWheel={ canvas.forwardWheel }
-                                        />
-                                    );
-                                } else if (
-                                    tier === 'live' ||
-                                    tier === 'warm'
-                                ) {
-                                    incoming = true;
-                                    content = [
-                                        <ArtboardEditor
-                                            key="editor"
-                                            artboard={ artboard }
-                                            settings={ previewSettings }
-                                            isActive={ tier === 'live' }
-                                            onHeight={ onHeight }
-                                            onWheel={ canvas.forwardWheel }
-                                            onDocument={ canvas.watchDocument }
-                                            onKeyDownCapture={
-                                                editing.noteKeyDown
-                                            }
-                                            bridgeRef={ editing.bridgeRef }
-                                            onSelection={
-                                                editing.setSelectedBlock
-                                            }
-                                            onAllowedBlocks={
-                                                editing.setAllowedBlocks
-                                            }
-                                        />,
-                                        outgoing === 'preview' &&
-                                            previewOf( true ),
-                                    ];
-                                } else if (
-                                    tier === 'preview' &&
-                                    mounted.has( artboard.id )
-                                ) {
-                                    incoming = true;
-                                    content = [
-                                        previewOf( false ),
-                                        outgoing === 'snapshot' &&
-                                            copyOf( true ),
-                                    ];
-                                } else if (
-                                    tier === 'preview' &&
-                                    outgoing === 'snapshot'
-                                ) {
-                                    // Waiting for its turn in the queue.
-                                    content = [ copyOf( false ) ];
-                                } else if (
-                                    tier === 'snapshot' &&
-                                    hasCopyNow
-                                ) {
-                                    // The frozen copy of its last Preview.
-                                    // After a style change it lies over
-                                    // the render that will replace it.
-                                    incoming = true;
-                                    content = [
-                                        once,
-                                        copyOf( !! once ),
-                                        outgoing === 'preview' &&
-                                            previewOf( true ),
-                                    ];
-                                } else if ( once ) {
-                                    // Never rendered: rendered once here to
-                                    // make its frozen copy.
-                                    content = [
-                                        once,
-                                        <Skeleton
-                                            key="skeleton"
-                                            className="wfd-artboard__skeleton"
-                                        />,
-                                    ];
-                                } else if (
-                                    tier === 'preview' ||
-                                    ( tier === 'snapshot' &&
-                                        ! rendered.has( artboard.id ) )
-                                ) {
-                                    // Never rendered yet.
-                                    content = (
-                                        <Skeleton className="wfd-artboard__skeleton" />
-                                    );
-                                }
-                                if ( outgoing && incoming ) {
-                                    content.push(
-                                        <PaintWatch
-                                            key={ 'watch-' + tier }
-                                            selector={ PAINTED[ tier ] }
-                                            onPainted={ () =>
-                                                handedOver( artboard.id, tier )
-                                            }
-                                        />
-                                    );
-                                }
-                                if ( hasFailed ) {
-                                    content = (
-                                        <ArtboardError
-                                            kind={ artboard.kind }
-                                            onRetry={ () =>
-                                                invalidateResolution(
-                                                    'getEntityRecord',
-                                                    [
-                                                        'postType',
-                                                        KINDS[ artboard.kind ]
-                                                            .postType,
-                                                        artboard.entityId,
-                                                    ]
-                                                )
-                                            }
-                                        />
-                                    );
-                                }
+                                    let incoming = false;
+                                    if ( isMedia ) {
+                                        content = (
+                                            <ArtboardMedia
+                                                record={ artboard.record }
+                                            />
+                                        );
+                                    } else if (
+                                        isBrowser &&
+                                        tier !== 'ghost'
+                                    ) {
+                                        content = (
+                                            <BrowserArtboard
+                                                artboard={ artboard }
+                                                isBrowsing={ tier === 'live' }
+                                                homeUrl={ homeUrl }
+                                                preview={ preview }
+                                                onEscape={ editing.leaveEdit }
+                                                onWheel={ canvas.forwardWheel }
+                                            />
+                                        );
+                                    } else if (
+                                        tier === 'live' ||
+                                        tier === 'warm'
+                                    ) {
+                                        incoming = true;
+                                        content = [
+                                            <ArtboardEditor
+                                                key="editor"
+                                                artboard={ artboard }
+                                                settings={ previewSettings }
+                                                isActive={ tier === 'live' }
+                                                onHeight={ onHeight }
+                                                onWheel={ canvas.forwardWheel }
+                                                onDocument={
+                                                    canvas.watchDocument
+                                                }
+                                                onKeyDownCapture={
+                                                    editing.noteKeyDown
+                                                }
+                                                bridgeRef={ editing.bridgeRef }
+                                                onSelection={
+                                                    editing.setSelectedBlock
+                                                }
+                                                onAllowedBlocks={
+                                                    editing.setAllowedBlocks
+                                                }
+                                            />,
+                                            outgoing === 'preview' &&
+                                                previewOf( true ),
+                                        ];
+                                    } else if (
+                                        tier === 'preview' &&
+                                        mounted.has( artboard.id )
+                                    ) {
+                                        incoming = true;
+                                        content = [
+                                            previewOf( false ),
+                                            outgoing === 'snapshot' &&
+                                                copyOf( true ),
+                                        ];
+                                    } else if (
+                                        tier === 'preview' &&
+                                        outgoing === 'snapshot'
+                                    ) {
+                                        // Waiting for its turn in the queue.
+                                        content = [ copyOf( false ) ];
+                                    } else if (
+                                        tier === 'snapshot' &&
+                                        hasCopyNow
+                                    ) {
+                                        // The frozen copy of its last Preview.
+                                        // After a style change it lies over
+                                        // the render that will replace it.
+                                        incoming = true;
+                                        content = [
+                                            once,
+                                            copyOf( !! once ),
+                                            outgoing === 'preview' &&
+                                                previewOf( true ),
+                                        ];
+                                    } else if ( once ) {
+                                        // Never rendered: rendered once here to
+                                        // make its frozen copy.
+                                        content = [
+                                            once,
+                                            <Skeleton
+                                                key="skeleton"
+                                                className="wfd-artboard__skeleton"
+                                            />,
+                                        ];
+                                    } else if (
+                                        tier === 'preview' ||
+                                        ( tier === 'snapshot' &&
+                                            ! rendered.has( artboard.id ) )
+                                    ) {
+                                        // Never rendered yet.
+                                        content = (
+                                            <Skeleton className="wfd-artboard__skeleton" />
+                                        );
+                                    }
+                                    if ( hasFailed ) {
+                                        content = (
+                                            <ArtboardError
+                                                kind={ artboard.kind }
+                                                onRetry={ () =>
+                                                    invalidateResolution(
+                                                        'getEntityRecord',
+                                                        [
+                                                            'postType',
+                                                            KINDS[
+                                                                artboard.kind
+                                                            ].postType,
+                                                            artboard.entityId,
+                                                        ]
+                                                    )
+                                                }
+                                            />
+                                        );
+                                    }
+                                    return { content, incoming };
+                                };
                                 return (
                                     <ArtboardFrame
                                         key={ artboard.id }
@@ -1281,7 +1246,11 @@ export function App() {
                                             reloadBrowser( artboard.id )
                                         }
                                     >
-                                        { content }
+                                        <TierContent
+                                            tier={ tier }
+                                            canHandOver={ canHandOver }
+                                            contentFor={ contentFor }
+                                        />
                                     </ArtboardFrame>
                                 );
                             } ) }

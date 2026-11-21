@@ -1,9 +1,14 @@
 /**
- * Tells when the content an artboard is changing to has been drawn, so that
- * what it showed before can stay over it until then: a tier change then
- * shows no empty frame.
+ * A tier change that shows no empty frame (D65): what an artboard showed
+ * before stays over what it now shows until that has been drawn.
  */
-import { useContext, useEffect, useRef } from '@wordpress/element';
+import {
+    useCallback,
+    useContext,
+    useEffect,
+    useReducer,
+    useRef,
+} from '@wordpress/element';
 import { FrameElementContext } from './index';
 
 const CHECK_EVERY = 50;
@@ -46,7 +51,7 @@ function isDrawn( iframe ) {
  * @param {string}   props.selector  The iframes of the incoming content.
  * @param {Function} props.onPainted Called once.
  */
-export function PaintWatch( { selector, onPainted } ) {
+function PaintWatch( { selector, onPainted } ) {
     const frame = useContext( FrameElementContext );
     const latest = useRef( onPainted );
     latest.current = onPainted;
@@ -85,4 +90,60 @@ export function PaintWatch( { selector, onPainted } ) {
         };
     }, [ frame, selector ] );
     return null;
+}
+
+// The tier changes that hand over from one content to the next, and the
+// iframes of the content each tier changes to.
+const HANDOVERS = {
+    snapshot: [ 'preview' ],
+    preview: [ 'live', 'warm', 'snapshot' ],
+};
+const PAINTED = {
+    preview: '.wfd-preview:not(.is-over) iframe',
+    live: 'iframe[name="editor-canvas"]',
+    warm: 'iframe[name="editor-canvas"]',
+    snapshot:
+        '.wfd-snapshot:not(.is-over) .wfd-snapshot__copy:not(.is-loading) iframe',
+};
+
+/**
+ * An artboard's tier content. It keeps the tier whose content was last drawn
+ * itself, so that the end of a handover renders this artboard's content and
+ * nothing else of the board.
+ *
+ * @param {Object}   props
+ * @param {string}   props.tier        The artboard's tier.
+ * @param {boolean}  props.canHandOver Whether its content can be left over the next.
+ * @param {Function} props.contentFor  Receives the tier being left, if any, and
+ *                                     returns `content` and `incoming`: whether
+ *                                     the content of the new tier is there to
+ *                                     be drawn.
+ */
+export function TierContent( { tier, canHandOver, contentFor } ) {
+    const drawn = useRef( tier );
+    const [ , redraw ] = useReducer( ( count ) => count + 1, 0 );
+    let outgoing = null;
+    if ( drawn.current !== tier ) {
+        if ( canHandOver && HANDOVERS[ drawn.current ]?.includes( tier ) ) {
+            outgoing = drawn.current;
+        } else {
+            drawn.current = tier;
+        }
+    }
+    const handedOver = useCallback( ( painted ) => {
+        drawn.current = painted;
+        redraw();
+    }, [] );
+    const { content, incoming } = contentFor( outgoing );
+    if ( ! outgoing || ! incoming ) {
+        return content;
+    }
+    return [
+        ...content,
+        <PaintWatch
+            key={ 'watch-' + tier }
+            selector={ PAINTED[ tier ] }
+            onPainted={ () => handedOver( tier ) }
+        />,
+    ];
 }
