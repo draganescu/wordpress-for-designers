@@ -54,7 +54,7 @@ The **Try it in WordPress Playground** button starts a WordPress site in your br
 
 ## Requirements
 
-- WordPress 7.2 or later
+- WordPress 7.1 or later
 - PHP 7.4 or later
 - A block theme
 

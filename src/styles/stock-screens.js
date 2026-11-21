@@ -1,33 +1,18 @@
 /**
  * What the plugin knows about WordPress's stock styles screens, the
  * `GlobalStylesUI` of `@wordpress/global-styles-ui`: where they are rendered
- * and what shows when one throws, their paths, and three things the package
- * has but does not export (its element list, what makes a variation a whole
- * one, and when the Background screen is offered). When WordPress exports
+ * and what shows when one throws, their paths, and two things the package
+ * has but does not export (what makes a variation a whole one, and when the
+ * Background screen is offered). When WordPress exports
  * one of these, or changes a path, this is the only file to change.
  */
 import { useEffect } from '@wordpress/element';
-import { __, sprintf } from '@wordpress/i18n';
 import { ErrorBoundary } from '@wordpress/editor';
 import {
     areGlobalStylesEqual,
     getSetting,
 } from '@wordpress/global-styles-engine';
 import { GlobalStylesUI } from '@wordpress/global-styles-ui';
-import {
-    button,
-    caption,
-    formInput,
-    formSelect,
-    heading,
-    headingLevel1,
-    headingLevel2,
-    headingLevel3,
-    headingLevel4,
-    headingLevel5,
-    headingLevel6,
-    link,
-} from '@wordpress/icons';
 
 /**
  * Keeps a ref true while it is mounted. Drawn inside the error boundary next
@@ -130,94 +115,6 @@ export function siteScreens( merged ) {
         screens.background = '/background';
     }
     return screens;
-}
-
-/**
- * The elements WordPress styles for the whole site (decision D53), in the
- * groups and order of the stock "Blocks & Elements" list and with the titles
- * of their stock screens, so a row and the screen it opens read the same.
- *
- * Mirrors `ELEMENT_GROUPS` in `src/screen-block-list.tsx` and `ELEMENTS` in
- * `src/screen-element.tsx` of `@wordpress/global-styles-ui` 2.0.0, the
- * release `package.json` pins: change the two together. The icons are those
- * of `ELEMENT_ICONS` in release 2.2.0's list; the pinned release's list
- * shows none.
- *
- * @return {Array} Groups as { title, elements: [ { name, path, title, icon } ] }.
- */
-export function elementGroups() {
-    const item = ( name, title, icon ) => ( {
-        name,
-        path: '/blocks/elements/' + name,
-        title,
-        icon,
-    } );
-    return [
-        {
-            title: __( 'Elements', 'wordpress-for-designers' ),
-            elements: [
-                item( 'link', __( 'Link', 'wordpress-for-designers' ), link ),
-                item(
-                    'caption',
-                    __( 'Caption', 'wordpress-for-designers' ),
-                    caption
-                ),
-                item(
-                    'cite',
-                    __( 'Citation', 'wordpress-for-designers' ),
-                    caption
-                ),
-            ],
-        },
-        {
-            title: __( 'Headings', 'wordpress-for-designers' ),
-            elements: [
-                item(
-                    'heading',
-                    __( 'All headings', 'wordpress-for-designers' ),
-                    heading
-                ),
-                ...[
-                    headingLevel1,
-                    headingLevel2,
-                    headingLevel3,
-                    headingLevel4,
-                    headingLevel5,
-                    headingLevel6,
-                ].map( ( icon, index ) =>
-                    item(
-                        'h' + ( index + 1 ),
-                        sprintf(
-                            /* translators: %d: heading level, 1 to 6. */
-                            __( 'Heading %d', 'wordpress-for-designers' ),
-                            index + 1
-                        ),
-                        icon
-                    )
-                ),
-            ],
-        },
-        {
-            title: __( 'Form controls', 'wordpress-for-designers' ),
-            elements: [
-                item(
-                    'textInput',
-                    __( 'Input', 'wordpress-for-designers' ),
-                    formInput
-                ),
-                item(
-                    'select',
-                    __( 'Select', 'wordpress-for-designers' ),
-                    formSelect
-                ),
-                item(
-                    'button',
-                    __( 'Button (element)', 'wordpress-for-designers' ),
-                    button
-                ),
-            ],
-        },
-    ];
 }
 
 /**

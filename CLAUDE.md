@@ -23,7 +23,7 @@ A plugin that opens an infinite canvas (a board) inside WordPress. Each artboard
 - Every criterion in `spec/acceptance.md` has a passing end-to-end test with the name given there.
 - The lint rules named in `spec/constraints.md` pass with no disabled lines.
 - `spec/open-questions.md` lists everything you could not build, or is empty.
-- The plugin activates on a clean WordPress 7.2 with a block theme and no other plugins, with no PHP notices and no console errors.
+- The plugin activates on a clean WordPress 7.1 with a block theme and no other plugins, with no PHP notices and no console errors.
 
 ## Reading order
 
@@ -40,6 +40,6 @@ A plugin that opens an infinite canvas (a board) inside WordPress. Each artboard
 
 ## Environment
 
-- WordPress 7.2 or later, PHP 7.4 or later, a block theme.
+- WordPress 7.1 or later, PHP 7.4 or later, a block theme. This branch, `wp-7.1`, is the release line for WordPress 7.1; `master` is the line for 7.2 (D80).
 - The Gutenberg plugin is not required and must not be assumed.
 - API names in this spec were checked against Gutenberg commit `e77b5057a91` (plugin version 24.4.1) and WordPress core `7.2-beta5`. If an allowlisted export is missing in the WordPress you build against, apply rule 4.

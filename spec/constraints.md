@@ -23,7 +23,7 @@ Constraints override every other file. Each has a reason, so the rule is not rel
 | C17 | Inserter lists show names and usage lines only. No rendered previews. | Previews would compete with the Preview tier budget. | AC-INS-06. | `[U]` |
 | C18 | Editing happens at 30% zoom or more. Preview tier at 20% zoom or more. Snapshot below 20%. | Decided thresholds. Manual testing showed that editing only at 100% does not work for designers. The stock block tools are placed correctly at other zooms only with the structure and CSS in `spike-report.md`, "Editing below 100%". | AC-TIER group, AC-EDIT-09. | `[U]` |
 | C19 | Only users with `edit_theme_options` can open the plugin. Every board is visible to all of them. | One rule, no partial states. | AC-PERM group. | `[U]` |
-| C20 | Requires WordPress 7.2 or later. Works without the Gutenberg plugin. | Locked default. | Activation test on clean WordPress. | `[U]` |
+| C20 | Requires WordPress 7.1 or later on this release line; the line built on `master` requires 7.2 (D80). Works without the Gutenberg plugin. | Locked default. | Activation test on clean WordPress. | `[U]` |
 | C21 | Pointer, trackpad and keyboard, and on the canvas area the touch gestures of D64. No other touch gesture. | Touch was cut, then asked for on the board so that it can be used on a tablet. | AC-CANVAS-08 to AC-CANVAS-11. | `[U]` |
 | C22 | Pan and zoom gestures cause no React render. They change one CSS transform. React state updates when the gesture settles. | Performance. | AC-PERF-01, AC-PERF-04. | `[B5]` `[B6]` |
 | C23 | Every user-facing string goes through `@wordpress/i18n` with the text domain `wordpress-for-designers`. | WordPress convention. | ESLint `@wordpress/i18n-text-domain`. | `[N]` |

@@ -462,7 +462,7 @@ function TokensTab( {
  * @param {Object}      props
  * @param {string}      props.blockQuery         The search text.
  * @param {Function}    props.onBlockQueryChange Called with the search text.
- * @param {Array}       props.blockGroups        [{ title, rows: [{ path, title, icon, changes }] }], the elements' groups first (D53).
+ * @param {Array}       props.blockGroups        [{ title, rows: [{ path, title, icon, changes }] }]; a group with no title has no heading (D80).
  * @param {string|null} props.openBlock          Path of the open row's stock screen.
  * @param {Function}    props.onOpenBlock        Called with a path.
  * @param {Function}    props.renderBlockStyles  Renders the stock screen at a path.
@@ -497,8 +497,10 @@ function BlocksTab( {
                 />
             </div>
             { blockGroups.map( ( group ) => (
-                <section key={ group.title }>
-                    <GroupHeading>{ group.title }</GroupHeading>
+                <section key={ group.title ?? '' }>
+                    { group.title && (
+                        <GroupHeading>{ group.title }</GroupHeading>
+                    ) }
                     <RowGroup>
                         { group.rows.map(
                             ( { path, title, icon, changes } ) => (

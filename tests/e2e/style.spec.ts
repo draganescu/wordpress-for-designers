@@ -658,121 +658,37 @@ test.describe( 'STYLE', () => {
         ).toContainText( 'Styles' );
     } );
 
-    test( 'AC-STYLE-09 The Blocks tab lists the elements in groups before the blocks, and an element row opens the stock styles screen for it', async ( {
+    test( 'AC-STYLE-09 The Blocks tab lists blocks only, with no element rows and no group heading', async ( {
         page,
     } ) => {
         await setViewport( page, { x: 40, y: 40, zoom: 0.25 } );
         const panel = right( page );
         await panel.getByRole( 'tab', { name: 'Blocks' } ).click();
         const list = panel.getByRole( 'tabpanel' );
-        await expect( list.getByRole( 'heading' ) ).toHaveText( [
-            'Elements',
-            'Headings',
-            'Form controls',
-            'Blocks',
-        ] );
         const names = list.locator( '.wfd-row__name' );
-        await expect( names.nth( 13 ) ).toBeVisible();
-        expect( ( await names.allInnerTexts() ).slice( 0, 14 ) ).toEqual( [
+        await expect( names.first() ).toHaveText( 'Paragraph' );
+        await expect( list.getByRole( 'heading' ) ).toHaveCount( 0 );
+        const titles = await names.allInnerTexts();
+        for ( const element of [
             'Link',
             'Caption',
             'Citation',
             'All headings',
             'Heading 1',
-            'Heading 2',
-            'Heading 3',
-            'Heading 4',
-            'Heading 5',
-            'Heading 6',
             'Input',
             'Select',
             'Button (element)',
-            'Paragraph',
-        ] );
+        ] ) {
+            expect( titles ).not.toContain( element );
+        }
 
-        // The search finds an element by name and by its group's title.
+        // The search finds blocks and nothing else.
         const search = panel.getByRole( 'searchbox' );
-        await search.fill( 'h1' );
-        await expect( names ).toHaveText( [ 'Heading 1' ] );
         await search.fill( 'form controls' );
-        await expect( names ).toHaveText( [
-            'Input',
-            'Select',
-            'Button (element)',
-        ] );
-        await expect( list.getByRole( 'heading' ) ).toHaveText( [
-            'Form controls',
-        ] );
-
-        // A row reads as the stock screen it opens does.
-        const stock = panel.locator( '.wfd-styles__block-styles' );
-        await names.filter( { hasText: /^Button \(element\)$/ } ).click();
-        await expect(
-            stock
-                .getByRole( 'heading', {
-                    name: 'Button (element)',
-                    exact: true,
-                } )
-                .first()
-        ).toBeVisible();
-        await stock
-            .getByRole( 'button', { name: 'Back', exact: true } )
-            .click();
-        await search.fill( '' );
-
-        // An element opens its stock screen; a change there repaints the
-        // board, is counted on its row and is a Styles change in Review.
-        const index = artboardOf( fixture, 'template' );
-        const ratio = () =>
-            page
-                .locator( `[data-wfd-artboard="${ index.id }"] iframe` )
-                .first()
-                .evaluate( ( frame: HTMLIFrameElement ) => {
-                    const heading = frame.contentDocument?.querySelector(
-                        'h1, h2, h3, h4, h5, h6'
-                    );
-                    if ( ! heading ) {
-                        return null;
-                    }
-                    const style =
-                        frame.contentWindow!.getComputedStyle( heading );
-                    return Math.round(
-                        parseFloat( style.lineHeight ) /
-                            parseFloat( style.fontSize )
-                    );
-                } )
-                .catch( () => null );
-        await expect.poll( ratio ).toBe( 1 );
-        const row = list.locator( '.wfd-row', {
-            has: page.locator( '.wfd-row__name', {
-                hasText: /^All headings$/,
-            } ),
-        } );
-        await expect( row ).not.toContainText( 'change' );
-        await row.click();
-        await expect(
-            stock.getByRole( 'heading', { name: 'All headings' } ).first()
-        ).toBeVisible();
-        await expect( stock ).toContainText(
-            'Manage the appearance of all headings.'
-        );
-        const lineHeight = stock.getByRole( 'spinbutton', {
-            name: 'Line height',
-        } );
-        await lineHeight.fill( '3' );
-        await lineHeight.press( 'Enter' );
-        await expect.poll( ratio ).toBe( 3 );
-        await expect( page.locator( '[data-wfd-control="H9"]' ) ).toHaveText(
-            'Review 1 change'
-        );
-        await stock
-            .getByRole( 'button', { name: 'Back', exact: true } )
-            .click();
-        await expect( row ).toContainText( '1 change' );
-        await page.locator( '[data-wfd-control="H9"]' ).click();
-        await expect(
-            page.getByRole( 'dialog', { name: 'Review changes' } )
-        ).toContainText( 'Styles' );
+        await expect( names ).toHaveCount( 0 );
+        await search.fill( 'paragraph' );
+        await expect( names ).toHaveText( [ 'Paragraph' ] );
+        await expect( list.getByRole( 'heading' ) ).toHaveCount( 0 );
     } );
 
     test( "AC-STYLE-10 The variation menu reads Default for the theme's own styles, the name for exactly a variation and Custom after any further change; its Default item returns to the theme's styles", async ( {
@@ -869,7 +785,9 @@ test.describe( 'STYLE', () => {
             .locator( '.wfd-row__name', { hasText: /^Thrower$/ } )
             .click();
         const crashed = panel.locator( '.wfd-styles__block-styles' );
-        await expect( crashed ).toContainText( 'The editor has crashed' );
+        await expect( crashed ).toContainText(
+            'The editor has encountered an unexpected error'
+        );
         await expect(
             crashed.getByRole( 'button', { name: 'Copy error' } )
         ).toBeVisible();
@@ -912,7 +830,9 @@ test.describe( 'STYLE', () => {
             .getByRole( 'heading', { name: 'Colors', exact: true } )
             .first();
         await expect( colors ).toBeVisible();
-        await expect( stock ).not.toContainText( 'The editor has crashed' );
+        await expect( stock ).not.toContainText(
+            'The editor has encountered an unexpected error'
+        );
         await panel.getByRole( 'tab', { name: 'Blocks' } ).click();
         await expect( paragraph ).toBeVisible();
         await panel.getByRole( 'tab', { name: 'Tokens' } ).click();

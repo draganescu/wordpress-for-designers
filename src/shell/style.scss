@@ -538,6 +538,14 @@ html.wp-toolbar:has(.wfd-board-page) {
     border: 0;
 }
 
+// WordPress 7.1 stretches the hidden descriptions of the two move buttons to
+// the width of their nearest positioned box, which in the header is the
+// whole toolbar, and the toolbar then scrolls past its end. Keeping them
+// inside the buttons' own box leaves nothing to scroll to.
+.wfd-header__toolbar .block-editor-block-mover__move-button-container {
+    position: relative;
+}
+
 .wfd-slot-list-view,
 .wfd-slot-inspector {
     display: block;

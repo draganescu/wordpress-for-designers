@@ -1,7 +1,8 @@
 name: Release
 
 # Builds the plugin and attaches wordpress-for-designers.zip to a GitHub
-# release when a version tag (v1.2.3) is pushed. A tag with a hyphen
+# release when a version tag (v1.2.3) is pushed. On this branch, wp-7.1, the
+# release is the one for WordPress 7.1. A tag with a hyphen
 # (v1.2.3-beta.1) makes a pre-release.
 
 on:
@@ -35,6 +36,10 @@ jobs:
 
             - run: npm run package
 
+            # This branch is the release line for WordPress 7.1 (D80), so the
+            # title says so. The release is marked as the latest only while no
+            # release has a higher version: once the 7.2 line is out, it keeps
+            # the badge.
             - name: Publish the release
               env:
                   GH_TOKEN: ${{ github.token }}
@@ -43,8 +48,15 @@ jobs:
                       *-*) PRERELEASE=--prerelease ;;
                       *) PRERELEASE= ;;
                   esac
+                  HIGHEST=$( { gh release list --limit 100 --json tagName --jq '.[].tagName'; echo "$GITHUB_REF_NAME"; } | sort -V | tail -n 1 )
+                  if [ "$HIGHEST" = "$GITHUB_REF_NAME" ] && [ -z "$PRERELEASE" ]; then
+                      LATEST=--latest
+                  else
+                      LATEST=--latest=false
+                  fi
                   gh release create "$GITHUB_REF_NAME" dist/wordpress-for-designers.zip \
-                      --title "$GITHUB_REF_NAME" \
+                      --title "$GITHUB_REF_NAME for WordPress 7.1" \
                       --generate-notes \
                       --verify-tag \
+                      $LATEST \
                       $PRERELEASE
