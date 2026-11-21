@@ -8,6 +8,7 @@ import { store as coreStore } from '@wordpress/core-data';
 import { store as boardStore } from '../board-store';
 import { holdLock, isLockable, takeLock } from '../lock';
 import { KINDS } from './constants';
+import { historyStep } from './seams';
 import { expose } from './test-hooks';
 
 /**
@@ -225,11 +226,11 @@ export function useEditing( { viewport, areaRef, getArtboards, widthOf } ) {
                     return;
                 }
                 event.preventDefault();
-                if ( event.shiftKey ) {
-                    registry.dispatch( coreStore ).redo();
-                } else {
-                    registry.dispatch( coreStore ).undo();
-                }
+                historyStep( () =>
+                    event.shiftKey
+                        ? registry.dispatch( coreStore ).redo()
+                        : registry.dispatch( coreStore ).undo()
+                );
                 return;
             }
             if ( event.key !== 'Escape' ) {

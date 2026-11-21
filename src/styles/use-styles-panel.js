@@ -12,6 +12,7 @@ import {
     getSetting,
     getStyle,
     setSetting,
+    setStyle,
 } from '@wordpress/global-styles-engine';
 import { useGlobalStylesRevisions } from '@wordpress/global-styles-ui';
 import { getCurrentThemeGlobalStylesVariations } from '../adapter/experimental';
@@ -201,6 +202,8 @@ export function useStylesPanel( { styles, serverSettings, usesOf } ) {
         () =>
             presets( merged, 'spacing.spacingSizes' ).map( ( size ) => ( {
                 slug: size.slug,
+                name: size.name,
+                size: String( size.size ),
                 px: toPx( size.size ),
             } ) ),
         [ merged ]
@@ -319,6 +322,17 @@ export function useStylesPanel( { styles, serverSettings, usesOf } ) {
 
     return {
         blockStylesFor,
+        // One setting or style, for the site or for one block type, as the
+        // stock screens write it.
+        setValue: ( kind, path, value, block ) =>
+            update(
+                ( kind === 'setting' ? setSetting : setStyle )(
+                    styles.readUser(),
+                    path,
+                    value,
+                    block
+                )
+            ),
         panelProps: {
             variations,
             activeVariation,

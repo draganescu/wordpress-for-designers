@@ -43,6 +43,8 @@ import { useGlobalStyles } from '../styles/use-global-styles';
 import { useStylesPanel } from '../styles/use-styles-panel';
 import { ReviewDrawer } from '../review/review-drawer';
 import { useReview } from '../review/use-review';
+import { changedEntries } from '../review/entries';
+import { artboardsLine, moreLine } from '../review/format';
 import { brandColor, highlightCss, useUsageIndex } from '../usage-index';
 import {
     ArtboardsPanel,
@@ -62,7 +64,12 @@ import { LockDialog, RemoveDialog } from './dialogs';
 import { ShortcutsButton, ShortcutsDialog } from './shortcuts-dialog';
 import { Note, NoteSettings } from './notes';
 import { Header } from './header';
-import { artboardLabel, liveLabel } from './labels';
+import {
+    artboardLabel,
+    kindAndDevice,
+    liveLabel,
+    nameAndDevice,
+} from './labels';
 import { ArtboardSettings, EditingPanel } from './right-panel';
 import { Shell } from './shell';
 import { useDeviceWidths } from './device-widths';
@@ -72,7 +79,13 @@ import {
     selectArtboards as readArtboards,
     useArtboards,
 } from './use-artboards';
-import { actionsSeam, editSeam } from './seams';
+import {
+    actionsSeam,
+    editSeam,
+    historyStep,
+    isHistoryStep,
+    useMarks,
+} from './seams';
 import { windowHasRoom } from './space-gate';
 import { rectOf, useCanvasInteractions } from './use-canvas-interactions';
 import { tidyMoves } from './tidy';
@@ -157,6 +170,17 @@ function useBoard() {
     }, [ record, isLoaded, setBoard ] );
     return isLoaded;
 }
+
+/**
+ * The key of the Review item an artboard shows, or null when it shows none.
+ *
+ * @param {Object} artboard The artboard.
+ * @return {string|null} The key.
+ */
+const itemKeyOf = ( artboard ) =>
+    KINDS[ artboard.kind ].postType
+        ? `postType/${ KINDS[ artboard.kind ].postType }/${ artboard.entityId }`
+        : null;
 
 function layoutTooltip( name, isUndo ) {
     if ( ! name ) {
@@ -287,6 +311,8 @@ export function App() {
     const [ scope, setScope ] = useState( 'block' );
     const [ editingTab, setEditingTab ] = useState( 'entity' );
     const review = useReview();
+    // What the agent surface asks to have marked; nothing until it is loaded.
+    const marks = useMarks();
 
     const widths = useDeviceWidths();
     const widthOf = useCallback( ( device ) => widths[ device ], [ widths ] );
@@ -545,12 +571,16 @@ export function App() {
                     : artboard.width,
         };
     };
+    const stylesRef = useRef( styles );
+    stylesRef.current = styles;
     const usage = useUsageIndex( artboards, styles.merged );
     const stylesPanel = useStylesPanel( {
         styles,
         serverSettings,
         usesOf: usage.usesOf,
     } );
+    const stylesPanelRef = useRef( stylesPanel );
+    stylesPanelRef.current = stylesPanel;
     // The token picked in the Tokens tab, and where it is used.
     const token = useMemo( () => {
         if ( ! selectedToken ) {
@@ -816,6 +846,16 @@ export function App() {
     // The seams of the agent surface (spec/agent/surface.md, Seams). Each
     // function is the one a control calls, and reads the stores as they are
     // when it is called.
+    const whenStylesCurrent = async () => {
+        // A change to the styles is drawn by the panel a moment later.
+        for (
+            let tries = 0;
+            tries < 100 && ! stylesRef.current.isCurrent();
+            tries++
+        ) {
+            await new Promise( ( resolve ) => setTimeout( resolve, 20 ) );
+        }
+    };
     const whenListed = async ( isListed ) => {
         // The inserter's lists are drawn from the stores a moment later.
         for ( let tries = 0; tries < 40 && ! isListed(); tries++ ) {
@@ -834,9 +874,163 @@ export function App() {
             return result;
         },
         leave: editing.leaveEdit,
+        liveId: () => registry.select( boardStore ).getLiveId(),
     };
     actionsSeam.current = {
         board: readBoard,
+        // What the targets say an artboard, and a block of it, is.
+        whereOf: kindAndDevice,
+        whereOfBlocks: nameAndDevice,
+        noteLabel: __( 'Note', 'wordpress-for-designers' ),
+        stylesLabel: __( 'Styles', 'wordpress-for-designers' ),
+        // The rows of the Tokens tab and what the variation menu shows.
+        styles: () => {
+            const panel = stylesPanel.panelProps;
+            const ofType = ( type ) =>
+                panel.typography.filter( ( row ) => row.tokenType === type );
+            let variation = 'Default';
+            if ( panel.activeVariation ) {
+                variation = panel.activeVariation;
+            } else if ( panel.isCustom ) {
+                variation = 'Custom';
+            }
+            return {
+                variation,
+                variations: panel.variations.map( ( item ) => item.title ),
+                colors: panel.colors.map( ( row ) => ( {
+                    slug: row.slug,
+                    name: row.name,
+                    value: row.color,
+                    uses: row.uses,
+                } ) ),
+                fontSizes: ofType( 'font-size' ).map( ( row ) => ( {
+                    slug: row.slug,
+                    name: row.name,
+                    value: row.size,
+                    uses: row.uses,
+                } ) ),
+                fontFamilies: ofType( 'font-family' ).map( ( row ) => ( {
+                    slug: row.slug.replace( /^family:/, '' ),
+                    name: row.name,
+                    value: row.fontFamilyCss,
+                    uses: row.uses,
+                } ) ),
+                spacing: panel.spacing.map( ( row ) => ( {
+                    slug: row.slug,
+                    name: row.name,
+                    value: row.size,
+                } ) ),
+            };
+        },
+        // Whether the Styles panel has drawn what the store holds.
+        stylesKey: () =>
+            styles.id ? `root/globalStyles/${ styles.id }` : null,
+        // The picker of a colour row (S4). False when there is no such
+        // colour.
+        setColor: async ( slug, value ) => {
+            await whenStylesCurrent();
+            const panel = stylesPanelRef.current.panelProps;
+            if ( ! panel.colors.some( ( color ) => color.slug === slug ) ) {
+                return false;
+            }
+            panel.onChangeColor( slug, value );
+            await whenStylesCurrent();
+            return true;
+        },
+        // A stock styles screen (S8, D52, D53).
+        setStyleValue: async ( kind, path, value, block ) => {
+            await whenStylesCurrent();
+            stylesPanelRef.current.setValue( kind, path, value, block );
+            await whenStylesCurrent();
+        },
+        // The variation menu (S2, D54). False for a name it does not list.
+        pickVariation: async ( name ) => {
+            await whenStylesCurrent();
+            const panel = stylesPanelRef.current.panelProps;
+            if (
+                name !== 'Default' &&
+                ! panel.variations.some( ( item ) => item.title === name )
+            ) {
+                return false;
+            }
+            panel.onPickVariation( name === 'Default' ? null : name );
+            await whenStylesCurrent();
+            return true;
+        },
+        // A click on a token's row (S4, S5), without the colour picker;
+        // with no kind, the selected token is cleared. Gives the banner's
+        // numbers.
+        showUses: ( kind, slug ) => {
+            if ( ! kind ) {
+                setSelectedToken( null );
+                return { places: 0, artboards: [] };
+            }
+            if ( kind === 'color' ) {
+                setSelectedToken( { type: 'color', slug } );
+            } else {
+                setSelectedToken( {
+                    type: 'typography',
+                    slug: kind === 'font-family' ? `family:${ slug }` : slug,
+                } );
+            }
+            const found = usage.locate( kind, slug );
+            return {
+                places: found.places,
+                artboards: [ ...found.perArtboard.keys() ],
+            };
+        },
+        // The cards of the Review drawer.
+        reviewItems: () =>
+            review.readItems().map( ( item ) => ( {
+                key: item.key,
+                type: item.type,
+                name: item.name,
+                isNew: item.isNew,
+                lines: [
+                    ...item.lines,
+                    ...( item.moreCount > 0
+                        ? [ moreLine( item.moreCount ) ]
+                        : [] ),
+                    ...( item.artboardCount !== undefined
+                        ? [ artboardsLine( item.artboardCount ) ]
+                        : [] ),
+                ],
+            } ) ),
+        // "Discard" on a card, after its confirmation (D48).
+        discardItem: review.discardKey,
+        // For authorship: each unsaved item with its edits as they are now,
+        // the item an artboard shows, and whether history is being stepped.
+        changeMarks: () =>
+            changedEntries( registry.select ).map( ( entry ) => [
+                entry.key,
+                registry
+                    .select( coreStore )
+                    .getEntityRecordEdits( entry.kind, entry.name, entry.id ),
+            ] ),
+        itemKeyOf,
+        isHistoryStep,
+        // The blocks a pattern's inserter row inserts in edit (D39): by the
+        // name of a registered pattern, or the id of a pattern of the site.
+        // Null when the inserter lists no such pattern.
+        patternBlocks: async ( pattern ) => {
+            const id = /^\d+$/.test( pattern )
+                ? `user:${ pattern }`
+                : `theme:${ pattern }`;
+            const core = registry.resolveSelect( coreStore );
+            await Promise.all( [
+                core.getBlockPatterns().catch( () => null ),
+                core
+                    .getEntityRecords( 'postType', 'wp_block', USER_PATTERNS )
+                    .catch( () => null ),
+            ] );
+            await whenListed( () =>
+                inserterDataRef.current.lookup.patterns.has( id )
+            );
+            if ( ! inserterDataRef.current.lookup.patterns.has( id ) ) {
+                return null;
+            }
+            return inserterRef.current.blocksFor( { type: 'pattern', id } );
+        },
         // While the designer cannot use the board either (D49, and an open
         // dialog or drawer).
         isBlocked: () =>
@@ -999,7 +1193,8 @@ export function App() {
                                                     'wordpress-for-designers'
                                                 ),
                                           disabled: ! hasContentUndo,
-                                          onClick: undoContent,
+                                          onClick: () =>
+                                              historyStep( undoContent ),
                                       }
                                     : {
                                           label: layoutTooltip(
@@ -1023,7 +1218,8 @@ export function App() {
                                                     'wordpress-for-designers'
                                                 ),
                                           disabled: ! hasContentRedo,
-                                          onClick: redoContent,
+                                          onClick: () =>
+                                              historyStep( redoContent ),
                                       }
                                     : {
                                           label: layoutTooltip(
@@ -1068,6 +1264,7 @@ export function App() {
                             } }
                             reviewCount={ review.count }
                             onReview={ review.open }
+                            agentChip={ marks.chip }
                         />
                     }
                     left={ isLeftHidden ? null : left }
@@ -1366,6 +1563,17 @@ export function App() {
                                         isChanged={ review.changedArtboardIds?.has(
                                             artboard.id
                                         ) }
+                                        isAgentWorking={ marks.working.includes(
+                                            artboard.id
+                                        ) }
+                                        isAgentChanged={ [
+                                            'agent',
+                                            'both',
+                                        ].includes(
+                                            marks.authors[
+                                                itemKeyOf( artboard )
+                                            ]
+                                        ) }
                                         hasError={ hasFailed }
                                         isStale={
                                             tier === 'snapshot' &&
@@ -1437,7 +1645,10 @@ export function App() {
                                     onClose={ () => setShortcutsOpen( false ) }
                                 />
                             ) }
-                            <ReviewDrawer { ...review.drawerProps } />
+                            <ReviewDrawer
+                                { ...review.drawerProps }
+                                authors={ marks.authors }
+                            />
                             { editing.lockDialog && (
                                 <LockDialog
                                     state={ editing.lockDialog.state }

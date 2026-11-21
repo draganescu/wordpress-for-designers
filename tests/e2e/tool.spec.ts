@@ -852,4 +852,1063 @@ test.describe( 'TOOL', () => {
         expect( ( await callTool( page, 'board-get' ) ).ok ).toBe( true );
         await expect( review( page ) ).toHaveText( 'Review 1 change' );
     } );
+
+    test( 'AC-TOOL-09 A block tool puts its artboard in edit first, the one in edit leaves, and no block changes outside the Live artboard', async ( {
+        page,
+        requestUtils,
+    } ) => {
+        const fixture = await resetFixture( requestUtils );
+        await openBoard( page, fixture.boardId );
+        await boardAtRest( page );
+        const header = artboardOf( fixture, 'template-part' );
+        const hero = artboardOf( fixture, 'pattern' );
+        expect(
+            ( await callTool( page, 'artboard-edit', { artboard: header.id } ) )
+                .ok
+        ).toBe( true );
+        await expect( frame( page, header.id ) ).toHaveAttribute(
+            'data-wfd-tier',
+            'live'
+        );
+
+        // Which artboard is Live each time the pattern's edits change.
+        await page.evaluate( ( id ) => {
+            const { select, subscribe } = ( window as any ).wp.data;
+            const seen: string[] = [];
+            ( window as any ).wfdSeen = seen;
+            let last = select( 'core' ).getEntityRecordEdits(
+                'postType',
+                'wp_block',
+                id
+            );
+            subscribe( () => {
+                const now = select( 'core' ).getEntityRecordEdits(
+                    'postType',
+                    'wp_block',
+                    id
+                );
+                if ( now !== last ) {
+                    last = now;
+                    seen.push( String( select( 'wfd/board' ).getLiveId() ) );
+                }
+            } );
+        }, fixture.patterns.hero );
+
+        const updated = await callTool( page, 'block-update', {
+            artboard: hero.id,
+            path: [ 0 ],
+            attributes: { content: 'Changed in the pattern' },
+        } );
+        expect( updated.ok ).toBe( true );
+        await expect( frame( page, hero.id ) ).toHaveAttribute(
+            'data-wfd-tier',
+            'live'
+        );
+        await expect( frame( page, header.id ) ).not.toHaveAttribute(
+            'data-wfd-tier',
+            'live'
+        );
+        await expect( page.locator( '[data-wfd-tier="live"]' ) ).toHaveCount(
+            1
+        );
+        const seen = await page.evaluate( () => ( window as any ).wfdSeen );
+        expect( seen.length ).toBeGreaterThan( 0 );
+        expect( new Set( seen ) ).toEqual( new Set( [ hero.id ] ) );
+        await expect( editorFrame( page, hero.id ).locator( 'h2' ) ).toHaveText(
+            'Changed in the pattern'
+        );
+        // The part that was in edit is unchanged.
+        await expect( review( page ) ).toHaveText( 'Review 1 change' );
+
+        // A browser has no blocks.
+        const browser = await callTool( page, 'artboard-add', {
+            kind: 'browser',
+            path: '/',
+        } );
+        const refused = await callTool( page, 'blocks-get', {
+            artboard: browser.result.id,
+        } );
+        expect( refused ).toEqual( {
+            ok: false,
+            error: { code: 'not_editable', message: '/ cannot be edited.' },
+        } );
+    } );
+
+    test( 'AC-TOOL-10 blocks-get returns paths, names, titles, text and attributes to the depth asked, and says what is editable', async ( {
+        page,
+        requestUtils,
+    } ) => {
+        const fixture = await resetFixture( requestUtils );
+        await openBoard( page, fixture.boardId );
+        await boardAtRest( page );
+        const header = artboardOf( fixture, 'template-part' );
+        const all = await callTool( page, 'blocks-get', {
+            artboard: header.id,
+        } );
+        expect( all.ok ).toBe( true );
+        expect( all.result.artboard ).toBe( header.id );
+        expect( all.result.blocks ).toHaveLength( 1 );
+        const group = all.result.blocks[ 0 ];
+        expect( group ).toMatchObject( {
+            path: [ 0 ],
+            ref: `wfd-ref-a_${ header.id }_b_0`,
+            name: 'core/group',
+            title: 'Group',
+            text: 'Fixture header text',
+            editable: true,
+            innerCount: 1,
+        } );
+        expect( group.attributes.layout ).toEqual( { type: 'constrained' } );
+        expect( group.inner ).toHaveLength( 1 );
+        expect( group.inner[ 0 ] ).toMatchObject( {
+            path: [ 0, 0 ],
+            ref: `wfd-ref-a_${ header.id }_b_0_0`,
+            name: 'core/paragraph',
+            title: 'Paragraph',
+            text: 'Fixture header text',
+            editable: true,
+            innerCount: 0,
+            inner: [],
+        } );
+        expect( group.inner[ 0 ].attributes.content ).toBe(
+            'Fixture header text'
+        );
+
+        // Depth 0: no inner blocks listed.
+        const shallow = await callTool( page, 'blocks-get', {
+            artboard: header.id,
+            depth: 0,
+        } );
+        expect( shallow.result.blocks[ 0 ].innerCount ).toBe( 1 );
+        expect( shallow.result.blocks[ 0 ] ).not.toHaveProperty( 'inner' );
+
+        // One block, by path.
+        const one = await callTool( page, 'blocks-get', {
+            artboard: header.id,
+            path: [ 0, 0 ],
+        } );
+        expect( one.result.blocks ).toHaveLength( 1 );
+        expect( one.result.blocks[ 0 ].path ).toEqual( [ 0, 0 ] );
+        expect(
+            (
+                await callTool( page, 'blocks-get', {
+                    artboard: header.id,
+                    path: [ 3 ],
+                } )
+            ).error
+        ).toEqual( { code: 'not_found', message: 'Block [3] was not found.' } );
+
+        // A page: the template around it is not editable, its own blocks are.
+        const about = fixture.layout.artboards.find(
+            ( a ) => a.entityId === fixture.pages.about
+        )!;
+        const page10 = await callTool( page, 'blocks-get', {
+            artboard: about.id,
+            depth: 10,
+        } );
+        expect( page10.ok ).toBe( true );
+        const flat: any[] = [];
+        const walk = ( blocks: any[] ) =>
+            blocks.forEach( ( block ) => {
+                flat.push( block );
+                walk( block.inner ?? [] );
+            } );
+        walk( page10.result.blocks );
+        const part = flat.find( ( b ) => b.name === 'core/template-part' );
+        expect( part.editable ).toBe( false );
+        const heading = flat.find(
+            ( b ) => b.name === 'core/heading' && b.text === 'About'
+        );
+        expect( heading.editable ).toBe( true );
+        const paragraph = flat.find(
+            ( b ) =>
+                b.name === 'core/paragraph' && b.text === 'About paragraph.'
+        );
+        expect( paragraph.editable ).toBe( true );
+        expect( paragraph.attributes.backgroundColor ).toBe( 'accent-1' );
+        expect(
+            flat
+                .filter( ( b ) => b.name === 'core/post-content' )
+                .every( ( b ) => b.innerCount === 2 )
+        ).toBe( true );
+    } );
+
+    test( 'AC-TOOL-11 block-update changes the text in every artboard that shows the item, lists it in Review, and undoes as one step', async ( {
+        page,
+        requestUtils,
+    } ) => {
+        const fixture = await resetFixture( requestUtils );
+        await openBoard( page, fixture.boardId );
+        await boardAtRest( page );
+        const header = artboardOf( fixture, 'template-part' );
+        const mobile = artboardOf( fixture, 'template-part', 'mobile' );
+        await setViewport( page, {
+            x: 40 - header.x * 0.4,
+            y: 60 - header.y * 0.4,
+            zoom: 0.4,
+        } );
+        await expect( frame( page, mobile.id ) ).toHaveAttribute(
+            'data-wfd-tier',
+            'preview'
+        );
+
+        const updated = await callTool( page, 'block-update', {
+            artboard: header.id,
+            path: [ 0, 0 ],
+            attributes: { content: 'Changed by a tool' },
+        } );
+        expect( updated.ok ).toBe( true );
+        expect( updated.result ).toMatchObject( {
+            path: [ 0, 0 ],
+            name: 'core/paragraph',
+            text: 'Changed by a tool',
+        } );
+        expect( updated.result ).not.toHaveProperty( 'inner' );
+        const live = editorFrame( page, header.id ).locator( 'p' );
+        await expect( live ).toHaveText( 'Changed by a tool' );
+        const other = page
+            .frameLocator( `[data-wfd-artboard="${ mobile.id }"] iframe` )
+            .locator( 'p' );
+        await expect( other ).toHaveText( 'Changed by a tool' );
+        await expect( review( page ) ).toHaveText( 'Review 1 change' );
+        await review( page ).click();
+        await expect(
+            page.locator( '.wfd-review__item' ).first()
+        ).toContainText( 'Header' );
+        await page.getByRole( 'button', { name: 'Keep editing' } ).click();
+
+        // Cmd/Ctrl + Z in the artboard.
+        await live.click();
+        await page.keyboard.press( 'ControlOrMeta+z' );
+        await expect( live ).toHaveText( 'Fixture header text' );
+        await expect( other ).toHaveText( 'Fixture header text' );
+        await expect( review( page ) ).toHaveText( 'Review changes' );
+        await expect( review( page ) ).toBeDisabled();
+    } );
+
+    test( 'AC-TOOL-12 blocks-insert inserts markup and a pattern, and what the editor does not allow fails with not_allowed', async ( {
+        page,
+        requestUtils,
+    } ) => {
+        const fixture = await resetFixture( requestUtils );
+        await openBoard( page, fixture.boardId );
+        await boardAtRest( page );
+        const header = artboardOf( fixture, 'template-part' );
+        const names = async ( artboard: string ) => {
+            const out: string[] = [];
+            const walk = ( blocks: any[] ) =>
+                blocks.forEach( ( block ) => {
+                    out.push( `${ block.path.join( '.' ) } ${ block.name }` );
+                    walk( block.inner ?? [] );
+                } );
+            walk(
+                (
+                    await callTool( page, 'blocks-get', {
+                        artboard,
+                        depth: 10,
+                    } )
+                ).result.blocks
+            );
+            return out;
+        };
+        const heading =
+            '<!-- wp:heading --><h2 class="wp-block-heading">Inserted</h2><!-- /wp:heading -->';
+        const inserted = await callTool( page, 'blocks-insert', {
+            artboard: header.id,
+            parent: [ 0 ],
+            index: 0,
+            markup:
+                heading +
+                '\n\n<!-- wp:paragraph --><p>And a paragraph</p><!-- /wp:paragraph -->',
+        } );
+        expect( inserted ).toEqual( {
+            ok: true,
+            result: {
+                inserted: [
+                    [ 0, 0 ],
+                    [ 0, 1 ],
+                ],
+            },
+        } );
+        expect( await names( header.id ) ).toEqual( [
+            '0 core/group',
+            '0.0 core/heading',
+            '0.1 core/paragraph',
+            '0.2 core/paragraph',
+        ] );
+        await expect(
+            editorFrame( page, header.id ).locator( 'h2' )
+        ).toHaveText( 'Inserted' );
+
+        // Without an index: after the last, at the top level.
+        const last = await callTool( page, 'blocks-insert', {
+            artboard: header.id,
+            markup: heading,
+        } );
+        expect( last.result ).toEqual( { inserted: [ [ 1 ] ] } );
+
+        // A registered pattern, by name.
+        const pattern = await page.evaluate( async () => {
+            const { resolveSelect } = ( window as any ).wp.data;
+            const all = await resolveSelect( 'core' ).getBlockPatterns();
+            return all.find(
+                ( item: any ) =>
+                    ( ! item.source || item.source === 'theme' ) &&
+                    item.inserter !== false
+            ).name;
+        } );
+        const before = ( await names( header.id ) ).length;
+        const byName = await callTool( page, 'blocks-insert', {
+            artboard: header.id,
+            pattern,
+        } );
+        expect( byName.ok ).toBe( true );
+        expect( byName.result.inserted[ 0 ] ).toEqual( [ 2 ] );
+        expect( ( await names( header.id ) ).length ).toBeGreaterThan( before );
+        expect(
+            (
+                await callTool( page, 'blocks-insert', {
+                    artboard: header.id,
+                    pattern: 'no/such-pattern',
+                } )
+            ).error
+        ).toEqual( {
+            code: 'not_found',
+            message: 'Pattern no/such-pattern was not found.',
+        } );
+
+        // A block the editor does not allow there: nothing is inserted.
+        const count = ( await names( header.id ) ).length;
+        const refused = await callTool( page, 'blocks-insert', {
+            artboard: header.id,
+            markup:
+                heading +
+                '<!-- wp:list-item --><li>Alone</li><!-- /wp:list-item -->',
+        } );
+        expect( refused ).toEqual( {
+            ok: false,
+            error: {
+                code: 'not_allowed',
+                message: 'The editor does not allow this change.',
+            },
+        } );
+        expect( ( await names( header.id ) ).length ).toBe( count );
+        expect(
+            (
+                await callTool( page, 'blocks-insert', {
+                    artboard: header.id,
+                    markup: '   ',
+                } )
+            ).error.code
+        ).toBe( 'invalid_args' );
+        expect(
+            (
+                await callTool( page, 'blocks-insert', {
+                    artboard: header.id,
+                } )
+            ).error.code
+        ).toBe( 'invalid_args' );
+
+        // A block whose editing mode is disabled cannot be changed.
+        const about = fixture.layout.artboards.find(
+            ( a ) => a.entityId === fixture.pages.about
+        )!;
+        const top = (
+            await callTool( page, 'blocks-get', {
+                artboard: about.id,
+                depth: 0,
+            } )
+        ).result.blocks;
+        const locked = top.find( ( block: any ) => ! block.editable );
+        expect( locked ).toBeTruthy();
+        expect(
+            await callTool( page, 'block-update', {
+                artboard: about.id,
+                path: locked.path,
+                attributes: { className: 'nope' },
+            } )
+        ).toEqual( {
+            ok: false,
+            error: {
+                code: 'not_allowed',
+                message: 'The editor does not allow this change.',
+            },
+        } );
+        const into = await callTool( page, 'blocks-insert', {
+            artboard: about.id,
+            markup: heading,
+        } );
+        expect( into.error.code ).toBe( 'not_allowed' );
+    } );
+
+    test( 'AC-TOOL-13 blocks-remove removes the blocks at the paths given, or none when one cannot be removed', async ( {
+        page,
+        requestUtils,
+    } ) => {
+        const fixture = await resetFixture( requestUtils );
+        await openBoard( page, fixture.boardId );
+        await boardAtRest( page );
+        const hero = artboardOf( fixture, 'pattern' );
+        const top = async ( artboard: string ) =>
+            (
+                await callTool( page, 'blocks-get', { artboard, depth: 0 } )
+            ).result.blocks.map( ( block: any ) => block.name );
+        expect( await top( hero.id ) ).toEqual( [
+            'core/heading',
+            'core/paragraph',
+        ] );
+        await callTool( page, 'blocks-insert', {
+            artboard: hero.id,
+            markup: '<!-- wp:separator --><hr class="wp-block-separator has-alpha-channel-opacity"/><!-- /wp:separator -->',
+        } );
+        expect( await top( hero.id ) ).toHaveLength( 3 );
+        const removed = await callTool( page, 'blocks-remove', {
+            artboard: hero.id,
+            paths: [ [ 0 ], [ 2 ] ],
+        } );
+        expect( removed ).toEqual( { ok: true, result: { removed: 2 } } );
+        expect( await top( hero.id ) ).toEqual( [ 'core/paragraph' ] );
+
+        // By a block reference alone.
+        const byRef = await callTool( page, 'blocks-remove', {
+            artboard: `wfd-ref-a_${ hero.id }_b_0`,
+        } );
+        expect( byRef.result ).toEqual( { removed: 1 } );
+        // The editor leaves an empty paragraph in an artboard with no
+        // block, as it does when the designer deletes the last one.
+        const left = (
+            await callTool( page, 'blocks-get', { artboard: hero.id } )
+        ).result.blocks;
+        expect(
+            left.map( ( block: any ) => `${ block.name } "${ block.text }"` )
+        ).toEqual( [ 'core/paragraph ""' ] );
+
+        // One of them cannot be removed: none is.
+        const about = fixture.layout.artboards.find(
+            ( a ) => a.entityId === fixture.pages.about
+        )!;
+        const flat: any[] = [];
+        const walk = ( blocks: any[] ) =>
+            blocks.forEach( ( block ) => {
+                flat.push( block );
+                walk( block.inner ?? [] );
+            } );
+        const read = async () => {
+            flat.length = 0;
+            walk(
+                (
+                    await callTool( page, 'blocks-get', {
+                        artboard: about.id,
+                        depth: 10,
+                    } )
+                ).result.blocks
+            );
+            return flat.map( ( b ) => `${ b.path.join( '.' ) } ${ b.name }` );
+        };
+        const before = await read();
+        const own = flat.find(
+            ( b ) =>
+                b.name === 'core/paragraph' && b.text === 'About paragraph.'
+        );
+        const locked = flat.find( ( b ) => ! b.editable );
+        const refused = await callTool( page, 'blocks-remove', {
+            artboard: about.id,
+            paths: [ own.path, locked.path ],
+        } );
+        expect( refused ).toEqual( {
+            ok: false,
+            error: {
+                code: 'not_allowed',
+                message: 'The editor does not allow this change.',
+            },
+        } );
+        expect( await read() ).toEqual( before );
+        // Alone, the page's own block can be removed.
+        expect(
+            (
+                await callTool( page, 'blocks-remove', {
+                    artboard: about.id,
+                    paths: [ own.path ],
+                } )
+            ).result
+        ).toEqual( { removed: 1 } );
+        expect( ( await read() ).length ).toBe( before.length - 1 );
+    } );
+
+    test( 'AC-TOOL-14 blocks-move moves a block to another parent and index and returns its new path', async ( {
+        page,
+        requestUtils,
+    } ) => {
+        const fixture = await resetFixture( requestUtils );
+        await openBoard( page, fixture.boardId );
+        await boardAtRest( page );
+        const header = artboardOf( fixture, 'template-part' );
+        const names = async () => {
+            const out: string[] = [];
+            const walk = ( blocks: any[] ) =>
+                blocks.forEach( ( block ) => {
+                    out.push( `${ block.path.join( '.' ) } ${ block.name }` );
+                    walk( block.inner ?? [] );
+                } );
+            walk(
+                (
+                    await callTool( page, 'blocks-get', {
+                        artboard: header.id,
+                        depth: 10,
+                    } )
+                ).result.blocks
+            );
+            return out;
+        };
+        await callTool( page, 'blocks-insert', {
+            artboard: header.id,
+            markup: '<!-- wp:heading --><h2 class="wp-block-heading">Mover</h2><!-- /wp:heading -->',
+        } );
+        expect( await names() ).toEqual( [
+            '0 core/group',
+            '0.0 core/paragraph',
+            '1 core/heading',
+        ] );
+
+        // Into the group, before its paragraph.
+        const into = await callTool( page, 'blocks-move', {
+            artboard: header.id,
+            path: [ 1 ],
+            parent: [ 0 ],
+            index: 0,
+        } );
+        expect( into ).toEqual( { ok: true, result: { path: [ 0, 0 ] } } );
+        expect( await names() ).toEqual( [
+            '0 core/group',
+            '0.0 core/heading',
+            '0.1 core/paragraph',
+        ] );
+
+        // Within its parent: the index is counted after it has left.
+        const within = await callTool( page, 'blocks-move', {
+            artboard: `wfd-ref-a_${ header.id }_b_0_0`,
+            parent: [ 0 ],
+            index: 1,
+        } );
+        expect( within.result ).toEqual( { path: [ 0, 1 ] } );
+        expect( await names() ).toEqual( [
+            '0 core/group',
+            '0.0 core/paragraph',
+            '0.1 core/heading',
+        ] );
+
+        // Back to the top level, first.
+        const out = await callTool( page, 'blocks-move', {
+            artboard: header.id,
+            path: [ 0, 1 ],
+            index: 0,
+        } );
+        expect( out.result ).toEqual( { path: [ 0 ] } );
+        expect( await names() ).toEqual( [
+            '0 core/heading',
+            '1 core/group',
+            '1.0 core/paragraph',
+        ] );
+
+        expect(
+            (
+                await callTool( page, 'blocks-move', {
+                    artboard: header.id,
+                    path: [ 1 ],
+                    parent: [ 1, 0 ],
+                    index: 0,
+                } )
+            ).error.code
+        ).toBe( 'invalid_args' );
+        expect(
+            (
+                await callTool( page, 'blocks-move', {
+                    artboard: header.id,
+                    path: [ 0 ],
+                    index: 5,
+                } )
+            ).error
+        ).toEqual( {
+            code: 'invalid_args',
+            message: 'index must be 1 or less.',
+        } );
+        expect(
+            (
+                await callTool( page, 'blocks-move', {
+                    artboard: header.id,
+                    path: [ 7 ],
+                    index: 0,
+                } )
+            ).error.code
+        ).toBe( 'not_found' );
+    } );
+
+    test( "AC-TOOL-24 The tree read from a Preview and from a Snapshot equals the Live editor's tree, and no preview copy has a path or a target", async ( {
+        page,
+        requestUtils,
+    } ) => {
+        test.setTimeout( 300000 );
+        const fixture = await resetFixture( requestUtils );
+        const seeded = await requestUtils.rest< any >( {
+            method: 'POST',
+            path: '/wfd-test/v1/seed-blocks',
+            data: { board: fixture.boardId },
+        } );
+        const artboards = seeded.layout.artboards;
+        expect( artboards ).toHaveLength( 10 );
+        await openBoard( page, fixture.boardId, 10 );
+        await boardAtRest( page );
+        // The surface is loaded; nothing is in edit.
+        await page.evaluate( () => ( window as any ).wfdAgent.ready() );
+
+        // A document's tree, read once it has stopped changing.
+        const documentTree = async ( id: string ) => {
+            let last = '';
+            let since = Date.now();
+            for (;;) {
+                const now = JSON.stringify(
+                    await page.evaluate(
+                        ( artboard ) =>
+                            ( window as any ).wfdTest.documentBlocks(
+                                artboard
+                            ),
+                        id
+                    )
+                );
+                if ( now !== last ) {
+                    last = now;
+                    since = Date.now();
+                } else if ( now !== 'null' && Date.now() - since > 1200 ) {
+                    return JSON.parse( now ) as string[];
+                }
+                await page.waitForTimeout( 150 );
+            }
+        };
+        const elements = ( id: string ) =>
+            page
+                .locator( `[data-wfd-artboard="${ id }"] iframe` )
+                .last()
+                .evaluate(
+                    ( el: HTMLIFrameElement ) =>
+                        el.contentDocument!.querySelectorAll( '[data-block]' )
+                            .length
+                );
+        const blockRefs = ( id: string ) =>
+            page.evaluate(
+                async ( artboard ) =>
+                    ( await ( window as any ).wfdAgent.ready() )
+                        .targets()
+                        .filter(
+                            ( target: any ) =>
+                                target.kind === 'block' &&
+                                target.ref.startsWith(
+                                    `wfd-ref-a_${ artboard }_b_`
+                                )
+                        )
+                        .map( ( target: any ) => target.ref ),
+                id
+            );
+
+        // Every artboard is a Snapshot when the board opens fitted.
+        const snapshots: Record< string, string[] > = {};
+        for ( const artboard of artboards ) {
+            expect( ( await tiersOf( page ) )[ artboard.id ] ).toBe(
+                'snapshot'
+            );
+            snapshots[ artboard.id ] = await documentTree( artboard.id );
+        }
+
+        let copies = 0;
+        for ( const artboard of artboards ) {
+            await setViewport( page, {
+                x: 40 - artboard.x * 0.3,
+                y: 60 - artboard.y * 0.3,
+                zoom: 0.3,
+            } );
+            await expect( frame( page, artboard.id ) ).toHaveAttribute(
+                'data-wfd-tier',
+                'preview'
+            );
+            const preview = await documentTree( artboard.id );
+            const drawn = await elements( artboard.id );
+            const targets = await blockRefs( artboard.id );
+
+            const read = await callTool( page, 'blocks-get', {
+                artboard: artboard.id,
+                depth: 10,
+            } );
+            expect( read.ok, artboard.entityId ).toBe( true );
+            const tree: string[] = [];
+            const refs = new Set< string >();
+            const walk = ( blocks: any[] ) =>
+                blocks.forEach( ( block ) => {
+                    tree.push( `${ block.path.join( '.' ) } ${ block.name }` );
+                    refs.add( block.ref );
+                    expect( block.innerCount ).toBe( block.inner.length );
+                    walk( block.inner );
+                } );
+            walk( read.result.blocks );
+
+            expect( preview, `${ artboard.entityId } preview` ).toEqual( tree );
+            expect(
+                snapshots[ artboard.id ],
+                `${ artboard.entityId } snapshot`
+            ).toEqual( tree );
+            // The Live canvas, appender and all.
+            expect(
+                await documentTree( artboard.id ),
+                `${ artboard.entityId } live`
+            ).toEqual( tree );
+            // Every block target is a block of the tree.
+            expect( targets.length ).toBeGreaterThan( 0 );
+            for ( const ref of targets ) {
+                expect( refs.has( ref ), ref ).toBe( true );
+            }
+            copies += drawn - tree.length;
+            await callTool( page, 'edit-leave' );
+        }
+        // The seeded template and the fixture's own draw preview copies.
+        expect( copies ).toBeGreaterThan( 20 );
+        const seededId = artboards[ 9 ].id;
+        const seededTree = (
+            await callTool( page, 'blocks-get', {
+                artboard: seededId,
+                depth: 10,
+            } )
+        ).result.blocks;
+        const all: any[] = [];
+        const collect = ( blocks: any[] ) =>
+            blocks.forEach( ( block ) => {
+                all.push( block );
+                collect( block.inner );
+            } );
+        collect( seededTree );
+        const count = ( name: string ) =>
+            all.filter( ( block ) => block.name === name ).length;
+        // Each is in the tree once, whatever number of posts is drawn.
+        expect( count( 'core/post-template' ) ).toBe( 1 );
+        expect( count( 'core/post-title' ) ).toBe( 1 );
+        expect( count( 'core/comment-template' ) ).toBe( 1 );
+        expect( count( 'core/comment-content' ) ).toBe( 1 );
+        expect( count( 'core/navigation-link' ) ).toBe( 3 );
+        expect( count( 'core/navigation-submenu' ) ).toBe( 1 );
+        expect( count( 'core/block' ) ).toBe( 1 );
+        expect(
+            all.find( ( block ) => block.name === 'core/block' ).innerCount
+        ).toBe( 1 );
+    } );
+
+    test( 'AC-TOOL-25 targets() lists artboards, notes, blocks of mounted artboards and token rows, each within 1 px of its box, and changes no tier', async ( {
+        page,
+        requestUtils,
+    } ) => {
+        const fixture = await resetFixture( requestUtils );
+        const note = {
+            id: '0c0ffee0-0000-4000-8000-000000000002',
+            x: 3200,
+            y: -500,
+            text: 'First line\nsecond line',
+            color: 'pink',
+        };
+        await requestUtils.rest( {
+            method: 'POST',
+            path: `/wp/v2/wfd-boards/${ fixture.boardId }`,
+            data: { layout: { ...fixture.layout, notes: [ note ] } },
+        } );
+        await openBoard( page, fixture.boardId );
+        await boardAtRest( page );
+        const header = artboardOf( fixture, 'template-part' );
+        const targetsOf = () =>
+            page.evaluate( async () =>
+                ( await ( window as any ).wfdAgent.ready() ).targets()
+            );
+        const near = ( rect: any, box: any, what: string ) => {
+            for ( const side of [ 'x', 'y', 'width', 'height' ] ) {
+                expect(
+                    Math.abs( rect[ side ] - box[ side ] ),
+                    `${ what } ${ side }`
+                ).toBeLessThanOrEqual( 1 );
+            }
+        };
+
+        const tiers = await tiersOf( page );
+        const fitted = await targetsOf();
+        expect( await tiersOf( page ) ).toEqual( tiers );
+        expect( Object.keys( fitted[ 0 ] ) ).toEqual( [
+            'ref',
+            'kind',
+            'rect',
+            'label',
+            'where',
+            'text',
+        ] );
+        // Every artboard, as the board opens fitted.
+        const artboardTargets = fitted.filter(
+            ( t: any ) => t.kind === 'artboard'
+        );
+        expect( artboardTargets.map( ( t: any ) => t.ref ).sort() ).toEqual(
+            fixture.layout.artboards
+                .map( ( a ) => `wfd-ref-a_${ a.id }` )
+                .sort()
+        );
+        for ( const artboard of fixture.layout.artboards ) {
+            const target = artboardTargets.find(
+                ( t: any ) => t.ref === `wfd-ref-a_${ artboard.id }`
+            );
+            near(
+                target.rect,
+                await frameBox( frame( page, artboard.id ) ),
+                artboard.id
+            );
+            expect( target.text ).toBe( '' );
+        }
+        expect(
+            artboardTargets.find(
+                ( t: any ) => t.ref === `wfd-ref-a_${ header.id }`
+            )
+        ).toMatchObject( {
+            label: 'Header',
+            where: 'Template part · Desktop',
+        } );
+        // The note.
+        const noteTarget = fitted.find( ( t: any ) => t.kind === 'note' );
+        expect( noteTarget ).toMatchObject( {
+            ref: `wfd-ref-n_${ note.id }`,
+            label: 'Note',
+            where: '',
+            text: 'First line',
+        } );
+        near(
+            noteTarget.rect,
+            await page
+                .locator( `[data-wfd-note="${ note.id }"]` )
+                .boundingBox(),
+            'note'
+        );
+        // A block of a frozen copy.
+        const frozen = fitted.find(
+            ( t: any ) => t.ref === `wfd-ref-a_${ header.id }_b_0_0`
+        );
+        expect( frozen ).toMatchObject( {
+            kind: 'block',
+            label: 'Paragraph',
+            where: 'Header · Desktop',
+            text: 'Fixture header text',
+        } );
+        near(
+            frozen.rect,
+            await page
+                .frameLocator( `[data-wfd-artboard="${ header.id }"] iframe` )
+                .locator( 'p' )
+                .boundingBox(),
+            'frozen block'
+        );
+        // The rows of the Tokens tab.
+        const tokens = fitted.filter( ( t: any ) => t.kind === 'token' );
+        const rows = page.locator( '[data-wfd-token]' );
+        expect( tokens.length ).toBe( await rows.count() );
+        expect( tokens.length ).toBeGreaterThan( 5 );
+        const base = tokens.find(
+            ( t: any ) => t.ref === 'wfd-ref-t_color_base'
+        );
+        expect( base ).toMatchObject( {
+            label: 'Base',
+            where: 'Styles',
+            text: '#FFFFFF',
+        } );
+        near(
+            base.rect,
+            await page.locator( '[data-wfd-token="color:base"]' ).boundingBox(),
+            'token'
+        );
+        expect(
+            tokens.some( ( t: any ) =>
+                t.ref.startsWith( 'wfd-ref-t_font-size_' )
+            )
+        ).toBe( true );
+        expect(
+            tokens.some( ( t: any ) =>
+                t.ref.startsWith( 'wfd-ref-t_font-family_' )
+            )
+        ).toBe( true );
+        // Ordered so that a thing comes after what contains it.
+        const kinds = fitted.map( ( t: any ) => t.kind );
+        expect( kinds ).toEqual(
+            [ 'artboard', 'block', 'note', 'token' ].flatMap( ( kind ) =>
+                kinds.filter( ( k: string ) => k === kind )
+            )
+        );
+
+        // A Preview, and an artboard out of view.
+        await setViewport( page, {
+            x: 40 - header.x * 0.5,
+            y: 60 - header.y * 0.5,
+            zoom: 0.5,
+        } );
+        await expect( frame( page, header.id ) ).toHaveAttribute(
+            'data-wfd-tier',
+            'preview'
+        );
+        await page
+            .frameLocator( `[data-wfd-artboard="${ header.id }"] iframe` )
+            .locator( 'p' )
+            .waitFor();
+        await boardAtRest( page );
+        const before = await tiersOf( page );
+        const zoomed = await targetsOf();
+        expect( await tiersOf( page ) ).toEqual( before );
+        const block = zoomed.find(
+            ( t: any ) => t.ref === `wfd-ref-a_${ header.id }_b_0_0`
+        );
+        near(
+            block.rect,
+            await page
+                .frameLocator( `[data-wfd-artboard="${ header.id }"] iframe` )
+                .locator( 'p' )
+                .boundingBox(),
+            'preview block'
+        );
+        // Something of each is inside the canvas area.
+        const area = ( await page
+            .locator( '[data-wfd-region="canvas"]' )
+            .boundingBox() )!;
+        for ( const target of zoomed.filter(
+            ( t: any ) => t.kind !== 'token'
+        ) ) {
+            expect( target.rect.width ).toBeGreaterThan( 0 );
+            expect( target.rect.height ).toBeGreaterThan( 0 );
+            expect( target.rect.x ).toBeLessThan( area.x + area.width );
+            expect( target.rect.x + target.rect.width ).toBeGreaterThan(
+                area.x
+            );
+            expect( target.rect.y ).toBeLessThan( area.y + area.height );
+            expect( target.rect.y + target.rect.height ).toBeGreaterThan(
+                area.y
+            );
+        }
+        // A Ghost has a target only while part of it is in the canvas area.
+        const index = artboardOf( fixture, 'template' );
+        expect(
+            zoomed.some( ( t: any ) => t.ref === `wfd-ref-a_${ index.id }` )
+        ).toBe( false );
+
+        // The artboard in edit.
+        await enterEdit( page, header.id );
+        const editing = await targetsOf();
+        const live = editing.find(
+            ( t: any ) => t.ref === `wfd-ref-a_${ header.id }_b_0_0`
+        );
+        near(
+            live.rect,
+            await editorFrame( page, header.id ).locator( 'p' ).boundingBox(),
+            'live block'
+        );
+        // The Tokens tab is not shown in edit.
+        expect( editing.some( ( t: any ) => t.kind === 'token' ) ).toBe(
+            false
+        );
+    } );
+
+    test( 'AC-TOOL-26 A reference is accepted in place of an artboard or a path, with or without a leading #', async ( {
+        page,
+        requestUtils,
+    } ) => {
+        const fixture = await resetFixture( requestUtils );
+        await openBoard( page, fixture.boardId );
+        await boardAtRest( page );
+        const board = ( await callTool( page, 'board-get' ) ).result;
+        const header = board.artboards.find(
+            ( a: any ) =>
+                a.kind === 'template-part' &&
+                a.device === 'desktop' &&
+                a.name === 'Header'
+        );
+        expect( header.ref ).toBe( `wfd-ref-a_${ header.id }` );
+
+        // An artboard's reference, where a tool takes an artboard.
+        for ( const artboard of [ header.ref, '#' + header.ref ] ) {
+            const read = await callTool( page, 'blocks-get', { artboard } );
+            expect( read.ok ).toBe( true );
+            expect( read.result.artboard ).toBe( header.id );
+            expect( read.result.blocks ).toHaveLength( 1 );
+        }
+        // A block's reference gives the artboard and the path.
+        const blocks = (
+            await callTool( page, 'blocks-get', {
+                artboard: header.ref,
+            } )
+        ).result.blocks;
+        const paragraph = blocks[ 0 ].inner[ 0 ];
+        expect( paragraph.ref ).toBe( `wfd-ref-a_${ header.id }_b_0_0` );
+        const one = await callTool( page, 'blocks-get', {
+            artboard: paragraph.ref,
+        } );
+        expect( one.result.blocks ).toHaveLength( 1 );
+        expect( one.result.blocks[ 0 ].name ).toBe( 'core/paragraph' );
+        const changed = await callTool( page, 'block-update', {
+            artboard: '#' + paragraph.ref,
+            attributes: { content: 'By reference' },
+        } );
+        expect( changed.ok ).toBe( true );
+        expect( changed.result.text ).toBe( 'By reference' );
+        // A path given as well wins over the reference's.
+        const both = await callTool( page, 'blocks-get', {
+            artboard: paragraph.ref,
+            path: [ 0 ],
+        } );
+        expect( both.result.blocks[ 0 ].name ).toBe( 'core/group' );
+        // Where a tool takes several artboards.
+        expect(
+            (
+                await callTool( page, 'board-select', {
+                    artboards: [ '#' + header.ref, paragraph.ref ],
+                } )
+            ).result
+        ).toEqual( { selection: [ header.id ] } );
+
+        // Strings that do not parse.
+        for ( const artboard of [
+            'wfd-ref-x_nothing',
+            'wfd-ref-a_',
+            `wfd-ref-a_${ header.id }_b_`,
+            `wfd-ref-a_${ header.id }_b_0_x`,
+            `wfd-ref-a_${ header.id } `,
+            'wfd-ref-t_color_',
+        ] ) {
+            const failed = await callTool( page, 'blocks-get', { artboard } );
+            expect( failed.ok, artboard ).toBe( false );
+            expect( failed.error.code, artboard ).toBe( 'invalid_args' );
+            expect( failed.error.message ).toContain( 'artboard' );
+        }
+        // A note or a token where an artboard is asked for.
+        expect(
+            (
+                await callTool( page, 'artboard-edit', {
+                    artboard: 'wfd-ref-t_color_base',
+                } )
+            ).error.code
+        ).toBe( 'invalid_args' );
+        // Strings that parse and name nothing.
+        expect(
+            (
+                await callTool( page, 'blocks-get', {
+                    artboard: 'wfd-ref-a_11111111-2222-4333-8444-555555555555',
+                } )
+            ).error
+        ).toEqual( {
+            code: 'not_found',
+            message:
+                'Artboard wfd-ref-a_11111111-2222-4333-8444-555555555555 was not found.',
+        } );
+        expect(
+            (
+                await callTool( page, 'blocks-get', {
+                    artboard: `wfd-ref-a_${ header.id }_b_9_9`,
+                } )
+            ).error
+        ).toEqual( {
+            code: 'not_found',
+            message: 'Block [9,9] was not found.',
+        } );
+    } );
 } );

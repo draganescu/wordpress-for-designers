@@ -13,8 +13,67 @@ import {
     unavailable,
     unknownTool,
 } from './errors';
+import { frameOf } from '../artboard-frame/rects';
+import {
+    authorOf,
+    beginCall,
+    changedOf,
+    endCall,
+    startAuthorship,
+} from './authorship';
+import { documentBlocks } from './blocks';
+import { findArtboard } from './board';
+import { setAnnotating, setSession, workEnded, workStarted } from './marks';
+import { subscribe, targets } from './targets';
 import { functions } from './tools';
 import { checkInput } from './validate';
+
+// In a test build, the tree read from what an artboard draws (AC-TOOL-24).
+if ( window.wfdTest ) {
+    window.wfdTest.documentBlocks = ( id ) => {
+        const doc = frameOf( id ).document;
+        return doc
+            ? documentBlocks( doc ).map(
+                  ( { path, name } ) => `${ path.join( '.' ) } ${ name }`
+              )
+            : null;
+    };
+}
+
+// The tools that put an artboard in edit, where blocks go on changing for a
+// moment after the tool is done.
+const IN_EDITOR = [
+    'artboard-new',
+    'artboard-edit',
+    'blocks-get',
+    'block-update',
+    'blocks-insert',
+    'blocks-remove',
+    'blocks-move',
+];
+
+// From the moment the surface is loaded it records who changes what.
+startAuthorship();
+
+/**
+ * The artboards a call names, in its `artboard` and `artboards` fields.
+ *
+ * @param {Object} input The call's input.
+ * @return {string[]} Their ids; a field that names nothing is left out.
+ */
+function namedArtboards( input ) {
+    const ids = new Set();
+    for ( const value of [ input.artboard, ...( input.artboards ?? [] ) ] ) {
+        if ( typeof value === 'string' ) {
+            try {
+                ids.add( findArtboard( value ).artboard.id );
+            } catch {
+                // The tool itself says what is wrong with it.
+            }
+        }
+    }
+    return [ ...ids ];
+}
 
 // Calls run one at a time, in the order they arrive.
 let last = Promise.resolve();
@@ -42,10 +101,24 @@ async function run( name, input ) {
         if ( ! fn || actionsSeam.current.isBlocked() ) {
             throw unavailable();
         }
-        return {
-            ok: true,
-            result: await fn( input, { changedOf: () => undefined } ),
-        };
+        // What changes from here until the call ends is the agent's
+        // (spec/agent/surface.md, Authorship), and the artboards the call
+        // names are marked as worked on (Marks).
+        const named = namedArtboards( input );
+        beginCall();
+        workStarted( named );
+        try {
+            const result = await fn( input, { changedOf, authorOf } );
+            // A JSON value, in one piece: what a block keeps as rich text
+            // is given as the markup it stands for.
+            return {
+                ok: true,
+                result: JSON.parse( JSON.stringify( result ) ),
+            };
+        } finally {
+            endCall( IN_EDITOR.includes( name ) );
+            workEnded( named );
+        }
     } catch ( error ) {
         if ( error instanceof ToolError ) {
             return failed( error );
@@ -74,9 +147,9 @@ export const surface = {
     version: 1,
     tools: declarations,
     call,
-    targets: () => [],
-    subscribe: () => () => {},
-    setAnnotating: () => {},
+    targets,
+    subscribe,
+    setAnnotating,
 };
 
 /**
@@ -87,6 +160,9 @@ export const surface = {
  * @param {Function} send   Sends the results of the answer's call.
  */
 export async function relay( answer, send ) {
+    // The header chip shows from the poll that finds a session until the
+    // poll that finds it ended.
+    setSession( !! answer.active );
     if ( ! answer.call ) {
         return;
     }

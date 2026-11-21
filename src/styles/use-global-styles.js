@@ -7,7 +7,7 @@
  * the user record.
  */
 import { useCallback, useEffect, useMemo, useState } from '@wordpress/element';
-import { useDispatch, useSelect } from '@wordpress/data';
+import { useDispatch, useRegistry, useSelect } from '@wordpress/data';
 import { store as coreStore } from '@wordpress/core-data';
 import { getBlockTypes } from '@wordpress/blocks';
 import {
@@ -51,6 +51,7 @@ export function useGlobalStyles( serverSettings ) {
         };
     }, [] );
     const { editEntityRecord } = useDispatch( coreStore );
+    const registry = useRegistry();
     const [ preview, setPreview ] = useState( null );
 
     const recordSettings = record?.settings;
@@ -138,9 +139,26 @@ export function useGlobalStyles( serverSettings ) {
         [ id, editEntityRecord ]
     );
 
+    // The user's styles as the store holds them now, which a render that
+    // has not happened yet does not show.
+    const readRecord = () =>
+        id
+            ? registry
+                  .select( coreStore )
+                  .getEditedEntityRecord( 'root', 'globalStyles', id )
+            : null;
+
     return {
         id,
         isReady,
+        readUser: () => ( {
+            settings: readRecord()?.settings ?? {},
+            styles: readRecord()?.styles ?? {},
+        } ),
+        // Whether what this render worked from is what the store holds.
+        isCurrent: () =>
+            readRecord()?.settings === recordSettings &&
+            readRecord()?.styles === recordStyles,
         base: base ?? EMPTY,
         user,
         merged: merged ?? EMPTY,

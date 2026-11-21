@@ -40,6 +40,40 @@ export function liveLabel( artboard ) {
 }
 
 /**
+ * "{Kind} · {Device}": the label A1 without the name. For a media object,
+ * its kind alone.
+ *
+ * @param {Object} artboard The artboard.
+ * @return {string} The text.
+ */
+export function kindAndDevice( artboard ) {
+    if ( ! hasDevice( artboard ) ) {
+        return KINDS[ artboard.kind ].label;
+    }
+    return sprintf(
+        /* translators: 1: kind, for example "Template". 2: device, for example "Desktop". */
+        __( '%1$s · %2$s', 'wordpress-for-designers' ),
+        KINDS[ artboard.kind ].label,
+        DEVICES[ artboard.device ].label
+    );
+}
+
+/**
+ * "{Name} · {Device}": where a block of an artboard is.
+ *
+ * @param {Object} artboard The artboard with its name.
+ * @return {string} The text.
+ */
+export function nameAndDevice( artboard ) {
+    return sprintf(
+        /* translators: 1: artboard name. 2: device, for example "Desktop". */
+        __( '%1$s · %2$s', 'wordpress-for-designers' ),
+        artboard.name,
+        DEVICES[ artboard.device ].label
+    );
+}
+
+/**
  * A label in two parts, around the artboard's name: for a label that shows
  * the name as a text field (A7).
  *
