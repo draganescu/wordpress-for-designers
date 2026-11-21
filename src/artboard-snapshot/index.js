@@ -93,6 +93,26 @@ function whenLoaded( node, callback ) {
     window.setTimeout( done, 2000 );
 }
 
+/**
+ * Whether every document of a Preview had its blocks and style sheets when
+ * it was copied. A copy taken earlier is taken again.
+ *
+ * @param {Element} preview The Preview's root element.
+ * @return {boolean} Whether the copy is of the whole render.
+ */
+function isWhole( preview ) {
+    return [ ...preview.querySelectorAll( 'iframe' ) ].every( ( iframe ) => {
+        const doc = iframe.contentDocument;
+        return (
+            doc?.readyState === 'complete' &&
+            doc.querySelector( '.is-root-container' ) &&
+            [ ...doc.querySelectorAll( 'link[rel="stylesheet"]' ) ].every(
+                ( link ) => link.sheet
+            )
+        );
+    } );
+}
+
 export function createSnapshotStore() {
     const snapshots = new Map();
     return {
@@ -109,9 +129,16 @@ export function createSnapshotStore() {
             if ( ! preview?.querySelector( 'iframe' )?.contentDocument?.body ) {
                 return false;
             }
+            // A copy of what the Preview was rendered from is what it shows
+            // already. Copying again costs a serialisation and a second load
+            // on screen, which a zoom out did for every artboard.
+            const current = snapshots.get( id );
+            if ( current?.isWhole && current.version === version ) {
+                return true;
+            }
             const node = freeze( preview );
-            const old = snapshots.get( id )?.node;
-            snapshots.set( id, { node, version } );
+            const old = current?.node;
+            snapshots.set( id, { node, version, isWhole: isWhole( preview ) } );
             if ( old?.isConnected ) {
                 // An iframe shows nothing until its document has loaded, so
                 // the copy on screen stays until the new one has.
