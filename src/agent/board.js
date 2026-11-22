@@ -3,13 +3,29 @@
  * them, and finding the artboard an input names.
  */
 import { actionsSeam } from '../shell/seams';
+import { surfaceActions } from './actions';
 import { invalidArgs, notFound } from './errors';
 import { artboardRef, isRef, noteRef, parseRef } from './refs';
 
+let composedFrom = null;
+let composed = null;
+
 /**
- * @return {Object} The Board actions seam.
+ * @return {Object|null} The board actions: the seam onto the shell's hooks
+ *                       with the surface's own actions; null before the
+ *                       board has drawn.
  */
-export const actions = () => actionsSeam.current;
+export function actions() {
+    const seam = actionsSeam.current;
+    if ( ! seam ) {
+        return null;
+    }
+    if ( seam !== composedFrom ) {
+        composedFrom = seam;
+        composed = { ...seam, ...surfaceActions };
+    }
+    return composed;
+}
 
 /**
  * Finds what an artboard field names: an artboard's id, or a reference to an
