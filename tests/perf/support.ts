@@ -619,6 +619,120 @@ const RASTER_WATCH = 4000;
 const RASTER_PAUSE = 250;
 
 /**
+ * Starts noting what the board does, for the error of `rasterWork`: each
+ * change of an artboard's tier, each iframe added or removed, with its time,
+ * and what the app's counters and the page's animations say when asked.
+ * It watches attributes other than `style` and the list of children, so a
+ * pan or a zoom, which writes one transform, costs it nothing.
+ *
+ * @param page The page.
+ */
+async function watchBoard( page: Page ) {
+    await page.evaluate( () => {
+        const hooks = ( window as any ).wfdTest;
+        const began = performance.now();
+        const counted = () => ( {
+            renders: hooks.counters.renders,
+            styleGenerations: hooks.counters.styleGenerations,
+            parses: hooks.counters.parses,
+            storeCallbacks: hooks.counters.storeCallbacks,
+        } );
+        const before: Record< string, number > = counted();
+        const events: string[] = [];
+        const note = ( text: string ) => {
+            if ( events.length < 80 ) {
+                events.push(
+                    `${ Math.round( performance.now() - began ) } ${ text }`
+                );
+            }
+        };
+        const nameOf = ( element: Element | null ) =>
+            (
+                element
+                    ?.closest( '[data-wfd-artboard]' )
+                    ?.getAttribute( 'data-wfd-artboard' ) ?? '?'
+            ).slice( 0, 8 );
+        const frames = ( nodes: NodeList ) =>
+            [ ...nodes ].flatMap( ( node ) =>
+                node instanceof HTMLElement
+                    ? [
+                          ...( node.matches( 'iframe' ) ? [ node ] : [] ),
+                          ...node.querySelectorAll( 'iframe' ),
+                      ]
+                    : []
+            );
+        ( window as any ).wfdPerfWatch?.observer.disconnect();
+        const observer = new MutationObserver( ( records ) => {
+            for ( const record of records ) {
+                if ( record.type === 'attributes' ) {
+                    const element = record.target as Element;
+                    note(
+                        `${ nameOf( element ) } ${ record.oldValue } > ${ element.getAttribute(
+                            'data-wfd-tier'
+                        ) }`
+                    );
+                    continue;
+                }
+                const added = frames( record.addedNodes ).length;
+                const removed = frames( record.removedNodes ).length;
+                if ( added || removed ) {
+                    note(
+                        `${ nameOf( record.target as Element ) } iframes +${ added } -${ removed }`
+                    );
+                }
+            }
+        } );
+        observer.observe(
+            document.querySelector( '[data-wfd-region="canvas"]' )!,
+            {
+                subtree: true,
+                childList: true,
+                attributeFilter: [ 'data-wfd-tier' ],
+                attributeOldValue: true,
+            }
+        );
+        ( window as any ).wfdPerfWatch = {
+            observer,
+            report() {
+                const now: Record< string, number > = counted();
+                const documents = [
+                    document,
+                    ...[ ...document.querySelectorAll( 'iframe' ) ].flatMap(
+                        ( frame ) =>
+                            frame.contentDocument
+                                ? [ frame.contentDocument ]
+                                : []
+                    ),
+                ];
+                return {
+                    ms: Math.round( performance.now() - began ),
+                    counters: Object.fromEntries(
+                        Object.keys( now ).map( ( key ) => [
+                            key,
+                            now[ key ] - before[ key ],
+                        ] )
+                    ),
+                    animations: documents.flatMap( ( doc ) =>
+                        doc.getAnimations().map( ( animation ) => {
+                            const target = ( animation.effect as any )
+                                ?.target as Element | null;
+                            return `${
+                                ( animation as any ).animationName ??
+                                ( animation as any ).transitionProperty ??
+                                'animation'
+                            } on ${ target?.tagName.toLowerCase() }.${ String(
+                                target?.getAttribute( 'class' ) ?? ''
+                            ).slice( 0, 60 ) } (${ animation.playState })`;
+                        } )
+                    ),
+                    events,
+                };
+            },
+        };
+    } );
+}
+
+/**
  * The drawing work a gesture causes: `raster`, how much there is, and
  * `sharpen`, how long after the gesture's last event it goes on, both in
  * milliseconds. Drawing that follows a pause of a quarter of a second is
@@ -641,6 +755,7 @@ export async function rasterWork(
     await metrics.startTracing( {
         categories: [ 'cc', 'blink.user_timing' ],
     } );
+    await watchBoard( page );
     await mark( 'wfd-perf-raster-start' );
     await gesture( 'wfd-perf-raster-end' );
     await page.waitForTimeout( RASTER_WATCH );
@@ -680,17 +795,44 @@ export async function rasterWork(
         sharp = Math.max( sharp, event.ts + event.dur );
     }
     if ( stop - sharp < RASTER_PAUSE * 1000 ) {
-        // What the board held by then, for whoever reads the failure.
-        const { waiting, placeholders } = await page.evaluate(
+        // What the board held by then, and what it did while it was
+        // watched, for whoever reads the failure.
+        const { waiting, placeholders, watched } = await page.evaluate(
             inPage( () => ( {
                 waiting: artboardsShown().waiting,
                 placeholders: document.querySelectorAll(
                     '.wfd-artboard__skeleton'
                 ).length,
+                watched: ( window as any ).wfdPerfWatch.report(),
             } ) )
         );
+        // The drawing, as stretches with no pause of 100 ms in them:
+        // start to end in ms from the gesture's last event, and the
+        // number of raster tasks.
+        const stretches: number[][] = [];
+        for ( const event of rasters ) {
+            const from = ( event.ts - end ) / 1000;
+            const to = ( event.ts + event.dur - end ) / 1000;
+            const last = stretches[ stretches.length - 1 ];
+            if ( last && from - last[ 1 ] < 100 ) {
+                last[ 1 ] = Math.max( last[ 1 ], to );
+                last[ 2 ]++;
+            } else {
+                stretches.push( [ from, to, 1 ] );
+            }
+        }
+        const drawing = stretches
+            .map(
+                ( [ from, to, tasks ] ) =>
+                    `${ Math.round( from ) } to ${ Math.round(
+                        to
+                    ) } (${ tasks })`
+            )
+            .join( ', ' );
         throw new Error(
-            `Drawing had not stopped ${ RASTER_WATCH } ms after the gesture: ${ waiting } artboards were waiting for their content and ${ placeholders } showed a placeholder.`
+            `Drawing had not stopped ${ RASTER_WATCH } ms after the gesture: ${ waiting } artboards were waiting for their content and ${ placeholders } showed a placeholder.\nDrawing, in ms from the gesture's last event (raster tasks): ${ drawing }.\nThe board since the gesture began: ${ JSON.stringify(
+                watched
+            ) }`
         );
     }
     return {
