@@ -13,7 +13,7 @@ The plugin is built through Milestone 18 of `spec/build-order.md`: Milestones 1 
 | `npm run lint` | Exits 0, no disabled lines |
 | CI | `.github/workflows/tests.yml` runs lint, build and the suite (Chromium, wp-env) on every pull request; CI retries a failed test twice and reports a pass on retry as flaky |
 | Performance | `.github/workflows/perf.yml` measures every pull request that changes more than documents against its base and fails on a broken budget; see [performance.md](performance.md) |
-| Open questions waiting for the product owner | 37 (`spec/open-questions.md`): the 36 of before and OQ-50, on what tells that an editor's blocks are all in. OQ-43 to OQ-49 are kept with their answers (D79 to D86) |
+| Open questions waiting for the product owner | 36 (`spec/open-questions.md`), as before the agent surface. OQ-43 to OQ-50 are kept with their answers (D79 to D86; OQ-50, on what tells that an editor's blocks are all in, was accepted on 2026-11-22 and is not yet a decision in `spec/decisions.md`) |
 | Browsers the suite runs in | Chromium only, touch included |
 | WordPress it was built and tested on | 7.2-RC2, Twenty Twenty-Five, PHP 8.2, no Gutenberg plugin |
 
