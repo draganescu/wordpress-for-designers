@@ -619,6 +619,141 @@ const RASTER_WATCH = 4000;
 const RASTER_PAUSE = 250;
 
 /**
+ * Runs in the page before a gesture: notes every change of an artboard's
+ * tier and every frame added to the canvas, with its time, for `stillMoving`.
+ */
+function watchTiers() {
+    const log: string[] = [];
+    const from = performance.now();
+    ( window as any ).wfdPerfTiers = log;
+    const note = ( what: string ) =>
+        log.length < 200 &&
+        log.push( `${ Math.round( performance.now() - from ) } ${ what }` );
+    new MutationObserver( ( records ) => {
+        for ( const record of records ) {
+            if ( record.type === 'attributes' ) {
+                note(
+                    'tier ' +
+                        ( record.target as Element ).getAttribute(
+                            'data-wfd-tier'
+                        )
+                );
+                continue;
+            }
+            record.addedNodes.forEach( ( node ) => {
+                const element = node as Element;
+                if (
+                    element.tagName === 'IFRAME' ||
+                    element.querySelector?.( 'iframe' )
+                ) {
+                    note( 'frame added' );
+                }
+            } );
+        }
+    } ).observe( document.querySelector( '[data-wfd-region="canvas"]' )!, {
+        subtree: true,
+        childList: true,
+        attributes: true,
+        attributeFilter: [ 'data-wfd-tier' ],
+    } );
+}
+
+/**
+ * Runs in the page when drawing has not stopped: the animations and
+ * transitions still running in the page and in each artboard's document,
+ * counted by kind, name and element, and what `watchTiers` noted.
+ */
+function stillMoving() {
+    const animations: Record< string, number > = {};
+    const visit = ( doc: Document, where: string ) => {
+        doc.getAnimations().forEach( ( animation: any ) => {
+            const target = animation.effect?.target as Element | undefined;
+            const key = [
+                where,
+                animation.animationName ?? animation.transitionProperty ?? '',
+                animation.playState,
+                target?.tagName ?? '',
+                ( target?.getAttribute( 'class' ) ?? '' ).slice( 0, 60 ),
+            ].join( ' | ' );
+            animations[ key ] = ( animations[ key ] ?? 0 ) + 1;
+        } );
+        doc.querySelectorAll( 'iframe' ).forEach( ( frame ) => {
+            try {
+                if ( frame.contentDocument ) {
+                    visit( frame.contentDocument, where + ' > frame' );
+                }
+            } catch {
+                // A frame of another origin.
+            }
+        } );
+    };
+    visit( document, 'page' );
+    return {
+        animations,
+        tiers: ( ( window as any ).wfdPerfTiers ?? [] ) as string[],
+    };
+}
+
+/**
+ * What a trace shows of a page that went on drawing: how many drawing tasks
+ * began in each quarter second after the gesture, and what the main thread
+ * did most in the last second that was watched.
+ *
+ * @param events The trace's events.
+ * @param end    When the gesture's last event was sent, as in the trace.
+ * @param stop   When watching stopped.
+ */
+function stillDrawing( events: any[], end: number, stop: number ): string {
+    const quarters: number[] = [];
+    for ( const event of events ) {
+        if (
+            event.name === 'RasterTask' &&
+            event.ph === 'X' &&
+            event.ts > end
+        ) {
+            const quarter = Math.floor( ( event.ts - end ) / 250_000 );
+            quarters[ quarter ] = ( quarters[ quarter ] ?? 0 ) + 1;
+        }
+    }
+    const work = new Map< string, number >();
+    for ( const event of events ) {
+        if (
+            event.ts < stop - 1_000_000 ||
+            event.ts > stop ||
+            ! String( event.cat ).includes( 'devtools.timeline' ) ||
+            event.ph === 'E'
+        ) {
+            continue;
+        }
+        const data = event.args?.data ?? event.args?.beginData ?? {};
+        const detail = [
+            data.type,
+            data.functionName,
+            data.url && String( data.url ).split( '/' ).slice( -2 ).join( '/' ),
+            data.nodeName,
+            data.clip &&
+                `${ data.clip[ 2 ] - data.clip[ 0 ] }x${ data.clip[ 5 ] - data.clip[ 1 ] }`,
+            data.frame && `frame ${ String( data.frame ).slice( 0, 6 ) }`,
+        ]
+            .filter( Boolean )
+            .join( ' ' );
+        const key = detail ? `${ event.name } (${ detail })` : event.name;
+        work.set( key, ( work.get( key ) ?? 0 ) + 1 );
+    }
+    const most = [ ...work ]
+        .sort( ( a, b ) => b[ 1 ] - a[ 1 ] )
+        .slice( 0, 20 )
+        .map( ( [ key, count ] ) => `${ count } × ${ key }` );
+    return (
+        `Drawing tasks begun in each quarter second after the gesture: ${ Array.from(
+            quarters,
+            ( count ) => count ?? 0
+        ).join( ' ' ) }\n` +
+        `The main thread in the last second watched:\n  ${ most.join( '\n  ' ) }`
+    );
+}
+
+/**
  * The drawing work a gesture causes: `raster`, how much there is, and
  * `sharpen`, how long after the gesture's last event it goes on, both in
  * milliseconds. Drawing that follows a pause of a quarter of a second is
@@ -638,9 +773,12 @@ export async function rasterWork(
         page.evaluate( ( n ) => {
             performance.mark( n );
         }, name );
+    // The timeline is traced as well, only so that a run where drawing does
+    // not stop can say what the page was doing: see `stillDrawing`.
     await metrics.startTracing( {
-        categories: [ 'cc', 'blink.user_timing' ],
+        categories: [ 'cc', 'blink.user_timing', 'devtools.timeline' ],
     } );
+    await page.evaluate( watchTiers );
     await mark( 'wfd-perf-raster-start' );
     await gesture( 'wfd-perf-raster-end' );
     await page.waitForTimeout( RASTER_WATCH );
@@ -689,8 +827,15 @@ export async function rasterWork(
                 ).length,
             } ) )
         );
+        const page_ = await page.evaluate( stillMoving );
         throw new Error(
-            `Drawing had not stopped ${ RASTER_WATCH } ms after the gesture: ${ waiting } artboards were waiting for their content and ${ placeholders } showed a placeholder.`
+            `Drawing had not stopped ${ RASTER_WATCH } ms after the gesture: ${ waiting } artboards were waiting for their content and ${ placeholders } showed a placeholder.\n` +
+                stillDrawing( events, end, stop ) +
+                `\nAnimations running: ${ JSON.stringify(
+                    page_.animations
+                ) }\nTier changes and new frames since the gesture began (ms): ${ JSON.stringify(
+                    page_.tiers
+                ) }`
         );
     }
     return {
