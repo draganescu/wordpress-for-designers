@@ -14,24 +14,26 @@ const THINGS = {
     media: 'Media',
 };
 // The longest address a browser keeps (spec/data-model.md, Board).
-const MAX_PATH = 2000;
+const MAX_ADDRESS = 2000;
 
 export default async function artboardAdd(
-    { kind, entityId, path, device },
+    { kind, entityId, address, device },
     { changedOf }
 ) {
     const isBrowser = kind === 'browser';
     if ( isBrowser && entityId !== undefined ) {
         throw invalidArgs( 'entityId is not allowed for a browser.' );
     }
-    if ( isBrowser && path === undefined ) {
-        throw invalidArgs( 'path is required for a browser.' );
+    if ( isBrowser && address === undefined ) {
+        throw invalidArgs( 'address is required for a browser.' );
     }
-    if ( isBrowser && path.length > MAX_PATH ) {
-        throw invalidArgs( `path must be ${ MAX_PATH } characters or less.` );
+    if ( isBrowser && address.length > MAX_ADDRESS ) {
+        throw invalidArgs(
+            `address must be ${ MAX_ADDRESS } characters or less.`
+        );
     }
-    if ( ! isBrowser && path !== undefined ) {
-        throw invalidArgs( 'path is allowed for a browser only.' );
+    if ( ! isBrowser && address !== undefined ) {
+        throw invalidArgs( 'address is allowed for a browser only.' );
     }
     if ( ! isBrowser && entityId === undefined ) {
         throw invalidArgs( `entityId is required for a ${ kind }.` );
@@ -55,8 +57,8 @@ export default async function artboardAdd(
     if ( isBrowser ) {
         // "New browser", then the click that places it (D55).
         id = await actions().createNew( 'browser' );
-        if ( path !== '/' ) {
-            actions().setAddress( id, path );
+        if ( address !== '/' ) {
+            actions().setAddress( id, address );
         }
     } else {
         id = await actions().openExisting( kind, entityId );

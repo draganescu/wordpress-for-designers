@@ -374,16 +374,21 @@ export function useStylesPanel( { styles, serverSettings, usesOf } ) {
             onOpenScreen: setOpenScreen,
             renderScreen: ( path ) =>
                 stockScreen( path, () => setOpenScreen( null ), screenStands ),
+            // Works from the styles as the store holds them now, so that
+            // two changes in a row both count. False for an unknown colour.
             onChangeColor: ( slug, value ) => {
-                const token = colors.find( ( color ) => color.slug === slug );
+                const now = styles.readMerged();
+                const token = presets( now, 'color.palette' ).find(
+                    ( color ) => color.slug === slug
+                );
                 if ( ! token ) {
-                    return;
+                    return false;
                 }
                 const path = `color.palette.${ token.origin }`;
-                const current = list( getSetting( merged, path ) );
+                const current = list( getSetting( now, path ) );
                 update(
                     setSetting(
-                        user,
+                        styles.readUser(),
                         path,
                         current.map( ( color ) =>
                             color.slug === slug
@@ -392,6 +397,7 @@ export function useStylesPanel( { styles, serverSettings, usesOf } ) {
                         )
                     )
                 );
+                return true;
             },
             onAddColor: () => {
                 const custom = list(

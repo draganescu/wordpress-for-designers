@@ -9,10 +9,10 @@ import { invalidArgs, notAllowed } from '../errors';
 export default async function blocksMove( input ) {
     const found = findArtboard( input.artboard );
     const { artboard } = found;
-    const path = pathFrom( input.path, found.path );
+    const path = pathFrom( input.block, found.path );
     const parent = input.parent ?? [];
     if ( ! path.length ) {
-        throw invalidArgs( 'path must name a block.' );
+        throw invalidArgs( 'block must name a block.' );
     }
     if ( path.every( ( index, depth ) => parent[ depth ] === index ) ) {
         throw invalidArgs( 'parent must not be the block or inside it.' );

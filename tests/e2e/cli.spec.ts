@@ -315,7 +315,7 @@ test.describe( 'CLI', () => {
         ).toBeDisabled();
     } );
 
-    test( 'AC-CLI-06 batch runs in order; after a failure the rest are skipped and the exit code is 1', async ( {
+    test( 'AC-CLI-06 batch runs in order; after a failure the rest are skipped, the first stays done, and the exit code is 1', async ( {
         page,
         requestUtils,
     } ) => {
@@ -324,27 +324,66 @@ test.describe( 'CLI', () => {
         const asked = listening( page );
         await openBoard( page, fixture.boardId );
         await asked;
+        await boardAtRest( page );
+        const hero = fixture.layout.artboards.find(
+            ( a ) => a.kind === 'pattern'
+        )!;
+        const header = fixture.layout.artboards.find(
+            ( a ) => a.kind === 'template-part'
+        )!;
+        const placeOf = ( id: string ) =>
+            page.evaluate( ( artboard ) => {
+                const { x, y } = ( window as any ).wp.data
+                    .select( 'wfd/board' )
+                    .getArtboard( artboard );
+                return { x, y };
+            }, id );
 
+        // In order: the second call moves what the first moved.
         const good = await wfd( [
             'batch',
             `--calls=${ JSON.stringify( [
-                { tool: 'board-get', input: {} },
+                {
+                    tool: 'artboard-update',
+                    input: { artboard: hero.id, x: 111, y: 222 },
+                },
+                {
+                    tool: 'artboard-update',
+                    input: { artboard: hero.id, x: 333, y: 444 },
+                },
                 { tool: 'board-get' },
             ] ) }`,
         ] );
         expect( good.code ).toBe( 0 );
         const all = JSON.parse( good.stdout );
         expect( all.ok ).toBe( true );
-        expect( all.results ).toHaveLength( 2 );
-        expect( all.results.every( ( r: any ) => r.ok ) ).toBe( true );
+        expect( all.results ).toHaveLength( 3 );
+        expect( all.results[ 0 ].result ).toMatchObject( { x: 111, y: 222 } );
+        expect( all.results[ 1 ].result ).toMatchObject( { x: 333, y: 444 } );
+        expect(
+            all.results[ 2 ].result.artboards.find(
+                ( a: any ) => a.id === hero.id
+            )
+        ).toMatchObject( { x: 333, y: 444 } );
+        expect( await placeOf( hero.id ) ).toEqual( { x: 333, y: 444 } );
 
-        // From standard input, the second of three fails.
+        // From standard input, the second of three fails: the first stays
+        // done and the third is not run.
         const bad = await wfd(
             [ 'batch' ],
             JSON.stringify( [
-                { tool: 'board-get', input: {} },
-                { tool: 'board-get', input: { nope: 1 } },
-                { tool: 'board-get', input: {} },
+                {
+                    tool: 'artboard-update',
+                    input: { artboard: hero.id, x: 555, y: 666 },
+                },
+                {
+                    tool: 'artboard-update',
+                    input: { artboard: hero.id, device: 'phone' },
+                },
+                {
+                    tool: 'artboard-update',
+                    input: { artboard: header.id, x: 777, y: 888 },
+                },
             ] )
         );
         expect( bad.code ).toBe( 1 );
@@ -352,11 +391,19 @@ test.describe( 'CLI', () => {
         expect( mixed.ok ).toBe( false );
         expect( mixed.results ).toHaveLength( 3 );
         expect( mixed.results[ 0 ].ok ).toBe( true );
-        expect( mixed.results[ 0 ].result.board.id ).toBe( fixture.boardId );
-        expect( mixed.results[ 1 ].error.code ).toBe( 'invalid_args' );
+        expect( mixed.results[ 0 ].result ).toMatchObject( { x: 555, y: 666 } );
+        expect( mixed.results[ 1 ].error ).toEqual( {
+            code: 'invalid_args',
+            message: 'device must be one of desktop, tablet, mobile.',
+        } );
         expect( mixed.results[ 2 ] ).toEqual( {
             ok: false,
             error: { code: 'skipped', message: 'An earlier call failed.' },
+        } );
+        expect( await placeOf( hero.id ) ).toEqual( { x: 555, y: 666 } );
+        expect( await placeOf( header.id ) ).toEqual( {
+            x: header.x,
+            y: header.y,
         } );
     } );
 
@@ -388,5 +435,91 @@ test.describe( 'CLI', () => {
             ).stdout
         );
         one( ( await wfd( [ 'call', 'board-get', '--nope=1' ] ) ).stdout );
+    } );
+
+    test( 'AC-CLI-08 A block given as --block reaches the board, and no field of any tool is a global parameter of WP-CLI', async ( {
+        page,
+        requestUtils,
+    } ) => {
+        const fixture = await resetFixture( requestUtils );
+        await wfd( [ 'status' ] );
+        const asked = listening( page );
+        await openBoard( page, fixture.boardId );
+        await asked;
+        await boardAtRest( page );
+        const header = fixture.layout.artboards.find(
+            ( a ) => a.kind === 'template-part'
+        )!;
+        const ran = await wfd( [
+            'call',
+            'blocks-get',
+            `--artboard=${ header.id }`,
+            '--block=[0]',
+        ] );
+        expect( ran.code ).toBe( 0 );
+        const { ok, result } = JSON.parse( ran.stdout );
+        expect( ok ).toBe( true );
+        expect( result.blocks ).toHaveLength( 1 );
+        expect( result.blocks[ 0 ] ).toMatchObject( {
+            path: [ 0 ],
+            name: 'core/group',
+        } );
+        const deeper = await wfd( [
+            'call',
+            'blocks-get',
+            `--artboard=${ header.id }`,
+            '--block=[0,0]',
+            '--depth=0',
+        ] );
+        expect( JSON.parse( deeper.stdout ).result.blocks[ 0 ].name ).toBe(
+            'core/paragraph'
+        );
+        // A browser's address and a style's property, as flags.
+        const browser = await wfd( [
+            'call',
+            'artboard-add',
+            '--kind=browser',
+            '--address=/?s=coffee',
+        ] );
+        expect( JSON.parse( browser.stdout ).result ).toMatchObject( {
+            kind: 'browser',
+            address: '/?s=coffee',
+        } );
+        const style = await wfd( [
+            'call',
+            'styles-set',
+            '--kind=style',
+            '--property=color.background',
+            '--value=#fafafa',
+        ] );
+        expect( JSON.parse( style.stdout ) ).toEqual( {
+            ok: true,
+            result: { changed: true },
+        } );
+
+        const globals = [
+            'path',
+            'url',
+            'user',
+            'context',
+            'debug',
+            'quiet',
+            'color',
+            'prompt',
+            'require',
+            'exec',
+            'ssh',
+            'http',
+            'skip-plugins',
+            'skip-themes',
+            'skip-packages',
+        ];
+        for ( const tool of declarations ) {
+            for ( const field of Object.keys( tool.input.properties ) ) {
+                expect( globals, `${ tool.name } ${ field }` ).not.toContain(
+                    field
+                );
+            }
+        }
     } );
 } );

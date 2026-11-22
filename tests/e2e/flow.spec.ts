@@ -360,11 +360,32 @@ test.describe( 'FLOW', () => {
         );
         expect( set ).toMatchObject( { slug: 'accent-1', value: '#123456' } );
         await expect.poll( background ).toBe( 'rgb(18, 52, 86)' );
+        // Every artboard that uses the colour, by what token-show-uses
+        // names.
+        const everyUse = async ( ids: string[] ) => {
+            for ( const id of ids ) {
+                await expect
+                    .poll( () =>
+                        page
+                            .locator( `[data-wfd-artboard="${ id }"] iframe` )
+                            .first()
+                            .evaluate( ( el: HTMLIFrameElement ) => {
+                                const p = el.contentDocument!.querySelector(
+                                    'p.has-accent-1-background-color'
+                                )!;
+                                return el.contentWindow!.getComputedStyle( p )
+                                    .backgroundColor;
+                            } )
+                    )
+                    .toBe( 'rgb(18, 52, 86)' );
+            }
+        };
 
         const uses = await call( 'token-show-uses', `--ref=${ accent.ref }` );
         expect( uses.places ).toBe( 3 );
         expect( uses.artboards ).toHaveLength( 3 );
         expect( uses.artboards ).toContain( hero.id );
+        await everyUse( uses.artboards );
         await expect(
             page.locator( '[data-wfd-banner="usage"]' )
         ).toContainText(

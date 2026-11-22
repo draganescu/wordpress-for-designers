@@ -6,7 +6,13 @@
  * and, only while a History revision is previewed, that revision in place of
  * the user record.
  */
-import { useCallback, useEffect, useMemo, useState } from '@wordpress/element';
+import {
+    useCallback,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+} from '@wordpress/element';
 import { useDispatch, useRegistry, useSelect } from '@wordpress/data';
 import { store as coreStore } from '@wordpress/core-data';
 import { getBlockTypes } from '@wordpress/blocks';
@@ -26,6 +32,9 @@ const EMPTY = { settings: {}, styles: {} };
 // renewed from them (decision D51): a dragged control changes them on every
 // animation frame.
 const SETTLE = 300;
+// How long a wait for a compile may last, in ms: the one safety limit of
+// spec/agent/tools.md, Settling.
+const COMPILE_LIMIT = 10000;
 
 /**
  * @param {Object} serverSettings Block editor settings from the server.
@@ -77,6 +86,21 @@ export function useGlobalStyles( serverSettings ) {
     // from the last: a save, or an edit that writes equal values, gives new
     // objects and the same CSS, and repaints nothing.
     const [ output, setOutput ] = useState( null );
+    // For whoever waits on a change (spec/agent/tools.md, Settling): the
+    // user record each stylesheet was compiled from, and the one whose
+    // stylesheet the mounted artboards have been given.
+    const raw = useRef();
+    raw.current = { settings: recordSettings, styles: recordStyles };
+    const report = useRef( {
+        css: null,
+        compiledFrom: null,
+        handedFrom: null,
+        waiters: new Set(),
+    } ).current;
+    const tellWaiters = useCallback(
+        () => [ ...report.waiters ].forEach( ( waiter ) => waiter() ),
+        [ report ]
+    );
     useEffect( () => {
         if ( ! merged ) {
             return;
@@ -92,6 +116,13 @@ export function useGlobalStyles( serverSettings ) {
                 disableLayoutStyles: !! serverSettings.disableLayoutStyles,
             } );
             const css = JSON.stringify( styles );
+            report.compiledFrom = raw.current;
+            if ( css === report.css ) {
+                // The same stylesheet: there is nothing new to hand over.
+                report.handedFrom = raw.current;
+                tellWaiters();
+            }
+            report.css = css;
             setOutput( ( last ) =>
                 last?.css === css
                     ? last
@@ -100,6 +131,23 @@ export function useGlobalStyles( serverSettings ) {
         } );
         return () => window.cancelAnimationFrame( frame );
     }, [ merged, serverSettings ] );
+
+    // A new stylesheet has been rendered into every mounted artboard by the
+    // time this runs: children are committed before their parent's effects.
+    useEffect( () => {
+        if ( output ) {
+            report.handedFrom = report.compiledFrom;
+            tellWaiters();
+        }
+    }, [ output, report, tellWaiters ] );
+    // While a History revision is previewed a change to the user's styles
+    // compiles nothing.
+    useEffect( () => {
+        if ( preview ) {
+            report.handedFrom = raw.current;
+            tellWaiters();
+        }
+    }, [ preview, recordSettings, recordStyles, report, tellWaiters ] );
 
     // The one settings object given to every preview and editor.
     const editorSettings = useMemo( () => {
@@ -155,10 +203,37 @@ export function useGlobalStyles( serverSettings ) {
             settings: readRecord()?.settings ?? {},
             styles: readRecord()?.styles ?? {},
         } ),
-        // Whether what this render worked from is what the store holds.
-        isCurrent: () =>
-            readRecord()?.settings === recordSettings &&
-            readRecord()?.styles === recordStyles,
+        // The theme's and the user's styles together, as the store holds
+        // them now.
+        readMerged: () =>
+            mergeGlobalStyles( base ?? EMPTY, {
+                settings: readRecord()?.settings ?? {},
+                styles: readRecord()?.styles ?? {},
+            } ),
+        // Resolves once the stylesheet compiled from the styles the store
+        // holds now has been given to the mounted artboards; rejects when
+        // that takes longer than the safety limit.
+        whenCompiled: () =>
+            new Promise( ( resolve, reject ) => {
+                const isDone = () =>
+                    !! report.handedFrom &&
+                    report.handedFrom.settings === readRecord()?.settings &&
+                    report.handedFrom.styles === readRecord()?.styles;
+                let timer = null;
+                const check = () => {
+                    if ( isDone() ) {
+                        window.clearTimeout( timer );
+                        report.waiters.delete( check );
+                        resolve();
+                    }
+                };
+                timer = window.setTimeout( () => {
+                    report.waiters.delete( check );
+                    reject( new Error( 'The styles did not compile.' ) );
+                }, COMPILE_LIMIT );
+                report.waiters.add( check );
+                check();
+            } ),
         base: base ?? EMPTY,
         user,
         merged: merged ?? EMPTY,

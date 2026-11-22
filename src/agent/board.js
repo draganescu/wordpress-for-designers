@@ -57,7 +57,7 @@ export function describeArtboard( artboard, board, changed ) {
         name: artboard.name,
     };
     if ( isBrowser ) {
-        out.path = artboard.path;
+        out.address = artboard.path;
     } else {
         out.entityId = artboard.entityId;
     }

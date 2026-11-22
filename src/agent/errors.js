@@ -38,6 +38,10 @@ export const notAgents = ( name ) =>
         `${ name } also has changes made by the designer.`
     );
 
+export const notReady = ( message ) => new ToolError( 'not_ready', message );
+
+export const STYLES_NOT_READY = 'The styles did not finish updating.';
+
 export const unavailable = () =>
     new ToolError( 'unavailable', 'The board cannot be used right now.' );
 

@@ -9,7 +9,14 @@ import {
     boardAtRest,
     artboardOf,
 } from './utils';
-import { wfd, php, callTool, isRelay, listening } from './agent-utils';
+import {
+    wfd,
+    php,
+    callTool,
+    isRelay,
+    isResult,
+    listening,
+} from './agent-utils';
 
 const chip = ( page: Page ) => page.locator( '[data-wfd-agent]' );
 const review = ( page: Page ) => page.locator( '[data-wfd-control="H9"]' );
@@ -53,7 +60,7 @@ async function threeAuthors( page: Page, requestUtils: any ) {
     } );
     await callTool( page, 'block-update', {
         artboard: header.id,
-        path: [ 0, 0 ],
+        block: [ 0, 0 ],
         attributes: { content: 'Changed by the agent' },
     } );
     await callTool( page, 'edit-leave' );
@@ -133,59 +140,115 @@ test.describe( 'MARK', () => {
         await expect( chip( page ) ).toHaveCount( 0, { timeout: 15000 } );
     } );
 
-    test( 'AC-MARK-02 The artboard a running call names ends in "· Agent working" with a dashed outline, for one second after, and no other does', async ( {
+    test( 'AC-MARK-02 The artboard a call made with wp wfd names ends in "· Agent working" with a dashed outline while the call runs and for one second after, and no other does', async ( {
         page,
         requestUtils,
     } ) => {
         const fixture = await resetFixture( requestUtils );
+        await wfd( [ 'status' ] );
+        const asked = listening( page );
         await openBoard( page, fixture.boardId );
+        await asked;
         await boardAtRest( page );
-        const hero = artboardOf( fixture, 'pattern' );
-        await expect( label( page, hero.id ) ).toHaveText(
-            'Hero · Pattern · Desktop'
+        const header = artboardOf( fixture, 'template-part' );
+        await expect( label( page, header.id ) ).toHaveText(
+            'Header · Template part · Desktop'
         );
-        const started = Date.now();
-        const moved = await callTool( page, 'artboard-update', {
-            artboard: hero.id,
-            x: hero.x + 10,
-            y: hero.y,
-        } );
-        expect( moved.ok ).toBe( true );
-        const working = page.locator( '[data-wfd-agent-working="true"]' );
-        await expect( working ).toHaveCount( 1 );
-        await expect( working ).toHaveAttribute( 'data-wfd-artboard', hero.id );
-        await expect( label( page, hero.id ) ).toHaveText(
-            'Hero · Pattern · Desktop · Agent working'
-        );
-        expect(
-            await frame( page, hero.id ).evaluate( ( el ) => {
-                const style = window.getComputedStyle( el, '::after' );
-                return `${ style.outlineStyle } ${ style.pointerEvents }`;
-            } )
-        ).toBe( 'dashed none' );
-        // It is not selected by it.
-        await expect( frame( page, hero.id ) ).not.toHaveClass( /is-selected/ );
-        // No other artboard has either.
-        expect(
-            await page
-                .locator( '.wfd-artboard__label' )
-                .filter( { hasText: 'Agent working' } )
-                .count()
-        ).toBe( 1 );
 
-        await expect( working ).toHaveCount( 0 );
-        expect( Date.now() - started ).toBeGreaterThanOrEqual( 900 );
-        await expect( label( page, hero.id ) ).toHaveText(
-            'Hero · Pattern · Desktop'
+        // Every time the mark goes on or off an artboard, with what the
+        // artboard shows at that moment.
+        await page.evaluate( () => {
+            const seen: any[] = [];
+            ( window as any ).wfdMarks = seen;
+            const on = new Set< string >();
+            new MutationObserver( () => {
+                document
+                    .querySelectorAll( '[data-wfd-artboard]' )
+                    .forEach( ( el ) => {
+                        const id = el.getAttribute( 'data-wfd-artboard' )!;
+                        const isOn =
+                            el.getAttribute( 'data-wfd-agent-working' ) ===
+                            'true';
+                        if ( isOn === on.has( id ) ) {
+                            return;
+                        }
+                        if ( isOn ) {
+                            on.add( id );
+                        } else {
+                            on.delete( id );
+                        }
+                        seen.push( {
+                            id,
+                            isOn,
+                            at: Date.now(),
+                            label: el.querySelector( '.wfd-artboard__label' )!
+                                .textContent,
+                            outline: window.getComputedStyle( el, '::after' )
+                                .outlineStyle,
+                            pointer: window.getComputedStyle( el, '::after' )
+                                .pointerEvents,
+                            chip:
+                                document
+                                    .querySelector( '[data-wfd-agent]' )
+                                    ?.getAttribute( 'data-wfd-agent' ) ?? null,
+                        } );
+                    } );
+            } ).observe( document.body, {
+                subtree: true,
+                attributes: true,
+                attributeFilter: [ 'data-wfd-agent-working' ],
+            } );
+        } );
+        let answeredAt = 0;
+        page.on( 'request', ( request ) => {
+            if ( isResult( request.url() ) ) {
+                answeredAt = Date.now();
+            }
+        } );
+
+        // A call that takes a moment: it puts the artboard in edit.
+        const ran = await wfd( [
+            'call',
+            'blocks-get',
+            `--artboard=${ header.id }`,
+        ] );
+        expect( ran.code ).toBe( 0 );
+        expect( answeredAt ).toBeGreaterThan( 0 );
+        await expect
+            .poll( () =>
+                page.evaluate( () => ( window as any ).wfdMarks.length )
+            )
+            .toBe( 2 );
+        const [ shown, gone ] = await page.evaluate(
+            () => ( window as any ).wfdMarks
         );
+        // Only the artboard the call names, and during the call.
+        expect( shown ).toMatchObject( {
+            id: header.id,
+            isOn: true,
+            outline: 'dashed',
+            pointer: 'none',
+            chip: 'working',
+        } );
+        expect( shown.label ).toContain( 'Header · Template part' );
+        expect( shown.label ).toContain( '· Agent working' );
+        expect( shown.at ).toBeLessThanOrEqual( answeredAt );
+        // For one second after it ends, and not much longer.
+        expect( gone ).toMatchObject( { id: header.id, isOn: false } );
+        expect( gone.at - answeredAt ).toBeGreaterThanOrEqual( 900 );
+        expect( gone.at - answeredAt ).toBeLessThan( 2500 );
+        expect( gone.label ).not.toContain( 'Agent working' );
+        await expect(
+            page.locator( '[data-wfd-agent-working="true"]' )
+        ).toHaveCount( 0 );
         expect(
-            await frame( page, hero.id ).evaluate(
+            await frame( page, header.id ).evaluate(
                 ( el ) => window.getComputedStyle( el, '::after' ).content
             )
         ).toBe( 'none' );
     } );
 
-    test( 'AC-MARK-03 After the agent changes a block every artboard that shows the item reads "· Changed by agent"; the designer\'s typing gives none; it goes when the item is discarded', async ( {
+    test( 'AC-MARK-03 After the agent changes a block every artboard that shows the item reads "· Changed by agent"; the designer\'s typing gives none; it goes when the item is discarded and when it is saved', async ( {
         page,
         requestUtils,
     } ) => {
@@ -199,7 +262,7 @@ test.describe( 'MARK', () => {
 
         const updated = await callTool( page, 'block-update', {
             artboard: header.id,
-            path: [ 0, 0 ],
+            block: [ 0, 0 ],
             attributes: { content: 'Changed by the agent' },
         } );
         expect( updated.ok ).toBe( true );
@@ -256,6 +319,39 @@ test.describe( 'MARK', () => {
         await expect( label( page, header.id ) ).toHaveText(
             'Header · Template part · Desktop'
         );
+
+        // Saved: the label goes too.
+        expect(
+            (
+                await callTool( page, 'block-update', {
+                    artboard: header.id,
+                    block: [ 0, 0 ],
+                    attributes: { content: 'Changed again by the agent' },
+                } )
+            ).ok
+        ).toBe( true );
+        await callTool( page, 'edit-leave' );
+        await expect( label( page, mobile.id ) ).toHaveText(
+            'Header · Template part · Mobile · Changed by agent'
+        );
+        await expect( changed ).toHaveCount( 2 );
+        await review( page ).click();
+        await page.getByRole( 'button', { name: 'Save 2 changes' } ).click();
+        await expect( page.locator( '.wfd-review__item' ) ).toHaveCount( 0 );
+        await page.keyboard.press( 'Escape' );
+        await expect( page.locator( '.wfd-review' ) ).toHaveCount( 0 );
+        await expect( changed ).toHaveCount( 0 );
+        await expect( label( page, mobile.id ) ).toHaveText(
+            'Header · Template part · Mobile'
+        );
+        await expect( label( page, header.id ) ).toHaveText(
+            'Header · Template part · Desktop'
+        );
+        expect(
+            ( await callTool( page, 'board-get' ) ).result.artboards.filter(
+                ( a: any ) => a.changed
+            )
+        ).toEqual( [] );
     } );
 
     test( 'AC-MARK-04 In Review an item only the agent changed has the badge "Agent", one both changed "Agent and you", and one only the designer changed none', async ( {
@@ -389,14 +485,14 @@ test.describe( 'MARK', () => {
         expect(
             await callTool( page, 'block-update', {
                 artboard: header.id,
-                path: 'first',
+                block: 'first',
                 attributes: { content: 'x' },
             } )
         ).toEqual( {
             ok: false,
             error: {
                 code: 'invalid_args',
-                message: 'path must be an array.',
+                message: 'block must be an array.',
             },
         } );
         await expect( review( page ) ).toBeDisabled();
@@ -404,7 +500,7 @@ test.describe( 'MARK', () => {
         // G2 while it runs and after, then G3.
         const updated = await callTool( page, 'block-update', {
             artboard: header.id,
-            path: [ 0, 0 ],
+            block: [ 0, 0 ],
             attributes: { content: 'From the page' },
         } );
         expect( updated.ok ).toBe( true );
@@ -498,7 +594,7 @@ test.describe( 'MARK', () => {
         // The agent works on the artboard in edit: G1, G2 and G3 show.
         const updated = await callTool( page, 'block-update', {
             artboard: header.id,
-            path: [ 0, 0 ],
+            block: [ 0, 0 ],
             attributes: { content: 'Same length text' },
         } );
         expect( updated.ok ).toBe( true );
@@ -527,5 +623,102 @@ test.describe( 'MARK', () => {
                 .locator( 'body' )
                 .innerText()
         ).not.toContain( 'agent' );
+    } );
+
+    test( "AC-MARK-08 Typing right after a read is the designer's; typing within a second after block-update makes the item both; a block that sets its own attributes after blocks-insert leaves it the agent's", async ( {
+        page,
+        requestUtils,
+    } ) => {
+        const fixture = await resetFixture( requestUtils );
+        await openBoard( page, fixture.boardId );
+        await boardAtRest( page );
+        const header = artboardOf( fixture, 'template-part' );
+        const hero = artboardOf( fixture, 'pattern' );
+        const footer = artboardOf( fixture, 'template-part', 'desktop', 1 );
+        const authors = async () =>
+            Object.fromEntries(
+                ( await callTool( page, 'review-list' ) ).result.items.map(
+                    ( item: any ) => [ item.name, item.author ]
+                )
+            );
+
+        // Right after blocks-get, and after artboard-edit: the designer's.
+        expect(
+            ( await callTool( page, 'blocks-get', { artboard: header.id } ) ).ok
+        ).toBe( true );
+        await editorFrame( page, header.id ).locator( 'p' ).click();
+        await page.keyboard.type( 'x' );
+        await expect( review( page ) ).toHaveText( 'Review 1 change' );
+        expect( await authors() ).toEqual( { Header: 'you' } );
+
+        expect(
+            ( await callTool( page, 'artboard-edit', { artboard: hero.id } ) )
+                .ok
+        ).toBe( true );
+        await editorFrame( page, hero.id ).locator( 'h2' ).click();
+        await page.keyboard.type( 'y' );
+        await expect( review( page ) ).toHaveText( 'Review 2 changes' );
+        expect( await authors() ).toEqual( { Header: 'you', Hero: 'you' } );
+
+        // Within a second after block-update on it: both.
+        const footerBlocks = (
+            await callTool( page, 'blocks-get', {
+                artboard: footer.id,
+                depth: 10,
+            } )
+        ).result.blocks;
+        const all: any[] = [];
+        const walk = ( blocks: any[] ) =>
+            blocks.forEach( ( block ) => {
+                all.push( block );
+                walk( block.inner ?? [] );
+            } );
+        walk( footerBlocks );
+        const paragraph = all.find(
+            ( block ) => block.name === 'core/paragraph' && block.text
+        );
+        const typedAt = await ( async () => {
+            const updated = await callTool( page, 'block-update', {
+                artboard: paragraph.ref,
+                attributes: { content: 'Changed by the agent' },
+            } );
+            expect( updated.ok ).toBe( true );
+            const done = Date.now();
+            await editorFrame( page, footer.id )
+                .locator( 'p' )
+                .filter( { hasText: 'Changed by the agent' } )
+                .click();
+            await page.keyboard.type( 'z' );
+            return Date.now() - done;
+        } )();
+        expect( typedAt ).toBeLessThan( 1000 );
+        await expect( review( page ) ).toHaveText( 'Review 3 changes' );
+        expect( ( await authors() ).Footer ).toBe( 'both' );
+
+        // A block that sets its own attributes just after it is inserted,
+        // with no input from the designer: the agent's.
+        const sign = fixture.layout.artboards.find(
+            ( a ) => a.entityId === fixture.patterns.sign
+        )!;
+        const inserted = await callTool( page, 'blocks-insert', {
+            artboard: sign.id,
+            markup: '<!-- wp:test/self-setting /-->',
+        } );
+        expect( inserted.ok ).toBe( true );
+        const stamp = async () =>
+            (
+                await callTool( page, 'blocks-get', {
+                    artboard: sign.id,
+                    block: inserted.result.inserted[ 0 ],
+                } )
+            ).result.blocks[ 0 ].attributes.stamp;
+        // No tool is called and nothing is pressed while it does.
+        await page.waitForTimeout( 1600 );
+        expect( await stamp() ).toBe( 'set' );
+        expect( ( await authors() )[ 'Sign-off' ] ).toBe( 'agent' );
+        await expect( frame( page, sign.id ) ).toHaveAttribute(
+            'data-wfd-agent-changed',
+            'true'
+        );
     } );
 } );

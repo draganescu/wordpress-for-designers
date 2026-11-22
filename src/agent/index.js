@@ -40,18 +40,6 @@ if ( window.wfdTest ) {
     };
 }
 
-// The tools that put an artboard in edit, where blocks go on changing for a
-// moment after the tool is done.
-const IN_EDITOR = [
-    'artboard-new',
-    'artboard-edit',
-    'blocks-get',
-    'block-update',
-    'blocks-insert',
-    'blocks-remove',
-    'blocks-move',
-];
-
 // From the moment the surface is loaded it records who changes what.
 startAuthorship();
 
@@ -91,15 +79,16 @@ async function run( name, input ) {
         if ( ! tool ) {
             throw unknownTool( name );
         }
+        const fn = functions[ name ];
+        // While the designer cannot use the board either, no tool can, and
+        // its input is not looked at (spec/agent/tools.md, Rules for every
+        // tool).
+        if ( ! fn || actionsSeam.current.isBlocked() ) {
+            throw unavailable();
+        }
         const wrong = checkInput( input, tool );
         if ( wrong ) {
             throw invalidArgs( wrong );
-        }
-        const fn = functions[ name ];
-        // While the designer cannot use the board either, no tool can
-        // (spec/agent/tools.md, Rules for every tool).
-        if ( ! fn || actionsSeam.current.isBlocked() ) {
-            throw unavailable();
         }
         // What changes from here until the call ends is the agent's
         // (spec/agent/surface.md, Authorship), and the artboards the call
@@ -116,7 +105,7 @@ async function run( name, input ) {
                 result: JSON.parse( JSON.stringify( result ) ),
             };
         } finally {
-            endCall( IN_EDITOR.includes( name ) );
+            endCall();
             workEnded( named );
         }
     } catch ( error ) {

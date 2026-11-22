@@ -324,6 +324,19 @@ function wfd_test_seed_blocks( $board ) {
     );
 }
 
+// A block that sets one of its own attributes a moment after it is first
+// drawn, as some blocks do (AC-MARK-08). It is not offered in the inserter.
+add_action(
+    'enqueue_block_editor_assets',
+    function () {
+        wp_add_inline_script(
+            'wp-blocks',
+            "wp.blocks.registerBlockType( 'test/self-setting', { apiVersion: 3, title: 'Self setting', category: 'text', supports: { inserter: false }, attributes: { stamp: { type: 'string', default: '' } }, edit: function ( props ) { wp.element.useEffect( function () { if ( props.attributes.stamp ) { return; } var timer = setTimeout( function () { props.setAttributes( { stamp: 'set' } ); }, 400 ); return function () { clearTimeout( timer ); }; }, [] ); return wp.element.createElement( 'p', wp.blockEditor.useBlockProps(), 'Self setting ' + props.attributes.stamp ); }, save: function () { return null; } } );",
+            'after'
+        );
+    }
+);
+
 // A style sheet WordPress loads into the canvas itself (AC-DEV-05).
 add_action(
     'enqueue_block_assets',

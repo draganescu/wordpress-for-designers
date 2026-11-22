@@ -155,10 +155,10 @@ What to do differently:
 ### The agent surface
 
 - **Seam functions must read the stores when they are called.** `src/shell/app.js` fills the seams on every render, so a closure over render-time values is one render old. Two tool calls in a batch run closer together than React renders. Where it matters the seam reads the registry (`readArtboards( registry.select )`), or waits for the render (`whenStylesCurrent`, `whenListed`).
-- **A block editor's inner blocks arrive late.** After an artboard enters edit, its template parts, synced patterns and page content fill in their blocks a moment after the editor mounts. `editorOf` in `src/agent/blocks.js` waits until the number of blocks has stopped changing.
+- **A block editor's inner blocks arrive late, with nothing resolving.** After an artboard enters edit, its template parts, synced patterns and page content fill in their blocks a moment after their records have resolved; for a moment the editor also holds a Query Loop post's content blocks, then lets them go; and until a block is drawn the editor says nothing may be inserted into it. `putInEdit` in `src/agent/edit.js` waits on what the stores and the canvas say (`src/agent/settle.js`), never on a pause (D82, OQ-50).
 - **`getBlocks()` gives a controlling block an empty `innerBlocks`.** Read the tree block by block with `getBlocks( clientId )` (D79).
 - **The editor's block appender has `data-block` and no `data-type`.** It is not a block; `documentBlocks` leaves it out with the preview copies.
-- **WP-CLI takes `--path` for itself** before any command runs (OQ-44). No tool field may be named after a global WP-CLI parameter if it is to be given as a flag.
+- **WP-CLI takes `--path` for itself** before any command runs. No tool field is named after a global WP-CLI parameter (D80); AC-CLI-08 checks the declarations for it.
 - **An option read twice in one WP-CLI process is read from a cache.** The relay reads its records with `$wpdb` (`wfd_agent_read`), and deletes the cached value before it writes.
 - **Decoding a call record as arrays turns `{}` into `[]`.** Call records and the body of the result route are decoded as objects.
 - **Removing the last block of an editor leaves an empty paragraph.** WordPress does that; a test that expects no block is wrong.

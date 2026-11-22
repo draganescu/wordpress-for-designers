@@ -86,13 +86,14 @@ test.describe( 'AGENT', () => {
         expect( await countFor( 3000 ) ).toBeGreaterThanOrEqual( 2 );
 
         // The session ends: every 10 seconds again.
-        await php( 'update_option( "wfd_agent_seen", time() - 500, false );' );
-        await page.waitForResponse( async ( response ) => {
+        const ended = page.waitForResponse( async ( response ) => {
             if ( ! isPoll( response.url() ) ) {
                 return false;
             }
             return ( await response.json() ).active === false;
         } );
+        await php( 'update_option( "wfd_agent_seen", time() - 500, false );' );
+        await ended;
         const idle = await countFor( 12000 );
         expect( idle ).toBeGreaterThanOrEqual( 1 );
         expect( idle ).toBeLessThanOrEqual( 2 );

@@ -8,9 +8,11 @@ import { invalidArgs, notAllowed } from '../errors';
 export default async function blocksRemove( input ) {
     const found = findArtboard( input.artboard );
     const { artboard } = found;
-    const paths = input.paths ?? [ pathFrom( undefined, found.path, 'paths' ) ];
+    const paths = input.blocks ?? [
+        pathFrom( undefined, found.path, 'blocks' ),
+    ];
     if ( paths.some( ( path ) => ! path.length ) ) {
-        throw invalidArgs( 'paths must name blocks.' );
+        throw invalidArgs( 'blocks must name blocks.' );
     }
     const { select, dispatch } = await editorOf( artboard );
     // The blocks, as their paths are before the call.

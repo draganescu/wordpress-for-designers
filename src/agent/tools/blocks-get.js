@@ -7,7 +7,7 @@ import { clientIdAt, describeBlock, editorOf } from '../blocks';
 export default async function blocksGet( input ) {
     const found = findArtboard( input.artboard );
     const { artboard } = found;
-    const path = input.path ?? found.path;
+    const path = input.block ?? found.path;
     const depth = input.depth ?? 2;
     const { select } = await editorOf( artboard );
     if ( path && path.length ) {

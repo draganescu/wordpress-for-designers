@@ -15,9 +15,9 @@ import { invalidArgs, notAllowed } from '../errors';
 export default async function blockUpdate( input ) {
     const found = findArtboard( input.artboard );
     const { artboard } = found;
-    const path = pathFrom( input.path, found.path );
+    const path = pathFrom( input.block, found.path );
     if ( ! path.length ) {
-        throw invalidArgs( 'path must name a block.' );
+        throw invalidArgs( 'block must name a block.' );
     }
     if ( ! Object.keys( input.attributes ).length ) {
         throw invalidArgs( 'attributes must have at least one key.' );

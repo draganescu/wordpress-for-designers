@@ -337,13 +337,13 @@ test.describe( 'TOOL', () => {
         // A browser at an address.
         const browser = await callTool( page, 'artboard-add', {
             kind: 'browser',
-            path: '/?s=hello',
+            address: '/?s=hello',
         } );
         expect( browser.ok ).toBe( true );
         expect( browser.result ).toMatchObject( {
             kind: 'browser',
             name: '/?s=hello',
-            path: '/?s=hello',
+            address: '/?s=hello',
             device: 'desktop',
             height: 900,
         } );
@@ -750,7 +750,7 @@ test.describe( 'TOOL', () => {
         );
     } );
 
-    test( 'AC-TOOL-23 With the Review drawer open, and in a narrow window, every tool fails with unavailable and changes nothing', async ( {
+    test( 'AC-TOOL-23 With the Review drawer open, and in a narrow window, every tool fails with unavailable and changes nothing, also when its input is wrong', async ( {
         page,
         requestUtils,
     } ) => {
@@ -774,20 +774,20 @@ test.describe( 'TOOL', () => {
             'blocks-get': { artboard: header.id },
             'block-update': {
                 artboard: header.id,
-                path: [ 0, 0 ],
+                block: [ 0, 0 ],
                 attributes: { content: 'Nope' },
             },
             'blocks-insert': {
                 artboard: header.id,
                 markup: '<!-- wp:paragraph --><p>Nope</p><!-- /wp:paragraph -->',
             },
-            'blocks-remove': { artboard: header.id, paths: [ [ 0, 0 ] ] },
-            'blocks-move': { artboard: header.id, path: [ 0, 0 ], index: 0 },
+            'blocks-remove': { artboard: header.id, blocks: [ [ 0, 0 ] ] },
+            'blocks-move': { artboard: header.id, block: [ 0, 0 ], index: 0 },
             'styles-get': {},
             'token-set': { kind: 'color', slug: 'base', value: '#123456' },
             'styles-set': {
                 kind: 'style',
-                path: 'color.background',
+                property: 'color.background',
                 value: '#123456',
             },
             'styles-set-variation': { name: 'Default' },
@@ -820,6 +820,19 @@ test.describe( 'TOOL', () => {
             } );
         const allUnavailable = async () => {
             const before = await state();
+            // Also when the input is wrong: it is not looked at.
+            for ( const name of Object.keys( tools ) ) {
+                expect(
+                    await callTool( page, name, { nope: 1 } ),
+                    `${ name } with a wrong input`
+                ).toEqual( {
+                    ok: false,
+                    error: {
+                        code: 'unavailable',
+                        message: 'The board cannot be used right now.',
+                    },
+                } );
+            }
             for ( const [ name, input ] of Object.entries( tools ) ) {
                 expect( await callTool( page, name, input ), name ).toEqual( {
                     ok: false,
@@ -897,7 +910,7 @@ test.describe( 'TOOL', () => {
 
         const updated = await callTool( page, 'block-update', {
             artboard: hero.id,
-            path: [ 0 ],
+            block: [ 0 ],
             attributes: { content: 'Changed in the pattern' },
         } );
         expect( updated.ok ).toBe( true );
@@ -924,7 +937,7 @@ test.describe( 'TOOL', () => {
         // A browser has no blocks.
         const browser = await callTool( page, 'artboard-add', {
             kind: 'browser',
-            path: '/',
+            address: '/',
         } );
         const refused = await callTool( page, 'blocks-get', {
             artboard: browser.result.id,
@@ -986,7 +999,7 @@ test.describe( 'TOOL', () => {
         // One block, by path.
         const one = await callTool( page, 'blocks-get', {
             artboard: header.id,
-            path: [ 0, 0 ],
+            block: [ 0, 0 ],
         } );
         expect( one.result.blocks ).toHaveLength( 1 );
         expect( one.result.blocks[ 0 ].path ).toEqual( [ 0, 0 ] );
@@ -994,7 +1007,7 @@ test.describe( 'TOOL', () => {
             (
                 await callTool( page, 'blocks-get', {
                     artboard: header.id,
-                    path: [ 3 ],
+                    block: [ 3 ],
                 } )
             ).error
         ).toEqual( { code: 'not_found', message: 'Block [3] was not found.' } );
@@ -1017,6 +1030,30 @@ test.describe( 'TOOL', () => {
         walk( page10.result.blocks );
         const part = flat.find( ( b ) => b.name === 'core/template-part' );
         expect( part.editable ).toBe( false );
+        // Every block of the template is locked: all but the page's own
+        // blocks and the blocks that show the page (its title, its
+        // featured image and its Content).
+        const content = flat.find( ( b ) => b.name === 'core/post-content' );
+        const isInContent = ( b: any ) =>
+            b.path.length > content.path.length &&
+            content.path.every(
+                ( index: number, depth: number ) => b.path[ depth ] === index
+            );
+        const ofThePage = [
+            'core/post-content',
+            'core/post-title',
+            'core/post-featured-image',
+        ];
+        const template = flat.filter(
+            ( b ) => ! isInContent( b ) && ! ofThePage.includes( b.name )
+        );
+        expect( template.length ).toBeGreaterThan( 20 );
+        expect(
+            template.filter( ( b ) => b.editable ).map( ( b ) => b.name )
+        ).toEqual( [] );
+        expect( flat.filter( isInContent ).every( ( b ) => b.editable ) ).toBe(
+            true
+        );
         const heading = flat.find(
             ( b ) => b.name === 'core/heading' && b.text === 'About'
         );
@@ -1055,7 +1092,7 @@ test.describe( 'TOOL', () => {
 
         const updated = await callTool( page, 'block-update', {
             artboard: header.id,
-            path: [ 0, 0 ],
+            block: [ 0, 0 ],
             attributes: { content: 'Changed by a tool' },
         } );
         expect( updated.ok ).toBe( true );
@@ -1148,24 +1185,90 @@ test.describe( 'TOOL', () => {
         } );
         expect( last.result ).toEqual( { inserted: [ [ 1 ] ] } );
 
-        // A registered pattern, by name.
-        const pattern = await page.evaluate( async () => {
+        // A pattern of the active theme, by name: the inserted blocks are
+        // that pattern's.
+        const patterns = await page.evaluate( async () => {
             const { resolveSelect } = ( window as any ).wp.data;
             const all = await resolveSelect( 'core' ).getBlockPatterns();
-            return all.find(
+            const themed = all.find(
                 ( item: any ) =>
                     ( ! item.source || item.source === 'theme' ) &&
                     item.inserter !== false
-            ).name;
+            );
+            const other = all.find(
+                ( item: any ) => item.source && item.source !== 'theme'
+            );
+            return {
+                name: themed.name,
+                blocks: ( window as any ).wp.blocks
+                    .parse( themed.content )
+                    .map( ( block: any ) => block.name ),
+                unlisted: other?.name ?? null,
+            };
         } );
+        const pattern = patterns.name;
         const before = ( await names( header.id ) ).length;
         const byName = await callTool( page, 'blocks-insert', {
             artboard: header.id,
             pattern,
         } );
         expect( byName.ok ).toBe( true );
-        expect( byName.result.inserted[ 0 ] ).toEqual( [ 2 ] );
+        expect( byName.result.inserted ).toEqual(
+            patterns.blocks.map( ( name: string, index: number ) => [
+                2 + index,
+            ] )
+        );
+        const topNames = async () =>
+            (
+                await callTool( page, 'blocks-get', {
+                    artboard: header.id,
+                    depth: 0,
+                } )
+            ).result.blocks.map( ( block: any ) => block.name );
+        expect(
+            ( await topNames() ).slice( 2, 2 + patterns.blocks.length )
+        ).toEqual( patterns.blocks );
         expect( ( await names( header.id ) ).length ).toBeGreaterThan( before );
+
+        // A pattern of the site, by its id: a synced pattern goes in by
+        // reference, as its inserter row puts it.
+        const bySite = await callTool( page, 'blocks-insert', {
+            artboard: header.id,
+            index: 0,
+            pattern: String( fixture.patterns.sign ),
+        } );
+        expect( bySite.result ).toEqual( { inserted: [ [ 0 ] ] } );
+        const synced = (
+            await callTool( page, 'blocks-get', {
+                artboard: header.id,
+                block: [ 0 ],
+            } )
+        ).result.blocks[ 0 ];
+        expect( synced.name ).toBe( 'core/block' );
+        expect( synced.attributes.ref ).toBe( fixture.patterns.sign );
+        expect( synced.text ).toBe( 'Until Sunday.' );
+        expect(
+            (
+                await callTool( page, 'blocks-remove', {
+                    artboard: header.id,
+                    blocks: [ [ 0 ] ],
+                } )
+            ).ok
+        ).toBe( true );
+
+        // A pattern the inserter does not list: one WordPress registers.
+        expect( patterns.unlisted ).toBeTruthy();
+        expect(
+            (
+                await callTool( page, 'blocks-insert', {
+                    artboard: header.id,
+                    pattern: patterns.unlisted,
+                } )
+            ).error
+        ).toEqual( {
+            code: 'not_found',
+            message: `Pattern ${ patterns.unlisted } was not found.`,
+        } );
         expect(
             (
                 await callTool( page, 'blocks-insert', {
@@ -1225,7 +1328,7 @@ test.describe( 'TOOL', () => {
         expect(
             await callTool( page, 'block-update', {
                 artboard: about.id,
-                path: locked.path,
+                block: locked.path,
                 attributes: { className: 'nope' },
             } )
         ).toEqual( {
@@ -1265,7 +1368,7 @@ test.describe( 'TOOL', () => {
         expect( await top( hero.id ) ).toHaveLength( 3 );
         const removed = await callTool( page, 'blocks-remove', {
             artboard: hero.id,
-            paths: [ [ 0 ], [ 2 ] ],
+            blocks: [ [ 0 ], [ 2 ] ],
         } );
         expect( removed ).toEqual( { ok: true, result: { removed: 2 } } );
         expect( await top( hero.id ) ).toEqual( [ 'core/paragraph' ] );
@@ -1314,7 +1417,7 @@ test.describe( 'TOOL', () => {
         const locked = flat.find( ( b ) => ! b.editable );
         const refused = await callTool( page, 'blocks-remove', {
             artboard: about.id,
-            paths: [ own.path, locked.path ],
+            blocks: [ own.path, locked.path ],
         } );
         expect( refused ).toEqual( {
             ok: false,
@@ -1329,7 +1432,7 @@ test.describe( 'TOOL', () => {
             (
                 await callTool( page, 'blocks-remove', {
                     artboard: about.id,
-                    paths: [ own.path ],
+                    blocks: [ own.path ],
                 } )
             ).result
         ).toEqual( { removed: 1 } );
@@ -1374,7 +1477,7 @@ test.describe( 'TOOL', () => {
         // Into the group, before its paragraph.
         const into = await callTool( page, 'blocks-move', {
             artboard: header.id,
-            path: [ 1 ],
+            block: [ 1 ],
             parent: [ 0 ],
             index: 0,
         } );
@@ -1401,7 +1504,7 @@ test.describe( 'TOOL', () => {
         // Back to the top level, first.
         const out = await callTool( page, 'blocks-move', {
             artboard: header.id,
-            path: [ 0, 1 ],
+            block: [ 0, 1 ],
             index: 0,
         } );
         expect( out.result ).toEqual( { path: [ 0 ] } );
@@ -1415,7 +1518,7 @@ test.describe( 'TOOL', () => {
             (
                 await callTool( page, 'blocks-move', {
                     artboard: header.id,
-                    path: [ 1 ],
+                    block: [ 1 ],
                     parent: [ 1, 0 ],
                     index: 0,
                 } )
@@ -1425,7 +1528,7 @@ test.describe( 'TOOL', () => {
             (
                 await callTool( page, 'blocks-move', {
                     artboard: header.id,
-                    path: [ 0 ],
+                    block: [ 0 ],
                     index: 5,
                 } )
             ).error
@@ -1437,7 +1540,7 @@ test.describe( 'TOOL', () => {
             (
                 await callTool( page, 'blocks-move', {
                     artboard: header.id,
-                    path: [ 7 ],
+                    block: [ 7 ],
                     index: 0,
                 } )
             ).error.code
@@ -1518,6 +1621,37 @@ test.describe( 'TOOL', () => {
             );
             snapshots[ artboard.id ] = await documentTree( artboard.id );
         }
+        // What can be pointed at in each frozen copy.
+        const frozenTargets: Record< string, string[] > = {};
+        for ( const artboard of artboards ) {
+            frozenTargets[ artboard.id ] = await blockRefs( artboard.id );
+        }
+        // The seeded template's Query Loop and Comment Template draw
+        // copies of their blocks, in the frozen copy as in a Preview.
+        const copiesIn = ( id: string ) =>
+            page
+                .locator( `[data-wfd-artboard="${ id }"] iframe` )
+                .last()
+                .evaluate( ( el: HTMLIFrameElement ) => {
+                    const doc = el.contentDocument!;
+                    const mark = '.block-editor-block-preview__live-content';
+                    return {
+                        posts: doc.querySelectorAll(
+                            `li.wp-block-post${ mark }`
+                        ).length,
+                        blocks: [
+                            ...doc.querySelectorAll( '[data-block]' ),
+                        ].filter( ( block ) =>
+                            block.parentElement?.closest( mark )
+                        ).length,
+                    };
+                } );
+        const seededTemplate = artboards[ 9 ].id;
+        const frozenCopies = await copiesIn( seededTemplate );
+        // Three posts: the one in edit has a hidden copy beside its blocks.
+        expect( frozenCopies.posts ).toBe( 3 );
+        expect( frozenCopies.blocks ).toBeGreaterThan( 20 );
+        expect( frozenTargets[ seededTemplate ].length ).toBeGreaterThan( 5 );
 
         let copies = 0;
         for ( const artboard of artboards ) {
@@ -1560,10 +1694,22 @@ test.describe( 'TOOL', () => {
                 await documentTree( artboard.id ),
                 `${ artboard.entityId } live`
             ).toEqual( tree );
-            // Every block target is a block of the tree.
+            // Every block target is a block of the tree, in the Preview and
+            // in the frozen copy: a preview copy has no target.
             expect( targets.length ).toBeGreaterThan( 0 );
-            for ( const ref of targets ) {
+            for ( const ref of [
+                ...targets,
+                ...frozenTargets[ artboard.id ],
+            ] ) {
                 expect( refs.has( ref ), ref ).toBe( true );
+            }
+            if ( artboard.id === seededTemplate ) {
+                const previewCopies = await copiesIn( seededTemplate );
+                expect( previewCopies.posts ).toBe( 3 );
+                expect( previewCopies.blocks ).toBe( frozenCopies.blocks );
+                // Fewer targets than drawn blocks: the copies are left out.
+                expect( targets.length ).toBeLessThanOrEqual( tree.length );
+                expect( drawn ).toBeGreaterThan( tree.length + 20 );
             }
             copies += drawn - tree.length;
             await callTool( page, 'edit-leave' );
@@ -1871,7 +2017,7 @@ test.describe( 'TOOL', () => {
         // A path given as well wins over the reference's.
         const both = await callTool( page, 'blocks-get', {
             artboard: paragraph.ref,
-            path: [ 0 ],
+            block: [ 0 ],
         } );
         expect( both.result.blocks[ 0 ].name ).toBe( 'core/group' );
         // Where a tool takes several artboards.
@@ -2090,15 +2236,35 @@ test.describe( 'TOOL', () => {
         await openBoard( page, fixture.boardId );
         await boardAtRest( page );
         const hero = artboardOf( fixture, 'pattern' );
-        await setViewport( page, {
-            x: 40 - hero.x * 0.3,
-            y: 60 - hero.y * 0.3,
-            zoom: 0.3,
-        } );
-        await expect( frame( page, hero.id ) ).toHaveAttribute(
-            'data-wfd-tier',
-            'preview'
-        );
+        // The three artboards that use the colour are all mounted.
+        const users = [
+            hero.id,
+            artboardOf( fixture, 'page', 'desktop', 0 ).id,
+            artboardOf( fixture, 'page', 'desktop', 1 ).id,
+        ];
+        await setViewport( page, { x: -300, y: -120, zoom: 0.25 } );
+        for ( const id of users ) {
+            await expect( frame( page, id ) ).toHaveAttribute(
+                'data-wfd-tier',
+                'preview'
+            );
+        }
+        const backgroundOf = ( id: string ) =>
+            page
+                .locator( `[data-wfd-artboard="${ id }"] iframe` )
+                .first()
+                .evaluate( ( el: HTMLIFrameElement ) => {
+                    const p = el.contentDocument!.querySelector(
+                        'p.has-accent-1-background-color'
+                    );
+                    return p
+                        ? el.contentWindow!.getComputedStyle( p )
+                              .backgroundColor
+                        : null;
+                } );
+        for ( const id of users ) {
+            await expect.poll( () => backgroundOf( id ) ).toMatch( /^rgb\(/ );
+        }
         const background = () =>
             page
                 .locator( `[data-wfd-artboard="${ hero.id }"] iframe` )
@@ -2128,6 +2294,12 @@ test.describe( 'TOOL', () => {
         } );
         expect( typeof set.result.uses ).toBe( 'number' );
         await expect.poll( background ).toBe( 'rgb(18, 52, 86)' );
+        // Every mounted artboard that uses it.
+        for ( const id of users ) {
+            await expect
+                .poll( () => backgroundOf( id ) )
+                .toBe( 'rgb(18, 52, 86)' );
+        }
         await page.waitForTimeout( 500 );
         expect( ( await counters( page ) ).styleGenerations - before ).toBe(
             1
@@ -2230,7 +2402,7 @@ test.describe( 'TOOL', () => {
         expect(
             await callTool( page, 'styles-set', {
                 kind: 'style',
-                path: 'color.background',
+                property: 'color.background',
                 value: '#101820',
             } )
         ).toEqual( { ok: true, result: { changed: true } } );
@@ -2244,7 +2416,7 @@ test.describe( 'TOOL', () => {
             (
                 await callTool( page, 'styles-set', {
                     kind: 'style',
-                    path: 'color.text',
+                    property: 'color.text',
                     value: '#ff0000',
                     block: 'core/heading',
                 } )
@@ -2265,7 +2437,7 @@ test.describe( 'TOOL', () => {
             (
                 await callTool( page, 'styles-set', {
                     kind: 'setting',
-                    path: 'color.palette.custom',
+                    property: 'color.palette.custom',
                     value: [
                         {
                             slug: 'tool-teal',
@@ -2293,7 +2465,7 @@ test.describe( 'TOOL', () => {
             (
                 await callTool( page, 'styles-set', {
                     kind: 'style',
-                    path: 'color.text',
+                    property: 'color.text',
                     value: '#000',
                     block: 'no/such-block',
                 } )
@@ -2454,7 +2626,7 @@ test.describe( 'TOOL', () => {
         await editPattern( page, fixture.patterns.hero );
         await callTool( page, 'block-update', {
             artboard: header.id,
-            path: [ 0, 0 ],
+            block: [ 0, 0 ],
             attributes: { content: 'Changed by the agent' },
         } );
         await callTool( page, 'blocks-insert', {
@@ -2544,7 +2716,7 @@ test.describe( 'TOOL', () => {
         // Only the agent changes the part.
         await callTool( page, 'block-update', {
             artboard: header.id,
-            path: [ 0, 0 ],
+            block: [ 0, 0 ],
             attributes: { content: 'Changed by the agent' },
         } );
         await expect( review( page ) ).toHaveText( 'Review 2 changes' );
@@ -2660,7 +2832,7 @@ test.describe( 'TOOL', () => {
             kind: 'page',
             entityId: fixture.pages.about,
         } );
-        await ok( 'artboard-add', { kind: 'browser', path: '/' } );
+        await ok( 'artboard-add', { kind: 'browser', address: '/' } );
         const newPage = await ok( 'artboard-new', { kind: 'page' } );
         const newPattern = await ok( 'artboard-new', { kind: 'pattern' } );
         await ok( 'artboard-new', { kind: 'template-part' } );
@@ -2669,7 +2841,7 @@ test.describe( 'TOOL', () => {
         await ok( 'blocks-get', { artboard: header.id } );
         await ok( 'block-update', {
             artboard: header.id,
-            path: [ 0, 0 ],
+            block: [ 0, 0 ],
             attributes: { content: 'Changed and not saved' },
         } );
         await ok( 'blocks-insert', {
@@ -2678,13 +2850,13 @@ test.describe( 'TOOL', () => {
         } );
         await ok( 'blocks-move', {
             artboard: header.id,
-            path: [ 1 ],
+            block: [ 1 ],
             parent: [ 0 ],
             index: 0,
         } );
         await ok( 'blocks-remove', {
             artboard: header.id,
-            paths: [ [ 0, 1 ] ],
+            blocks: [ [ 0, 1 ] ],
         } );
         // A page and a pattern, which take a post lock.
         await ok( 'blocks-insert', {
@@ -2700,7 +2872,7 @@ test.describe( 'TOOL', () => {
         } );
         await ok( 'styles-set', {
             kind: 'style',
-            path: 'color.background',
+            property: 'color.background',
             value: '#fafafa',
         } );
         await ok( 'styles-set-variation', { name: styles.variations[ 0 ] } );
@@ -2747,5 +2919,225 @@ test.describe( 'TOOL', () => {
         );
         // What was changed waits in Review.
         await expect( review( page ) ).not.toHaveText( 'Review changes' );
+    } );
+
+    test( 'AC-TOOL-27 A block tool returns the whole tree on its first call, a style tool returns with the stylesheet in the artboards, and a load held back fails with not_ready', async ( {
+        page,
+        requestUtils,
+    } ) => {
+        test.setTimeout( 120000 );
+        const fixture = await resetFixture( requestUtils );
+        await openBoard( page, fixture.boardId );
+        await boardAtRest( page );
+        const about = fixture.layout.artboards.find(
+            ( a ) => a.entityId === fixture.pages.about
+        )!;
+        const hero = artboardOf( fixture, 'pattern' );
+        const header = artboardOf( fixture, 'template-part' );
+        await setViewport( page, { x: -300, y: -120, zoom: 0.25 } );
+        await expect( frame( page, about.id ) ).toHaveAttribute(
+            'data-wfd-tier',
+            'preview'
+        );
+        await boardAtRest( page );
+        const flat = ( blocks: any[] ) => {
+            const out: string[] = [];
+            const walk = ( list: any[] ) =>
+                list.forEach( ( block ) => {
+                    out.push( `${ block.path.join( '.' ) } ${ block.name }` );
+                    walk( block.inner ?? [] );
+                } );
+            walk( blocks );
+            return out;
+        };
+
+        // The first call on an artboard that is not in edit: a page, with
+        // its template's parts and its own content.
+        const drawn = await page.evaluate( async ( id ) => {
+            await ( window as any ).wfdAgent.ready();
+            return ( window as any ).wfdTest.documentBlocks( id );
+        }, about.id );
+        const timed = await page.evaluate( async ( id ) => {
+            const agent = await ( window as any ).wfdAgent.ready();
+            const started = performance.now();
+            const first = await agent.call( 'blocks-get', {
+                artboard: id,
+                depth: 10,
+            } );
+            const took = performance.now() - started;
+            const again = performance.now();
+            const second = await agent.call( 'blocks-get', {
+                artboard: id,
+                depth: 10,
+            } );
+            return { first, took, second, repeat: performance.now() - again };
+        }, about.id );
+        expect( timed.first.ok ).toBe( true );
+        const tree = flat( timed.first.result.blocks );
+        expect(
+            tree.filter( ( line ) => / core\/template-part$/.test( line ) )
+        ).toHaveLength( 2 );
+        // The parts hold their blocks, and Content holds the page's.
+        const part = timed.first.result.blocks.find(
+            ( block: any ) => block.name === 'core/template-part'
+        );
+        expect( part.innerCount ).toBeGreaterThan( 0 );
+        expect( tree ).toContain(
+            `${ tree.find( ( line ) => / core\/post-content$/.test( line ) )!.split( ' ' )[ 0 ] }.0 core/heading`
+        );
+        // It is what a later call reads, and what the Preview drew.
+        expect( flat( timed.second.result.blocks ) ).toEqual( tree );
+        await page.waitForTimeout( 2000 );
+        expect(
+            flat(
+                (
+                    await callTool( page, 'blocks-get', {
+                        artboard: about.id,
+                        depth: 10,
+                    } )
+                ).result.blocks
+            )
+        ).toEqual( tree );
+        expect( drawn ).toEqual( tree );
+        // No fixed pause: on the artboard already in edit the tool answers
+        // at once.
+        expect( timed.repeat ).toBeLessThan( 150 );
+        expect( timed.took ).toBeLessThan( 5000 );
+        await callTool( page, 'edit-leave' );
+
+        // A style tool answers with the stylesheet already in the mounted
+        // artboards.
+        await setViewport( page, { x: -300, y: -120, zoom: 0.25 } );
+        await expect( frame( page, hero.id ) ).toHaveAttribute(
+            'data-wfd-tier',
+            'preview'
+        );
+        await boardAtRest( page );
+        const painted = await page.evaluate(
+            async ( ids ) => {
+                const agent = await ( window as any ).wfdAgent.ready();
+                const set = await agent.call( 'token-set', {
+                    kind: 'color',
+                    slug: 'accent-1',
+                    value: '#123456',
+                } );
+                // Read in the same task the tool answered in.
+                return {
+                    ok: set.ok,
+                    colors: ids.map( ( id: string ) => {
+                        const iframe = document.querySelector(
+                            `[data-wfd-artboard="${ id }"] iframe`
+                        ) as HTMLIFrameElement;
+                        const p = iframe.contentDocument!.querySelector(
+                            'p.has-accent-1-background-color'
+                        )!;
+                        return iframe.contentWindow!.getComputedStyle( p )
+                            .backgroundColor;
+                    } ),
+                };
+            },
+            [ hero.id, about.id ]
+        );
+        expect( painted ).toEqual( {
+            ok: true,
+            colors: [ 'rgb(18, 52, 86)', 'rgb(18, 52, 86)' ],
+        } );
+
+        // Loading held back past the safety limit.
+        await page.route( /template-parts/, async ( route ) => {
+            await new Promise( ( resolve ) => setTimeout( resolve, 14000 ) );
+            await route.continue().catch( () => {} );
+        } );
+        await page.evaluate( () =>
+            ( window as any ).wp.data
+                .dispatch( 'core' )
+                .invalidateResolutionForStore()
+        );
+        const started = Date.now();
+        const late = await callTool( page, 'blocks-get', {
+            artboard: header.id,
+        } );
+        expect( late ).toEqual( {
+            ok: false,
+            error: {
+                code: 'not_ready',
+                message: 'Header did not finish loading.',
+            },
+        } );
+        expect( Date.now() - started ).toBeGreaterThanOrEqual( 9500 );
+        expect( Date.now() - started ).toBeLessThan( 13500 );
+        await page.unroute( /template-parts/ );
+    } );
+
+    test( 'AC-TOOL-28 artboard-remove takes a never-saved new part off the board when only the agent changed it, and refuses once the designer has typed in it', async ( {
+        page,
+        requestUtils,
+    } ) => {
+        const fixture = await resetFixture( requestUtils );
+        await openBoard( page, fixture.boardId );
+        await boardAtRest( page );
+
+        // Only the agent changed it.
+        const first = await callTool( page, 'artboard-new', {
+            kind: 'template-part',
+        } );
+        expect( first.ok ).toBe( true );
+        await callTool( page, 'blocks-insert', {
+            artboard: first.result.id,
+            markup: '<!-- wp:paragraph --><p>From the agent.</p><!-- /wp:paragraph -->',
+        } );
+        await expect( page.locator( '[data-wfd-artboard]' ) ).toHaveCount( 10 );
+        expect(
+            await callTool( page, 'artboard-remove', {
+                artboards: [ first.result.id ],
+            } )
+        ).toEqual( { ok: true, result: { removed: [ first.result.id ] } } );
+        await expect( page.locator( '[data-wfd-artboard]' ) ).toHaveCount( 9 );
+        await expect( review( page ) ).toHaveText( 'Review changes' );
+
+        // The designer has typed in it.
+        const second = await callTool( page, 'artboard-new', {
+            kind: 'template-part',
+        } );
+        expect( second.ok ).toBe( true );
+        await callTool( page, 'blocks-insert', {
+            artboard: second.result.id,
+            markup: '<!-- wp:paragraph --><p>From the agent.</p><!-- /wp:paragraph -->',
+        } );
+        const paragraph = editorFrame( page, second.result.id )
+            .locator( 'p' )
+            .filter( { hasText: 'From the agent.' } );
+        await paragraph.click();
+        await page.keyboard.press( 'End' );
+        await page.keyboard.type( ' And the designer.' );
+        await expect( paragraph ).toHaveText(
+            'From the agent. And the designer.'
+        );
+        const hero = artboardOf( fixture, 'pattern' );
+        expect(
+            await callTool( page, 'artboard-remove', {
+                artboards: [ hero.id, second.result.id ],
+            } )
+        ).toEqual( {
+            ok: false,
+            error: {
+                code: 'not_agents',
+                message: 'Untitled part also has changes made by the designer.',
+            },
+        } );
+        // None of them is removed, and the content stays.
+        await expect( page.locator( '[data-wfd-artboard]' ) ).toHaveCount( 10 );
+        await expect( frame( page, hero.id ) ).toHaveCount( 1 );
+        await expect( frame( page, second.result.id ) ).toHaveAttribute(
+            'data-wfd-tier',
+            'live'
+        );
+        await expect( paragraph ).toHaveText(
+            'From the agent. And the designer.'
+        );
+        await expect( review( page ) ).toHaveText( 'Review 1 change' );
+        expect(
+            ( await callTool( page, 'review-list' ) ).result.items[ 0 ]
+        ).toMatchObject( { isNew: true, author: 'both' } );
     } );
 } );

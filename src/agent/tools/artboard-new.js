@@ -3,7 +3,7 @@
  * place its artboard (spec/agent/tools.md).
  */
 import { actions, describeArtboard } from '../board';
-import { editor } from '../edit';
+import { editor, putInEdit } from '../edit';
 import { invalidArgs } from '../errors';
 
 export default async function artboardNew(
@@ -29,10 +29,17 @@ export default async function artboardNew(
     if ( ! id ) {
         // A purpose whose template exists is not offered as new.
         throw invalidArgs(
-            `purpose ${ purpose } already has a template on the site.`
+            kind === 'template'
+                ? `purpose ${ purpose } already has a template on the site.`
+                : `kind ${ kind } cannot be made new right now.`
         );
     }
     const board = actions().board();
+    // It is left as the New row leaves it; where that is in edit, its
+    // editor has settled before the tool answers.
+    if ( board.edit === id ) {
+        await putInEdit( board.artboards.find( ( item ) => item.id === id ) );
+    }
     return describeArtboard(
         board.artboards.find( ( artboard ) => artboard.id === id ),
         board,

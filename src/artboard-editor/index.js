@@ -221,6 +221,10 @@ function Bridge( { bridgeRef, onSelection, onAllowedBlocks } ) {
         const dispatch = () => registry.dispatch( blockEditorStore );
         bridgeRef.current = {
             registry,
+            // Whether this editor has been given its settings, which
+            // happens just after it mounts: until then it answers what may
+            // be inserted and changed from WordPress's defaults.
+            isReady: () => select().getSettings().hasFixedToolbar === true,
             hasSelection: () =>
                 !! select().getSelectedBlockClientId() ||
                 select().hasMultiSelection(),

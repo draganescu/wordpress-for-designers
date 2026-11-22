@@ -846,16 +846,12 @@ export function App() {
     // The seams of the agent surface (spec/agent/surface.md, Seams). Each
     // function is the one a control calls, and reads the stores as they are
     // when it is called.
-    const whenStylesCurrent = async () => {
-        // A change to the styles is drawn by the panel a moment later.
-        for (
-            let tries = 0;
-            tries < 100 && ! stylesRef.current.isCurrent();
-            tries++
-        ) {
-            await new Promise( ( resolve ) => setTimeout( resolve, 20 ) );
-        }
-    };
+    // The styles part says when a change is compiled and in the artboards.
+    const whenCompiled = () =>
+        stylesRef.current.whenCompiled().then(
+            () => 'done',
+            () => 'not-ready'
+        );
     const whenListed = async ( isListed ) => {
         // The inserter's lists are drawn from the stores a moment later.
         for ( let tries = 0; tries < 40 && ! isListed(); tries++ ) {
@@ -922,40 +918,36 @@ export function App() {
                 } ) ),
             };
         },
-        // Whether the Styles panel has drawn what the store holds.
+        // The Review key of the Styles item.
         stylesKey: () =>
             styles.id ? `root/globalStyles/${ styles.id }` : null,
-        // The picker of a colour row (S4). False when there is no such
-        // colour.
+        // The picker of a colour row (S4). Each of the three gives 'done',
+        // 'unknown' for a colour or a variation that is not there, or
+        // 'not-ready' when the compile did not finish in time (D82).
         setColor: async ( slug, value ) => {
-            await whenStylesCurrent();
-            const panel = stylesPanelRef.current.panelProps;
-            if ( ! panel.colors.some( ( color ) => color.slug === slug ) ) {
-                return false;
+            if (
+                ! stylesPanelRef.current.panelProps.onChangeColor( slug, value )
+            ) {
+                return 'unknown';
             }
-            panel.onChangeColor( slug, value );
-            await whenStylesCurrent();
-            return true;
+            return whenCompiled();
         },
         // A stock styles screen (S8, D52, D53).
-        setStyleValue: async ( kind, path, value, block ) => {
-            await whenStylesCurrent();
-            stylesPanelRef.current.setValue( kind, path, value, block );
-            await whenStylesCurrent();
+        setStyleValue: ( kind, property, value, block ) => {
+            stylesPanelRef.current.setValue( kind, property, value, block );
+            return whenCompiled();
         },
-        // The variation menu (S2, D54). False for a name it does not list.
-        pickVariation: async ( name ) => {
-            await whenStylesCurrent();
+        // The variation menu (S2, D54).
+        pickVariation: ( name ) => {
             const panel = stylesPanelRef.current.panelProps;
             if (
                 name !== 'Default' &&
                 ! panel.variations.some( ( item ) => item.title === name )
             ) {
-                return false;
+                return 'unknown';
             }
             panel.onPickVariation( name === 'Default' ? null : name );
-            await whenStylesCurrent();
-            return true;
+            return whenCompiled();
         },
         // A click on a token's row (S4, S5), without the colour picker;
         // with no kind, the selected token is cleared. Gives the banner's

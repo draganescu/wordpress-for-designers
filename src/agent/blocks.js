@@ -84,25 +84,6 @@ function liveEditor() {
     };
 }
 
-const wait = ( ms ) => new Promise( ( resolve ) => setTimeout( resolve, ms ) );
-
-/**
- * Counts the blocks of the editor's tree, read block by block.
- *
- * @param {Object} select The editor's block editor selectors.
- * @param {string} root   The block to count under.
- * @return {number} The number of blocks.
- */
-function countBlocks( select, root = '' ) {
-    return select
-        .getBlocks( root )
-        .reduce(
-            ( total, block ) =>
-                total + 1 + countBlocks( select, block.clientId ),
-            0
-        );
-}
-
 /**
  * Puts an artboard in edit as `artboard-edit` does, unless it is in edit
  * already, and gives its block editor (spec/agent/tools.md, Blocks).
@@ -114,36 +95,7 @@ export async function editorOf( artboard ) {
     if ( artboard.kind === 'media' || artboard.kind === 'browser' ) {
         throw notEditable( artboard.name );
     }
-    const before = editor().bridgeRef.current;
-    const wasLive = !! before && editor().liveId() === artboard.id;
     await putInEdit( artboard );
-    if ( wasLive ) {
-        return liveEditor();
-    }
-    // The editor mounts, then the parts and patterns it shows fill in
-    // their blocks. The tree is read once it has stopped growing.
-    const started = Date.now();
-    let last = -1;
-    let since = Date.now();
-    while ( Date.now() - started < 8000 ) {
-        const bridge = editor().bridgeRef.current;
-        // The bridge of the editor that was in edit before is not this one.
-        if ( bridge && bridge !== before ) {
-            const count = countBlocks(
-                bridge.registry.select( blockEditorStore )
-            );
-            if ( count !== last ) {
-                last = count;
-                since = Date.now();
-            } else if ( Date.now() - since >= ( count ? 300 : 1000 ) ) {
-                return liveEditor();
-            }
-        }
-        await wait( 50 );
-    }
-    if ( ! editor().bridgeRef.current ) {
-        throw notFound( 'Artboard', artboard.id );
-    }
     return liveEditor();
 }
 
@@ -151,7 +103,8 @@ export async function editorOf( artboard ) {
  * Lets the change a tool made reach the entity's record, so the tool
  * returns with its effect in the stores.
  */
-export const settled = () => wait( 0 );
+export const settled = () =>
+    new Promise( ( resolve ) => window.setTimeout( resolve, 0 ) );
 
 /**
  * The client id of the block at a path.
@@ -188,15 +141,15 @@ export function pathOf( select, clientId ) {
 }
 
 /**
- * The path an input names: its `path` field, or the path of a block
+ * The path an input names: its `block` field, or the path of a block
  * reference given as the artboard.
  *
- * @param {Array|undefined} path    The `path` field.
+ * @param {Array|undefined} path    The `block` field.
  * @param {Array|undefined} refPath The path of the block reference.
  * @param {string}          field   The field's name, for the message.
  * @return {Array} The path.
  */
-export function pathFrom( path, refPath, field = 'path' ) {
+export function pathFrom( path, refPath, field = 'block' ) {
     const found = path ?? refPath;
     if ( ! found ) {
         throw invalidArgs(
