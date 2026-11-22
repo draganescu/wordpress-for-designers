@@ -97,3 +97,4 @@ The list below is generated from every `[N]` tag in the spec. From row 65 on, fo
 | 76 | `screens/AgentConnected.md, AgentWorking.md, AgentReview.md` | all | The wording, components and place of G1 to G4. `[N]` |
 | 77 | `decisions.md` | D79 | A preview copy drawn by a Post Template, a Comment Template or a read-only Content is not a block for paths, references and targets; pointing at one points at the nearest real block around it. `[N]` |
 | 78 | `decisions.md`, `agent/tools.md` | D81, D82 | The one second of D81; the 10-second safety limit and the error `not_ready` with its two messages. `[N]` |
+| 79 | `agent/relay.md`, `agent/tools.md` | D89, D90 | The `remaining` field of the poll's answer and the message "The call ran out of time."; other waits ending with `unavailable` at the 10-second limit. `[N]` |

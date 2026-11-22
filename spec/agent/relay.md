@@ -31,7 +31,7 @@ A call:
 }
 ```
 
-`calls` has one entry for `wp wfd call` and one per call for `wp wfd batch`. `results` has an envelope per entry once the status is `done`. `expires` is `created` plus 300 seconds.
+`calls` has one entry for `wp wfd call` and one per call for `wp wfd batch`. `results` has an envelope per entry once the status is `done`. `expires` is `created` plus 300 seconds. The record also holds `timeout`, the command's timeout in seconds.
 
 The queue holds calls and their results and nothing else. It never holds a copy of site content beyond what a call's input and result carry.
 
@@ -46,6 +46,7 @@ A board page is listening while its listener record's `seen` is less than 25 sec
 - A board page on a site where `wfd_agent_seen` does not exist sends nothing to the relay. The page learns this from its config when it loads (`wfdConfig.agent.seen`). `[U]` (C27, D76)
 - Where it exists, the page calls the poll route every 10 seconds while no session is active and every second while one is. It does not call it while the document is hidden.
 - When a poll answers that a session is active, the board loads the agent chunk (`surface.md`, Loading) and shows G1.
+- The poll hands a call over with `remaining`, the seconds left of the command's timeout, worked out on the server so that no two clocks are compared. The page starts no entry once that time has passed: the entry that is running is finished, and each entry not started gets `{ "ok": false, "error": { "code": "skipped", "message": "The call ran out of time." } }` (D89).
 - A call the poll hands over is run, entry by entry in order, through the same code as `window.wfdAgent`'s `call`. After an entry fails, the remaining entries are not run and each gets `{ "ok": false, "error": { "code": "skipped", "message": "An earlier call failed." } }`. The page then sends the results to the result route.
 
 ## Routes
@@ -80,7 +81,7 @@ The server stores the results and sets `status` to `done`, if the call exists, i
 | `no_board` | No listening board, or the one named by `--board` is not listening | `No board is listening. Open a board in WordPress for Designers; if one is open, reload it once.` |
 | `several_boards` | Several boards are listening and `--board` was not given | `Several boards are open: {id} "{title}", {id} "{title}". Pass --board=<id>.` |
 | `timeout` | The board did not answer in time | `The board did not answer within {n} seconds.` |
-| `skipped` | An earlier entry of the same batch failed | `An earlier call failed.` |
+| `skipped` | An earlier entry of the same batch failed, or the command's time ran out before this entry started | `An earlier call failed.`; `The call ran out of time.` |
 
 ## Cleanup
 

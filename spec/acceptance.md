@@ -243,6 +243,7 @@ The five groups below cover `agent/`. Unless a criterion says otherwise: the fix
 - AC-AGENT-06 With no board open, `wp wfd call board-get` fails with `no_board` in under 2 seconds. A call to a board whose page was closed after it last asked fails with `timeout` after `--timeout=2`, with exit code 1, and its option is gone. `[N]`
 - AC-AGENT-07 For an editor (no `edit_theme_options`) both relay routes return a permission error. `[U]`
 - AC-AGENT-08 Running the `wfd_agent_cleanup` event deletes a call record past its `expires` and a listener record more than 60 seconds old, and leaves fresh ones. Deactivating the plugin unschedules the event. Uninstalling deletes every `wfd_agent_` option. `[U]`
+- AC-AGENT-10 A batch whose first entry outlasts `--timeout` (the test holds it back) ends with `timeout` for the command; on the board the entry that was running finishes and no later entry starts. A failed send of results is tried again, and a poll that fails ends the session's mark on the board until one succeeds (D89). `[U]`
 - AC-AGENT-09 With the fixture board open in two pages, one `board-get` call is handed to one page only: exactly one of the two sends a result, and the command prints one envelope. `[N]`
 
 ## CLI
@@ -285,6 +286,7 @@ The five groups below cover `agent/`. Unless a criterion says otherwise: the fix
 - AC-TOOL-25 `targets()` lists every artboard and note, the blocks of mounted artboards and, with the Tokens tab shown, its colour, font-size and font-family rows. Each `rect` is within 1 px of the element's box in the window. Reading targets changes no artboard's tier. `[N]`
 - AC-TOOL-27 A block tool called on an artboard that is not in edit returns the artboard's whole tree, with the blocks of its template parts and of a page's content, on the first call. A style tool returns after the mounted artboards have the new stylesheet. No tool waits on a fixed pause. When loading is held back past the safety limit (the test delays a REST answer), the tool fails with `not_ready` (D82). `[U]`
 - AC-TOOL-28 `artboard-remove` takes a never-saved new template part off the board when only the agent changed it. After the designer has typed in it, the tool fails with `not_agents` and the artboard and its content stay (D83). `[U]`
+- AC-TOOL-29 An artboard holding a block that never meets the settling conditions (the test registers a block that mounts one of its two inner blocks, and a pattern that holds itself) is read by `blocks-get` once the safety limit has passed, with the blocks that are there. An artboard whose editor cannot mount fails with `not_ready`. A `board-refresh` whose request never answers fails with `unavailable` at the limit, and the next call is run (D90). `[U]`
 - AC-TOOL-26 A reference given by `board-get`, `blocks-get` or `styles-get` is accepted by the tools in place of an artboard, a path or a slug, with or without a leading `#`. A string that does not parse fails with `invalid_args`; one that names nothing fails with `not_found`. `[U]`
 
 ## MARK
@@ -295,6 +297,7 @@ The five groups below cover `agent/`. Unless a criterion says otherwise: the fix
 - AC-MARK-04 In the Review drawer an item only the agent changed has the badge "Agent", one both changed has "Agent and you", and one only the designer changed has none. `[U]` `[D:AgentReview]`
 - AC-MARK-05 `changed` in `board-get` and `author` in `review-list` say the same as the marks. `[N]`
 - AC-MARK-08 The designer typing in an artboard right after `blocks-get` or `artboard-edit` on it is recorded as the designer's. The designer typing within a second after `block-update` on it makes the item `both`. A block that sets its own attributes just after `blocks-insert`, with no input from the designer, leaves the item the agent's (D81). `[U]`
+- AC-MARK-09 The designer typing in an artboard while a tool call on its item is still running makes that item `both`, and `review-discard` then refuses it (D88). `[U]`
 - AC-MARK-06 A tool called through the page, on a site with no session, checks its input, records authorship and shows G2, G3 and G4 exactly as one called with `wp wfd` (C31). `[U]`
 - AC-MARK-07 Nothing of the agent surface is put inside the editing canvas: with marks showing, the Live artboard's canvas document holds no element, attribute or style of the plugin's that it did not hold before (C6). `[U]`
 
