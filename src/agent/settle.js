@@ -68,10 +68,14 @@ function expectedInner( block, artboard, isInQuery ) {
                 ? blocksOf( 'wp_navigation', attributes.ref )
                 : null;
         case 'core/post-content':
-            // The Content of the page a page artboard shows holds the
-            // page's blocks. Anywhere else, and inside a Query Loop, the
-            // content is drawn and not held: for a moment after it mounts
-            // the editor holds blocks there that it then lets go.
+            // WordPress makes a Content block editable, and so the holder
+            // of its post's blocks, only where it has a post to show and
+            // is not inside a Query Loop; everywhere else it draws the
+            // content read-only and holds nothing. The Content of a page
+            // artboard is the first case. A Query Loop gives itself its id
+            // just after it mounts, and until that has reached the Content
+            // blocks inside it they take themselves for editable and hold
+            // their post's blocks; then they let them go.
             return artboard.kind === 'page' && ! isInQuery
                 ? blocksOf( 'page', artboard.entityId )
                 : 0;
