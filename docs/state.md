@@ -145,9 +145,11 @@ npm run lint
 
 ## Releasing it
 
-A release is a version tag. Pushing `v1.2.3` runs `.github/workflows/release.yml`, which lints, builds, and attaches `wordpress-for-designers.zip` to a GitHub release of that name with generated notes. A tag with a hyphen (`v1.2.3-beta.1`) makes a pre-release.
+A release is a version tag. Pushing `v1.2.3` runs `.github/workflows/release.yml`, which lints, builds, and attaches `wordpress-for-designers.zip` and one zip per adapter to a GitHub release with generated notes. The title names the WordPress the plugin requires, read from the plugin header: "v1.2.3 for WordPress 7.2". A tag with a hyphen (`v1.2.3-beta.1`) makes a pre-release.
 
-The version is kept in three places: `package.json`, the plugin header and `WFD_VERSION`. `npm version` changes all three (its `version` script runs `tools/sync-version.mjs`), commits and makes the tag. The workflow stops before building if the tag and the three do not match.
+Each release line has its own branch: `master` for the newest WordPress, `wp-7.1` for WordPress 7.1. The workflow file is the same on every line; tag the branch of the line you are releasing. A release is marked as the latest only while no release has a higher version, so a patch on an older line never takes the badge from the newest one.
+
+The version is kept in `package.json`, the plugin header, `WFD_VERSION`, and in each adapter's plugin header and `readme.txt` "Stable tag" (an adapter's version is the main plugin's version it was built with). `npm version` changes them all (its `version` script runs `tools/sync-version.mjs --stage`), commits and makes the tag. The workflow stops before building if the tag and any of them do not match.
 
 ```bash
 npm version minor -m "Release %s"
@@ -157,10 +159,11 @@ npm version minor -m "Release %s"
 git push --follow-tags
 ```
 
-- The zip holds one folder, `wordpress-for-designers/`, with the plugin file, `uninstall.php`, `includes/` and `build/`. `tools/package.sh` has that list; the playground workflow uses it too.
-- `npm run build` then `npm run package` makes the same zip locally in `dist/`.
-- The newest release's zip is always at `https://github.com/draganescu/wordpress-for-designers/releases/latest/download/wordpress-for-designers.zip`.
-- The workflow does not run the end-to-end suite and does not check that the tag is on `master`.
+- The plugin zip holds one folder, `wordpress-for-designers/`, with the plugin file, `uninstall.php`, `includes/` and `build/`. `tools/package.sh` has that list; the playground workflow uses it too.
+- Each adapter is a folder under `adapters/` with its own `package.sh`, which leaves one zip in that folder's `dist/`. `tools/package-adapters.sh` runs every one and copies the zips into `dist/` beside the plugin's. A new adapter is released as soon as its folder has a `package.sh` and a `plugin/` folder; nothing else needs changing. A line with no `adapters/` folder releases the plugin alone.
+- `npm run build`, `npm run package` then `npm run package:adapters` makes the same zips locally in `dist/`.
+- The newest release's zip is always at `https://github.com/draganescu/wordpress-for-designers/releases/latest/download/wordpress-for-designers.zip`, and an adapter's at the same address with its own zip name.
+- The workflow does not run the end-to-end suite, or an adapter's tests, and does not check which branch the tag is on.
 
 ## Numbers that are built in
 
