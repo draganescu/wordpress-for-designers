@@ -94,6 +94,10 @@ export function targets() {
         return [];
     }
     const seam = actions();
+    // Before the board has drawn there is nothing to point at.
+    if ( ! seam ) {
+        return [];
+    }
     const board = seam.board();
     const artboards = [];
     const blocks = [];

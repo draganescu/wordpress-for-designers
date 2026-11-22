@@ -183,8 +183,11 @@ class WFD_Agent_Command {
 
         $id    = wp_generate_uuid4();
         $name  = WFD_AGENT_CALL . $id;
-        $now   = time();
-        $added = add_option(
+        $now = time();
+        // When the command starts waiting, to the microsecond: the page is
+        // told the time left from it (D89).
+        $started = microtime( true );
+        $added   = add_option(
             $name,
             wp_json_encode(
                 array(
@@ -192,7 +195,7 @@ class WFD_Agent_Command {
                     'board'   => $board,
                     'calls'   => $calls,
                     'status'  => 'queued',
-                    'created' => $now,
+                    'created' => $started,
                     'expires' => $now + WFD_AGENT_CALL_LIFE,
                     // The page starts no entry once this has passed (D89).
                     'timeout' => $timeout,
@@ -205,8 +208,7 @@ class WFD_Agent_Command {
             $this->fail( 'unavailable', WFD_AGENT_WRITE_FAILED );
         }
 
-        $started = microtime( true );
-        $call    = null;
+        $call = null;
         while ( microtime( true ) - $started < $timeout ) {
             usleep( 200000 );
             $call = wfd_agent_read( $name, false );

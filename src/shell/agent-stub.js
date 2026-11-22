@@ -13,6 +13,15 @@ const IDLE = 10000;
 const ACTIVE = 1000;
 // The pause before a failed send of results is tried again, in ms.
 const RETRY = 1000;
+// What each entry of a call gets when the surface could not be loaded
+// (spec/agent/tools.md, Errors).
+const UNAVAILABLE = {
+    ok: false,
+    error: {
+        code: 'unavailable',
+        message: 'The board cannot be used right now.',
+    },
+};
 
 let loading = null;
 
@@ -22,7 +31,13 @@ let loading = null;
  * @return {Promise<Object>} The chunk's module.
  */
 function load() {
-    loading ??= import( /* webpackChunkName: "agent" */ '../agent' );
+    // A failed request is forgotten, so that the next one tries again.
+    loading ??= import( /* webpackChunkName: "agent" */ '../agent' ).catch(
+        ( error ) => {
+            loading = null;
+            throw error;
+        }
+    );
     return loading;
 }
 
@@ -32,7 +47,13 @@ let surface = null;
  * @return {Promise<Object>} The page interface, always the same promise.
  */
 function ready() {
-    surface ??= load().then( ( module ) => module.surface );
+    surface ??= load().then(
+        ( module ) => module.surface,
+        ( error ) => {
+            surface = null;
+            throw error;
+        }
+    );
     return surface;
 }
 
@@ -127,7 +148,19 @@ function listen( config ) {
                 }
             } catch {
                 // The surface could not be loaded: it is tried again in
-                // turn.
+                // turn. A call this page took fails at once, so that the
+                // command does not wait for it.
+                if ( answer.call && ! loading ) {
+                    await sendResults(
+                        config,
+                        {
+                            id: answer.call.id,
+                            client,
+                            results: answer.call.calls.map( () => UNAVAILABLE ),
+                        },
+                        received + ( answer.call.remaining ?? 0 ) * 1000
+                    );
+                }
             }
             isActive = !! answer.active;
         }

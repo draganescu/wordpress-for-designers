@@ -2,6 +2,7 @@
  * `block-update`: change the attributes of one block, its text included
  * (spec/agent/tools.md).
  */
+import { getBlockType } from '@wordpress/blocks';
 import { findArtboard } from '../board';
 import {
     clientIdAt,
@@ -24,8 +25,19 @@ export default async function blockUpdate( input ) {
     }
     const { select, dispatch } = await editorOf( artboard );
     const clientId = clientIdAt( select, path );
-    if ( select.getBlockEditingMode( clientId ) === 'disabled' ) {
+    const mode = select.getBlockEditingMode( clientId );
+    if ( mode === 'disabled' ) {
         throw notAllowed();
+    }
+    // Where the editor lets only the content of a block be changed, the
+    // tool changes nothing else either.
+    if ( mode === 'contentOnly' ) {
+        const declared =
+            getBlockType( select.getBlockName( clientId ) )?.attributes ?? {};
+        const isContent = ( name ) => declared[ name ]?.role === 'content';
+        if ( ! Object.keys( input.attributes ).every( isContent ) ) {
+            throw notAllowed();
+        }
     }
     dispatch.updateBlockAttributes( clientId, input.attributes );
     await settled();

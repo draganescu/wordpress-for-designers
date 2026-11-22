@@ -284,7 +284,7 @@ function wfd_agent_take_call( $board, $client ) {
             return array(
                 'id'        => $call->id,
                 'calls'     => $call->calls,
-                'remaining' => max( 0, round( (int) $call->created + $timeout - microtime( true ), 3 ) ),
+                'remaining' => max( 0, round( (float) $call->created + $timeout - microtime( true ), 3 ) ),
             );
         }
     }
@@ -357,12 +357,33 @@ function wfd_agent_result( $request ) {
     ) {
         return rest_ensure_response( array( 'stored' => false ) );
     }
+    // The page did not ask while it ran the call: it is listening still, so
+    // that the command that follows finds it.
+    $listener_name = WFD_AGENT_LISTENER . $call->client;
+    $listener      = wfd_agent_read( $listener_name );
+    if ( is_array( $listener ) ) {
+        $listener['seen'] = time();
+        if ( ! wfd_agent_write( $listener_name, $listener ) ) {
+            return wfd_agent_write_error();
+        }
+    }
     $call->status  = 'done';
     $call->results = $body->results;
-    if ( ! wfd_agent_write( $name, $call ) ) {
+    // The row changes only if it is still there: a call the command has
+    // given up on and deleted is not made again.
+    global $wpdb;
+    $changed = $wpdb->query( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+        $wpdb->prepare(
+            "UPDATE $wpdb->options SET option_value = %s WHERE option_name = %s",
+            wp_json_encode( $call ),
+            $name
+        )
+    );
+    wp_cache_delete( $name, 'options' );
+    if ( false === $changed ) {
         return wfd_agent_write_error();
     }
-    return rest_ensure_response( array( 'stored' => true ) );
+    return rest_ensure_response( array( 'stored' => 1 === $changed ) );
 }
 
 /**
