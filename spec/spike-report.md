@@ -221,7 +221,7 @@ The Live tree was read two ways. "As worded" is the sentence of `agent/surface.m
 
 **Not measured.** A Query Loop with two or more posts, where the copy that is the editor's own blocks may not be the first one drawn: the fixture has one post. Synced patterns and Navigation blocks that point at a menu: the fixture has neither inside an artboard.
 
-Data: `spikes/agent/evidence/a.json`, `a-active-copy.json`.
+Data: `spikes/agent/evidence/a-active-copy.json`. The run's full output was not kept; `spikes/agent/tests/run-a.mjs` makes it again.
 
 ## Spike (a), second run
 
@@ -293,7 +293,7 @@ Other things observed:
 
 **Not measured.** A Query Loop inside a Query Loop. A Comment Template drawing real comments (a template draws placeholder comments). Blocks from plugins that draw previews of their own without WordPress's block preview: none is in the test environment. A browser other than Chromium. A WordPress other than 7.2-RC2: the class is WordPress's own markup, not a documented interface, so AC-TOOL-24 is what would notice it changing.
 
-Data: `spikes/agent/evidence/a2.json`. Code: `spikes/agent/tests/run-a2.mjs`, and the `seed-a2` route in `spikes/agent/wfd-agent-spike/wfd-agent-spike.php`.
+Data: not kept; `spikes/agent/tests/run-a2.mjs` makes it again. Code: `spikes/agent/tests/run-a2.mjs`, and the `seed-a2` route in `spikes/agent/wfd-agent-spike/wfd-agent-spike.php`.
 
 ## Spike (b): the relay round trip
 
@@ -334,7 +334,7 @@ Data: `spikes/agent/evidence/c.json`.
 
 ## Spike (d): a chunk requested on demand
 
-**What was run.** `node spikes/agent/tests/run-d.mjs`. The board's own entry, `src/shell/index.js`, was built with `wp-scripts build` and the repository's webpack configuration from a second entry file that imports it and adds the stub of `agent/surface.md`: `window.wfdAgent = { ready }`, where `ready()` calls the build's own dynamic `import()` of one more module, once. That module imports `select` from `@wordpress/data` and `store` from `@wordpress/block-editor`. The output went to `spikes/agent/wfd-agent-spike/chunk-build/`, and the spike plugin served it in place of the board's script on a board opened with `?wfd_spike_chunk=1`. Every script request to either build folder was recorded.
+**What was run.** `node spikes/agent/tests/run-d.mjs`. The board's own entry, `src/shell/index.js`, was built with `wp-scripts build` and the repository's webpack configuration from a second entry file that imports it and adds the stub of `agent/surface.md`: `window.wfdAgent = { ready }`, where `ready()` calls the build's own dynamic `import()` of one more module, once. That module imports `select` from `@wordpress/data` and `store` from `@wordpress/block-editor`. The output went to `spikes/agent/wfd-agent-spike/chunk-build/` (not kept; `spikes/agent/chunk.webpack.config.js` builds it again), and the spike plugin served it in place of the board's script on a board opened with `?wfd_spike_chunk=1`. Every script request to either build folder was recorded.
 
 **What was observed.**
 
