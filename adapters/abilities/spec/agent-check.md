@@ -12,6 +12,7 @@ The harness cannot do this. A person does it on a hosted site that an agent's pr
 8. Ask the agent to save. It declines and points to Review, and it presses nothing on the board.
 9. Put another window over the agent's browser and ask for a change. The agent reports that the board is not in view.
 10. Ask it to switch to the other board. It opens that board's address and works there.
+11. Ask it to make a new board. It runs `wfd/board-new`, opens the new board's address, and does not press "Add board".
 
 | Date | Agent | MCP Adapter | Sign-in | Steps that failed | Notes |
 |---|---|---|---|---|---|

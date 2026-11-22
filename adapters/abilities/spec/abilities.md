@@ -1,6 +1,6 @@
 # Abilities
 
-The closed list of abilities the adapter registers: one for each tool of the main plugin's `includes/agent-tools.json`, and three of its own. No other ability is registered. `[U]` for the list (D95, D96); `[N]` applies to every name, label, field, result and message in this file unless a line says otherwise.
+The closed list of abilities the adapter registers: one for each tool of the main plugin's `includes/agent-tools.json`, and four of its own. No other ability is registered. `[U]` for the list (D95, D96, D103); `[N]` applies to every name, label, field, result and message in this file unless a line says otherwise.
 
 Read `../../../spec/agent/tools.md` for what each tool does and `../../../spec/agent/relay.md`, From PHP, for the functions used here.
 
@@ -85,6 +85,19 @@ It calls `wfd_agent_begin( 'abilities' )`, then returns `{ "board": { "id", "tit
 
 The ability opens nothing: the agent opens `address` in its browser (D96).
 
+### `wfd/board-new`
+
+| | |
+|---|---|
+| `label` | Make a board |
+| `description` | Make a new, empty board and get its address to open in your browser, and how to work on it. |
+| Input | `title`: string, not required |
+| Annotations | `readonly` false, `destructive` false |
+
+It calls `wfd_agent_board_new` with the title, then `wfd_agent_begin( 'abilities' )`, and returns `{ "board": { "id", "title", "address", "listening" }, "guide": "…" }` as `wfd/board-open` does, for the new board. With no title the board is titled "Untitled board". A failure of `wfd_agent_board_new` is an error with its code and message, and no session is marked.
+
+The board is made at once and stays: this is the one thing an ability saves (D103, AB3).
+
 ### `wfd/batch`
 
 | | |
@@ -98,7 +111,7 @@ The ability opens nothing: the agent opens `address` in its browser (D96).
 | `calls` | array of 1 to 50 objects, each `{ "tool": string, "input": object }` with `tool` required | yes | The calls, in order. `tool` is a tool's name as in the declarations; a leading `wfd/` is ignored. `input` is that tool's input, without `board` |
 | `board` | integer of 1 or more | no | As for a tool ability |
 
-It calls `wfd_agent_relay` with the entries and a timeout of 60. Result: `{ "ok": true, "results": [ envelope, … ] }` when every envelope is `ok`, and `{ "ok": false, "results": [ … ] }` when one failed, with the envelopes as the relay gives them (`../../../spec/agent/relay.md`). A failure of the relay itself is an error, as for a tool ability. The three abilities of this section are not tools and cannot be in a batch: naming one is the relay's `unknown_tool`.
+It calls `wfd_agent_relay` with the entries and a timeout of 60. Result: `{ "ok": true, "results": [ envelope, … ] }` when every envelope is `ok`, and `{ "ok": false, "results": [ … ] }` when one failed, with the envelopes as the relay gives them (`../../../spec/agent/relay.md`). A failure of the relay itself is an error, as for a tool ability. The four abilities of this section are not tools and cannot be in a batch: naming one is the relay's `unknown_tool`.
 
 ## Relay failures
 
@@ -134,4 +147,5 @@ Rules:
 - If you change the site in another way, run `wfd/board-refresh` afterwards so the board shows it.
 - With several boards open, pass `board` with the id of the one you mean.
 - To work on another board, run `wfd/board-open` for it and open its address.
+- To make a new board, run `wfd/board-new` and open its address.
 ```

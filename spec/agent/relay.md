@@ -79,6 +79,7 @@ A way in that runs in PHP reaches the board through these functions, and through
 | `wfd_agent_begin( string $source )` | Marks the session as a command does, with no call. A board opened afterwards finds the session on its first poll. |
 | `wfd_agent_boards()` | Every published board, as `{ "id", "title", "address", "listening" }`, by id. `address` is the URL of the board's page in wp-admin. It marks no session. |
 | `wfd_agent_tools()` | The declarations, as an array. |
+| `wfd_agent_board_new( string $title = '' )` | Makes a board as "Add board" does (`screens/Boards.md`): published, with the empty layout, titled `$title`, or "Untitled board" when it is empty. Returns the board as `wfd_agent_boards()` lists it, or `{ "ok": false, "error": { "code": "unavailable", "message": "The board could not be made." } }` when WordPress could not make it. It marks no session (D103). |
 
 The caller checks that its user may use the plugin (C19); the functions do not.
 

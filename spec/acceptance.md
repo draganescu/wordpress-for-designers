@@ -249,6 +249,7 @@ The five groups below cover `agent/`. Unless a criterion says otherwise: the fix
 - AC-AGENT-12 On a site where no way in has been used, after `wfd_agent_begin( 'test' )` a board that is then opened asks the poll route within 2 seconds of loading, requests the agent chunk and shows G1. No page other than a board page sends a request to `wfd/v1/agent`: the Boards screen and the dashboard, left open for 30 seconds during the session, send none. `[U]`
 - AC-AGENT-13 A call made with the source `test` has `"source": "test"` in its record while it is queued. Afterwards `wfd_agent_sources` holds a time for `test`, and after a `wp wfd status` one for `cli` too; the poll's answer lists both in `sources`. G1, G2 and the authorship of the change are the same for a call from either. `[U]`
 - AC-AGENT-14 `wfd_agent_boards()` returns every published board with its id, title and address and with `listening` true only for a board open in a page; each address opens that board for an administrator. Calling it on a site where no way in has been used leaves `wfd_agent_seen` absent. `[N]`
+- AC-AGENT-15 `wfd_agent_board_new()` makes a published board titled "Untitled board" with no artboards, and `wfd_agent_board_new( 'Launch' )` one titled "Launch". Each returns the board's id, title and address with `listening` false, the address opens that board for an administrator, and `wfd_agent_seen` stays absent on a site where no way in has been used. `[U]`
 
 ## CLI
 

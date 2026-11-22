@@ -23,7 +23,7 @@ The board must be open and visible for step 5: a board page does not ask while i
 
 ## What the adapter does `[U]`
 
-- It registers the ability category and the 24 abilities of `abilities.md`: one for each of the 21 tools, and three of its own (D96).
+- It registers the ability category and the 25 abilities of `abilities.md`: one for each of the 21 tools, and four of its own (D96, D103).
 - It holds the guide, the text of `abilities.md` that `wfd/board-open` returns.
 
 Its label for the way in (D93) is `abilities`.
@@ -55,8 +55,8 @@ If (b) shows that results need an output schema, or (c) that a code is lost, tha
 
 | ID | Rule | Reason | Check |
 |---|---|---|---|
-| AB1 | The adapter calls only `wfd_agent_relay`, `wfd_agent_begin`, `wfd_agent_boards` and `wfd_agent_tools` of the main plugin. It reads no option, post, constant or global of the main plugin's. | D92: one public surface. | AC-ABIL-12; code review |
+| AB1 | The adapter calls only `wfd_agent_relay`, `wfd_agent_begin`, `wfd_agent_boards`, `wfd_agent_tools` and `wfd_agent_board_new` of the main plugin. It reads no option, post, constant or global of the main plugin's. | D92: one public surface. | AC-ABIL-12; code review |
 | AB2 | A tool ability's name, description and input fields come from `wfd_agent_tools()` when abilities are registered. The adapter holds no copy of the declarations. | D95: a tool added by a later decision appears with no change to the adapter. | AC-ABIL-02 |
-| AB3 | Nothing is saved, published or deleted by an ability, and the guide tells the agent not to save through the browser either. | D78 of the main plugin: the agent never saves. An agent that controls a browser could press Save, and only the guide stands in its way. | AC-ABIL-10; `agent-check.md` |
+| AB3 | Nothing is saved, published or deleted by an ability, except the board `wfd/board-new` makes (D103), and the guide tells the agent not to save through the browser either. | D78 of the main plugin: the agent never saves. An agent that controls a browser could press Save, and only the guide stands in its way. | AC-ABIL-10; `agent-check.md` |
 | AB4 | On a site where no way in has been used, activating the adapter and listing abilities changes nothing for an open board: `wfd/boards-list` marks no session. | C27 of the main plugin. | AC-ABIL-11 |
 | AB5 | The adapter is not for a session with no board on screen, and has no server-side version of any tool. | D95, D68. | None |

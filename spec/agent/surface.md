@@ -141,7 +141,7 @@ The strings are translated like every other string of the plugin (C23).
 
 ## For adapters
 
-Two PHP hooks let a separate plugin attach to the board page and to the runbook, and four PHP functions let one make calls from the server (D92). Together they are the whole server-side interface for adapters.
+Two PHP hooks let a separate plugin attach to the board page and to the runbook, and five PHP functions let one make calls from the server (D92, D103). Together they are the whole server-side interface for adapters.
 
 | Hook | Kind | When and what |
 |---|---|---|
@@ -154,5 +154,6 @@ Two PHP hooks let a separate plugin attach to the board page and to the runbook,
 | `wfd_agent_begin( $source )` | A session with no call |
 | `wfd_agent_boards()` | The site's boards, with their addresses and whether each is listening |
 | `wfd_agent_tools()` | The declarations |
+| `wfd_agent_board_new( $title )` | A new board |
 
 Nothing in this plugin names a harness or holds code for one (C32).
