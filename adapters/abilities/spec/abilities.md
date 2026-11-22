@@ -47,7 +47,7 @@ Executing one:
 2. If the relay failed, return an error with its code and the message of Relay failures below.
 3. If the one envelope is `ok`, return its `result`. Otherwise return an error with the envelope's `code` and `message`, unchanged (D98).
 
-An error is a `WP_Error` whose code is the code and whose message is the message.
+An error is a `WP_Error` whose code is the code and whose message is the code, a colon, a space and the message: `not_found: Artboard wfd-ref-a_3f2c… was not found.` (D101). What carries abilities to an agent may pass on the message alone, so the code is in it. This holds for every error the adapter returns; the messages in this file are given without the code.
 
 Annotations:
 

@@ -49,7 +49,7 @@ Three throwaway proofs, run on the test environment of `acceptance.md` before th
 | (b) | A result crosses the Abilities API and the MCP Adapter unchanged. | The JSON the MCP client receives for `board-get`, and for a made-up result holding `{}`, `[]`, `0.3`, `1` and `null` at the top level and nested, equals what the board sent: an empty object stays an object and a whole number stays whole. The spike settles whether an ability needs an output schema for this, and reports it. |
 | (c) | An error keeps its code. | A tool failure (`not_found`) and a relay failure (`no_board`) each reach the MCP client with the code readable, as a field or in the text. The spike reports where the code is found. |
 
-If (b) shows that results need an output schema, or (c) that a code is lost, that is an open question for the product owner, not something to patch around.
+If (b) shows that results need an output schema, or (c) that a code is lost, that is an open question for the product owner, not something to patch around. Spike (c) did show it, and the product owner decided D101: the code is at the start of the message (`spike-report.md`).
 
 ## Rules
 
