@@ -635,8 +635,24 @@ test.describe( 'STUDIO', () => {
         await openBoard( page, fixture.boardId );
         await boardAtRest( page );
         await annotate( page );
-        const requests: string[] = [];
-        page.on( 'request', ( request ) => requests.push( request.url() ) );
+        // The layouts the board saves. A height the board measures is saved
+        // too, a moment after it is drawn, and later on a slow machine; the
+        // designer's layout is everything else.
+        const saved: any[] = [];
+        page.on( 'request', ( request ) => {
+            if (
+                /wfd-boards/.test( request.url() ) &&
+                request.method() !== 'GET'
+            ) {
+                saved.push( request.postDataJSON()?.layout );
+            }
+        } );
+        const placement = ( artboards: any[] ) =>
+            artboards
+                .map( ( { id, x, y }: any ) => ( { id, x, y } ) )
+                .sort( ( one: any, two: any ) =>
+                    one.id.localeCompare( two.id )
+                );
 
         const state = async () => {
             const board: any = await callTool( page, 'board-get' );
@@ -680,11 +696,14 @@ test.describe( 'STUDIO', () => {
         await expect(
             page.locator( '[data-wfd-control="H9"]' )
         ).toBeDisabled();
-        // The adapter called no tool and saved nothing: the board was not
-        // written to.
-        expect(
-            requests.filter( ( url ) => /wfd-boards/.test( url ) )
-        ).toEqual( [] );
+        // The adapter called no tool: whatever the board saved holds the
+        // layout as it was.
+        for ( const layout of saved ) {
+            expect( placement( layout.artboards ) ).toEqual(
+                placement( before.artboards )
+            );
+            expect( layout.notes ?? [] ).toEqual( before.notes ?? [] );
+        }
     } );
 
     test( 'AC-STUDIO-10 After a command with active: false the layer is gone and G1 no longer reads "Annotating"; with the main plugin deactivated the adapter adds nothing to any page and WordPress shows no notice or error', async ( {
