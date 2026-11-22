@@ -6,6 +6,7 @@ import { parse } from '@wordpress/blocks';
 import { actions, findArtboard } from '../board';
 import { clientIdAt, editorOf, settled } from '../blocks';
 import { invalidArgs, notAllowed, notFound } from '../errors';
+import { withinLimit } from '../limit';
 
 export default async function blocksInsert( input ) {
     const { markup, pattern } = input;
@@ -20,7 +21,7 @@ export default async function blocksInsert( input ) {
     let blocks;
     if ( pattern !== undefined ) {
         // As the pattern's inserter row inserts it in edit (D39).
-        blocks = await actions().patternBlocks( pattern );
+        blocks = await withinLimit( actions().patternBlocks( pattern ) );
         if ( ! blocks ) {
             throw notFound( 'Pattern', pattern );
         }

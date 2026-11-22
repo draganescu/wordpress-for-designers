@@ -3,8 +3,9 @@
  * Authorship). The unit is a Review item. An item is the agent's when its
  * edits changed during a tool call, or within a second after a tool that
  * changed it and before the designer acted there (D81); the designer's when
- * they changed at any other time; and both when both have changed it. The
- * record is kept in the page, for as long as the unsaved edits.
+ * they changed at any other time, or during a call after the designer acted
+ * in its artboard (D88); and both when both have changed it. The record is
+ * kept in the page, for as long as the unsaved edits.
  */
 import { subscribe } from '@wordpress/data';
 import { frameOf } from '../artboard-frame/rects';
@@ -29,17 +30,124 @@ const touched = new Set();
 // over. The designer's first key or pointer press ends them all.
 const seconds = new Map();
 let stopWatching = null;
+// The items whose artboard, or its chrome, the designer has pressed a key or
+// a pointer button in while the running call runs (D88).
+const pressed = new Set();
+let stopPresses = null;
 const listeners = new Set();
 
 const isAgents = ( key ) => calls > 0 || seconds.get( key ) > Date.now();
 
 function attribute( key ) {
-    const who = isAgents( key ) ? 'agent' : 'you';
+    let who = isAgents( key ) ? 'agent' : 'you';
     if ( calls > 0 ) {
         touched.add( key );
+        // The designer acted there during the call: what changes is
+        // theirs as well.
+        if ( pressed.has( key ) ) {
+            who = 'both';
+        }
     }
     const had = authors.get( key );
     authors.set( key, had && had !== who ? 'both' : who );
+}
+
+/**
+ * Which artboard a press of the designer's is in.
+ *
+ * @param {Event}       event  The key or pointer press.
+ * @param {string|null} liveId The artboard in edit.
+ * @return {string|null|undefined} The artboard's id; null for its chrome
+ *                                 with no artboard in edit; undefined for
+ *                                 a press that is not the designer's, or
+ *                                 is on a note or another artboard's label.
+ */
+function pressedIn( event, liveId ) {
+    // WordPress copies the canvas's events onto its iframe element; the
+    // designer's own are the trusted ones.
+    if ( ! event.isTrusted ) {
+        return undefined;
+    }
+    const doc = event.target.ownerDocument ?? event.target;
+    if ( doc !== document ) {
+        // The canvas of an artboard's editor: the artboard its frame is in.
+        return (
+            doc.defaultView?.frameElement
+                ?.closest( '[data-wfd-artboard]' )
+                ?.getAttribute( 'data-wfd-artboard' ) ?? liveId
+        );
+    }
+    const on = event.target.closest?.( '[data-wfd-artboard], [data-wfd-note]' );
+    if ( ! on ) {
+        // The chrome: header, panels, inspector, list view.
+        return liveId;
+    }
+    return on.getAttribute( 'data-wfd-artboard' ) ?? undefined;
+}
+
+/**
+ * Listens for the designer's key and pointer presses in the board and in
+ * the canvas of the artboard in edit. The canvas is looked for again on
+ * each `refresh`, since a call can put another artboard in edit.
+ *
+ * @param {Function} onPress Called with the press and the artboard in edit.
+ * @return {Object} `refresh` and `stop`.
+ */
+function listenForPresses( onPress ) {
+    const documents = new Set();
+    const handle = ( event ) => onPress( event, editor()?.liveId() ?? null );
+    const add = ( doc ) => {
+        if ( doc && ! documents.has( doc ) ) {
+            documents.add( doc );
+            doc.addEventListener( 'keydown', handle, true );
+            doc.addEventListener( 'pointerdown', handle, true );
+        }
+    };
+    const refresh = () => {
+        add( document );
+        const liveId = editor()?.liveId();
+        add( liveId ? frameOf( liveId ).document : null );
+    };
+    refresh();
+    return {
+        refresh,
+        stop: () => {
+            for ( const doc of documents ) {
+                doc.removeEventListener( 'keydown', handle, true );
+                doc.removeEventListener( 'pointerdown', handle, true );
+            }
+            documents.clear();
+        },
+    };
+}
+
+/**
+ * Watches the designer from the start of a call (D88): a press in an
+ * artboard or its chrome makes what changes in the item it shows the
+ * designer's too.
+ */
+function watchDuringCall() {
+    stopPresses?.stop();
+    pressed.clear();
+    stopPresses = listenForPresses( ( event, liveId ) => {
+        const id = pressedIn( event, liveId );
+        if ( ! id ) {
+            return;
+        }
+        const artboard = actions()
+            ?.board()
+            .artboards.find( ( item ) => item.id === id );
+        const key = artboard ? actions().itemKeyOf( artboard ) : null;
+        if ( key ) {
+            pressed.add( key );
+        }
+    } );
+}
+
+function stopWatchingCall() {
+    stopPresses?.stop();
+    stopPresses = null;
+    pressed.clear();
 }
 
 /**
@@ -60,39 +168,20 @@ function watchDesigner() {
     // A watch started by an earlier call is on the editor that was in edit
     // then, and ends when that call's second does: start again for this one.
     stopWatching?.();
-    const liveId = editor()?.liveId();
-    const onPress = ( event ) => {
-        // WordPress copies the canvas's events onto its iframe element;
-        // the designer's own are the trusted ones.
-        if ( ! event.isTrusted ) {
-            return;
-        }
+    const liveId = editor()?.liveId() ?? null;
+    const presses = listenForPresses( ( event ) => {
+        const id = pressedIn( event, liveId );
         // Another artboard or a note is neither that artboard nor its
         // chrome.
-        const other = event.target.closest?.(
-            '[data-wfd-artboard], [data-wfd-note]'
-        );
-        if ( other && other.getAttribute( 'data-wfd-artboard' ) !== liveId ) {
+        if ( id === undefined || ( id !== null && id !== liveId ) ) {
             return;
         }
         endSeconds();
-    };
-    const documents = [ document ];
-    const canvas = liveId ? frameOf( liveId ).document : null;
-    if ( canvas ) {
-        documents.push( canvas );
-    }
-    for ( const doc of documents ) {
-        doc.addEventListener( 'keydown', onPress, true );
-        doc.addEventListener( 'pointerdown', onPress, true );
-    }
+    } );
     const timer = window.setTimeout( endSeconds, SECOND );
     stopWatching = () => {
         window.clearTimeout( timer );
-        for ( const doc of documents ) {
-            doc.removeEventListener( 'keydown', onPress, true );
-            doc.removeEventListener( 'pointerdown', onPress, true );
-        }
+        presses.stop();
     };
 }
 
@@ -105,6 +194,8 @@ function check() {
     if ( ! seam ) {
         return;
     }
+    // A call can put another artboard in edit: its canvas is watched too.
+    stopPresses?.refresh();
     const now = new Map( seam.changeMarks() );
     const isStep = seam.isHistoryStep();
     let hasChanged = false;
@@ -157,27 +248,38 @@ export function startAuthorship() {
 }
 
 /**
- * Marks the start of a tool call.
+ * Marks the start of a tool call. Nothing that can throw comes after the
+ * count goes up.
  */
 export function beginCall() {
     check();
     touched.clear();
+    if ( calls === 0 ) {
+        watchDuringCall();
+    }
     calls++;
 }
 
 /**
  * Marks the end of a tool call. The items it changed have a second in which
  * a change to them is still the agent's; a call that changed nothing starts
- * none.
+ * none. The count goes down whatever the last look at the items throws.
  */
 export function endCall() {
-    check();
-    calls--;
-    if ( touched.size ) {
-        const until = Date.now() + SECOND;
-        touched.forEach( ( key ) => seconds.set( key, until ) );
+    try {
+        check();
+    } finally {
+        calls--;
+        const keys = [ ...touched ];
         touched.clear();
-        watchDesigner();
+        if ( calls === 0 ) {
+            stopWatchingCall();
+        }
+        if ( keys.length ) {
+            const until = Date.now() + SECOND;
+            keys.forEach( ( key ) => seconds.set( key, until ) );
+            watchDesigner();
+        }
     }
 }
 

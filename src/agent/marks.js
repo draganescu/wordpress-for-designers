@@ -59,8 +59,10 @@ function draw() {
  * @param {string[]} ids The artboards the call names.
  */
 export function workStarted( ids ) {
-    running++;
     ids.forEach( ( id ) => working.set( id, Infinity ) );
+    // The count goes up last: nothing after it can throw but the drawing,
+    // and `workEnded` follows whatever throws.
+    running++;
     draw();
 }
 
@@ -70,6 +72,7 @@ export function workStarted( ids ) {
  * @param {string[]} ids The artboards the call named.
  */
 export function workEnded( ids ) {
+    // Down first, before anything that can throw.
     running--;
     lastEnded = Date.now();
     ids.forEach( ( id ) => working.set( id, lastEnded + STAY ) );

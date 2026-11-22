@@ -106,6 +106,15 @@ class WFD_Agent_Command {
     }
 
     /**
+     * Notes that a command ran, or fails when that cannot be written.
+     */
+    private function touch() {
+        if ( ! wfd_agent_touch() ) {
+            $this->fail( 'unavailable', WFD_AGENT_WRITE_FAILED );
+        }
+    }
+
+    /**
      * The value of a flag: as parsed when it is valid JSON, else the string.
      *
      * @param mixed $value The flag's value.
@@ -167,10 +176,15 @@ class WFD_Agent_Command {
             $board = $boards[0]['id'];
         }
 
-        $id   = wp_generate_uuid4();
-        $name = WFD_AGENT_CALL . $id;
-        $now  = time();
-        add_option(
+        $encoded = wp_json_encode( $calls );
+        if ( false === $encoded || strlen( $encoded ) > WFD_AGENT_MAX_BYTES ) {
+            $this->fail( 'invalid_args', 'The input is larger than 1 MB.' );
+        }
+
+        $id    = wp_generate_uuid4();
+        $name  = WFD_AGENT_CALL . $id;
+        $now   = time();
+        $added = add_option(
             $name,
             wp_json_encode(
                 array(
@@ -180,11 +194,16 @@ class WFD_Agent_Command {
                     'status'  => 'queued',
                     'created' => $now,
                     'expires' => $now + WFD_AGENT_CALL_LIFE,
+                    // The page starts no entry once this has passed (D89).
+                    'timeout' => $timeout,
                 )
             ),
             '',
             false
         );
+        if ( ! $added ) {
+            $this->fail( 'unavailable', WFD_AGENT_WRITE_FAILED );
+        }
 
         $started = microtime( true );
         $call    = null;
@@ -210,7 +229,7 @@ class WFD_Agent_Command {
      *     wp wfd status
      */
     public function status() {
-        wfd_agent_touch();
+        $this->touch();
         $status = array(
             'plugin' => WFD_VERSION,
             'boards' => wfd_agent_listening_boards(),
@@ -239,7 +258,7 @@ class WFD_Agent_Command {
      * @param array $assoc_args The flags.
      */
     public function tools( $args, $assoc_args ) {
-        wfd_agent_touch();
+        $this->touch();
         if ( isset( $assoc_args['format'] ) && 'json' === $assoc_args['format'] ) {
             WP_CLI::line( rtrim( wfd_agent_tools_json() ) );
             return;
@@ -274,7 +293,7 @@ class WFD_Agent_Command {
      * @param array $assoc_args The flags.
      */
     public function call( $args, $assoc_args ) {
-        wfd_agent_touch();
+        $this->touch();
         $name = $args[0];
         $tool = null;
         foreach ( wfd_agent_tools() as $declared ) {
@@ -343,7 +362,7 @@ class WFD_Agent_Command {
      * @param array $assoc_args The flags.
      */
     public function batch( $args, $assoc_args ) {
-        wfd_agent_touch();
+        $this->touch();
         $json  = isset( $assoc_args['calls'] ) ? (string) $assoc_args['calls'] : (string) stream_get_contents( STDIN );
         $calls = json_decode( $json );
         if ( ! is_array( $calls ) || count( $calls ) < 1 || count( $calls ) > 50 ) {

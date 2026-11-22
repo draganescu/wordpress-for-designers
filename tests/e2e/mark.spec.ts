@@ -722,4 +722,66 @@ test.describe( 'MARK', () => {
             'true'
         );
     } );
+
+    test( 'AC-MARK-09 Typing in an artboard while a tool call on its item still runs makes the item both, and review-discard refuses it', async ( {
+        page,
+        requestUtils,
+    } ) => {
+        test.setTimeout( 90000 );
+        const fixture = await resetFixture( requestUtils );
+        await openBoard( page, fixture.boardId );
+        await boardAtRest( page );
+        const header = artboardOf( fixture, 'template-part' );
+        expect(
+            ( await callTool( page, 'artboard-edit', { artboard: header.id } ) )
+                .ok
+        ).toBe( true );
+
+        // The call is held for 4 seconds: the site's patterns are asked for
+        // again and answer late.
+        const list = /v2(\/|%2F)blocks([?&]|$)/;
+        await page.route( list, async ( route ) => {
+            await new Promise( ( resolve ) => setTimeout( resolve, 4000 ) );
+            await route.continue().catch( () => {} );
+        } );
+        await page.evaluate( () =>
+            ( window as any ).wp.data
+                .dispatch( 'core' )
+                .invalidateResolutionForStoreSelector( 'getEntityRecords' )
+        );
+        let isDone = false;
+        const insert = callTool( page, 'blocks-insert', {
+            artboard: header.id,
+            pattern: String( fixture.patterns.hero ),
+        } ).then( ( envelope: any ) => {
+            isDone = true;
+            return envelope;
+        } );
+        await expect( frame( page, header.id ) ).toHaveAttribute(
+            'data-wfd-agent-working',
+            'true'
+        );
+        // The designer types in it while the call runs.
+        await editorFrame( page, header.id )
+            .locator( 'p' )
+            .filter( { hasText: 'Fixture header text' } )
+            .click();
+        await page.keyboard.type( 'q' );
+        expect( isDone ).toBe( false );
+        expect( ( await insert ).ok ).toBe( true );
+        await page.unroute( list );
+
+        const items = ( await callTool( page, 'review-list' ) ).result.items;
+        const item = items.find( ( one: any ) => one.name === 'Header' );
+        expect( item.author ).toBe( 'both' );
+        expect(
+            await callTool( page, 'review-discard', { key: item.key } )
+        ).toEqual( {
+            ok: false,
+            error: {
+                code: 'not_agents',
+                message: 'Header also has changes made by the designer.',
+            },
+        } );
+    } );
 } );

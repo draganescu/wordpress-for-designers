@@ -64,3 +64,12 @@ export const SKIPPED = {
     ok: false,
     error: { code: 'skipped', message: 'An earlier call failed.' },
 };
+
+/**
+ * What an entry of a call gets when the command's time ran out before it
+ * started (spec/agent/relay.md; decision D89).
+ */
+export const OUT_OF_TIME = {
+    ok: false,
+    error: { code: 'skipped', message: 'The call ran out of time.' },
+};

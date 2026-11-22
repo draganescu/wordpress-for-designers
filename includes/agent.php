@@ -26,6 +26,10 @@ define( 'WFD_AGENT_LISTENING', 25 );
 define( 'WFD_AGENT_LISTENER_LIFE', 60 );
 // A call record lives this long at most.
 define( 'WFD_AGENT_CALL_LIFE', 300 );
+// The largest call input and result body, in bytes.
+define( 'WFD_AGENT_MAX_BYTES', 1048576 );
+// What a write to the relay's options that failed is reported as.
+define( 'WFD_AGENT_WRITE_FAILED', 'The relay could not write to the database.' );
 
 /**
  * The tool declarations, as includes/agent-tools.json holds them.
@@ -97,15 +101,44 @@ function wfd_agent_records( $prefix, $as_array = true ) {
 }
 
 /**
+ * Writes an option of the relay's, and says whether the row holds the value
+ * afterwards. `update_option` also answers false when the row already held
+ * the value, which is not a failure.
+ *
+ * @param string $name  The option name.
+ * @param mixed  $value The value, as it is stored.
+ * @return bool Whether the row holds the value.
+ */
+function wfd_agent_update( $name, $value ) {
+    global $wpdb;
+    // The value this process last read may be older than the row.
+    wp_cache_delete( $name, 'options' );
+    if ( update_option( $name, $value, false ) ) {
+        return true;
+    }
+    $stored = $wpdb->get_var( $wpdb->prepare( "SELECT option_value FROM $wpdb->options WHERE option_name = %s", $name ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+    return null !== $stored && (string) $stored === (string) $value;
+}
+
+/**
  * Writes one of the relay's records.
  *
  * @param string       $name   The option name.
  * @param array|object $record The record.
+ * @return bool Whether it was written.
  */
 function wfd_agent_write( $name, $record ) {
-    // The value this process last read may be older than the row.
-    wp_cache_delete( $name, 'options' );
-    update_option( $name, wp_json_encode( $record ), false );
+    return wfd_agent_update( $name, wp_json_encode( $record ) );
+}
+
+/**
+ * The error a route answers with when a write to the relay's options
+ * failed.
+ *
+ * @return WP_Error
+ */
+function wfd_agent_write_error() {
+    return new WP_Error( 'wfd_agent_write_failed', WFD_AGENT_WRITE_FAILED, array( 'status' => 500 ) );
 }
 
 /**
@@ -131,13 +164,15 @@ function wfd_agent_is_active() {
 /**
  * Notes that a `wp wfd` command ran now, and makes sure the cleanup is
  * scheduled.
+ *
+ * @return bool Whether the time was written.
  */
 function wfd_agent_touch() {
-    wp_cache_delete( WFD_AGENT_SEEN, 'options' );
-    update_option( WFD_AGENT_SEEN, time(), false );
+    $written = wfd_agent_update( WFD_AGENT_SEEN, (string) time() );
     if ( ! wp_next_scheduled( WFD_AGENT_CLEANUP ) ) {
         wp_schedule_event( time(), 'hourly', WFD_AGENT_CLEANUP );
     }
+    return $written;
 }
 
 /**
@@ -242,9 +277,14 @@ function wfd_agent_take_call( $board, $client ) {
         );
         wp_cache_delete( $name, 'options' );
         if ( 1 === $changed ) {
+            // The seconds left of the command's timeout, worked out here so
+            // that the page compares no clock of its own with the server's
+            // (D89).
+            $timeout = isset( $call->timeout ) ? (int) $call->timeout : 30;
             return array(
-                'id'    => $call->id,
-                'calls' => $call->calls,
+                'id'        => $call->id,
+                'calls'     => $call->calls,
+                'remaining' => max( 0, round( (int) $call->created + $timeout - microtime( true ), 3 ) ),
             );
         }
     }
@@ -258,9 +298,9 @@ function wfd_agent_take_call( $board, $client ) {
  * @return WP_REST_Response
  */
 function wfd_agent_poll( $request ) {
-    $board  = (int) $request['board'];
-    $client = (string) $request['client'];
-    wfd_agent_write(
+    $board   = (int) $request['board'];
+    $client  = (string) $request['client'];
+    $written = wfd_agent_write(
         WFD_AGENT_LISTENER . $client,
         array(
             'board' => $board,
@@ -268,6 +308,9 @@ function wfd_agent_poll( $request ) {
             'seen'  => time(),
         )
     );
+    if ( ! $written ) {
+        return wfd_agent_write_error();
+    }
     return rest_ensure_response(
         array(
             'active' => wfd_agent_is_active(),
@@ -280,14 +323,31 @@ function wfd_agent_poll( $request ) {
  * POST wfd/v1/agent/result.
  *
  * @param WP_REST_Request $request The request.
- * @return WP_REST_Response
+ * @return WP_REST_Response|WP_Error
  */
 function wfd_agent_result( $request ) {
     $name = WFD_AGENT_CALL . (string) $request['id'];
     $call = wfd_agent_read( $name, false );
-    // The body is read as objects, so that an empty object in a result is
-    // not stored as an empty list.
-    $body = json_decode( $request->get_body() );
+    // A body over the limit is not stored: each entry fails instead, so the
+    // command answers at once.
+    if ( strlen( $request->get_body() ) > WFD_AGENT_MAX_BYTES ) {
+        $results = array();
+        $count   = is_object( $call ) && isset( $call->calls ) ? count( (array) $call->calls ) : 0;
+        for ( $index = 0; $index < $count; $index++ ) {
+            $results[] = array(
+                'ok'    => false,
+                'error' => array(
+                    'code'    => 'invalid_args',
+                    'message' => 'The result is larger than 1 MB.',
+                ),
+            );
+        }
+        $body = (object) array( 'results' => json_decode( wp_json_encode( $results ) ) );
+    } else {
+        // The body is read as objects, so that an empty object in a result
+        // is not stored as an empty list.
+        $body = json_decode( $request->get_body() );
+    }
     if (
         ! is_object( $call ) ||
         ! isset( $call->status, $call->client, $body->results ) ||
@@ -299,7 +359,9 @@ function wfd_agent_result( $request ) {
     }
     $call->status  = 'done';
     $call->results = $body->results;
-    wfd_agent_write( $name, $call );
+    if ( ! wfd_agent_write( $name, $call ) ) {
+        return wfd_agent_write_error();
+    }
     return rest_ensure_response( array( 'stored' => true ) );
 }
 

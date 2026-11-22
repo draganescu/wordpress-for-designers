@@ -16,6 +16,14 @@ const TYPE_WORDS = {
     null: 'null',
 };
 
+/**
+ * @param {Object} object An object.
+ * @param {string} name   A property's name.
+ * @return {boolean} Whether the object has the property itself.
+ */
+const isOwn = ( object, name ) =>
+    Object.prototype.hasOwnProperty.call( object, name );
+
 function isType( value, type ) {
     switch ( type ) {
         case 'string':
@@ -96,12 +104,16 @@ function check( value, schema, field, tool ) {
     }
     if ( schema.properties && isType( value, 'object' ) ) {
         for ( const name of schema.required ?? [] ) {
-            if ( value[ name ] === undefined ) {
+            if ( ! isOwn( value, name ) || value[ name ] === undefined ) {
                 return `${ name } is required.`;
             }
         }
         for ( const name of Object.keys( value ) ) {
-            const property = schema.properties[ name ];
+            // Only the schema's own properties are fields: an input field
+            // named after something every object inherits is not one.
+            const property = isOwn( schema.properties, name )
+                ? schema.properties[ name ]
+                : null;
             if ( ! property ) {
                 if ( schema.additionalProperties === false ) {
                     return `${ name } is not a field of ${ tool }.`;

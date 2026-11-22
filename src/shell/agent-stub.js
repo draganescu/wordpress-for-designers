@@ -11,6 +11,8 @@ import { store as boardStore } from '../board-store';
 // How often the relay is asked, in ms: with no session, and during one.
 const IDLE = 10000;
 const ACTIVE = 1000;
+// The pause before a failed send of results is tried again, in ms.
+const RETRY = 1000;
 
 let loading = null;
 
@@ -32,6 +34,30 @@ let surface = null;
 function ready() {
     surface ??= load().then( ( module ) => module.surface );
     return surface;
+}
+
+/**
+ * Sends a call's results, trying again after a failed send for as long as
+ * the command can still be waiting for them (spec/agent/relay.md).
+ *
+ * @param {Object} config   The relay's routes.
+ * @param {Object} data     The body: `id`, `client` and `results`.
+ * @param {number} deadline When the command stops waiting, in ms.
+ */
+async function sendResults( config, data, deadline ) {
+    for (;;) {
+        try {
+            await apiFetch( { path: config.send, method: 'POST', data } );
+            return;
+        } catch {
+            if ( Date.now() + RETRY > deadline ) {
+                return;
+            }
+            await new Promise( ( resolve ) =>
+                window.setTimeout( resolve, RETRY )
+            );
+        }
+    }
 }
 
 /**
@@ -62,8 +88,9 @@ function listen( config ) {
             return;
         }
         isAsking = true;
+        let answer = null;
         try {
-            const answer = await apiFetch( {
+            answer = await apiFetch( {
                 path: config.poll,
                 method: 'POST',
                 data: {
@@ -72,19 +99,37 @@ function listen( config ) {
                     title: board.getTitle(),
                 },
             } );
-            if ( answer.active || answer.call || isActive ) {
-                const { relay } = await load();
-                await relay( answer, ( results ) =>
-                    apiFetch( {
-                        path: config.send,
-                        method: 'POST',
-                        data: { id: answer.call.id, client, results },
-                    } )
+        } catch {
+            // The relay could not be reached: it is asked again in turn,
+            // and until a poll succeeds the board does not show a session.
+            if ( loading ) {
+                await load().then(
+                    ( { relay } ) => relay( { active: false, call: null } ),
+                    () => {}
                 );
             }
+        }
+        if ( answer ) {
+            const received = Date.now();
+            try {
+                if ( answer.active || answer.call || isActive ) {
+                    const { relay } = await load();
+                    await relay(
+                        answer,
+                        ( results, deadline ) =>
+                            sendResults(
+                                config,
+                                { id: answer.call.id, client, results },
+                                deadline
+                            ),
+                        received
+                    );
+                }
+            } catch {
+                // The surface could not be loaded: it is tried again in
+                // turn.
+            }
             isActive = !! answer.active;
-        } catch {
-            // The relay could not be reached: it is asked again in turn.
         }
         isAsking = false;
         wait( isActive ? ACTIVE : IDLE );

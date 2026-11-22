@@ -8,10 +8,8 @@ import { store as coreStore } from '@wordpress/core-data';
 import { editSeam } from '../shell/seams';
 import { locked, notEditable, notFound, notReady } from './errors';
 import { frameOf } from '../artboard-frame/rects';
+import { LIMIT, nextFrame, withinLimit } from './limit';
 import { hasEveryBlock, isDrawn } from './settle';
-
-// The one safety limit of a wait, in ms.
-const LIMIT = 10000;
 
 /**
  * @return {Object} The editor in edit seam.
@@ -19,26 +17,12 @@ const LIMIT = 10000;
 export const editor = () => editSeam.current;
 
 /**
- * Lets React draw what the stores hold now.
- *
- * @return {Promise<void>} Resolves after the next frame's work.
- */
-const nextRender = () =>
-    new Promise( ( resolve ) => {
-        const after = () => window.setTimeout( resolve, 0 );
-        if ( document.hidden ) {
-            after();
-        } else {
-            window.requestAnimationFrame( after );
-        }
-    } );
-
-/**
  * Puts an artboard in edit, unless it is in edit already, and waits until
  * its editor is mounted, the page's `core` store reports no selector still
  * resolving, and the blocks of its template parts, synced patterns, menus
  * and page content are in. An artboard already in edit and settled is not
- * waited for. A browser has no editor.
+ * waited for. A browser has no editor. At the safety limit a mounted editor
+ * with nothing resolving is taken as it is (D90).
  *
  * @param {Object} artboard The artboard with its name.
  * @return {Promise<void>} Resolves once the editor has settled.
@@ -46,7 +30,7 @@ const nextRender = () =>
 export async function putInEdit( artboard ) {
     const before = editor().bridgeRef.current;
     const wasLive = !! before && editor().liveId() === artboard.id;
-    const result = await editor().enter( artboard.id );
+    const result = await withinLimit( editor().enter( artboard.id ) );
     if ( result === 'not-editable' ) {
         throw notEditable( artboard.name );
     }
@@ -59,7 +43,9 @@ export async function putInEdit( artboard ) {
     if ( artboard.kind === 'browser' ) {
         return;
     }
-    const isSettled = () => {
+    // The editor of this artboard is mounted and has its settings, and the
+    // page's `core` store resolves nothing.
+    const isMounted = () => {
         const bridge = editor().bridgeRef.current;
         return (
             !! bridge &&
@@ -68,11 +54,19 @@ export async function putInEdit( artboard ) {
             ( wasLive || bridge !== before ) &&
             editor().liveId() === artboard.id &&
             bridge.isReady() &&
-            ! select( coreStore ).hasResolvingSelectors() &&
-            // What has resolved is drawn a moment later: the blocks that
-            // come from records are all in.
-            hasEveryBlock( bridge.registry, artboard ) &&
-            isDrawn( bridge.registry, frameOf( artboard.id ).document )
+            ! select( coreStore ).hasResolvingSelectors()
+        );
+    };
+    const isSettled = () => {
+        if ( ! isMounted() ) {
+            return false;
+        }
+        const { registry } = editor().bridgeRef.current;
+        // What has resolved is drawn a moment later: the blocks that come
+        // from records are all in.
+        return (
+            hasEveryBlock( registry, artboard ) &&
+            isDrawn( registry, frameOf( artboard.id ).document )
         );
     };
     if ( wasLive && isSettled() ) {
@@ -81,8 +75,14 @@ export async function putInEdit( artboard ) {
     const started = Date.now();
     while ( ! isSettled() ) {
         if ( Date.now() - started > LIMIT ) {
+            // A block of a plugin, or a pattern that holds itself, may never
+            // meet the conditions on inner blocks and elements: a mounted
+            // editor with nothing resolving is taken as it is (D90).
+            if ( isMounted() ) {
+                return;
+            }
             throw notReady( `${ artboard.name } did not finish loading.` );
         }
-        await nextRender();
+        await nextFrame();
     }
 }

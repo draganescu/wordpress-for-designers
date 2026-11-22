@@ -16,7 +16,7 @@ import {
     openInserter,
     postLock,
 } from './utils';
-import { callTool, wp } from './agent-utils';
+import { callTool, php, wp } from './agent-utils';
 
 const SAMPLE = path.join( __dirname, 'assets', 'wfd-sample.png' );
 const review = ( page: Page ) => page.locator( '[data-wfd-control="H9"]' );
@@ -3067,6 +3067,121 @@ test.describe( 'TOOL', () => {
         expect( Date.now() - started ).toBeGreaterThanOrEqual( 9500 );
         expect( Date.now() - started ).toBeLessThan( 13500 );
         await page.unroute( /template-parts/ );
+    } );
+
+    test( 'AC-TOOL-29 An artboard that never meets the settling conditions is read at the limit, one whose editor cannot mount fails with not_ready, and a refresh that never answers fails with unavailable', async ( {
+        page,
+        requestUtils,
+    } ) => {
+        test.setTimeout( 150000 );
+        const fixture = await resetFixture( requestUtils );
+        // A pattern holding a block that mounts one of its two inner
+        // blocks; a pattern that holds itself; and a third pattern, whose
+        // record is never answered.
+        const made = await php(
+            `$half = wp_insert_post( array( 'post_type' => 'wp_block', 'post_status' => 'publish', 'post_title' => 'Half', 'post_content' => '<!-- wp:test/half-mounted --><div class="wp-block-test-half-mounted"><!-- wp:paragraph --><p>Shown</p><!-- /wp:paragraph --><!-- wp:test/unmounted /--></div><!-- /wp:test/half-mounted -->' ) );
+            $itself = wp_insert_post( array( 'post_type' => 'wp_block', 'post_status' => 'publish', 'post_title' => 'Itself', 'post_content' => '' ) );
+            wp_update_post( array( 'ID' => $itself, 'post_content' => '<!-- wp:paragraph --><p>Before</p><!-- /wp:paragraph --><!-- wp:block {"ref":' . $itself . '} /-->' ) );
+            $hidden = wp_insert_post( array( 'post_type' => 'wp_block', 'post_status' => 'private', 'post_title' => 'Unreachable', 'post_content' => '<!-- wp:paragraph --><p>x</p><!-- /wp:paragraph -->' ) );
+            echo wp_json_encode( array( $half, $itself, $hidden ) );`
+        );
+        const [ half, itself, hidden ] = JSON.parse( made.stdout );
+        await openBoard( page, fixture.boardId );
+        const names = ( blocks: any[] ): string[] =>
+            blocks.flatMap( ( block ) => [
+                block.name,
+                ...names( block.inner ?? [] ),
+            ] );
+
+        // The block that never draws its second child: read once the limit
+        // has passed, with the blocks that are there.
+        const halfBoard = await callTool( page, 'artboard-add', {
+            kind: 'pattern',
+            entityId: half,
+        } );
+        expect( halfBoard.ok ).toBe( true );
+        let started = Date.now();
+        const halfRead = await callTool( page, 'blocks-get', {
+            artboard: halfBoard.result.id,
+            depth: 5,
+        } );
+        const tookHalf = Date.now() - started;
+        expect( halfRead.ok ).toBe( true );
+        expect( names( halfRead.result.blocks ) ).toEqual( [
+            'test/half-mounted',
+            'core/paragraph',
+            'test/unmounted',
+        ] );
+        expect( tookHalf ).toBeGreaterThanOrEqual( 9500 );
+        expect( tookHalf ).toBeLessThan( 13500 );
+
+        // The pattern that holds itself: its record is counted once.
+        const selfBoard = await callTool( page, 'artboard-add', {
+            kind: 'pattern',
+            entityId: itself,
+        } );
+        expect( selfBoard.ok ).toBe( true );
+        const selfRead = await callTool( page, 'blocks-get', {
+            artboard: selfBoard.result.id,
+            depth: 5,
+        } );
+        expect( selfRead.ok ).toBe( true );
+        expect( names( selfRead.result.blocks ).slice( 0, 2 ) ).toEqual( [
+            'core/paragraph',
+            'core/block',
+        ] );
+
+        // An artboard whose editor cannot mount: its record is asked for
+        // and never answered. It is put on the board as a layout step.
+        await callTool( page, 'edit-leave' );
+        const held = new RegExp( `wp(/|%2F)v2(/|%2F)blocks(/|%2F)${ hidden }` );
+        await page.route( held, () => {} );
+        const unreachable = '00000000-0000-4000-8000-000000000029';
+        await page.evaluate(
+            ( [ id, entityId ] ) =>
+                ( window as any ).wp.data.dispatch( 'wfd/board' ).addArtboard( {
+                    id,
+                    kind: 'pattern',
+                    entityId,
+                    device: 'desktop',
+                    x: 1580,
+                    y: 3200,
+                    height: 400,
+                } ),
+            [ unreachable, hidden ] as const
+        );
+        started = Date.now();
+        const never = await callTool( page, 'blocks-get', {
+            artboard: unreachable,
+        } );
+        expect( never.ok ).toBe( false );
+        expect( never.error.code ).toBe( 'not_ready' );
+        expect( never.error.message ).toMatch( /did not finish loading\.$/ );
+        expect( Date.now() - started ).toBeGreaterThanOrEqual( 9500 );
+        expect( Date.now() - started ).toBeLessThan( 13500 );
+        await page.unroute( held );
+        await callTool( page, 'edit-leave' );
+
+        // A refresh whose request never answers ends at the limit, and the
+        // next call runs.
+        const pages = /wp(\/|%2F)v2(\/|%2F)pages/;
+        await page.route( pages, () => {} );
+        started = Date.now();
+        const refreshed = await callTool( page, 'board-refresh' );
+        expect( refreshed ).toEqual( {
+            ok: false,
+            error: {
+                code: 'unavailable',
+                message: 'The board cannot be used right now.',
+            },
+        } );
+        expect( Date.now() - started ).toBeGreaterThanOrEqual( 9500 );
+        expect( Date.now() - started ).toBeLessThan( 13500 );
+        started = Date.now();
+        const next = await callTool( page, 'board-get' );
+        expect( next.ok ).toBe( true );
+        expect( Date.now() - started ).toBeLessThan( 2000 );
+        await page.unroute( pages );
     } );
 
     test( 'AC-TOOL-28 artboard-remove takes a never-saved new part off the board when only the agent changed it, and refuses once the designer has typed in it', async ( {

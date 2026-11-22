@@ -318,6 +318,97 @@ test.describe( 'AGENT', () => {
         }
     } );
 
+    test( 'AC-AGENT-10 A batch that outlasts its timeout starts no later entry, a failed send of results is tried again, and a failed poll ends the session mark until one succeeds', async ( {
+        page,
+        requestUtils,
+    } ) => {
+        test.setTimeout( 120000 );
+        const fixture = await resetFixture( requestUtils );
+        await wfd( [ 'status' ] );
+        const sent: any[] = [];
+        page.on( 'request', ( request ) => {
+            if ( isResult( request.url() ) ) {
+                sent.push( request.postDataJSON() );
+            }
+        } );
+        const asked = listening( page );
+        await openBoard( page, fixture.boardId );
+        await asked;
+        const about = fixture.layout.artboards.find(
+            ( a: any ) => a.entityId === fixture.pages.about
+        )!;
+        const selected = () =>
+            page.evaluate( () =>
+                ( window as any ).wp.data.select( 'wfd/board' ).getSelectedIds()
+            );
+        expect( await selected() ).toEqual( [] );
+
+        // The first entry is held back past the command's timeout: its
+        // requests answer after 5 seconds.
+        const pages = /wp(\/|%2F)v2(\/|%2F)pages/;
+        await page.route( pages, async ( route ) => {
+            await new Promise( ( resolve ) => setTimeout( resolve, 5000 ) );
+            await route.continue().catch( () => {} );
+        } );
+        const ran = await wfd(
+            [ 'batch', '--timeout=3' ],
+            JSON.stringify( [
+                { tool: 'board-refresh', input: {} },
+                { tool: 'board-select', input: { artboards: [ about.id ] } },
+            ] )
+        );
+        expect( ran.code ).toBe( 1 );
+        expect( JSON.parse( ran.stdout ).error ).toEqual( {
+            code: 'timeout',
+            message: 'The board did not answer within 3 seconds.',
+        } );
+        // On the board the running entry finishes, and the next is not
+        // started.
+        await expect.poll( () => sent.length, { timeout: 15000 } ).toBe( 1 );
+        expect( sent[ 0 ].results ).toEqual( [
+            { ok: true, result: { refreshed: true } },
+            {
+                ok: false,
+                error: {
+                    code: 'skipped',
+                    message: 'The call ran out of time.',
+                },
+            },
+        ] );
+        expect( await selected() ).toEqual( [] );
+        await page.unroute( pages );
+
+        // A send of results that fails is tried again.
+        let failures = 0;
+        const resultUrl = ( url: URL ) => isResult( url.href );
+        await page.route( resultUrl, async ( route ) => {
+            if ( failures++ === 0 ) {
+                await route.fulfill( { status: 500, body: '{}' } );
+                return;
+            }
+            await route.continue();
+        } );
+        const before = sent.length;
+        const answered = await wfd( [ 'call', 'board-get' ] );
+        expect( answered.code ).toBe( 0 );
+        expect( JSON.parse( answered.stdout ).ok ).toBe( true );
+        expect( sent.length - before ).toBe( 2 );
+        await page.unroute( resultUrl );
+
+        // A poll that fails ends the session's mark until one succeeds.
+        const chip = page.locator( '[data-wfd-agent]' );
+        await expect( chip ).toHaveCount( 1 );
+        const pollUrl = ( url: URL ) => isPoll( url.href );
+        await page.route( pollUrl, ( route ) =>
+            route.fulfill( { status: 500, body: '{}' } )
+        );
+        await expect( chip ).toHaveCount( 0, { timeout: 5000 } );
+        await page.waitForTimeout( 2500 );
+        await expect( chip ).toHaveCount( 0 );
+        await page.unroute( pollUrl );
+        await expect( chip ).toHaveCount( 1, { timeout: 5000 } );
+    } );
+
     test( 'AC-AGENT-09 With a board open in two pages a call is handed to one page only', async ( {
         page,
         context,

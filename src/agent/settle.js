@@ -38,35 +38,32 @@ function blocksOf( postType, id ) {
 }
 
 /**
- * How many inner blocks a block that takes them from a record will hold.
+ * The record a block takes its inner blocks from.
  *
  * @param {Object}  block     The block.
  * @param {Object}  artboard  The artboard in edit.
  * @param {boolean} isInQuery Whether the block is inside a Query Loop.
- * @return {number|null} The number; null for a block that holds its own
- *                       inner blocks, or whose record cannot be read.
+ * @return {Array|null} The record's post type and id, `[]` for a Content
+ *                      block that holds nothing, or null for a block that
+ *                      holds its own inner blocks.
  */
-function expectedInner( block, artboard, isInQuery ) {
+function recordOf( block, artboard, isInQuery ) {
     const { attributes } = block;
     switch ( block.name ) {
         case 'core/template-part':
             return attributes.slug
-                ? blocksOf(
+                ? [
                       'wp_template_part',
                       `${
                           attributes.theme ??
                           select( coreStore ).getCurrentTheme()?.stylesheet
-                      }//${ attributes.slug }`
-                  )
+                      }//${ attributes.slug }`,
+                  ]
                 : null;
         case 'core/block':
-            return attributes.ref
-                ? blocksOf( 'wp_block', attributes.ref )
-                : null;
+            return attributes.ref ? [ 'wp_block', attributes.ref ] : null;
         case 'core/navigation':
-            return attributes.ref
-                ? blocksOf( 'wp_navigation', attributes.ref )
-                : null;
+            return attributes.ref ? [ 'wp_navigation', attributes.ref ] : null;
         case 'core/post-content':
             // WordPress makes a Content block editable, and so the holder
             // of its post's blocks, only where it has a post to show and
@@ -77,8 +74,8 @@ function expectedInner( block, artboard, isInQuery ) {
             // blocks inside it they take themselves for editable and hold
             // their post's blocks; then they let them go.
             return artboard.kind === 'page' && ! isInQuery
-                ? blocksOf( 'page', artboard.entityId )
-                : 0;
+                ? [ 'page', artboard.entityId ]
+                : [];
     }
     return null;
 }
@@ -91,19 +88,30 @@ function expectedInner( block, artboard, isInQuery ) {
  */
 export function hasEveryBlock( registry, artboard ) {
     const editor = registry.select( blockEditorStore );
-    const isFull = ( clientId, isInQuery ) =>
+    // `within` holds the records the block is inside of. A record that is
+    // its own ancestor is counted once (D90): WordPress draws the inner
+    // copy as a warning that holds nothing.
+    const isFull = ( clientId, isInQuery, within ) =>
         editor.getBlocks( clientId ).every( ( block ) => {
-            const expected = expectedInner( block, artboard, isInQuery );
+            const record = recordOf( block, artboard, isInQuery );
+            const key = record?.length ? record.join( ':' ) : null;
+            let expected = null;
+            if ( record && ! record.length ) {
+                expected = 0;
+            } else if ( key && ! within.has( key ) ) {
+                expected = blocksOf( ...record );
+            }
             return (
                 ( expected === null ||
                     editor.getBlocks( block.clientId ).length === expected ) &&
                 isFull(
                     block.clientId,
-                    isInQuery || block.name === 'core/query'
+                    isInQuery || block.name === 'core/query',
+                    key ? new Set( [ ...within, key ] ) : within
                 )
             );
         } );
-    return isFull( '', false );
+    return isFull( '', false, new Set() );
 }
 
 /**

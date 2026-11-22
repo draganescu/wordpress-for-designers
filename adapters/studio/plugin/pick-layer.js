@@ -200,15 +200,37 @@
 
     function turnOff() {
         isOn = false;
-        if ( ! layer ) {
-            return;
-        }
-        layer.remove();
+        // Turning on may have stopped part way: each step is undone only if
+        // it was done, and a step that throws does not keep the others from
+        // being undone.
+        const steps = [
+            function () {
+                if ( layer ) {
+                    layer.remove();
+                }
+            },
+            function () {
+                if ( unsubscribe ) {
+                    unsubscribe();
+                }
+            },
+            function () {
+                if ( surface && surface.setAnnotating ) {
+                    surface.setAnnotating( false );
+                }
+            },
+        ];
+        steps.forEach( function ( step ) {
+            try {
+                step();
+            } catch ( error ) {
+                window.console.error( error );
+            }
+        } );
         layer = null;
         children = [];
-        unsubscribe();
         unsubscribe = null;
-        surface.setAnnotating( false );
+        surface = null;
     }
 
     window.addEventListener( COMMAND, function ( event ) {

@@ -5,6 +5,7 @@
 import { actions, describeArtboard } from '../board';
 import { editor, putInEdit } from '../edit';
 import { invalidArgs } from '../errors';
+import { withinLimit } from '../limit';
 
 export default async function artboardNew(
     { kind, purpose, x, y },
@@ -21,10 +22,12 @@ export default async function artboardNew(
     }
     // The New rows are offered with no artboard in edit (D63).
     editor().leave();
-    const id = await actions().createNew(
-        kind,
-        purpose,
-        x === undefined ? undefined : { x, y }
+    const id = await withinLimit(
+        actions().createNew(
+            kind,
+            purpose,
+            x === undefined ? undefined : { x, y }
+        )
     );
     if ( ! id ) {
         // A purpose whose template exists is not offered as new.

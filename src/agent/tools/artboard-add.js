@@ -5,6 +5,7 @@
 import { actions, describeArtboard } from '../board';
 import { editor } from '../edit';
 import { invalidArgs, notFound } from '../errors';
+import { withinLimit } from '../limit';
 
 const THINGS = {
     page: 'Page',
@@ -56,12 +57,12 @@ export default async function artboardAdd(
     let id;
     if ( isBrowser ) {
         // "New browser", then the click that places it (D55).
-        id = await actions().createNew( 'browser' );
+        id = await withinLimit( actions().createNew( 'browser' ) );
         if ( address !== '/' ) {
             actions().setAddress( id, address );
         }
     } else {
-        id = await actions().openExisting( kind, entityId );
+        id = await withinLimit( actions().openExisting( kind, entityId ) );
         if ( ! id ) {
             throw notFound( THINGS[ kind ], entityId );
         }

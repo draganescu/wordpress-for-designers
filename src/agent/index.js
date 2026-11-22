@@ -6,6 +6,7 @@
 import declarations from '../../includes/agent-tools.json';
 import { actionsSeam } from '../shell/seams';
 import {
+    OUT_OF_TIME,
     SKIPPED,
     ToolError,
     failed,
@@ -94,19 +95,24 @@ async function run( name, input ) {
         // (spec/agent/surface.md, Authorship), and the artboards the call
         // names are marked as worked on (Marks).
         const named = namedArtboards( input );
+        // Each count goes up as the last thing its function does, and the
+        // ends run whatever throws, so that no count stays up.
         beginCall();
-        workStarted( named );
         try {
-            const result = await fn( input, { changedOf, authorOf } );
-            // A JSON value, in one piece: what a block keeps as rich text
-            // is given as the markup it stands for.
-            return {
-                ok: true,
-                result: JSON.parse( JSON.stringify( result ) ),
-            };
+            workStarted( named );
+            try {
+                const result = await fn( input, { changedOf, authorOf } );
+                // A JSON value, in one piece: what a block keeps as rich
+                // text is given as the markup it stands for.
+                return {
+                    ok: true,
+                    result: JSON.parse( JSON.stringify( result ) ),
+                };
+            } finally {
+                workEnded( named );
+            }
         } finally {
             endCall();
-            workEnded( named );
         }
     } catch ( error ) {
         if ( error instanceof ToolError ) {
@@ -143,18 +149,23 @@ export const surface = {
 
 /**
  * The relay client: takes what a poll answered, runs the call it handed
- * over, entry by entry, and sends the results (spec/agent/relay.md).
+ * over, entry by entry, and sends the results (spec/agent/relay.md). No
+ * entry is started once the command's time has run out (D89).
  *
- * @param {Object}   answer The poll's answer: `active` and `call`.
- * @param {Function} send   Sends the results of the answer's call.
+ * @param {Object}   answer   The poll's answer: `active` and `call`.
+ * @param {Function} send     Sends the results of the answer's call.
+ * @param {number}   received When the answer came, in ms.
  */
-export async function relay( answer, send ) {
+export async function relay( answer, send, received = Date.now() ) {
     // The header chip shows from the poll that finds a session until the
     // poll that finds it ended.
     setSession( !! answer.active );
     if ( ! answer.call ) {
         return;
     }
+    // `remaining` is worked out on the server, so no two clocks are
+    // compared.
+    const deadline = received + ( answer.call.remaining ?? 0 ) * 1000;
     const results = [];
     let hasFailed = false;
     for ( const entry of answer.call.calls ) {
@@ -162,9 +173,13 @@ export async function relay( answer, send ) {
             results.push( SKIPPED );
             continue;
         }
+        if ( Date.now() >= deadline ) {
+            results.push( OUT_OF_TIME );
+            continue;
+        }
         const envelope = await call( entry.tool, entry.input );
         hasFailed = ! envelope.ok;
         results.push( envelope );
     }
-    await send( results );
+    await send( results, deadline );
 }

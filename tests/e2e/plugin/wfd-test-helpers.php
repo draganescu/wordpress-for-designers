@@ -334,6 +334,14 @@ add_action(
             "wp.blocks.registerBlockType( 'test/self-setting', { apiVersion: 3, title: 'Self setting', category: 'text', supports: { inserter: false }, attributes: { stamp: { type: 'string', default: '' } }, edit: function ( props ) { wp.element.useEffect( function () { if ( props.attributes.stamp ) { return; } var timer = setTimeout( function () { props.setAttributes( { stamp: 'set' } ); }, 400 ); return function () { clearTimeout( timer ); }; }, [] ); return wp.element.createElement( 'p', wp.blockEditor.useBlockProps(), 'Self setting ' + props.attributes.stamp ); }, save: function () { return null; } } );",
             'after'
         );
+        // A block that holds two inner blocks and mounts only one of them:
+        // its second child draws no element, so the artboard never meets
+        // the settling conditions (AC-TOOL-29).
+        wp_add_inline_script(
+            'wp-blocks',
+            "wp.blocks.registerBlockType( 'test/unmounted', { apiVersion: 3, title: 'Unmounted', category: 'text', parent: [ 'test/half-mounted' ], supports: { inserter: false }, edit: function () { return null; }, save: function () { return null; } } ); wp.blocks.registerBlockType( 'test/half-mounted', { apiVersion: 3, title: 'Half mounted', category: 'design', supports: { inserter: false }, edit: function () { return wp.element.createElement( 'div', wp.blockEditor.useInnerBlocksProps( wp.blockEditor.useBlockProps() ) ); }, save: function () { return wp.element.createElement( 'div', wp.blockEditor.useInnerBlocksProps.save( wp.blockEditor.useBlockProps.save() ) ); } } );",
+            'after'
+        );
     }
 );
 
