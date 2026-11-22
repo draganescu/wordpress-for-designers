@@ -1,0 +1,111 @@
+{
+    "container": "wp-env-agent-9632492e-cli-1",
+    "direct": {
+        "runs": 10,
+        "allAnswered": true,
+        "wallMs": {
+            "min": 472,
+            "median": 904,
+            "max": 1316
+        },
+        "waitMsInCommand": [
+            618,
+            405,
+            404,
+            202,
+            201,
+            1014,
+            1027,
+            606,
+            609,
+            205
+        ],
+        "bootMsInCommand": [
+            337,
+            331,
+            286,
+            214,
+            226,
+            224,
+            216,
+            286,
+            241,
+            457
+        ],
+        "recordsLeft": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "viaWpEnv": {
+        "runs": 5,
+        "allAnswered": true,
+        "wallMs": {
+            "min": 1246,
+            "median": 1614,
+            "max": 2036
+        },
+        "waitMsInCommand": [
+            1004,
+            1004,
+            604,
+            407,
+            404
+        ],
+        "bootMsInCommand": [
+            244,
+            213,
+            351,
+            223,
+            194
+        ],
+        "recordsLeft": [
+            0,
+            0,
+            0,
+            0,
+            0
+        ]
+    },
+    "readWithGetOption": {
+        "code": 1,
+        "ok": false,
+        "result": null,
+        "read": "option",
+        "statusSeen": "queued",
+        "statusInDb": "done",
+        "polls": 20,
+        "bootMs": 345,
+        "waitMs": 4019,
+        "left": 0,
+        "wallMs": 4419
+    },
+    "noPageAsking": {
+        "code": 1,
+        "ok": false,
+        "result": null,
+        "read": "db",
+        "statusSeen": "queued",
+        "statusInDb": "queued",
+        "polls": 10,
+        "bootMs": 205,
+        "waitMs": 2014,
+        "left": 0,
+        "wallMs": 2270
+    },
+    "page": {
+        "polls": 29,
+        "answered": 16
+    },
+    "sample": "{\"ok\":true,\"result\":{\"tool\":\"board-get\",\"title\":\"agent \\u203a Fixture board \\u2014 WordPress\",\"artboards\":9},\"read\":\"db\",\"statusSeen\":\"done\",\"statusInDb\":\"done\",\"polls\":3,\"bootMs\":337,\"waitMs\":618,\"left\":0}",
+    "errors": [],
+    "pass": true
+}

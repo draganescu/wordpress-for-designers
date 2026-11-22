@@ -143,6 +143,7 @@ function ColorRow( { token, isSelected, isPickerOpen, onToggle, onAnchor } ) {
             isSelected={ isSelected }
             aria-haspopup="dialog"
             aria-expanded={ isPickerOpen }
+            data-wfd-token={ `color:${ token.slug }` }
             onClick={ onToggle }
         />
     );
@@ -379,6 +380,9 @@ function TokensTab( {
                                 ) }
                                 suffix={ token.uses }
                                 isSelected={ selected }
+                                data-wfd-token={ `${
+                                    token.tokenType
+                                }:${ token.slug.replace( /^family:/, '' ) }` }
                                 onClick={ () =>
                                     onSelectToken?.(
                                         selected

@@ -228,3 +228,86 @@ Unless a criterion says otherwise, the fixture in `architecture.md` is loaded an
 - AC-A11Y-01 Every icon-only control has an accessible name equal to the label in `screens/`. `[D:Main]`
 - AC-A11Y-02 A keyboard-only user can select an artboard, enter edit, type, leave edit, open Review and save. `[U]`
 - AC-A11Y-03 The automated accessibility scan used by WordPress's end-to-end utilities reports no violations on the Overview, Main, Styles and Review states. `[N]`
+
+## Agent surface (D65)
+
+The five groups below cover `agent/`. Unless a criterion says otherwise: the fixture is loaded, the user is an administrator, one `wp wfd status` has already run on the site, and the fixture board is open in one page. "Runs" a `wp wfd` command means running it in the test environment's WP-CLI container (`api-allowlist.md`). A criterion that calls a tool "through the page" uses `window.wfdAgent.ready()` and `call`, with no `wp wfd` command. Marks are read from the attributes named in `agent/surface.md`, Marks. `[N]` for these conventions
+
+## AGENT
+
+- AC-AGENT-01 On a site where no `wp wfd` command has ever run, an open board sends no request to `wfd/v1/agent` in 30 seconds, requests no agent chunk and shows no G1. `[U]`
+- AC-AGENT-02 After a `wp wfd` command, an open board requests the agent chunk within 15 seconds and from then on asks the poll route every second. Once the session has ended (the test ends it by making `wfd_agent_seen` old) it asks every 10 seconds again. While the page is hidden it does not ask. `[U]`
+- AC-AGENT-03 `wp wfd status` with no board open prints an empty `boards` and the hint, with exit code 0. With the fixture board open in two pages it lists that board once, with its id and title, and no hint. `[N]`
+- AC-AGENT-04 `wp wfd call board-get` prints an `ok` envelope holding the fixture's artboards, with exit code 0, and the call's option is gone afterwards. `[U]`
+- AC-AGENT-05 With two different boards open, `wp wfd call board-get` fails with `several_boards` naming both; with `--board` it answers for the board named. `[N]`
+- AC-AGENT-06 With no board open, `wp wfd call board-get` fails with `no_board` in under 2 seconds. A call to a board whose page was closed after it last asked fails with `timeout` after `--timeout=2`, with exit code 1, and its option is gone. `[N]`
+- AC-AGENT-07 For an editor (no `edit_theme_options`) both relay routes return a permission error. `[U]`
+- AC-AGENT-08 Running the `wfd_agent_cleanup` event deletes a call record past its `expires` and a listener record more than 60 seconds old, and leaves fresh ones. Deactivating the plugin unschedules the event. Uninstalling deletes every `wfd_agent_` option. `[U]`
+- AC-AGENT-10 A batch whose first entry outlasts `--timeout` (the test holds it back) ends with `timeout` for the command; on the board the entry that was running finishes and no later entry starts. A failed send of results is tried again, and a poll that fails ends the session's mark on the board until one succeeds (D89). `[U]`
+- AC-AGENT-09 With the fixture board open in two pages, one `board-get` call is handed to one page only: exactly one of the two sends a result, and the command prints one envelope. `[N]`
+
+## CLI
+
+- AC-CLI-01 `wp wfd tools --format=json` prints the content of `includes/agent-tools.json`; it has the 21 tools of `agent/tools.md` in that file's order; and `tools` of `window.wfdAgent` is equal to it. `[U]`
+- AC-CLI-02 `wp wfd tools` prints the runbook of `agent/cli.md` verbatim, then `# Tools` with every tool in the stated form. Text added through the `wfd_agent_runbook` filter is printed before `# Tools`. `[N]`
+- AC-CLI-03 The same call given with `--<field>=<value>` flags, with `--input`, and with `--ref` in place of `--artboard` has the same effect and prints the same result. `[N]`
+- AC-CLI-04 `wp wfd call nothing-here` fails with `unknown_tool` and exit code 1, also with no board open. `[N]`
+- AC-CLI-05 A call whose input breaks the tool's schema fails with `invalid_args`, its message names the field, and nothing on the board changes. `[U]`
+- AC-CLI-06 `wp wfd batch` runs its calls in order on one board and prints one envelope per call. When the second of three fails, the third is `skipped`, the first stays done, and the exit code is 1. `[N]`
+- AC-CLI-08 `wp wfd call blocks-get --artboard=<id> --block='[0]'` reaches the board and returns that block: no field of any tool is a global parameter of WP-CLI (D80). `[U]`
+- AC-CLI-07 The standard output of `status`, `call` and `batch` is one JSON document and nothing else. `[N]`
+
+## TOOL
+
+- AC-TOOL-01 `board-get` returns the board's id and title, every artboard and note in left-panel order with the fields of `agent/tools.md`, the selection, the artboard in edit and the zoom. `[N]`
+- AC-TOOL-02 `board-select` with one artboard selects it and brings it into view; with two it selects both and fits them. With an artboard in edit, edit ends first. `[N]`
+- AC-TOOL-03 After a page's title is changed on the site with `wp post update`, `board-refresh` makes its artboard's label show the new title, and an unsaved change to another item is still listed in Review. `[N]`
+- AC-TOOL-04 `artboard-add` opens an existing page as an artboard where its inserter row's click would, and a browser at a given address. With an artboard in edit, edit ends first and the page is not inserted into that artboard. An unknown `entityId` fails with `not_found`. `[U]`
+- AC-TOOL-05 `artboard-new` for a page creates a draft "Untitled page" at once; for a template part nothing exists on the site until it is saved from Review; `x` and `y` place the artboard there; a template purpose that exists already fails with `invalid_args`. `[U]`
+- AC-TOOL-06 `artboard-update` changes the device, and the position, each as one layout undo step named "change device" and "move artboard". `[U]`
+- AC-TOOL-07 `artboard-remove` takes artboards off the board, opens no dialog and leaves their items on the site; the header's Undo brings them back. `[U]`
+- AC-TOOL-08 `artboard-edit` makes the artboard Live, sets the zoom as D37 says when the board is below 30%, and changes nothing when it is in edit already. A media object fails with `not_editable`. An item locked by another user fails with `locked`, stays a Preview, and no lock dialog opens. `edit-leave` leaves edit and keeps the artboard selected. `[U]`
+- AC-TOOL-09 A block tool that names an artboard which is not in edit puts it in edit first, and the artboard that was in edit leaves edit. At no time does a block change in an artboard that is not Live (C29). `[U]`
+- AC-TOOL-10 `blocks-get` returns the artboard's blocks with their paths, names, titles, text and attributes, to the depth asked. For a page artboard the template's blocks have `editable` false and the page's own have true. `[N]`
+- AC-TOOL-11 `block-update` on a Heading's `content` changes the text in the canvas and in every other artboard that shows the same item, the item is listed in Review, and Cmd/Ctrl + Z in the artboard undoes it as one step. `[U]`
+- AC-TOOL-12 `blocks-insert` inserts parsed markup at the parent and index given, a pattern of the active theme by name and a pattern of the site by id; the inserted blocks are that pattern's. A pattern the inserter does not list fails with `not_found`. A block the editor does not allow there fails with `not_allowed` and nothing is inserted. A block whose editing mode is disabled cannot be changed: `block-update` on it fails with `not_allowed`. `[U]`
+- AC-TOOL-13 `blocks-remove` removes the blocks at the paths given; when one of them cannot be removed, none is. `[N]`
+- AC-TOOL-14 `blocks-move` moves a block to another parent and index and returns its new path. `[N]`
+- AC-TOOL-15 `styles-get` returns the rows of the Tokens tab with the same names, values and use counts, and the variation the menu shows. `[U]`
+- AC-TOOL-16 `token-set` on a colour repaints every mounted artboard that uses it without anything being saved, with one style compile for the change (AC-STYLE-03's counter), and Styles is listed in Review. A value that is not a hex colour fails with `invalid_args`. `[U]`
+- AC-TOOL-17 `styles-set` with `kind` `style` changes a style for the site and, with `block`, for one block type; with `kind` `setting` it changes a setting. Each shows in the edited `globalStyles` record and in the artboards. `[U]`
+- AC-TOOL-18 `styles-set-variation` makes the variation menu read that variation, and `Default` makes it read "Variation: Default". An unknown name fails with `not_found`. `[U]`
+- AC-TOOL-19 `token-show-uses` with a token shows the banner, the label counts and the outlines that a click on its row shows, and returns the banner's numbers; with no fields it clears them. `[U]`
+- AC-TOOL-20 After every tool has been called at least once, nothing on the site has been saved, published, trashed or deleted: every item that existed before has the same saved content and status, and the only new items are the drafts `artboard-new` creates for a page and a pattern (C28). `[U]`
+- AC-TOOL-21 `review-list` returns the items of the Review drawer with the same names and lines, each with its author. `[U]`
+- AC-TOOL-22 `review-discard` discards an item only the agent changed, as the card's Discard does. On an item the designer also changed it fails with `not_agents` and the item stays. `[N]`
+- AC-TOOL-23 While the Review drawer is open, and while the window is narrower than 1180 px, every tool fails with `unavailable` and changes nothing, also when its input is wrong. `[N]`
+- AC-TOOL-24 For every fixture artboard, and for a template the test seeds that holds a Query Loop showing three posts, a Comment Template, a synced pattern and a Navigation block that points at a menu, the tree read from the Preview's document equals the Live editor's tree read block by block (the same paths, names and order), and the same holds for a Snapshot. No preview copy has a path, a reference or a target (`agent/surface.md`, Block paths; D79). `[U]` for the equality, `[N]` for the seeded cases
+- AC-TOOL-25 `targets()` lists every artboard and note, the blocks of mounted artboards and, with the Tokens tab shown, its colour, font-size and font-family rows. Each `rect` is within 1 px of the element's box in the window. Reading targets changes no artboard's tier. `[N]`
+- AC-TOOL-27 A block tool called on an artboard that is not in edit returns the artboard's whole tree, with the blocks of its template parts and of a page's content, on the first call. A style tool returns after the mounted artboards have the new stylesheet. No tool waits on a fixed pause. When loading is held back past the safety limit (the test delays a REST answer), the tool fails with `not_ready` (D82). `[U]`
+- AC-TOOL-28 `artboard-remove` takes a never-saved new template part off the board when only the agent changed it. After the designer has typed in it, the tool fails with `not_agents` and the artboard and its content stay (D83). `[U]`
+- AC-TOOL-29 An artboard holding a block that never meets the settling conditions (the test registers a block that mounts one of its two inner blocks, and a pattern that holds itself) is read by `blocks-get` once the safety limit has passed, with the blocks that are there. An artboard whose editor cannot mount fails with `not_ready`. A `board-refresh` whose request never answers fails with `unavailable` at the limit, and the next call is run (D90). `[U]`
+- AC-TOOL-26 A reference given by `board-get`, `blocks-get` or `styles-get` is accepted by the tools in place of an artboard, a path or a slug, with or without a leading `#`. A string that does not parse fails with `invalid_args`; one that names nothing fails with `not_found`. `[U]`
+
+## MARK
+
+- AC-MARK-01 G1 appears within 15 seconds of a `wp wfd` command and goes after the poll that finds the session ended. It reads "Agent connected" during a session, "Agent working" while a call runs and for one second after, "Annotating" while `setAnnotating( true )` is in force and no call runs, and is not shown otherwise. `[U]` `[D:AgentConnected]`
+- AC-MARK-02 While a call that names an artboard runs, and for one second after, that artboard's label ends in "· Agent working" and it has the dashed outline; no other artboard has either. `[U]` `[D:AgentWorking]`
+- AC-MARK-03 After the agent changes a block, every artboard that shows that item has "· Changed by agent" in its label. The designer's own typing gives no such label. The label goes when the item is saved or discarded. `[U]` `[D:AgentWorking]`
+- AC-MARK-04 In the Review drawer an item only the agent changed has the badge "Agent", one both changed has "Agent and you", and one only the designer changed has none. `[U]` `[D:AgentReview]`
+- AC-MARK-05 `changed` in `board-get` and `author` in `review-list` say the same as the marks. `[N]`
+- AC-MARK-08 The designer typing in an artboard right after `blocks-get` or `artboard-edit` on it is recorded as the designer's. The designer typing within a second after `block-update` on it makes the item `both`. A block that sets its own attributes just after `blocks-insert`, with no input from the designer, leaves the item the agent's (D81). `[U]`
+- AC-MARK-09 The designer typing in an artboard while a tool call on its item is still running makes that item `both`, and `review-discard` then refuses it (D88). `[U]`
+- AC-MARK-06 A tool called through the page, on a site with no session, checks its input, records authorship and shows G2, G3 and G4 exactly as one called with `wp wfd` (C31). `[U]`
+- AC-MARK-07 Nothing of the agent surface is put inside the editing canvas: with marks showing, the Live artboard's canvas document holds no element, attribute or style of the plugin's that it did not hold before (C6). `[U]`
+
+## FLOW
+
+The designed flows, each driven by `wp wfd` commands alone and checked on the board. They use the fixture's content in place of the demo site's. `[U]` `[A]`
+
+- AC-FLOW-01 Reading: `status`, then `board-get`. The answer names the fixture's artboards and notes, and Review has nothing to save.
+- AC-FLOW-02 Pointing at blocks: the references of a Heading and a Button inside a page artboard that is not in edit, and of that page's Mobile artboard, are taken from `targets()`. One `batch` reads the Heading, changes its text and changes the Button's colour, by reference. Both changes show at every width of that page, and the page is listed once in Review with the author `agent`.
+- AC-FLOW-03 Two references, one ask: `blocks-get` by the reference of a block on one artboard, then `blocks-insert` of a pattern after a referenced block on a second artboard. The second artboard ends in edit with the pattern in place; the first is unchanged and no longer in edit.
+- AC-FLOW-04 A token: `token-set` by a colour's reference, then `token-show-uses`. Every artboard that uses the colour is repainted, the banner shows the uses, and nothing is saved.
+- AC-FLOW-05 A change made outside the board: a page is created with `wp post create`, then `board-refresh` and `artboard-add` put it on the board, and a block change to it waits in Review.
+- AC-FLOW-06 Review: `review-list`, then `review-discard` of the Styles item the agent changed. The designer then saves from the drawer; what the agent changed and did not discard reaches the site, and no `wp wfd` command took part in the save.

@@ -42,6 +42,98 @@ function editedBlocks( record ) {
     );
 }
 
+/**
+ * The items of the Review list, one per changed entry.
+ *
+ * @param {Array}  entries         What `changedEntries` gives.
+ * @param {Object} state
+ * @param {Set}    state.unchecked Keys of the unchecked items.
+ * @param {Set}    state.failed    Keys of the items that failed to save.
+ * @param {Array}  state.templates The site's template records.
+ * @param {Array}  state.artboards The board's artboards.
+ * @return {Array} The items.
+ */
+export function reviewItems(
+    entries,
+    { unchecked, failed, templates, artboards }
+) {
+    return entries.map( ( entry ) => {
+        const item = {
+            key: entry.key,
+            name:
+                entry.type === 'styles'
+                    ? __( 'Styles', 'wordpress-for-designers' )
+                    : entry.title ||
+                      recordName( entry.edited ) ||
+                      recordName( entry.saved ),
+            type: entry.type,
+            isNew: !! entry.isNew,
+            isChecked: ! unchecked.has( entry.key ),
+            hasError: failed.has( entry.key ),
+            lines: [],
+        };
+        if ( entry.type === 'styles' ) {
+            item.lines = getGlobalStylesChanges(
+                entry.edited ?? {},
+                entry.saved ?? {}
+            );
+            item.changeCount = item.lines.length;
+            item.artboardCount = artboards.length;
+            return item;
+        }
+        if ( entry.type === 'site' ) {
+            return item;
+        }
+        const { lines, moreCount } = changeLines(
+            entry.saved ? parse( rawContent( entry.saved ) ) : [],
+            editedBlocks( entry.edited )
+        );
+        item.lines = lines;
+        item.moreCount = moreCount;
+        const fieldChanged = ( field ) =>
+            sprintf(
+                /* translators: 1: what was changed, for example "Template". 2: what happened to it, for example "changed". */
+                __( '%1$s: %2$s', 'wordpress-for-designers' ),
+                field,
+                __( 'changed', 'wordpress-for-designers' )
+            );
+        if (
+            entry.type === 'page' &&
+            entry.saved &&
+            ( entry.saved.template ?? '' ) !== ( entry.edited?.template ?? '' )
+        ) {
+            // The page was given another template.
+            item.lines = [
+                fieldChanged( __( 'Template', 'wordpress-for-designers' ) ),
+                ...item.lines,
+            ];
+        }
+        if (
+            KINDS[ entry.type ]?.isNamed &&
+            entry.saved &&
+            rawTitle( entry.saved ) !== rawTitle( entry.edited )
+        ) {
+            // It was renamed on its label (D62).
+            item.lines = [
+                fieldChanged( __( 'Title', 'wordpress-for-designers' ) ),
+                ...item.lines,
+            ];
+        }
+        if ( entry.type === 'page' || entry.type === 'pattern' ) {
+            const status = entry.edited?.status;
+            item.status = STATUS[ status ] ?? status ?? '';
+        }
+        if ( entry.type === 'template-part' ) {
+            item.usedByCount = countTemplatesUsing( templates, {
+                kind: 'template-part',
+                entityId: entry.id,
+                record: entry.edited,
+            } );
+        }
+        return item;
+    } );
+}
+
 export function useReview() {
     const registry = useRegistry();
     const [ unchecked, setUnchecked ] = useState( () => new Set() );
@@ -66,85 +158,11 @@ export function useReview() {
 
     const items = useMemo(
         () =>
-            entries.map( ( entry ) => {
-                const item = {
-                    key: entry.key,
-                    name:
-                        entry.type === 'styles'
-                            ? __( 'Styles', 'wordpress-for-designers' )
-                            : entry.title ||
-                              recordName( entry.edited ) ||
-                              recordName( entry.saved ),
-                    type: entry.type,
-                    isNew: !! entry.isNew,
-                    isChecked: ! unchecked.has( entry.key ),
-                    hasError: failed.has( entry.key ),
-                    lines: [],
-                };
-                if ( entry.type === 'styles' ) {
-                    item.lines = getGlobalStylesChanges(
-                        entry.edited ?? {},
-                        entry.saved ?? {}
-                    );
-                    item.changeCount = item.lines.length;
-                    item.artboardCount = artboards.length;
-                    return item;
-                }
-                if ( entry.type === 'site' ) {
-                    return item;
-                }
-                const { lines, moreCount } = changeLines(
-                    entry.saved ? parse( rawContent( entry.saved ) ) : [],
-                    editedBlocks( entry.edited )
-                );
-                item.lines = lines;
-                item.moreCount = moreCount;
-                const fieldChanged = ( field ) =>
-                    sprintf(
-                        /* translators: 1: what was changed, for example "Template". 2: what happened to it, for example "changed". */
-                        __( '%1$s: %2$s', 'wordpress-for-designers' ),
-                        field,
-                        __( 'changed', 'wordpress-for-designers' )
-                    );
-                if (
-                    entry.type === 'page' &&
-                    entry.saved &&
-                    ( entry.saved.template ?? '' ) !==
-                        ( entry.edited?.template ?? '' )
-                ) {
-                    // The page was given another template.
-                    item.lines = [
-                        fieldChanged(
-                            __( 'Template', 'wordpress-for-designers' )
-                        ),
-                        ...item.lines,
-                    ];
-                }
-                if (
-                    KINDS[ entry.type ]?.isNamed &&
-                    entry.saved &&
-                    rawTitle( entry.saved ) !== rawTitle( entry.edited )
-                ) {
-                    // It was renamed on its label (D62).
-                    item.lines = [
-                        fieldChanged(
-                            __( 'Title', 'wordpress-for-designers' )
-                        ),
-                        ...item.lines,
-                    ];
-                }
-                if ( entry.type === 'page' || entry.type === 'pattern' ) {
-                    const status = entry.edited?.status;
-                    item.status = STATUS[ status ] ?? status ?? '';
-                }
-                if ( entry.type === 'template-part' ) {
-                    item.usedByCount = countTemplatesUsing( templates, {
-                        kind: 'template-part',
-                        entityId: entry.id,
-                        record: entry.edited,
-                    } );
-                }
-                return item;
+            reviewItems( entries, {
+                unchecked,
+                failed,
+                templates,
+                artboards,
             } ),
         [ entries, unchecked, failed, templates, artboards ]
     );
@@ -280,6 +298,32 @@ export function useReview() {
         [ discard, entries ]
     );
 
+    // The same, read from the stores as they are now: for the agent
+    // surface (spec/agent/surface.md, Seams).
+    const readItems = useCallback(
+        () =>
+            reviewItems( changedEntries( registry.select ), {
+                unchecked,
+                failed,
+                templates:
+                    registry
+                        .select( coreStore )
+                        .getEntityRecords( 'postType', 'wp_template', ALL ) ??
+                    [],
+                artboards: registry.select( boardStore ).getArtboards(),
+            } ),
+        [ registry, unchecked, failed ]
+    );
+    const discardKey = useCallback(
+        ( key ) =>
+            discard(
+                changedEntries( registry.select ).filter(
+                    ( entry ) => entry.key === key
+                )
+            ),
+        [ registry, discard ]
+    );
+
     const toggle = useCallback( ( key ) => {
         setUnchecked( ( current ) => {
             const next = new Set( current );
@@ -314,6 +358,8 @@ export function useReview() {
         open: () => setIsOpen( true ),
         close: () => setIsOpen( false ),
         changedArtboardIds: isOpen ? changedArtboardIds : null,
+        readItems,
+        discardKey,
         drawerProps: {
             isOpen,
             onClose: () => setIsOpen( false ),

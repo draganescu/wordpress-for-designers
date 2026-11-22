@@ -7,6 +7,7 @@ import { useRef, useState } from '@wordpress/element';
 import { CheckboxControl } from '@wordpress/components';
 import {
     AlertDialog,
+    Badge,
     Button,
     Card,
     Drawer,
@@ -32,11 +33,19 @@ import {
  *
  * @param {Object}     props
  * @param {Object}     props.item      The item.
+ * @param {string}     props.author    Who changed it, when the agent surface knows: 'agent', 'you' or 'both'.
  * @param {() => void} props.onToggle  Called when the checkbox changes.
  * @param {() => void} props.onDiscard Called when "Discard" is used.
  * @param {boolean}    props.isSaving  Whether a save is in flight.
  */
-function ReviewItem( { item, onToggle, onDiscard, isSaving } ) {
+// G4: who changed the item, when the agent did (spec/agent/surface.md,
+// Marks). An item only the designer changed has no badge.
+const AUTHOR_BADGE = {
+    agent: __( 'Agent', 'wordpress-for-designers' ),
+    both: __( 'Agent and you', 'wordpress-for-designers' ),
+};
+
+function ReviewItem( { item, author, onToggle, onDiscard, isSaving } ) {
     const lines = item.lines ?? [];
     const hasMore = item.moreCount > 0;
     const hasArtboards = item.artboardCount !== undefined;
@@ -55,6 +64,14 @@ function ReviewItem( { item, onToggle, onDiscard, isSaving } ) {
                         checked={ item.isChecked }
                         onChange={ onToggle }
                     />
+                    { AUTHOR_BADGE[ author ] && (
+                        <Badge
+                            className="wfd-review__author"
+                            data-wfd-author={ author }
+                        >
+                            { AUTHOR_BADGE[ author ] }
+                        </Badge>
+                    ) }
                     <Button
                         className="wfd-review__discard"
                         variant="minimal"
@@ -121,6 +138,7 @@ function ReviewItem( { item, onToggle, onDiscard, isSaving } ) {
  * @param {() => void}            props.onSave        Called by the primary button.
  * @param {() => void}            props.onDiscardAll  Called after the discard confirmation.
  * @param {boolean}               props.isSaving      Whether a save is in flight.
+ * @param {Object}                props.authors       Who changed each item, by key, from the agent surface's mark slot.
  */
 export function ReviewDrawer( {
     isOpen,
@@ -131,6 +149,7 @@ export function ReviewDrawer( {
     onSave,
     onDiscardAll,
     isSaving = false,
+    authors = {},
 } ) {
     const isEmpty = items.length === 0;
     const checkedCount = items.filter( ( item ) => item.isChecked ).length;
@@ -197,6 +216,7 @@ export function ReviewDrawer( {
                                 <ReviewItem
                                     key={ item.key }
                                     item={ item }
+                                    author={ authors[ item.key ] }
                                     onToggle={ () =>
                                         onToggleItem?.( item.key )
                                     }

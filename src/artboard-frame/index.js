@@ -35,6 +35,11 @@ export { TierContent } from './handover';
  */
 export const FrameElementContext = createContext( null );
 
+const AGENT_ENDING = {
+    working: __( 'Agent working', 'wordpress-for-designers' ),
+    changed: __( 'Changed by agent', 'wordpress-for-designers' ),
+};
+
 const ERROR_KIND = {
     page: __( "Couldn't load this page.", 'wordpress-for-designers' ),
     template: __( "Couldn't load this template.", 'wordpress-for-designers' ),
@@ -141,15 +146,37 @@ function Label( {
     isLive,
     uses,
     isChanged,
+    agentMark,
     onDeviceChange,
     isRenaming,
     onRename,
     onAddress,
     onReload,
 } ) {
+    const separator = _x(
+        '·',
+        'separator between parts of an artboard label',
+        'wordpress-for-designers'
+    );
+    // G2 and G3: what the agent is working on, and what it changed
+    // (spec/agent/surface.md, Marks).
+    const ending = AGENT_ENDING[ agentMark ] ? (
+        <>
+            { ' ' + separator + ' ' }
+            <span className="wfd-artboard__label-agent">
+                { AGENT_ENDING[ agentMark ] }
+            </span>
+        </>
+    ) : null;
     // The label's text. While the artboard is named, its name is a text
     // field and the rest of the label stays as it is (A7).
-    const text = ( isShort, suffix = null ) => {
+    const text = ( isShort, given = null ) => {
+        const suffix = (
+            <>
+                { given }
+                { ending }
+            </>
+        );
         if ( ! isRenaming ) {
             return (
                 <Text variant="body-sm" className="wfd-artboard__label-text">
@@ -231,11 +258,6 @@ function Label( {
             </div>
         );
     }
-    const separator = _x(
-        '·',
-        'separator between parts of an artboard label',
-        'wordpress-for-designers'
-    );
     let suffix = null;
     if ( uses ) {
         suffix = (
@@ -270,6 +292,8 @@ function Label( {
  * @param {boolean}  props.isSelected     Whether it is the selected artboard.
  * @param {number}   props.uses           Uses of the selected token, if any.
  * @param {boolean}  props.isChanged      Whether Review marks it as changed.
+ * @param {boolean}  props.isAgentWorking Whether a running call of the agent names it (G2).
+ * @param {boolean}  props.isAgentChanged Whether the agent changed the item it shows (G3).
  * @param {Function} props.onDeviceChange Changes the device from the Live label.
  * @param {boolean}  props.isRenaming     Whether its name is being typed in the label.
  * @param {Function} props.onRename       Ends renaming: see NameField.
@@ -287,6 +311,8 @@ export function ArtboardFrame( {
     isSelected,
     uses,
     isChanged,
+    isAgentWorking = false,
+    isAgentChanged = false,
     onDeviceChange,
     isRenaming,
     onRename,
@@ -307,6 +333,13 @@ export function ArtboardFrame( {
     if ( isChanged ) {
         classes.push( 'is-changed' );
     }
+    // G3 is not shown while G2 is, or while Review adds "· Changed".
+    let agentMark = null;
+    if ( isAgentWorking ) {
+        agentMark = 'working';
+    } else if ( isAgentChanged && ! isChanged ) {
+        agentMark = 'changed';
+    }
     return (
         <div
             className={ classes.join( ' ' ) }
@@ -316,12 +349,15 @@ export function ArtboardFrame( {
             data-wfd-kind={ artboard.kind }
             data-wfd-device={ artboard.device }
             data-wfd-stale={ isStale ? 'true' : undefined }
+            data-wfd-agent-working={ isAgentWorking ? 'true' : undefined }
+            data-wfd-agent-changed={ isAgentChanged ? 'true' : undefined }
         >
             <Label
                 artboard={ artboard }
                 isLive={ isLive }
                 uses={ uses }
                 isChanged={ isChanged }
+                agentMark={ agentMark }
                 onDeviceChange={ onDeviceChange }
                 isRenaming={ isRenaming }
                 onRename={ onRename }

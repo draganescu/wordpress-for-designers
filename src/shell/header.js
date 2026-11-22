@@ -18,6 +18,7 @@ import {
     wordpress,
 } from '@wordpress/icons';
 import {
+    Badge,
     Button,
     ButtonLink,
     Icon,
@@ -36,6 +37,14 @@ const ZOOM_ITEMS = [
     [ 'fit-all', __( 'Fit all', 'wordpress-for-designers' ) ],
     [ 'fit-selection', __( 'Fit selection', 'wordpress-for-designers' ) ],
 ];
+
+// G1: what the header chip reads while an agent is there
+// (spec/agent/surface.md, Marks).
+const AGENT_CHIP = {
+    connected: __( 'Agent connected', 'wordpress-for-designers' ),
+    working: __( 'Agent working', 'wordpress-for-designers' ),
+    annotating: __( 'Annotating', 'wordpress-for-designers' ),
+};
 
 function reviewText( count ) {
     if ( ! count ) {
@@ -79,6 +88,7 @@ export function Header( {
     isNoteToolArmed,
     isNoteToolDisabled,
     onToggleNoteTool,
+    agentChip = null,
 } ) {
     countRender();
     return (
@@ -205,6 +215,14 @@ export function Header( {
                 </Text>
             </div>
             <div className="wfd-header__end">
+                { AGENT_CHIP[ agentChip ] && (
+                    <Badge
+                        className="wfd-header__agent"
+                        data-wfd-agent={ agentChip }
+                    >
+                        { AGENT_CHIP[ agentChip ] }
+                    </Badge>
+                ) }
                 <IconButton
                     icon={ grid }
                     label={ __( 'Tidy up', 'wordpress-for-designers' ) }

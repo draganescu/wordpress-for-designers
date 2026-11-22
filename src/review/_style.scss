@@ -12,3 +12,10 @@
 .wfd-review__discard {
     flex-shrink: 0;
 }
+
+// G4: who changed the item (spec/agent/surface.md, Marks). It sits after the
+// item's name, beside "Discard".
+.wfd-review__author {
+    flex-shrink: 0;
+    margin-inline-start: auto;
+}

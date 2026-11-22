@@ -1,0 +1,196 @@
+{
+    "initial": {
+        "markup": "<!-- wp:group {\"layout\":{\"type\":\"constrained\"}} -->\n<div class=\"wp-block-group\"><!-- wp:paragraph -->\n<p>Fixture header text</p>\n<!-- /wp:paragraph --></div>\n<!-- /wp:group -->",
+        "liveCanvas": "paragraph:Fixture header text",
+        "mobilePreview": "paragraph:Fixture header text",
+        "mobileTier": "preview",
+        "review": "Review changes",
+        "reviewDisabled": true,
+        "undoDisabled": true,
+        "hasUndo": false,
+        "dirty": []
+    },
+    "alone": {
+        "updateBlockAttributes": {
+            "changedTree": true,
+            "changedLiveCanvas": true,
+            "changedMobilePreview": true,
+            "review": "Review 1 change",
+            "dirty": [
+                "wp_template_part/twentytwentyfive//header"
+            ],
+            "undoTooltip": null,
+            "oneUndoRestoresTree": true,
+            "oneUndoRestoresCanvas": true,
+            "oneUndoRestoresPreview": true,
+            "reviewAfterUndo": "Review changes",
+            "reviewDisabledAfterUndo": true,
+            "dirtyAfterUndo": [],
+            "after": {
+                "markup": "<!-- wp:group {\"layout\":{\"type\":\"constrained\"}} -->\n<div class=\"wp-block-group\"><!-- wp:paragraph -->\n<p>Changed from outside</p>\n<!-- /wp:paragraph --></div>\n<!-- /wp:group -->",
+                "liveCanvas": "paragraph:Changed from outside",
+                "mobilePreview": "paragraph:Changed from outside",
+                "mobileTier": "preview",
+                "review": "Review 1 change",
+                "reviewDisabled": false,
+                "undoDisabled": false,
+                "hasUndo": true,
+                "dirty": [
+                    "wp_template_part/twentytwentyfive//header"
+                ]
+            }
+        },
+        "insertBlocks": {
+            "changedTree": true,
+            "changedLiveCanvas": true,
+            "changedMobilePreview": true,
+            "review": "Review 1 change",
+            "dirty": [
+                "wp_template_part/twentytwentyfive//header"
+            ],
+            "undoTooltip": null,
+            "oneUndoRestoresTree": true,
+            "oneUndoRestoresCanvas": true,
+            "oneUndoRestoresPreview": true,
+            "reviewAfterUndo": "Review changes",
+            "reviewDisabledAfterUndo": true,
+            "dirtyAfterUndo": [],
+            "after": {
+                "markup": "<!-- wp:group {\"layout\":{\"type\":\"constrained\"}} -->\n<div class=\"wp-block-group\"><!-- wp:paragraph -->\n<p>Fixture header text</p>\n<!-- /wp:paragraph -->\n\n<!-- wp:heading -->\n<h2 class=\"wp-block-heading\">Inserted from outside</h2>\n<!-- /wp:heading --></div>\n<!-- /wp:group -->",
+                "liveCanvas": "paragraph:Fixture header text | heading:Inserted from outside",
+                "mobilePreview": "paragraph:Fixture header text | heading:Inserted from outside",
+                "mobileTier": "preview",
+                "review": "Review 1 change",
+                "reviewDisabled": false,
+                "undoDisabled": false,
+                "hasUndo": true,
+                "dirty": [
+                    "wp_template_part/twentytwentyfive//header"
+                ]
+            }
+        },
+        "removeBlocks": {
+            "changedTree": true,
+            "changedLiveCanvas": true,
+            "changedMobilePreview": true,
+            "review": "Review 1 change",
+            "dirty": [
+                "wp_template_part/twentytwentyfive//header"
+            ],
+            "undoTooltip": null,
+            "oneUndoRestoresTree": true,
+            "oneUndoRestoresCanvas": true,
+            "oneUndoRestoresPreview": true,
+            "reviewAfterUndo": "Review changes",
+            "reviewDisabledAfterUndo": true,
+            "dirtyAfterUndo": [],
+            "after": {
+                "markup": "<!-- wp:group {\"layout\":{\"type\":\"constrained\"}} -->\n<div class=\"wp-block-group\"></div>\n<!-- /wp:group -->",
+                "liveCanvas": "null:",
+                "mobilePreview": "group:",
+                "mobileTier": "preview",
+                "review": "Review 1 change",
+                "reviewDisabled": false,
+                "undoDisabled": false,
+                "hasUndo": true,
+                "dirty": [
+                    "wp_template_part/twentytwentyfive//header"
+                ]
+            }
+        }
+    },
+    "chain": [
+        {
+            "action": "updateBlockAttributes",
+            "changedTree": true,
+            "changedLiveCanvas": true,
+            "changedMobilePreview": true,
+            "review": "Review 1 change",
+            "dirty": [
+                "wp_template_part/twentytwentyfive//header"
+            ],
+            "liveCanvas": "paragraph:Changed from outside",
+            "mobilePreview": "paragraph:Changed from outside"
+        },
+        {
+            "action": "insertBlocks",
+            "changedTree": true,
+            "changedLiveCanvas": true,
+            "changedMobilePreview": true,
+            "review": "Review 1 change",
+            "dirty": [
+                "wp_template_part/twentytwentyfive//header"
+            ],
+            "liveCanvas": "paragraph:Changed from outside | heading:Inserted from outside",
+            "mobilePreview": "paragraph:Changed from outside | heading:Inserted from outside"
+        },
+        {
+            "action": "moveBlockToPosition",
+            "changedTree": true,
+            "changedLiveCanvas": true,
+            "changedMobilePreview": true,
+            "review": "Review 1 change",
+            "dirty": [
+                "wp_template_part/twentytwentyfive//header"
+            ],
+            "liveCanvas": "heading:Inserted from outside | paragraph:Changed from outside",
+            "mobilePreview": "heading:Inserted from outside | paragraph:Changed from outside"
+        },
+        {
+            "action": "removeBlocks",
+            "changedTree": true,
+            "changedLiveCanvas": true,
+            "changedMobilePreview": true,
+            "review": "Review 1 change",
+            "dirty": [
+                "wp_template_part/twentytwentyfive//header"
+            ],
+            "liveCanvas": "heading:Inserted from outside | null:",
+            "mobilePreview": "heading:Inserted from outside | group:"
+        }
+    ],
+    "errors": [],
+    "reviewDrawer": "Review changes Nothing reaches the site until you save. Artboard positions on the board save on their own. Header Template part · used by 8 templates Discard Heading: added Paragraph: removed Discard all Keep editing Save 1 change",
+    "undoChain": [
+        {
+            "undoes": "removeBlocks",
+            "treeIsAsBeforeThatAction": true,
+            "canvasIsAsBeforeThatAction": true,
+            "previewIsAsBeforeThatAction": true,
+            "review": "Review 1 change"
+        },
+        {
+            "undoes": "moveBlockToPosition",
+            "treeIsAsBeforeThatAction": true,
+            "canvasIsAsBeforeThatAction": true,
+            "previewIsAsBeforeThatAction": true,
+            "review": "Review 1 change"
+        },
+        {
+            "undoes": "insertBlocks",
+            "treeIsAsBeforeThatAction": true,
+            "canvasIsAsBeforeThatAction": true,
+            "previewIsAsBeforeThatAction": true,
+            "review": "Review 1 change"
+        },
+        {
+            "undoes": "updateBlockAttributes",
+            "treeIsAsBeforeThatAction": true,
+            "canvasIsAsBeforeThatAction": true,
+            "previewIsAsBeforeThatAction": true,
+            "review": "Review changes"
+        }
+    ],
+    "end": {
+        "review": "Review changes",
+        "reviewDisabled": true,
+        "undoDisabled": true,
+        "dirty": []
+    },
+    "sameAttributeTwice": {
+        "afterBoth": "paragraph:Changed a second time",
+        "afterOneUndo": "paragraph:Fixture header text",
+        "oneUndoTookBackBoth": true
+    },
+    "pass": true
+}

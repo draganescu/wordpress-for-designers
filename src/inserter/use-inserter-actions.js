@@ -126,7 +126,7 @@ export function useInserterActions( {
             };
             if ( item.type === 'media' ) {
                 if ( ! lookup.images.has( item.id ) ) {
-                    return;
+                    return null;
                 }
                 Object.assign( object, sizeOf( item ) );
             } else {
@@ -151,13 +151,14 @@ export function useInserterActions( {
                     );
                     object.entityId = copy.id;
                 } else {
-                    return;
+                    return null;
                 }
             }
             addArtboard( object );
             if ( ! isEditing() ) {
                 selectArtboard( object.id );
             }
+            return object.id;
         },
         [
             lookup,
@@ -167,6 +168,15 @@ export function useInserterActions( {
             selectArtboard,
             isEditing,
         ]
+    );
+
+    /**
+     * Opens an item on the board where a click on its row puts it: the
+     * middle of the board in view, clear of what is there.
+     */
+    const openInSpace = useCallback(
+        ( item ) => openOnBoard( item, findSpace( sizeOf( item ) ) ),
+        [ openOnBoard, findSpace, sizeOf ]
     );
 
     /**
@@ -184,10 +194,10 @@ export function useInserterActions( {
             }
             // Every row but a block's is named for the kind it opens as.
             if ( KINDS[ item.type ] ) {
-                openOnBoard( item, findSpace( sizeOf( item ) ) );
+                openInSpace( item );
             }
         },
-        [ isEditing, blocksFor, bridgeRef, openOnBoard, findSpace, sizeOf ]
+        [ isEditing, blocksFor, bridgeRef, openInSpace ]
     );
 
     const renderUpload = useCallback(
@@ -289,5 +299,7 @@ export function useInserterActions( {
         },
         canvasDropProps,
         dropTarget,
+        openInSpace,
+        blocksFor,
     };
 }

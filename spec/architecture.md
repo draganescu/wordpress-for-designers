@@ -15,6 +15,9 @@ Part names in this file are fixed. Use them for the top-level folders under `src
 | Preview route | REST route `wfd/v1/preview` (D57): takes an open board page's unsaved changes and keeps them for the current user on this site, apart from those of that user's other open board pages, for an hour after the page last sent them; removes them when the list is empty. It answers whether that page's changes were still kept, so the board can reload its browsers when they were not. Requires `edit_theme_options`. | `[U]` |
 | Preview layer | On a front-end request from a user with `edit_theme_options` whose `wfd_preview` argument holds a nonce of that user and names one of that user's open board pages, puts that page's kept changes in place of the saved content through public filters: posts and parts found by queries, block templates and parts, synced patterns and navigation menus as they render, global styles, and the site's title, tagline and logo. The page is sent with no-cache headers. It never acts on a request to the REST API. The nonce is given to the board with its page and again with each answer of the preview route. | `[U]` |
 | Uninstall | Deletes all `wfd_board` posts and every user's unsaved changes kept for previews (D57). Site content is untouched. | `[N]` |
+| Agent relay | REST routes `wfd/v1/agent/poll` and `wfd/v1/agent/result`, the queue in options and its hourly cleanup (`agent/relay.md`). Requires `edit_theme_options`. Uninstall also deletes the relay's options and its cron event. | `[U]` (D68, D69) |
+| `wp wfd` | The WP-CLI command with `status`, `tools`, `call` and `batch` (`agent/cli.md`). Loaded only under WP-CLI. | `[U]` (D68) |
+| Adapter hooks | The action `wfd_board_enqueue_assets` on the board app page and the filter `wfd_agent_runbook` (`agent/surface.md`, For adapters). | `[N]` |
 
 ## Client parts
 
@@ -35,6 +38,7 @@ Part names in this file are fixed. Use them for the top-level folders under `src
 | `review` | The Review changes drawer. | `[D:Review]` |
 | `lock` | Takes the post lock when a page or pattern is about to become Live, refreshes it while Live, releases it on leaving edit and on page unload, and shows the lock dialog (see `data-model.md`, Locks). | `[U]` |
 | `adapter` | `private.js` and `experimental.js` (C2, C3). | `[B8]` |
+| `agent` | The agent surface (D65): the tool functions of `agent/tools.md`, the reference resolver and targets, authorship, the marks, the relay client and `window.wfdAgent` (`agent/surface.md`). Built as a chunk of its own and loaded on demand (C27). It reaches the other parts only through the four seams of `agent/surface.md`. | `[U]` `[A]` |
 
 ## Tiers
 
@@ -95,6 +99,8 @@ Hiding the panels (D32): `[U]`
 | Save | Dirty entity records | `review` | REST, one request per entity | Explicit | `[B6]` |
 | Layout | Moves, adds, removals, device changes, notes (D46) | `board-store` | `wfd-boards` REST | 2 s debounce | `[B6]` `[U]` |
 | Boot | Server preload | Editor settings, assets, base styles | Shared by every editor | Once per session | `[B6]` |
+| Agent calls | `wp wfd`, or a script calling `window.wfdAgent` | The relay's queue and the board's poll, then `agent` | The same stores and functions the UI's controls use, so every stream above carries the change on | One call at a time; the poll runs every second during a session and not at all on a site no agent has used | `[U]` `[A]` |
+| Agent marks | Calls and authorship in `agent` | The mark slots | Header chip, artboard labels and outlines, Review cards | Only while the surface is loaded | `[U]` `[A]` |
 
 ## Events inside artboard iframes
 
@@ -185,3 +191,13 @@ On the canvas area (D64): `[U]`
 ## Fixture for tests
 
 Tests run against a local WordPress with the Twenty Twenty-Five theme and a seeded board containing two pages, two templates, three template-part artboards (Header on Desktop and Mobile, Footer) and two patterns, matching the arrangement in `screens/images/Overview.png`. The colours and text in the images come from a different demo theme and are not asserted. `[N]`
+
+## Agent surface
+
+The agent surface (D65) is specified in `agent/`: `surface.md` for its parts, the page interface, references, targets, seams, authorship and marks; `tools.md` for the closed list of tools; `relay.md` for the queue, the routes and the timings; `cli.md` for `wp wfd` and the runbook. Those files are part of this architecture and rank with this file in the precedence of `CLAUDE.md`, rule 3. `[U]`
+
+Three rules place it among the parts above: `[U]`
+
+- It is a way to do what the UI does, not a second implementation. A tool calls the function a control calls (C26); blocks change only in the Live editor (C29); styles compile once per change as for the designer (C14).
+- It adds no state to the board, no field to the layout and no tier, and it never keeps an artboard mounted that the tier rules would not.
+- It is absent until an agent is there (C27), and the plugin works without it.

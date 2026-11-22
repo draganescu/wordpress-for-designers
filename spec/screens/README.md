@@ -1,12 +1,13 @@
 # Screens
 
-Twenty-six screens. Each has an image in `images/` (except `LockDialog`, `ShortcutsDialog`, `NeedsSpace` and `InserterPages`, which have none) and a file here naming its state, the regions it uses and its own elements. Regions shared by many screens are defined once in this file.
+Twenty-nine screens. Each has an image in `images/` (except `LockDialog`, `ShortcutsDialog`, `NeedsSpace` and `InserterPages`, which have none) and a file here naming its state, the regions it uses and its own elements. Regions shared by many screens are defined once in this file.
 
 Rules for reading the images (see also `CLAUDE.md`, rules 6 and 7):
 
 - They were rendered at 1440 × 900 from hand-styled markup. Layout, grouping, wording and states are binding. Exact pixel values are not; spacing, colour, type and radius come from the components and `--wpds-*` tokens.
 - Icons in the images are approximations. Use the named `@wordpress/icons` icon.
 - The site shown inside artboards (The Slow Margin) and the names, counts and dates in lists are fixture data.
+- The three agent screens (`AgentConnected`, `AgentWorking`, `AgentReview`) were cut, at 1279 × 962, from the design of a session in WordPress Studio. They show the demo site, Morrow Coffee Roasters, and each file lists what in its image is not built.
 - Three things visible in the images are **not** built: the "⌘K" hint in the document bar, the zoom control at the bottom left of the canvas on the two editing screens (zoom lives in the header, H8), and dimming that covers only the canvas behind dialogs (dialogs are modal over the whole window). `[N]`
 
 Component names refer to `@wordpress/ui` unless prefixed: `wpc.` is `@wordpress/components`, `be.` is `@wordpress/block-editor`, `ed.` is `@wordpress/editor`, `gs.` is `@wordpress/global-styles-ui`.
@@ -65,6 +66,10 @@ Notes (D46): `[U]`
 - Colours, with the `--wpds-*` surface each uses: Yellow (`caution`), Green (`success`), Blue (`info`), Pink (`error`).
 - Selected alone, the right panel shows: `Text` heading-md "Note"; `wpc.ColorPalette` labelled "Color" with the four colours, named as above, no custom colour and no clear button; one `Button` outline "Remove from board"; the hint "Enter or double-click edits. Delete removes it from the board."
 - In the left panel notes are the last group, "Notes", in order of creation. A row has the `comment` icon and the note's first line, or "Empty note" when it has no text, and nothing at the right. A row is selected, added to the selection and removed like an artboard row (L4); double-click or Enter edits the note's text.
+
+## Agent marks (D65, D73) `[U]` `[A]`
+
+Four marks show the designer that an agent is connected, what it is working on and what it changed: G1, a `Badge` in the header just before H12; G2 and G3, endings of the artboard label A1 (and A2), G2 with a dashed outline; G4, a `Badge` on a Review card. Their text, components and conditions are defined once, in `agent/surface.md`, Marks, and their screens are `AgentConnected.md`, `AgentWorking.md` and `AgentReview.md`. They are shown only while the agent surface is loaded; on a site no agent has used, every screen in this folder is exactly as it was.
 
 ## Region: Left panel, artboards by kind `[D:Overview]` `[U]`
 

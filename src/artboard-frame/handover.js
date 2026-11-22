@@ -1,5 +1,5 @@
 /**
- * A tier change that shows no empty frame (D65): what an artboard showed
+ * A tier change that shows no empty frame (D100): what an artboard showed
  * before stays over what it now shows until that has been drawn.
  */
 import {

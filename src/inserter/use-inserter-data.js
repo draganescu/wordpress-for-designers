@@ -11,7 +11,7 @@ import { KINDS } from '../shell/constants';
 import { recordName } from '../shell/use-artboards';
 
 const ALL = { per_page: -1 };
-const USER_PATTERNS = { per_page: -1, status: 'publish,draft' };
+export const USER_PATTERNS = { per_page: -1, status: 'publish,draft' };
 // Every page that is not in the trash, by title. Only what a row shows is
 // asked for; an artboard requests its page in full.
 const PAGES = {

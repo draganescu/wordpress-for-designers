@@ -12,6 +12,7 @@ import {
     getSetting,
     getStyle,
     setSetting,
+    setStyle,
 } from '@wordpress/global-styles-engine';
 import { useGlobalStylesRevisions } from '@wordpress/global-styles-ui';
 import { getCurrentThemeGlobalStylesVariations } from '../adapter/experimental';
@@ -201,6 +202,8 @@ export function useStylesPanel( { styles, serverSettings, usesOf } ) {
         () =>
             presets( merged, 'spacing.spacingSizes' ).map( ( size ) => ( {
                 slug: size.slug,
+                name: size.name,
+                size: String( size.size ),
                 px: toPx( size.size ),
             } ) ),
         [ merged ]
@@ -319,6 +322,17 @@ export function useStylesPanel( { styles, serverSettings, usesOf } ) {
 
     return {
         blockStylesFor,
+        // One setting or style, for the site or for one block type, as the
+        // stock screens write it.
+        setValue: ( kind, path, value, block ) =>
+            update(
+                ( kind === 'setting' ? setSetting : setStyle )(
+                    styles.readUser(),
+                    path,
+                    value,
+                    block
+                )
+            ),
         panelProps: {
             variations,
             activeVariation,
@@ -360,16 +374,21 @@ export function useStylesPanel( { styles, serverSettings, usesOf } ) {
             onOpenScreen: setOpenScreen,
             renderScreen: ( path ) =>
                 stockScreen( path, () => setOpenScreen( null ), screenStands ),
+            // Works from the styles as the store holds them now, so that
+            // two changes in a row both count. False for an unknown colour.
             onChangeColor: ( slug, value ) => {
-                const token = colors.find( ( color ) => color.slug === slug );
+                const now = styles.readMerged();
+                const token = presets( now, 'color.palette' ).find(
+                    ( color ) => color.slug === slug
+                );
                 if ( ! token ) {
-                    return;
+                    return false;
                 }
                 const path = `color.palette.${ token.origin }`;
-                const current = list( getSetting( merged, path ) );
+                const current = list( getSetting( now, path ) );
                 update(
                     setSetting(
-                        user,
+                        styles.readUser(),
                         path,
                         current.map( ( color ) =>
                             color.slug === slug
@@ -378,6 +397,7 @@ export function useStylesPanel( { styles, serverSettings, usesOf } ) {
                         )
                     )
                 );
+                return true;
             },
             onAddColor: () => {
                 const custom = list(
