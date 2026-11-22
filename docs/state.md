@@ -4,7 +4,7 @@ As of 2026-11-21. This describes what exists; `spec/` says what should exist. Fo
 
 ## Summary
 
-The plugin is built through Milestone 18 of `spec/build-order.md`: Milestones 1 to 12 with the decisions taken afterwards (D32 to D64), and the agent surface (D65 to D79, Milestones 13 to 18), built on 2026-11-21 on the branch `agent-surface`.
+The plugin is built through Milestone 18 of `spec/build-order.md`: Milestones 1 to 12 with the decisions taken afterwards (D32 to D64, and D100), and the agent surface (D65 to D79, Milestones 13 to 18), built on 2026-11-21 on the branch `agent-surface`.
 
 | Check | Result |
 |---|---|
@@ -31,7 +31,7 @@ Not done or not verified:
 A "Designer" menu in wp-admin lists boards. A board opens full screen: a header, a left panel, an infinite canvas and a right panel.
 
 - **Canvas.** Pan and zoom from 2% to 400%. Each artboard shows one page, template, template part or pattern at a device width (Desktop 1440, Tablet 780, Mobile 360 with default breakpoints). Images from the media library can also sit on the board as media objects.
-- **Tiers.** An artboard far from view is an outline (Ghost). In view it is a read-only render (Preview), at most 12 at once. Below 20% zoom, or beyond the 12, it is a frozen copy (Snapshot); an artboard that was never rendered is rendered once to make that copy. One artboard at a time is the real block editor (Live); the two edited before it stay mounted (Warm).
+- **Tiers.** An artboard far from view is an outline (Ghost). In view it is a read-only render (Preview), at most 12 at once. Below 20% zoom, or beyond the 12, it is a frozen copy (Snapshot); an artboard that was never rendered is rendered once to make that copy. One artboard at a time is the real block editor (Live); the two edited before it stay mounted (Warm). A change of tier shows no empty frame: what the artboard showed before stays over the new content until that is drawn (D100; `TierContent` in `src/artboard-frame/handover.js`). An editor that leaves Warm still shows the `Skeleton` until its Preview mounts, and D100 has no acceptance test yet.
 - **Editing.** Double-click or Enter edits an artboard at the board's zoom, from 30% up. Below 30% the zoom first fits the artboard's width. The block toolbar sits in the header, the list view in the left panel, the inspector in the right panel. Esc, the back button, a click on empty board, a click on another artboard, or zooming out below 30% ends edit.
 - **Selecting several.** Cmd/Ctrl + click in the artboard list or on the board adds an artboard to the selection or takes it out; Shift + click in the list selects a range (D41). Dragging from empty board draws a rectangle and selects every artboard it touches as it is dragged; with Cmd/Ctrl it adds to the selection, and in edit it first leaves edit (D43, in `src/shell/use-canvas-interactions.js`; OQ-29 lists the builder's choices). Several selected artboards move together, by drag or arrow keys, and Delete takes them all off the board with no dialog; the right panel shows Styles. The store keeps `selectedIds`; `getSelectedId` gives an id only when exactly one is selected.
 - **Keyboard shortcuts dialog.** A control floating at the bottom left of the canvas area, and Ctrl + Option + H on a Mac or Shift + Alt + H elsewhere, open a dialog listing the board's shortcuts (D42). It is in `src/shell/shortcuts-dialog.js`. Closing it puts focus back where it was, the caret of a block included. The control's shadow is a Sass variable of `@wordpress/base-styles`, because the design system has no elevation token (OQ-28).
@@ -161,9 +161,11 @@ npm run lint
 
 ## Releasing it
 
-A release is a version tag. Pushing `v1.2.3` runs `.github/workflows/release.yml`, which lints, builds, and attaches `wordpress-for-designers.zip` to a GitHub release of that name with generated notes. A tag with a hyphen (`v1.2.3-beta.1`) makes a pre-release.
+A release is a version tag. Pushing `v1.2.3` runs `.github/workflows/release.yml`, which lints, builds, and attaches `wordpress-for-designers.zip` and one zip per adapter to a GitHub release with generated notes. The title names the WordPress the plugin requires, read from the plugin header: "v1.2.3 for WordPress 7.2". A tag with a hyphen (`v1.2.3-beta.1`) makes a pre-release.
 
-The version is kept in three places: `package.json`, the plugin header and `WFD_VERSION`. `npm version` changes all three (its `version` script runs `tools/sync-version.mjs`), commits and makes the tag. The workflow stops before building if the tag and the three do not match.
+Each release line has its own branch: `master` for the newest WordPress, `wp-7.1` for WordPress 7.1. The workflow file is the same on every line; tag the branch of the line you are releasing. A release is marked as the latest only while no release has a higher version, so a patch on an older line never takes the badge from the newest one.
+
+The version is kept in `package.json`, the plugin header, `WFD_VERSION`, and in each adapter's plugin header and `readme.txt` "Stable tag" (an adapter's version is the main plugin's version it was built with). `npm version` changes them all (its `version` script runs `tools/sync-version.mjs --stage`), commits and makes the tag. The workflow stops before building if the tag and any of them do not match.
 
 ```bash
 npm version minor -m "Release %s"
@@ -173,10 +175,11 @@ npm version minor -m "Release %s"
 git push --follow-tags
 ```
 
-- The zip holds one folder, `wordpress-for-designers/`, with the plugin file, `uninstall.php`, `includes/` and `build/`. `tools/package.sh` has that list; the playground workflow uses it too.
-- `npm run build` then `npm run package` makes the same zip locally in `dist/`.
-- The newest release's zip is always at `https://github.com/draganescu/wordpress-for-designers/releases/latest/download/wordpress-for-designers.zip`.
-- The workflow does not run the end-to-end suite and does not check that the tag is on `master`.
+- The plugin zip holds one folder, `wordpress-for-designers/`, with the plugin file, `uninstall.php`, `includes/` and `build/`. `tools/package.sh` has that list; the playground workflow uses it too.
+- Each adapter is a folder under `adapters/` with its own `package.sh`, which leaves one zip in that folder's `dist/`. `tools/package-adapters.sh` runs every one and copies the zips into `dist/` beside the plugin's. A new adapter is released as soon as its folder has a `package.sh` and a `plugin/` folder; nothing else needs changing. A line with no `adapters/` folder releases the plugin alone.
+- `npm run build`, `npm run package` then `npm run package:adapters` makes the same zips locally in `dist/`.
+- The newest release's zip is always at `https://github.com/draganescu/wordpress-for-designers/releases/latest/download/wordpress-for-designers.zip`, and an adapter's at the same address with its own zip name.
+- The workflow does not run the end-to-end suite, or an adapter's tests, and does not check which branch the tag is on.
 
 ## Numbers that are built in
 
