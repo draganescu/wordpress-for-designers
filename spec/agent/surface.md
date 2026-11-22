@@ -141,11 +141,18 @@ The strings are translated like every other string of the plugin (C23).
 
 ## For adapters
 
-Two PHP hooks let a separate plugin attach to the board page and to the runbook. They are the whole server-side interface for adapters.
+Two PHP hooks let a separate plugin attach to the board page and to the runbook, and four PHP functions let one make calls from the server (D92). Together they are the whole server-side interface for adapters.
 
 | Hook | Kind | When and what |
 |---|---|---|
 | `wfd_board_enqueue_assets` | action, argument: the board's id | Fired on the board app page after the board's own script is enqueued. An adapter enqueues its script here. |
 | `wfd_agent_runbook` | filter, argument: the runbook text | Applied to the text `wp wfd tools` prints before the tool list (`cli.md`). An adapter appends its own section. |
+
+| Function | What it gives |
+|---|---|
+| `wfd_agent_relay( $calls, $args )` | A round trip to a listening board (`relay.md`, From PHP) |
+| `wfd_agent_begin( $source )` | A session with no call |
+| `wfd_agent_boards()` | The site's boards, with their addresses and whether each is listening |
+| `wfd_agent_tools()` | The declarations |
 
 Nothing in this plugin names a harness or holds code for one (C32).

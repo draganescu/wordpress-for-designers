@@ -159,6 +159,7 @@ What the agent surface stores, and where. The full definitions are in `agent/`. 
 |---|---|---|
 | The tool declarations | `includes/agent-tools.json`, shipped with the plugin | With the plugin |
 | Whether an agent has ever used this site, and when it last did | Option `wfd_agent_seen` | Until uninstall |
+| When each way in was last used, by its label (D93) | Option `wfd_agent_sources` | Until uninstall |
 | One record per open board page that is listening | Options `wfd_agent_listener_{client}` | 60 seconds after the page last asked |
 | One record per call, with its results | Options `wfd_agent_call_{id}` (`agent/relay.md`, Records) | Until the command reads the result, 300 seconds at most |
 | Who made each unsaved change | In the board page only (`agent/surface.md`, Authorship) | As long as the unsaved change |
