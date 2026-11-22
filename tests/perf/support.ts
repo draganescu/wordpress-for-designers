@@ -712,17 +712,46 @@ async function watchBoard( page: Page ) {
                             now[ key ] - before[ key ],
                         ] )
                     ),
+                    // Each with where it is: the artboard, its tier and
+                    // whether it is in a frozen copy, then the block or the
+                    // region of the board.
                     animations: documents.flatMap( ( doc ) =>
                         doc.getAnimations().map( ( animation ) => {
                             const target = ( animation.effect as any )
                                 ?.target as Element | null;
+                            const holder = doc.defaultView
+                                ?.frameElement as Element | null;
+                            const artboard = holder?.closest(
+                                '[data-wfd-artboard]'
+                            );
+                            const where = holder
+                                ? `${ nameOf( holder ) } ${ artboard?.getAttribute(
+                                      'data-wfd-tier'
+                                  ) }${
+                                      holder.closest( '.wfd-snapshot__copy' )
+                                          ? ' copy'
+                                          : ''
+                                  }, ${
+                                      target
+                                          ?.closest( '[data-type]' )
+                                          ?.getAttribute( 'data-type' ) ??
+                                      'no block'
+                                  }`
+                                : `page, ${
+                                      target
+                                          ?.closest( '[data-wfd-region]' )
+                                          ?.getAttribute( 'data-wfd-region' ) ??
+                                      'no region'
+                                  }`;
                             return `${
                                 ( animation as any ).animationName ??
                                 ( animation as any ).transitionProperty ??
                                 'animation'
                             } on ${ target?.tagName.toLowerCase() }.${ String(
                                 target?.getAttribute( 'class' ) ?? ''
-                            ).slice( 0, 60 ) } (${ animation.playState })`;
+                            ).slice( 0, 60 ) } (${
+                                animation.playState
+                            }) in ${ where }`;
                         } )
                     ),
                     events,
