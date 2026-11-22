@@ -4,7 +4,7 @@ As of 2026-11-20. This describes what exists; `spec/` says what should exist. Fo
 
 ## Summary
 
-The plugin is built through Milestone 12 of `spec/build-order.md`, plus the decisions taken afterwards (D32 to D64).
+The plugin is built through Milestone 12 of `spec/build-order.md`, plus the decisions taken afterwards (D32 to D65).
 
 | Check | Result |
 |---|---|
@@ -31,7 +31,7 @@ Not done or not verified:
 A "Designer" menu in wp-admin lists boards. A board opens full screen: a header, a left panel, an infinite canvas and a right panel.
 
 - **Canvas.** Pan and zoom from 2% to 400%. Each artboard shows one page, template, template part or pattern at a device width (Desktop 1440, Tablet 780, Mobile 360 with default breakpoints). Images from the media library can also sit on the board as media objects.
-- **Tiers.** An artboard far from view is an outline (Ghost). In view it is a read-only render (Preview), at most 12 at once. Below 20% zoom, or beyond the 12, it is a frozen copy (Snapshot); an artboard that was never rendered is rendered once to make that copy. One artboard at a time is the real block editor (Live); the two edited before it stay mounted (Warm).
+- **Tiers.** An artboard far from view is an outline (Ghost). In view it is a read-only render (Preview), at most 12 at once. Below 20% zoom, or beyond the 12, it is a frozen copy (Snapshot); an artboard that was never rendered is rendered once to make that copy. One artboard at a time is the real block editor (Live); the two edited before it stay mounted (Warm). A change of tier shows no empty frame: what the artboard showed before stays over the new content until that is drawn (D65; `TierContent` in `src/artboard-frame/handover.js`). An editor that leaves Warm still shows the `Skeleton` until its Preview mounts, and D65 has no acceptance test yet.
 - **Editing.** Double-click or Enter edits an artboard at the board's zoom, from 30% up. Below 30% the zoom first fits the artboard's width. The block toolbar sits in the header, the list view in the left panel, the inspector in the right panel. Esc, the back button, a click on empty board, a click on another artboard, or zooming out below 30% ends edit.
 - **Selecting several.** Cmd/Ctrl + click in the artboard list or on the board adds an artboard to the selection or takes it out; Shift + click in the list selects a range (D41). Dragging from empty board draws a rectangle and selects every artboard it touches as it is dragged; with Cmd/Ctrl it adds to the selection, and in edit it first leaves edit (D43, in `src/shell/use-canvas-interactions.js`; OQ-29 lists the builder's choices). Several selected artboards move together, by drag or arrow keys, and Delete takes them all off the board with no dialog; the right panel shows Styles. The store keeps `selectedIds`; `getSelectedId` gives an id only when exactly one is selected.
 - **Keyboard shortcuts dialog.** A control floating at the bottom left of the canvas area, and Ctrl + Option + H on a Mac or Shift + Alt + H elsewhere, open a dialog listing the board's shortcuts (D42). It is in `src/shell/shortcuts-dialog.js`. Closing it puts focus back where it was, the caret of a block included. The control's shadow is a Sass variable of `@wordpress/base-styles`, because the design system has no elevation token (OQ-28).

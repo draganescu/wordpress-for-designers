@@ -469,6 +469,14 @@ html.wp-toolbar:has(.wfd-board-page) {
     pointer-events: none;
 }
 
+// A Preview left over the content that replaces it until that is drawn.
+.wfd-preview.is-over {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    overflow: hidden;
+}
+
 // BlockPreview cuts its content at 2000 px with inline max-heights on its
 // wrapper and its iframe. An artboard shows all of its content, as it does in edit.
 // The frozen copy of a Preview keeps the class, so it is covered too.
@@ -570,7 +578,15 @@ html.wp-toolbar:has(.wfd-board-page) {
 .wfd-snapshot.is-over {
     position: absolute;
     inset: 0;
+    z-index: 1;
     overflow: hidden;
+}
+
+// A new frozen copy loads under the one on screen, which it then replaces.
+.wfd-snapshot__copy.is-loading {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
 }
 
 // Notes (D46): above every artboard, the Live one included.

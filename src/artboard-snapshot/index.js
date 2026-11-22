@@ -57,6 +57,62 @@ function freeze( preview ) {
     return copy;
 }
 
+/**
+ * Calls back once every iframe in a frozen copy has loaded its document.
+ *
+ * @param {Element}  node     The frozen copy.
+ * @param {Function} callback Called once.
+ */
+function whenLoaded( node, callback ) {
+    const iframes = [ ...node.querySelectorAll( 'iframe' ) ];
+    let left = iframes.length;
+    let isDone = false;
+    const done = () => {
+        if ( ! isDone ) {
+            isDone = true;
+            callback();
+        }
+    };
+    if ( ! left ) {
+        done();
+        return;
+    }
+    iframes.forEach( ( iframe ) =>
+        iframe.addEventListener(
+            'load',
+            () => {
+                left -= 1;
+                if ( ! left ) {
+                    done();
+                }
+            },
+            { once: true }
+        )
+    );
+    // A copy that never loads is shown anyway.
+    window.setTimeout( done, 2000 );
+}
+
+/**
+ * Whether every document of a Preview had its blocks and style sheets when
+ * it was copied. A copy taken earlier is taken again.
+ *
+ * @param {Element} preview The Preview's root element.
+ * @return {boolean} Whether the copy is of the whole render.
+ */
+function isWhole( preview ) {
+    return [ ...preview.querySelectorAll( 'iframe' ) ].every( ( iframe ) => {
+        const doc = iframe.contentDocument;
+        return (
+            doc?.readyState === 'complete' &&
+            doc.querySelector( '.is-root-container' ) &&
+            [ ...doc.querySelectorAll( 'link[rel="stylesheet"]' ) ].every(
+                ( link ) => link.sheet
+            )
+        );
+    } );
+}
+
 export function createSnapshotStore() {
     const snapshots = new Map();
     return {
@@ -73,9 +129,26 @@ export function createSnapshotStore() {
             if ( ! preview?.querySelector( 'iframe' )?.contentDocument?.body ) {
                 return false;
             }
+            // A copy of what the Preview was rendered from is what it shows
+            // already. Copying again costs a serialisation and a second load
+            // on screen, which a zoom out did for every artboard.
+            const current = snapshots.get( id );
+            if ( current?.isWhole && current.version === version ) {
+                return true;
+            }
             const node = freeze( preview );
-            snapshots.get( id )?.node.replaceWith( node );
-            snapshots.set( id, { node, version } );
+            const old = current?.node;
+            snapshots.set( id, { node, version, isWhole: isWhole( preview ) } );
+            if ( old?.isConnected ) {
+                // An iframe shows nothing until its document has loaded, so
+                // the copy on screen stays until the new one has.
+                node.classList.add( 'is-loading' );
+                old.after( node );
+                whenLoaded( node, () => {
+                    node.classList.remove( 'is-loading' );
+                    old.remove();
+                } );
+            }
             return true;
         },
         has: ( id ) => snapshots.has( id ),
@@ -98,9 +171,10 @@ export function createSnapshotStore() {
         mount( id, host ) {
             const snapshot = snapshots.get( id );
             if ( snapshot ) {
+                snapshot.node.classList.remove( 'is-loading' );
                 host.appendChild( snapshot.node );
             }
-            return () => snapshots.get( id )?.node.remove();
+            return () => host.replaceChildren();
         },
         forget: ( id ) => snapshots.delete( id ),
     };
