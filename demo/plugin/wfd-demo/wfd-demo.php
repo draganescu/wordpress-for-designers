@@ -3,7 +3,7 @@
  * Plugin Name: WordPress for Designers demo content
  * Description: Morrow Coffee Roasters, the demo site of WordPress for Designers: a coffee post type and a command that seeds pages, posts, coffees, patterns, media and boards. Not part of the plugin.
  * Version: 1.0.0
- * Requires at least: 7.2
+ * Requires at least: 7.1
  * Requires PHP: 7.4
  * License: GPL-2.0-or-later
  *

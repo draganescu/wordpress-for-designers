@@ -1,6 +1,6 @@
 {
     "name": "wordpress-for-designers",
-    "version": "0.2.0",
+    "version": "0.2.1",
     "private": true,
     "description": "An infinite canvas of real WordPress pages, templates, template parts and patterns.",
     "license": "GPL-2.0-or-later",
@@ -11,7 +11,8 @@
         "lint:js": "wp-scripts lint-js src tests tools eslint.config.cjs webpack.config.js",
         "lint:css": "wp-scripts lint-style \"src/**/*.scss\"",
         "package": "sh tools/package.sh",
-        "version": "node tools/sync-version.mjs && git add wordpress-for-designers.php",
+        "package:adapters": "sh tools/package-adapters.sh",
+        "version": "node tools/sync-version.mjs --stage",
         "wp-env": "wp-env",
         "test:e2e": "WP_BASE_URL=http://localhost:8888 wp-scripts test-playwright --config tests/e2e/playwright.config.ts",
         "test:perf": "wp-scripts test-playwright --config tests/perf/playwright.config.ts",
@@ -21,7 +22,7 @@
         "@wordpress/admin-ui": "^3.2.0",
         "@wordpress/dataviews": "^22.1.0",
         "@wordpress/global-styles-engine": "2.2.0",
-        "@wordpress/global-styles-ui": "2.0.0",
+        "@wordpress/global-styles-ui": "1.22.0",
         "@wordpress/icons": "^21.0.0",
         "@wordpress/ui": "^0.27.0"
     },

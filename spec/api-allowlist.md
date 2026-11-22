@@ -33,11 +33,11 @@ Import only what is listed here. "WP script" means use the script handle WordPre
 | `@wordpress/admin-ui` | Bundled | `Page`, `NavigableRegion`, `Breadcrumbs` | |
 | `@wordpress/dataviews` | Bundled | `DataViews`, `filterSortAndPaginate` | |
 | `@wordpress/global-styles-engine` | Bundled, release 2.2.0 exactly (D59) | `getSetting`, `setSetting`, `getStyle`, `setStyle`, `getPalettes`, `mergeGlobalStyles`, `generateGlobalStyles`, `areGlobalStylesEqual`, `getGlobalStylesChanges` | |
-| `@wordpress/global-styles-ui` | Bundled, release 2.0.0 exactly (D59) | `GlobalStylesUI`, `useGlobalStylesRevisions` | |
+| `@wordpress/global-styles-ui` | Bundled, release 1.22.0 exactly (D80) | `GlobalStylesUI`, `useGlobalStylesRevisions` | |
 
 One global is read besides these exports: `window.__experimentalBlockDragFromAnywhere`, the flag WordPress sets when its own "Drag blocks from anywhere" experiment is on. It is read only in `src/adapter/experimental.js`, to make the plugin's layer stand down (D40). `[U]`
 
-The two styles packages are pinned in `package.json` to the releases named in their rows, with no range (D59). `@wordpress/global-styles-ui` uses private functions of the `@wordpress/block-editor` that WordPress ships and of `@wordpress/global-styles-engine`, so the three have to match: 2.0.0 is the newest release of it that runs on WordPress 7.2, and it was tested with engine 2.2.0. Its exports in the table are the same in that release. A release of either is raised only for a WordPress that has shipped. `[U]`
+The two styles packages are pinned in `package.json` to the releases named in their rows, with no range (D59). `@wordpress/global-styles-ui` uses private functions of the `@wordpress/block-editor` that WordPress ships and of `@wordpress/global-styles-engine`, so the three have to match: on this release line 1.22.0 is the newest release of it that runs on WordPress 7.1 (D80). It brings its own copy of the engine, release 1.24.0, for its screens; the plugin's own code keeps engine 2.2.0, and the two were tested together. Its exports in the table are the same in that release. A release of either is raised only for a WordPress that has shipped. `[U]`
 
 Prefer `@wordpress/ui` when both it and `@wordpress/components` have a component (C4). Call `useEnableWpCompatOverlaySlot()` once at the app root, because the two libraries are mixed and `@wordpress/ui` is bundled. `[V]`
 

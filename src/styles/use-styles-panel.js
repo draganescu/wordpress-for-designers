@@ -18,7 +18,6 @@ import { getCurrentThemeGlobalStylesVariations } from '../adapter/experimental';
 import {
     StockScreen,
     blockPath,
-    elementGroups,
     isPartialVariation,
     siteScreens,
 } from './stock-screens';
@@ -206,46 +205,37 @@ export function useStylesPanel( { styles, serverSettings, usesOf } ) {
         [ merged ]
     );
 
-    // The rows of the Blocks tab in their groups, the elements' first (D53).
-    // A row is known by the path of its stock screen.
+    // The rows of the Blocks tab, in one group with no heading: this
+    // release line has no element rows (D80). A row is known by the path of
+    // its stock screen.
     const blockGroups = useMemo( () => {
         const needle = blockQuery.trim().toLowerCase();
         const matches = ( ...texts ) =>
             ! needle || texts.join( ' ' ).toLowerCase().includes( needle );
-        const groups = elementGroups().map( ( group ) => ( {
-            title: group.title,
-            // An element is found by title, name or group title.
-            rows: group.elements
-                .filter( ( element ) =>
-                    matches( element.title, element.name, group.title )
-                )
-                .map( ( { name, path, title, icon } ) => ( {
-                    path,
-                    title,
-                    icon,
-                    changes: countLeaves( user.styles?.elements?.[ name ] ),
-                } ) ),
-        } ) );
-        groups.push( {
-            title: __( 'Blocks', 'wordpress-for-designers' ),
-            rows: getBlockTypes()
-                .filter(
-                    ( type ) =>
-                        type.supports &&
-                        Object.keys( type.supports ).some( ( key ) =>
-                            STYLE_SUPPORTS.some( ( support ) =>
-                                key.toLowerCase().endsWith( support )
-                            )
-                        ) &&
-                        matches( type.title )
-                )
-                .map( ( type ) => ( {
-                    path: blockPath( type.name ),
-                    title: type.title,
-                    icon: type.icon,
-                    changes: countLeaves( user.styles?.blocks?.[ type.name ] ),
-                } ) ),
-        } );
+        const groups = [
+            {
+                title: null,
+                rows: getBlockTypes()
+                    .filter(
+                        ( type ) =>
+                            type.supports &&
+                            Object.keys( type.supports ).some( ( key ) =>
+                                STYLE_SUPPORTS.some( ( support ) =>
+                                    key.toLowerCase().endsWith( support )
+                                )
+                            ) &&
+                            matches( type.title )
+                    )
+                    .map( ( type ) => ( {
+                        path: blockPath( type.name ),
+                        title: type.title,
+                        icon: type.icon,
+                        changes: countLeaves(
+                            user.styles?.blocks?.[ type.name ]
+                        ),
+                    } ) ),
+            },
+        ];
         return groups.filter( ( group ) => group.rows.length );
     }, [ blockQuery, user ] );
 

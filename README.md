@@ -54,7 +54,7 @@ The **Try it in WordPress Playground** button starts a WordPress site in your br
 
 ## Requirements
 
-- WordPress 7.2 or later
+- WordPress 7.1 or later
 - PHP 7.4 or later
 - A block theme
 
@@ -72,7 +72,7 @@ A seeded demo site with its own WordPress on port 8900 is in [demo/](demo/README
 
 ## Release
 
-Pushing a version tag builds the plugin and attaches `wordpress-for-designers.zip` to a GitHub release:
+Pushing a version tag builds the plugin and each adapter under `adapters/`, and attaches their zips to a GitHub release:
 
 ```bash
 npm version minor -m "Release %s"
@@ -82,7 +82,7 @@ npm version minor -m "Release %s"
 git push --follow-tags
 ```
 
-`npm version` sets the version in `package.json` and the plugin file, commits and tags. See "Releasing it" in [docs/state.md](docs/state.md).
+`npm version` sets the version in `package.json`, the plugin file and each adapter, commits and tags. Each release line has its own branch, and a tag on it releases that line. See "Releasing it" in [docs/state.md](docs/state.md).
 
 ## Documentation
 

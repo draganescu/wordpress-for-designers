@@ -153,25 +153,17 @@ test.describe( 'EDIT', () => {
         const id = ( await live.getAttribute( 'data-wfd-artboard' ) )!;
         const frame = editorFrame( page, id );
 
-        // The stock empty state: one empty paragraph with its placeholder.
+        // The stock empty state. WordPress 7.1 draws it as its default
+        // block appender: the placeholder is the paragraph's own text.
         const paragraph = frame.locator( '.is-root-container p' );
         await expect( paragraph ).toHaveCount( 1 );
-        await expect( paragraph )
-            .toHaveAttribute(
-                'data-rich-text-placeholder',
-                'Type / to choose a block'
-            )
-            .catch( async () => {
-                await expect(
-                    frame.locator(
-                        '[data-rich-text-placeholder="Type / to choose a block"]'
-                    )
-                ).toHaveCount( 1 );
-            } );
-        await expect( paragraph ).toHaveText( '' );
-        // Its add-block button is the stock inserter toggle.
-        await paragraph.click();
-        const add = page.getByRole( 'button', { name: 'Add block' } );
+        await expect( paragraph ).toHaveClass(
+            /block-editor-default-block-appender__content/
+        );
+        await expect( paragraph ).toHaveText( 'Type / to choose a block' );
+        // Its add-block button is the stock inserter toggle, beside it in
+        // the appender.
+        const add = frame.getByRole( 'button', { name: 'Add block' } );
         await expect( add ).toBeVisible();
         const addBox = ( await add.boundingBox() )!;
         const paragraphBox = ( await paragraph.boundingBox() )!;
@@ -204,11 +196,16 @@ test.describe( 'EDIT', () => {
         const bodyChildren = await frame.locator( 'body' ).evaluate( ( body ) =>
             Array.from( body.children )
                 // WordPress adds style elements and an SVG with its duotone
-                // filter definitions next to the blocks.
+                // filter definitions next to the blocks, and WordPress 7.1
+                // an empty hidden box it measures the document with.
                 .filter(
                     ( el ) =>
                         ! [ 'style', 'link', 'svg' ].includes(
                             el.tagName.toLowerCase()
+                        ) &&
+                        ! (
+                            el.getAttribute( 'aria-hidden' ) === 'true' &&
+                            ! el.childElementCount
                         )
                 )
                 .map( ( el ) => String( el.getAttribute( 'class' ) ) )
