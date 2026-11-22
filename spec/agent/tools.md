@@ -9,16 +9,18 @@ Read `surface.md` first for what a reference is, how a tool call runs and how it
 - A tool is one entry of the declaration file (`surface.md`, Declarations): a `name`, a `description`, an `input` JSON Schema and a function. The schema of each tool is an object with exactly the fields listed for it below, `additionalProperties: false`, and the fields marked "yes" under Required in `required`. `[U]` for the shape (D74)
 - A tool does what the named control of the UI does, through the same function the control calls, and nothing more. The "Same as" column names that control or decision; its rules apply to the tool unchanged, including undo: a tool's change is a step of the history the control's change would be a step of. `[U]` (D72, D73, C26)
 - Where the block editor joins changes into one undo step, a tool's changes are joined too: two changes in a row to the same attribute of the same block are one step, as typing is. `[V]` by Milestone 13, spike (c)
-- A tool returns a JSON value, in one piece, when its effect is in the stores. It never waits for a save, a render or the designer. `[U]` (C30)
+- A tool returns a JSON value, in one piece, when its effect is in the stores and the board has settled on it (Settling, below). It never waits for a save or for the designer. `[U]` (C30, D82)
 - No tool saves, publishes, deletes or trashes anything on the site, takes over a lock, or opens or answers a dialog (C28). `[U]`
-- Where a field is called an *artboard*, its value is an artboard's `id` or a reference string that names an artboard or a block in it (`surface.md`, References). Where a field is called a *path*, its value is a block path (`surface.md`, Block paths).
+- Where a field is called an *artboard*, its value is an artboard's `id` or a reference string that names an artboard or a block in it (`surface.md`, References). Where a field's type is *path*, its value is a block path (`surface.md`, Block paths).
+- No field is named `path`, or after any other global parameter of WP-CLI (`url`, `user`, `context`, `debug`, `quiet`, `color`, `prompt`, `require`, `exec`, `ssh`, `http`, `skip-plugins`, `skip-themes`, `skip-packages`), because WP-CLI takes those flags before `wp wfd` sees them (D80). `[U]`
+- While the board cannot be used, a tool fails with `unavailable` before its input is looked at.
 - A tool that names an artboard which is not on the open board fails with `not_found`.
 - While the board cannot be used by the designer either, every tool fails with `unavailable` and changes nothing: the window is narrower than 1180 px (D49), or a dialog or the Review drawer is open.
 - The `description` of each tool in the declaration file is the text in the Description column, verbatim. It is not translated: agents read it, designers never see it.
 
 ## Errors
 
-A failed tool returns `{ "code": "...", "message": "..." }`. The codes are these and no others. Messages are the ones given here, verbatim, in English, with the named value put in.
+A failed tool returns `{ "code": "...", "message": "..." }`. The codes are these nine and no others. Messages are the ones given here, verbatim, in English, with the named value put in.
 
 | Code | When | Message |
 |---|---|---|
@@ -30,8 +32,20 @@ A failed tool returns `{ "code": "...", "message": "..." }`. The codes are these
 | `not_allowed` | The block editor does not allow the change: the block cannot be inserted there, moved or removed, or its editing mode is disabled, as the template around a page is | `The editor does not allow this change.` |
 | `not_agents` | `review-discard` names an item the designer has also changed | `{Name} also has changes made by the designer.` |
 | `unavailable` | The board cannot be used right now (see the rules above) | `The board cannot be used right now.` |
+| `not_ready` | The board did not settle within the safety limit (Settling) | `{Name} did not finish loading.` for an artboard; `The styles did not finish updating.` for a style tool |
 
 The relay adds four codes of its own: `no_board`, `several_boards`, `timeout` and `skipped` (`relay.md`).
+
+## Settling
+
+Some effects take a moment that the tool does not control: an artboard that has just entered edit fills in the blocks of its template parts, synced patterns and page content, and a style change is compiled and handed to the artboards. A tool waits for these, so that what it returns and what the next call reads are the real state. It waits on what the board itself reports and never on a fixed pause or on "nothing changed for a while". `[U]` (D82)
+
+| Tool | Waits until |
+|---|---|
+| `artboard-edit`, `artboard-new` when it ends in edit, and every block tool, after putting an artboard in edit | That artboard's editor is mounted, and the page's `core` data store reports no selector still resolving, as every `@wordpress/data` store reports for itself. A block tool then reads the tree. A tool called on the artboard already in edit, with nothing resolving, does not wait. |
+| `token-set`, `styles-set`, `styles-set-variation` | The `styles` part reports that the compile for this change has finished and its stylesheet has been given to the mounted artboards. The part reports this itself; the Styles panel being drawn is not the signal. |
+
+One safety limit covers both: 10 seconds. A tool that has waited that long fails with `not_ready`, and what it had already changed stays changed. `[N]` for the limit
 
 ## Board
 
@@ -57,7 +71,7 @@ Result:
       "kind": "page | template | template-part | pattern | media | browser",
       "name": "the name shown in its label (A1)",
       "entityId": "as in the layout; absent for a browser",
-      "path": "a browser's address; absent otherwise",
+      "address": "a browser's address; absent otherwise",
       "device": "desktop | tablet | mobile; absent for media",
       "x": 0, "y": 0, "width": 1440, "height": 900,
       "tier": "ghost | snapshot | preview | live | warm; absent for media and browsers",
@@ -104,7 +118,7 @@ Every saved record the board shows (the entities of its artboards, the parts and
 |---|---|---|---|
 | `kind` | `page`, `pattern`, `template`, `template-part`, `media` or `browser` | yes | What it is |
 | `entityId` | number for page, pattern and media; string (`theme//slug`) for template and template part | for every kind but `browser` | The item on the site |
-| `path` | string starting with `/` | for `browser` only | The address (`data-model.md`, Board) |
+| `address` | string starting with `/` | for `browser` only | The browser's address, stored as `path` in the layout (`data-model.md`, Board) |
 | `device` | `desktop`, `tablet` or `mobile` | no | Set after placing, as E6 sets it. Not allowed for `media` |
 
 The artboard is placed where the row's click places it. If an artboard is in edit, edit ends first, because a row clicked in edit inserts into the artboard and does not open one (D39). Result: the new artboard, in the form `board-get` gives.
@@ -137,6 +151,8 @@ At least one of `device` and `x`, `y` is required. Result: the artboard, in the 
 
 Result: `{ "removed": [ ids ] }`. If one of them is in edit, edit ends first.
 
+A new template or template part that has never been saved exists only on the board, so taking it off the board loses it with every change made to it. The tool removes such an artboard only when its item is recorded as the agent's alone (`surface.md`, Authorship). If one of the artboards named is such an item that the designer has also changed, the tool fails with `not_agents` and removes none of them (D83). `[U]`
+
 ### `artboard-edit`
 
 | Field | Type | Required | Meaning |
@@ -151,7 +167,7 @@ Input: no fields. Result: `{ "edit": null }`. With nothing in edit it changes no
 
 ## Blocks
 
-Blocks are changed only in the artboard in edit (C29). Each tool below names an artboard and first puts it in edit exactly as `artboard-edit` does, unless it is in edit already, and fails as `artboard-edit` fails. It then acts on the block editor of that artboard (`surface.md`, The editor in edit). The artboard stays in edit afterwards. `[U]` (D70)
+Blocks are changed only in the artboard in edit (C29). Each tool below names an artboard and first puts it in edit exactly as `artboard-edit` does, unless it is in edit already, and fails as `artboard-edit` fails. It then waits for that editor to settle (Settling) and acts on the block editor of that artboard (`surface.md`, Seams). The artboard stays in edit afterwards. `[U]` (D70)
 
 | Tool | Description | Same as |
 |---|---|---|
@@ -165,8 +181,8 @@ Blocks are changed only in the artboard in edit (C29). Each tool below names an 
 
 | Field | Type | Required | Meaning |
 |---|---|---|---|
-| `artboard` | artboard | yes | A block reference also gives the path, when `path` is absent |
-| `path` | path | no | The block to start from. Absent: the whole artboard |
+| `artboard` | artboard | yes | A block reference also gives the block, when `block` is absent |
+| `block` | path | no | The block to start from. Absent: the whole artboard |
 | `depth` | integer, 0 to 10 | no | How many levels of inner blocks to list under each returned block. Default 2 |
 
 Result:
@@ -190,14 +206,14 @@ Result:
 }
 ```
 
-With `path`, `blocks` holds that one block. `editable` is false for a block whose editing mode is disabled. `text` is the block's serialized content with tags removed and white space collapsed.
+With `block`, `blocks` holds that one block. `editable` is false for a block whose editing mode is disabled. `text` is the block's serialized content with tags removed and white space collapsed.
 
 ### `block-update`
 
 | Field | Type | Required | Meaning |
 |---|---|---|---|
-| `artboard` | artboard | yes | A block reference also gives the path, when `path` is absent |
-| `path` | path | yes, unless `artboard` is a block reference | |
+| `artboard` | artboard | yes | A block reference also gives the block, when `block` is absent |
+| `block` | path | yes, unless `artboard` is a block reference | The block to change |
 | `attributes` | object, at least one key | yes | Merged into the block's attributes. Text is the attribute that holds it, for example `content` of a Paragraph or Heading |
 
 Result: the block, in the form `blocks-get` gives with depth 0.
@@ -210,7 +226,7 @@ Result: the block, in the form `blocks-get` gives with depth 0.
 | `parent` | path | no | The block to insert into. Absent or `[]`: the top level of the artboard |
 | `index` | integer, 0 or more | no | Position among the parent's blocks. Absent: after the last |
 | `markup` | string of block markup | exactly one of `markup` and `pattern` | Parsed with `parse`. Markup that yields no block fails with `invalid_args` |
-| `pattern` | string | exactly one of `markup` and `pattern` | The `name` of a registered pattern, or the id of a pattern of the site as a string of digits. It is inserted as its inserter row inserts it in edit (D39) |
+| `pattern` | string | exactly one of `markup` and `pattern` | A pattern the inserter lists in edit: a pattern of the site, by its id as a string of digits, or a pattern of the active theme, by its `name`. It is inserted as its inserter row inserts it (D39). A pattern the inserter does not list, such as one registered by WordPress itself or by a plugin, is `not_found` (D84) |
 
 A block the editor does not allow at that place fails the whole call with `not_allowed`, and nothing is inserted. Result: `{ "inserted": [ paths of the new top-level blocks ] }`.
 
@@ -219,7 +235,7 @@ A block the editor does not allow at that place fails the whole call with `not_a
 | Field | Type | Required | Meaning |
 |---|---|---|---|
 | `artboard` | artboard | yes | |
-| `paths` | array of path, at least one | yes, unless `artboard` is a block reference | The blocks, as their paths are before the call |
+| `blocks` | array of path, at least one | yes, unless `artboard` is a block reference | The blocks, as their paths are before the call |
 
 Result: `{ "removed": n }`. If one of them cannot be removed, none is.
 
@@ -228,7 +244,7 @@ Result: `{ "removed": n }`. If one of them cannot be removed, none is.
 | Field | Type | Required | Meaning |
 |---|---|---|---|
 | `artboard` | artboard | yes | |
-| `path` | path | yes, unless `artboard` is a block reference | The block to move |
+| `block` | path | yes, unless `artboard` is a block reference | The block to move |
 | `parent` | path | no | Where it goes. Absent or `[]`: the top level |
 | `index` | integer, 0 or more | yes | Its position among the new parent's blocks, counted after it has left its old place |
 
@@ -279,7 +295,7 @@ Result: the colour, in the form `styles-get` gives. The name and the slug are ke
 | Field | Type | Required | Meaning |
 |---|---|---|---|
 | `kind` | `setting` or `style` | yes | Which of `setSetting` and `setStyle` of `@wordpress/global-styles-engine` is used |
-| `path` | string of keys joined by `.` | yes | The path that function takes, for example `typography.fontSize` or `color.background` |
+| `property` | string of keys joined by `.` | yes | The path that function takes, for example `typography.fontSize` or `color.background` |
 | `value` | any JSON value | yes | The value that function takes |
 | `block` | a registered block name | no | The block type the change is for. Absent: the site |
 

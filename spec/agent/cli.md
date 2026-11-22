@@ -41,15 +41,15 @@ How to work:
 Rules:
 - Nothing you change is saved. Every change waits in Review, where the designer saves or discards it. Never offer to save.
 - Blocks are changed in the artboard in edit. The block tools put the artboard in edit for you, and only one artboard is in edit at a time.
-- Read a block with `blocks-get` before you change it. A path names a place, and the block there may have changed.
-- A reference is a string that starts with `wfd-ref-`. Pass it wherever a tool takes an artboard, a path or a token. `board-get`, `blocks-get` and `styles-get` give the reference of everything they list.
+- Read a block with `blocks-get` before you change it. A block is named by its place, and the block at that place may have changed.
+- A reference is a string that starts with `wfd-ref-`. Pass it wherever a tool takes an artboard, a block or a token. `board-get`, `blocks-get` and `styles-get` give the reference of everything they list.
 - Templates and template parts have no draft. Tell the designer when a change to one will reach the live site once saved.
 - If you change the site with other commands, run `wp wfd call board-refresh` afterwards so the board shows it.
 
 Calling a tool:
   wp wfd call <tool> --<field>=<value> ...
   wp wfd call <tool> --input='<json object>'
-A value that is valid JSON is read as JSON, so arrays and numbers can be passed as `--path='[0,2]'`. Anything else is read as a string.
+A value that is valid JSON is read as JSON, so arrays and numbers can be passed as `--block='[0,2]'`. Anything else is read as a string.
 The answer is one JSON object: {"ok":true,"result":...} or {"ok":false,"error":{"code":"...","message":"..."}}.
 ```
 

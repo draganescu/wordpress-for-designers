@@ -253,6 +253,7 @@ The five groups below cover `agent/`. Unless a criterion says otherwise: the fix
 - AC-CLI-04 `wp wfd call nothing-here` fails with `unknown_tool` and exit code 1, also with no board open. `[N]`
 - AC-CLI-05 A call whose input breaks the tool's schema fails with `invalid_args`, its message names the field, and nothing on the board changes. `[U]`
 - AC-CLI-06 `wp wfd batch` runs its calls in order on one board and prints one envelope per call. When the second of three fails, the third is `skipped`, the first stays done, and the exit code is 1. `[N]`
+- AC-CLI-08 `wp wfd call blocks-get --artboard=<id> --block='[0]'` reaches the board and returns that block: no field of any tool is a global parameter of WP-CLI (D80). `[U]`
 - AC-CLI-07 The standard output of `status`, `call` and `batch` is one JSON document and nothing else. `[N]`
 
 ## TOOL
@@ -268,7 +269,7 @@ The five groups below cover `agent/`. Unless a criterion says otherwise: the fix
 - AC-TOOL-09 A block tool that names an artboard which is not in edit puts it in edit first, and the artboard that was in edit leaves edit. At no time does a block change in an artboard that is not Live (C29). `[U]`
 - AC-TOOL-10 `blocks-get` returns the artboard's blocks with their paths, names, titles, text and attributes, to the depth asked. For a page artboard the template's blocks have `editable` false and the page's own have true. `[N]`
 - AC-TOOL-11 `block-update` on a Heading's `content` changes the text in the canvas and in every other artboard that shows the same item, the item is listed in Review, and Cmd/Ctrl + Z in the artboard undoes it as one step. `[U]`
-- AC-TOOL-12 `blocks-insert` inserts parsed markup at the parent and index given, and a registered pattern by name. A block the editor does not allow there fails with `not_allowed` and nothing is inserted. A block whose editing mode is disabled cannot be changed: `block-update` on it fails with `not_allowed`. `[U]`
+- AC-TOOL-12 `blocks-insert` inserts parsed markup at the parent and index given, a pattern of the active theme by name and a pattern of the site by id; the inserted blocks are that pattern's. A pattern the inserter does not list fails with `not_found`. A block the editor does not allow there fails with `not_allowed` and nothing is inserted. A block whose editing mode is disabled cannot be changed: `block-update` on it fails with `not_allowed`. `[U]`
 - AC-TOOL-13 `blocks-remove` removes the blocks at the paths given; when one of them cannot be removed, none is. `[N]`
 - AC-TOOL-14 `blocks-move` moves a block to another parent and index and returns its new path. `[N]`
 - AC-TOOL-15 `styles-get` returns the rows of the Tokens tab with the same names, values and use counts, and the variation the menu shows. `[U]`
@@ -279,9 +280,11 @@ The five groups below cover `agent/`. Unless a criterion says otherwise: the fix
 - AC-TOOL-20 After every tool has been called at least once, nothing on the site has been saved, published, trashed or deleted: every item that existed before has the same saved content and status, and the only new items are the drafts `artboard-new` creates for a page and a pattern (C28). `[U]`
 - AC-TOOL-21 `review-list` returns the items of the Review drawer with the same names and lines, each with its author. `[U]`
 - AC-TOOL-22 `review-discard` discards an item only the agent changed, as the card's Discard does. On an item the designer also changed it fails with `not_agents` and the item stays. `[N]`
-- AC-TOOL-23 While the Review drawer is open, and while the window is narrower than 1180 px, every tool fails with `unavailable` and changes nothing. `[N]`
+- AC-TOOL-23 While the Review drawer is open, and while the window is narrower than 1180 px, every tool fails with `unavailable` and changes nothing, also when its input is wrong. `[N]`
 - AC-TOOL-24 For every fixture artboard, and for a template the test seeds that holds a Query Loop showing three posts, a Comment Template, a synced pattern and a Navigation block that points at a menu, the tree read from the Preview's document equals the Live editor's tree read block by block (the same paths, names and order), and the same holds for a Snapshot. No preview copy has a path, a reference or a target (`agent/surface.md`, Block paths; D79). `[U]` for the equality, `[N]` for the seeded cases
 - AC-TOOL-25 `targets()` lists every artboard and note, the blocks of mounted artboards and, with the Tokens tab shown, its colour, font-size and font-family rows. Each `rect` is within 1 px of the element's box in the window. Reading targets changes no artboard's tier. `[N]`
+- AC-TOOL-27 A block tool called on an artboard that is not in edit returns the artboard's whole tree, with the blocks of its template parts and of a page's content, on the first call. A style tool returns after the mounted artboards have the new stylesheet. No tool waits on a fixed pause. When loading is held back past the safety limit (the test delays a REST answer), the tool fails with `not_ready` (D82). `[U]`
+- AC-TOOL-28 `artboard-remove` takes a never-saved new template part off the board when only the agent changed it. After the designer has typed in it, the tool fails with `not_agents` and the artboard and its content stay (D83). `[U]`
 - AC-TOOL-26 A reference given by `board-get`, `blocks-get` or `styles-get` is accepted by the tools in place of an artboard, a path or a slug, with or without a leading `#`. A string that does not parse fails with `invalid_args`; one that names nothing fails with `not_found`. `[U]`
 
 ## MARK
@@ -291,6 +294,7 @@ The five groups below cover `agent/`. Unless a criterion says otherwise: the fix
 - AC-MARK-03 After the agent changes a block, every artboard that shows that item has "· Changed by agent" in its label. The designer's own typing gives no such label. The label goes when the item is saved or discarded. `[U]` `[D:AgentWorking]`
 - AC-MARK-04 In the Review drawer an item only the agent changed has the badge "Agent", one both changed has "Agent and you", and one only the designer changed has none. `[U]` `[D:AgentReview]`
 - AC-MARK-05 `changed` in `board-get` and `author` in `review-list` say the same as the marks. `[N]`
+- AC-MARK-08 The designer typing in an artboard right after `blocks-get` or `artboard-edit` on it is recorded as the designer's. The designer typing within a second after `block-update` on it makes the item `both`. A block that sets its own attributes just after `blocks-insert`, with no input from the designer, leaves the item the agent's (D81). `[U]`
 - AC-MARK-06 A tool called through the page, on a site with no session, checks its input, records authorship and shows G2, G3 and G4 exactly as one called with `wp wfd` (C31). `[U]`
 - AC-MARK-07 Nothing of the agent surface is put inside the editing canvas: with marks showing, the Live artboard's canvas document holds no element, attribute or style of the plugin's that it did not hold before (C6). `[U]`
 

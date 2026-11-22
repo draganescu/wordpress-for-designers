@@ -53,7 +53,7 @@ Calls run one at a time, in the order they arrive. A call that arrives while ano
 
 ## References
 
-A reference is a string that names one thing on a board. Tools take it wherever they take an artboard, a path, a token or a note, and `board-get`, `blocks-get` and `styles-get` give one for each thing they list. It is made only of letters, digits, `-` and `_`, so it can be an element's `id`. `[U]` for one handle shared by chat asks and annotations (D71); `[N]` for the grammar
+A reference is a string that names one thing on a board. Tools take it wherever they take an artboard, a path, a token or a note, and `board-get`, `blocks-get` and `styles-get` give one for each thing they list. It is made only of letters, digits, `-` and `_`, so it can be an element's `id`. Tools take it in their `artboard`, `artboards` and `slug` fields. `[U]` for one handle shared by chat asks and annotations (D71); `[N]` for the grammar
 
 | Names | Form | Example |
 |---|---|---|
@@ -119,6 +119,7 @@ The surface records who made each unsaved change, for `changed` in `board-get`, 
 
 - The unit is a Review item: an entity record with unsaved edits, or a new template or part.
 - An item is the agent's when its edits changed during a tool call. It is the designer's when its edits changed at any other time. An item both have changed is `both`.
+- One case is added to "during a tool call" (D81): a block that a tool has just changed can go on changing itself for a moment, as an inserted block does when it is first drawn. A change to an item within one second after a tool that changed that item has ended is the agent's, unless the designer has pressed a key or a pointer button in that artboard or in its chrome since the tool ended. From the designer's first such input the second is over. It never follows a tool that changed nothing, such as `blocks-get` or `artboard-edit`. `[U]` for the rule, `[N]` for the second
 - An item that is saved or discarded is forgotten. Undoing a change does not change who is recorded.
 - The record is kept in the page and lasts as long as the unsaved edits do, which is until the page unloads.
 

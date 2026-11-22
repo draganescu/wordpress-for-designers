@@ -46,7 +46,7 @@ The agent surface (D65) uses these members of stores the table already allows, t
 | Store | Selectors | Actions |
 |---|---|---|
 | `core/block-editor` (`store` of `@wordpress/block-editor`) | `getBlocks`, `getBlock`, `getBlockName`, `getBlockAttributes`, `getBlockRootClientId`, `getBlockIndex`, `getBlockEditingMode`, `canInsertBlockType`, `canRemoveBlocks`, `canMoveBlocks` | `updateBlockAttributes`, `insertBlocks`, `removeBlocks`, `moveBlockToPosition` |
-| `@wordpress/data` | `registry.batch` | |
+| `@wordpress/data` | `registry.batch`; of every store, the resolution members `hasFinishedResolution`, `getResolutionError`, `hasResolvingSelectors`, `invalidateResolution`, `invalidateResolutionForStore`, `startResolution`, `finishResolution`; `registry.resolveSelect` (D85, OQ-20) | |
 
 The surface's chunk is loaded with the build's own dynamic `import()`. No package is added for the agent surface: not a schema validator, not an MCP or WebMCP library, not an AI SDK (C25, C26). `[U]`
 
@@ -62,7 +62,7 @@ The surface's chunk is loaded with the build's own dynamic `import()`. No packag
 
 Use WordPress public functions only. The ones this plugin needs: `register_post_type`, `add_menu_page`, `add_submenu_page`, `current_user_can`, `get_block_editor_settings`, `WP_Block_Editor_Context`, `block_editor_rest_api_preload`, `wp_enqueue_script`, `wp_enqueue_style`, `wp_add_inline_script`, `wp_set_script_translations`, `iframe_header`, `iframe_footer`, `wp_check_post_lock`, `wp_set_post_lock`, `register_rest_field`, `register_rest_route`, `rest_ensure_response`. `[V]` Another public function may be used without an open question; a private or `_`-prefixed one may not. `[N]`
 
-For the agent surface (D65) the plugin also uses `WP_CLI::add_command` and WP-CLI's own output functions, under WP-CLI only; `add_option`, `get_option`, `update_option` and `delete_option`; `$wpdb` with `prepare` and `esc_like`, to find and read the relay's own option rows without a cache; `wp_schedule_event`, `wp_next_scheduled`, `wp_clear_scheduled_hook` and `register_deactivation_hook`; `wp_generate_uuid4`; `do_action` and `apply_filters`. `[N]`
+For the agent surface (D65) the plugin also uses `WP_CLI::add_command` and WP-CLI's own output functions, under WP-CLI only; `add_option`, `get_option`, `update_option` and `delete_option`; `$wpdb` with `prepare` and `esc_like`, to find and read the relay's own option rows without a cache, and for one conditional `UPDATE` of a call's own row that claims it for one page, followed by `wp_cache_delete` for that option (D85); `wp_schedule_event`, `wp_next_scheduled`, `wp_clear_scheduled_hook` and `register_deactivation_hook`; `wp_generate_uuid4`; `do_action` and `apply_filters`. `[N]`
 
 ## Build and test tooling
 

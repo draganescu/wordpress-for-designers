@@ -56,7 +56,7 @@ Both are under the REST namespace `wfd/v1`, require `edit_theme_options` (C19) a
 
 Body: `{ "board": 12, "client": "uuid", "title": "Site map" }`.
 
-The server writes the page's listener record, then looks for the oldest call that has `status` `queued`, names this board and has not expired. If there is one it sets its `status` to `running` and its `client` to this page, and returns it. A call is handed to one page only: two pages that show the same board never both run it.
+The server writes the page's listener record, then looks for the oldest call that has `status` `queued`, names this board and has not expired. If there is one it sets its `status` to `running` and its `client` to this page, and returns it. A call is handed to one page only: two pages that show the same board never both run it. The claim is one conditional write that changes the row only while it still holds the queued call that was read (D85).
 
 Response: `{ "active": true, "call": { "id": "uuid", "calls": [ … ] } }`, with `"call": null` when there is none and `"active": false` when no session is active.
 
