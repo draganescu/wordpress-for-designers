@@ -1,8 +1,13 @@
 name: Release
 
-# Builds the plugin and attaches wordpress-for-designers.zip to a GitHub
-# release when a version tag (v1.2.3) is pushed. A tag with a hyphen
-# (v1.2.3-beta.1) makes a pre-release.
+# Builds the plugin and every adapter under adapters/, and attaches their zips
+# to a GitHub release when a version tag (v1.2.3) is pushed. A tag with a
+# hyphen (v1.2.3-beta.1) makes a pre-release.
+#
+# Each release line has its own branch: master for the newest WordPress,
+# wp-7.1 for WordPress 7.1. This file is the same on every line. The release
+# title names the WordPress the plugin requires, read from its header, so a
+# tag on wp-7.1 makes "v0.2.1 for WordPress 7.1".
 
 on:
     push:
@@ -22,8 +27,8 @@ jobs:
                   node-version: 24
                   cache: npm
 
-            # The tag, package.json, the plugin header and WFD_VERSION must
-            # all carry the same version.
+            # The tag, package.json, the plugin header, WFD_VERSION and each
+            # adapter's header and readme must all carry the same version.
             - name: Check the tag matches the plugin version
               run: node tools/sync-version.mjs --check "$GITHUB_REF_NAME"
 
@@ -35,6 +40,11 @@ jobs:
 
             - run: npm run package
 
+            - run: npm run package:adapters
+
+            # The release is marked as the latest only while no release has a
+            # higher version, so a patch on an older line never takes the
+            # badge from the newest line.
             - name: Publish the release
               env:
                   GH_TOKEN: ${{ github.token }}
@@ -43,8 +53,20 @@ jobs:
                       *-*) PRERELEASE=--prerelease ;;
                       *) PRERELEASE= ;;
                   esac
-                  gh release create "$GITHUB_REF_NAME" dist/wordpress-for-designers.zip \
-                      --title "$GITHUB_REF_NAME" \
+                  REQUIRES=$(sed -n 's/^ \* Requires at least: *\([0-9.]*\).*/\1/p' wordpress-for-designers.php)
+                  if [ -z "$REQUIRES" ]; then
+                      echo "The plugin header has no Requires at least." >&2
+                      exit 1
+                  fi
+                  HIGHEST=$( { gh release list --limit 100 --json tagName --jq '.[].tagName'; echo "$GITHUB_REF_NAME"; } | sort -V | tail -n 1 )
+                  if [ "$HIGHEST" = "$GITHUB_REF_NAME" ] && [ -z "$PRERELEASE" ]; then
+                      LATEST=--latest
+                  else
+                      LATEST=--latest=false
+                  fi
+                  gh release create "$GITHUB_REF_NAME" dist/*.zip \
+                      --title "$GITHUB_REF_NAME for WordPress $REQUIRES" \
                       --generate-notes \
                       --verify-tag \
+                      $LATEST \
                       $PRERELEASE
