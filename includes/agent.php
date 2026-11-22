@@ -1,11 +1,13 @@
 <?php
 /**
  * The agent relay: how a call made on the server reaches the open board and
- * how its result comes back (spec/agent/relay.md; decisions D68 and D69).
+ * how its result comes back (spec/agent/relay.md; decisions D68, D69, D92
+ * and D93).
  *
  * All of its state is in options that are not autoloaded:
  *
- * - `wfd_agent_seen`: the time of the last `wp wfd` command.
+ * - `wfd_agent_seen`: the time a way in was last used.
+ * - `wfd_agent_sources`: the time each way in was last used, by its label.
  * - `wfd_agent_listener_{client}`: one open board page that is asking.
  * - `wfd_agent_call_{id}`: one call, with its results once it is done.
  *
@@ -15,10 +17,11 @@
 defined( 'ABSPATH' ) || exit;
 
 define( 'WFD_AGENT_SEEN', 'wfd_agent_seen' );
+define( 'WFD_AGENT_SOURCES', 'wfd_agent_sources' );
 define( 'WFD_AGENT_LISTENER', 'wfd_agent_listener_' );
 define( 'WFD_AGENT_CALL', 'wfd_agent_call_' );
 define( 'WFD_AGENT_CLEANUP', 'wfd_agent_cleanup' );
-// A session is active this long after the last command, in seconds.
+// A session is active this long after a way in was last used, in seconds.
 define( 'WFD_AGENT_SESSION', 120 );
 // A board page is listening this long after it last asked.
 define( 'WFD_AGENT_LISTENING', 25 );
@@ -162,15 +165,20 @@ function wfd_agent_is_active() {
 }
 
 /**
- * Notes that a `wp wfd` command ran now, and makes sure the cleanup is
- * scheduled.
+ * Marks the session: notes that a way in was used now, under its label
+ * (D93), and makes sure the cleanup is scheduled.
  *
- * @return bool Whether the time was written.
+ * @param string $source The label of the way in.
+ * @return bool Whether the times were written.
  */
-function wfd_agent_touch() {
-    $written = wfd_agent_update( WFD_AGENT_SEEN, (string) time() );
+function wfd_agent_begin( string $source ) {
+    $now                = time();
+    $sources            = (array) wfd_agent_read( WFD_AGENT_SOURCES );
+    $sources[ $source ] = $now;
+    $written            = wfd_agent_update( WFD_AGENT_SEEN, (string) $now );
+    $written            = wfd_agent_write( WFD_AGENT_SOURCES, $sources ) && $written;
     if ( ! wp_next_scheduled( WFD_AGENT_CLEANUP ) ) {
-        wp_schedule_event( time(), 'hourly', WFD_AGENT_CLEANUP );
+        wp_schedule_event( $now, 'hourly', WFD_AGENT_CLEANUP );
     }
     return $written;
 }
@@ -192,6 +200,150 @@ function wfd_agent_listening_boards() {
     }
     ksort( $boards );
     return array_values( $boards );
+}
+
+/**
+ * Every published board, by id, for a way in that runs in PHP (D92). It
+ * marks no session.
+ *
+ * @return array Arrays of `id`, `title`, `address` and `listening`.
+ */
+function wfd_agent_boards() {
+    $listening = wp_list_pluck( wfd_agent_listening_boards(), 'id' );
+    $boards    = array();
+    $posts     = get_posts(
+        array(
+            'post_type'   => WFD_POST_TYPE,
+            'post_status' => 'publish',
+            'numberposts' => -1,
+            'orderby'     => 'ID',
+            'order'       => 'ASC',
+        )
+    );
+    foreach ( $posts as $post ) {
+        $boards[] = array(
+            'id'        => $post->ID,
+            'title'     => $post->post_title,
+            'address'   => wfd_board_url( $post->ID ),
+            'listening' => in_array( $post->ID, $listening, true ),
+        );
+    }
+    return $boards;
+}
+
+/**
+ * A failure of the relay itself.
+ *
+ * @param string $code    The error code.
+ * @param string $message The message.
+ * @return array The failed envelope.
+ */
+function wfd_agent_failure( $code, $message ) {
+    return array(
+        'ok'    => false,
+        'error' => array(
+            'code'    => $code,
+            'message' => $message,
+        ),
+    );
+}
+
+/**
+ * Hands calls to a listening board, waits for the board's answer and gives
+ * the results (D92). The caller checks that its user may use the plugin.
+ *
+ * @param array $calls The entries, 1 to 50, each an array of `tool` and
+ *                     `input`.
+ * @param array $args  `source`, the label of the way in; `board`, a board
+ *                     id, when several are listening; `timeout`, whole
+ *                     seconds from 1 to 120, 30 without it.
+ * @return array `ok` true and `results`, one envelope per entry, or a failed
+ *               envelope for a failure of the relay itself.
+ */
+function wfd_agent_relay( array $calls, array $args ) {
+    if ( ! wfd_agent_begin( $args['source'] ) ) {
+        return wfd_agent_failure( 'unavailable', WFD_AGENT_WRITE_FAILED );
+    }
+    $timeout = isset( $args['timeout'] ) ? (int) $args['timeout'] : 30;
+
+    $names = wp_list_pluck( wfd_agent_tools(), 'name' );
+    foreach ( $calls as $index => $call ) {
+        if ( ! in_array( $call['tool'], $names, true ) ) {
+            return wfd_agent_failure( 'unknown_tool', sprintf( 'There is no tool named %s.', $call['tool'] ) );
+        }
+        // An input given as an array is stored as an object, so that an
+        // empty one does not reach the page as an empty list.
+        $calls[ $index ]['input'] = (object) $call['input'];
+    }
+
+    $boards = wfd_agent_listening_boards();
+    $none   = 'No board is listening. Open a board in WordPress for Designers; if one is open, reload it once.';
+    if ( isset( $args['board'] ) ) {
+        $board = (int) $args['board'];
+        if ( ! in_array( $board, wp_list_pluck( $boards, 'id' ), true ) ) {
+            return wfd_agent_failure( 'no_board', $none );
+        }
+    } elseif ( ! $boards ) {
+        return wfd_agent_failure( 'no_board', $none );
+    } elseif ( count( $boards ) > 1 ) {
+        $named = array();
+        foreach ( $boards as $listening ) {
+            $named[] = sprintf( '%d "%s"', $listening['id'], $listening['title'] );
+        }
+        return wfd_agent_failure( 'several_boards', sprintf( 'Several boards are open: %s. Pass --board=<id>.', implode( ', ', $named ) ) );
+    } else {
+        $board = $boards[0]['id'];
+    }
+
+    $encoded = wp_json_encode( $calls );
+    if ( false === $encoded || strlen( $encoded ) > WFD_AGENT_MAX_BYTES ) {
+        return wfd_agent_failure( 'invalid_args', 'The input is larger than 1 MB.' );
+    }
+
+    $id   = wp_generate_uuid4();
+    $name = WFD_AGENT_CALL . $id;
+    $now  = time();
+    // When the caller starts waiting, to the microsecond: the page is told
+    // the time left from it (D89).
+    $started = microtime( true );
+    $added   = add_option(
+        $name,
+        wp_json_encode(
+            array(
+                'id'      => $id,
+                'board'   => $board,
+                'calls'   => $calls,
+                'status'  => 'queued',
+                'source'  => $args['source'],
+                'created' => $started,
+                'expires' => $now + WFD_AGENT_CALL_LIFE,
+                // The page starts no entry once this has passed (D89).
+                'timeout' => $timeout,
+            )
+        ),
+        '',
+        false
+    );
+    if ( ! $added ) {
+        return wfd_agent_failure( 'unavailable', WFD_AGENT_WRITE_FAILED );
+    }
+
+    $call = null;
+    while ( microtime( true ) - $started < $timeout ) {
+        usleep( 200000 );
+        $call = wfd_agent_read( $name, false );
+        if ( $call && isset( $call->status ) && 'done' === $call->status ) {
+            break;
+        }
+    }
+    delete_option( $name );
+    if ( ! $call || ! isset( $call->status, $call->results ) || 'done' !== $call->status ) {
+        return wfd_agent_failure( 'timeout', sprintf( 'The board did not answer within %d seconds.', $timeout ) );
+    }
+    return array(
+        'ok'      => true,
+        'results' => (array) $call->results,
+    );
 }
 
 /**
@@ -295,7 +447,7 @@ function wfd_agent_take_call( $board, $client ) {
  * POST wfd/v1/agent/poll.
  *
  * @param WP_REST_Request $request The request.
- * @return WP_REST_Response
+ * @return WP_REST_Response|WP_Error
  */
 function wfd_agent_poll( $request ) {
     $board   = (int) $request['board'];
@@ -311,10 +463,18 @@ function wfd_agent_poll( $request ) {
     if ( ! $written ) {
         return wfd_agent_write_error();
     }
+    // The ways in that are in use, by their labels (D93).
+    $sources = array();
+    foreach ( (array) wfd_agent_read( WFD_AGENT_SOURCES ) as $source => $seen ) {
+        if ( time() - $seen < WFD_AGENT_SESSION ) {
+            $sources[] = $source;
+        }
+    }
     return rest_ensure_response(
         array(
-            'active' => wfd_agent_is_active(),
-            'call'   => wfd_agent_take_call( $board, $client ),
+            'active'  => wfd_agent_is_active(),
+            'sources' => $sources,
+            'call'    => wfd_agent_take_call( $board, $client ),
         )
     );
 }

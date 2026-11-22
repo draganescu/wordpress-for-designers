@@ -25,8 +25,9 @@ foreach ( $wfd_boards as $wfd_board ) {
 // Every user's kept changes, on this site (includes/preview.php).
 delete_metadata( 'user', 0, $GLOBALS['wpdb']->get_blog_prefix() . 'wfd_preview', '', true );
 
-// The agent relay: when an agent was last seen, every listener and call
-// record, and the cleanup event (includes/agent.php).
+// The agent relay: when a way in was last used, and each way in by its
+// label, every listener and call record, and the cleanup event
+// (includes/agent.php).
 $wfd_agent_options = $GLOBALS['wpdb']->get_col(
     $GLOBALS['wpdb']->prepare(
         "SELECT option_name FROM {$GLOBALS['wpdb']->options} WHERE option_name LIKE %s",
