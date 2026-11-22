@@ -497,23 +497,24 @@ test.describe( 'MARK', () => {
         } );
         await expect( review( page ) ).toBeDisabled();
 
-        // G2 while it runs and after, then G3.
-        const updated = await callTool( page, 'block-update', {
+        // G2 while it runs and after, then G3. The marks stay for a second
+        // after the call, so they are looked for together, from its start.
+        const updating = callTool( page, 'block-update', {
             artboard: header.id,
             block: [ 0, 0 ],
             attributes: { content: 'From the page' },
         } );
-        expect( updated.ok ).toBe( true );
-        await expect( frame( page, header.id ) ).toHaveAttribute(
-            'data-wfd-agent-working',
-            'true'
-        );
-        await expect( label( page, header.id ) ).toContainText(
-            'Agent working'
-        );
-        await expect( page.locator( '[data-wfd-agent]' ) ).toHaveText(
-            'Agent working'
-        );
+        await Promise.all( [
+            expect( frame( page, header.id ) ).toHaveAttribute(
+                'data-wfd-agent-working',
+                'true'
+            ),
+            expect( label( page, header.id ) ).toContainText( 'Agent working' ),
+            expect( page.locator( '[data-wfd-agent]' ) ).toHaveText(
+                'Agent working'
+            ),
+        ] );
+        expect( ( await updating ).ok ).toBe( true );
         await expect( label( page, mobile.id ) ).toHaveText(
             'Header · Template part · Mobile · Changed by agent'
         );
