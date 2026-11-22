@@ -1,8 +1,8 @@
 name: Tests
 
-# Lint, build, the end-to-end suite and the Studio adapter's tests on every
-# pull request. Both suites run against wp-env (WordPress and PHP as pinned in
-# .wp-env.json and adapters/studio/.wp-env.json) in Chromium.
+# Lint, build, the end-to-end suite and each adapter's tests on every
+# pull request. Every suite runs against wp-env (WordPress and PHP as pinned in
+# .wp-env.json and the adapters' own .wp-env.json files) in Chromium.
 
 on:
     pull_request:
@@ -97,5 +97,36 @@ jobs:
               with:
                   name: adapter-artifacts
                   path: adapters/studio/artifacts/test-results
+                  retention-days: 7
+                  if-no-files-found: ignore
+
+    abilities:
+        name: Abilities adapter
+        runs-on: ubuntu-latest
+        timeout-minutes: 30
+        steps:
+            - uses: actions/checkout@v4
+
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: 24
+                  cache: npm
+
+            - run: npm ci
+
+            - run: npm run build
+
+            - run: npx playwright install --with-deps chromium
+
+            # Starts the adapter's own site on port 8890 and runs its tests.
+            - name: Run the adapter's tests
+              run: sh adapters/abilities/test.sh
+
+            - name: Upload failure artifacts
+              if: failure()
+              uses: actions/upload-artifact@v4
+              with:
+                  name: abilities-artifacts
+                  path: adapters/abilities/artifacts/test-results
                   retention-days: 7
                   if-no-files-found: ignore

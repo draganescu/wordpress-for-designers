@@ -429,5 +429,33 @@ add_action(
                 },
             )
         );
+
+        // The agent surface's PHP functions, called in a web request, outside
+        // WP-CLI (AC-AGENT-11 to AC-AGENT-14). `run` says which: `relay`,
+        // `begin`, `boards`, or `options` for what the relay's options hold.
+        register_rest_route(
+            'wfd-test/v1',
+            '/agent',
+            array(
+                'methods'             => 'POST',
+                'permission_callback' => function () {
+                    return current_user_can( 'manage_options' );
+                },
+                'callback'            => function ( $request ) {
+                    switch ( $request['run'] ) {
+                        case 'relay':
+                            // The body as it was sent, so that an empty input stays an object.
+                            $body = json_decode( $request->get_body() );
+                            return rest_ensure_response( wfd_agent_relay( array_map( 'get_object_vars', $body->calls ), $request['args'] ) );
+                        case 'begin':
+                            return rest_ensure_response( wfd_agent_begin( $request['source'] ) );
+                        case 'boards':
+                            return rest_ensure_response( wfd_agent_boards() );
+                        case 'options':
+                            return rest_ensure_response( (object) array_map( 'json_decode', wfd_agent_records( 'wfd_agent_', null ) ) );
+                    }
+                },
+            )
+        );
     }
 );
