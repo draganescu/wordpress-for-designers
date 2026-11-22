@@ -7,7 +7,7 @@ Lets an agent that reaches the site through abilities work on a WordPress for De
 
 == Description ==
 
-With this adapter active, the site has one ability for each tool of WordPress for Designers, and three more: one lists the site's boards, one gives the address of a board and a guide for working on it, and one runs several calls in one round trip. What an agent does through them happens on the open board, where the designer watches, and nothing is saved until the designer saves it.
+With this adapter active, the site has one ability for each tool of WordPress for Designers, and four more: one lists the site's boards, one makes a board, one gives the address of a board and a guide for working on it, and one runs several calls in one round trip. What an agent does through them happens on the open board, where the designer watches, and nothing is saved until the designer saves it.
 
 It needs three things:
 

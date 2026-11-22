@@ -6,8 +6,8 @@
  * Requires PHP:      7.4
  * Text Domain:       wfd-abilities
  *
- * Registers one ability for each tool of WordPress for Designers and three of
- * its own, and hands every call to the board through the four functions that
+ * Registers one ability for each tool of WordPress for Designers and four of
+ * its own, and hands every call to the board through the functions that
  * plugin gives adapters. When that plugin is not active, or WordPress has no
  * Abilities API, this file registers nothing.
  *
@@ -42,6 +42,7 @@ Rules:
 - If you change the site in another way, run `wfd/board-refresh` afterwards so the board shows it.
 - With several boards open, pass `board` with the id of the one you mean.
 - To work on another board, run `wfd/board-open` for it and open its address.
+- To make a new board, run `wfd/board-new` and open its address.
 GUIDE;
 }
 
@@ -107,7 +108,7 @@ function wfd_abilities_register_category() {
 add_action( 'wp_abilities_api_categories_init', 'wfd_abilities_register_category' );
 
 /**
- * Registers the abilities: one for each tool, then the adapter's own three.
+ * Registers the abilities: one for each tool, then the adapter's own four.
  * Labels and descriptions are not translated: agents read them.
  */
 function wfd_abilities_register() {
@@ -218,6 +219,33 @@ function wfd_abilities_register() {
                     }
                 }
                 return wfd_abilities_error( 'not_found', sprintf( 'Board %d was not found.', $input['board'] ) );
+            },
+        )
+    );
+
+    wp_register_ability(
+        'wfd/board-new',
+        $shared + array(
+            'label'            => 'Make a board',
+            'description'      => 'Make a new, empty board and get its address to open in your browser, and how to work on it.',
+            'input_schema'     => array(
+                'type'                 => 'object',
+                'properties'           => array( 'title' => array( 'type' => 'string' ) ),
+                'additionalProperties' => false,
+                'default'              => new stdClass(),
+            ),
+            'meta'             => $meta( false, false ),
+            'execute_callback' => function ( $input = array() ) {
+                $input = (array) $input;
+                $entry = wfd_agent_board_new( isset( $input['title'] ) ? $input['title'] : '' );
+                if ( isset( $entry['error'] ) ) {
+                    return wfd_abilities_error( $entry['error']['code'], $entry['error']['message'] );
+                }
+                wfd_agent_begin( 'abilities' );
+                return array(
+                    'board' => $entry,
+                    'guide' => wfd_abilities_guide(),
+                );
             },
         )
     );

@@ -249,6 +249,36 @@ function wfd_agent_failure( $code, $message ) {
 }
 
 /**
+ * Makes a board as "Add board" does, for a way in that runs in PHP (D103).
+ * It marks no session.
+ *
+ * @param string $title The board's title; "Untitled board" without one.
+ * @return array The board as `wfd_agent_boards` lists it, or a failed
+ *               envelope.
+ */
+function wfd_agent_board_new( string $title = '' ) {
+    $id = wp_insert_post(
+        wp_slash(
+            array(
+                'post_type'    => WFD_POST_TYPE,
+                'post_status'  => 'publish',
+                'post_title'   => '' === $title ? __( 'Untitled board', 'wordpress-for-designers' ) : $title,
+                'post_content' => wp_json_encode( wfd_empty_layout() ),
+            )
+        )
+    );
+    if ( ! $id ) {
+        return wfd_agent_failure( 'unavailable', 'The board could not be made.' );
+    }
+    return array(
+        'id'        => $id,
+        'title'     => get_post( $id )->post_title,
+        'address'   => wfd_board_url( $id ),
+        'listening' => false,
+    );
+}
+
+/**
  * Hands calls to a listening board, waits for the board's answer and gives
  * the results (D92). The caller checks that its user may use the plugin.
  *

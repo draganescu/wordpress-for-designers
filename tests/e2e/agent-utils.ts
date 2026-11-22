@@ -112,6 +112,20 @@ export const boardsFromPhp = ( requestUtils: RequestUtils ) =>
     >( requestUtils, { run: 'boards' } );
 
 /**
+ * Runs `wfd_agent_board_new`.
+ *
+ * @param requestUtils The REST helper.
+ * @param title        The board's title, if it gets one.
+ */
+export const boardNewFromPhp = ( requestUtils: RequestUtils, title = '' ) =>
+    fromPhp< {
+        id: number;
+        title: string;
+        address: string;
+        listening: boolean;
+    } >( requestUtils, { run: 'board-new', title } );
+
+/**
  * What every option of the relay holds, by option name.
  *
  * @param requestUtils The REST helper.

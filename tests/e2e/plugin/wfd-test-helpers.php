@@ -451,6 +451,8 @@ add_action(
                             return rest_ensure_response( wfd_agent_begin( $request['source'] ) );
                         case 'boards':
                             return rest_ensure_response( wfd_agent_boards() );
+                        case 'board-new':
+                            return rest_ensure_response( wfd_agent_board_new( (string) $request['title'] ) );
                         case 'options':
                             return rest_ensure_response( (object) array_map( 'json_decode', wfd_agent_records( 'wfd_agent_', null ) ) );
                     }

@@ -46,6 +46,7 @@ const EVERY = [
     ...declarations.map( ( tool ) => `wfd/${ tool.name }` ),
     'wfd/boards-list',
     'wfd/board-open',
+    'wfd/board-new',
     'wfd/batch',
 ];
 
@@ -160,6 +161,7 @@ test.describe( 'ABIL', () => {
             },
             'wfd/boards-list': {},
             'wfd/board-open': { board: fixture.boardId },
+            'wfd/board-new': {},
             'wfd/batch': { calls: [ { tool: 'board-get', input: {} } ] },
         };
     };
@@ -216,8 +218,8 @@ test.describe( 'ABIL', () => {
         await mcp.close();
     } );
 
-    test( 'AC-ABIL-01 The discovery tool lists 24 abilities in the category wfd: wfd/boards-list, wfd/board-open, wfd/batch and one wfd/{name} for each tool of includes/agent-tools.json', async () => {
-        expect( EVERY ).toHaveLength( 24 );
+    test( 'AC-ABIL-01 The discovery tool lists 25 abilities in the category wfd: wfd/boards-list, wfd/board-open, wfd/board-new, wfd/batch and one wfd/{name} for each tool of includes/agent-tools.json', async () => {
+        expect( EVERY ).toHaveLength( 25 );
         expect(
             ( await mcp.abilities() )
                 .map( ( ability ) => ability.name )
@@ -541,7 +543,7 @@ test.describe( 'ABIL', () => {
         ).toBe( 'unknown_tool: There is no tool named boards-list.' );
     } );
 
-    test( "AC-ABIL-10 After every ability has been run once with valid input, nothing on the site is saved: the entities' saved content, global styles and the board's layout are as before, apart from what the board itself saves with no agent", async ( {
+    test( "AC-ABIL-10 After every ability has been run once with valid input, nothing on the site is saved: the entities' saved content, global styles and the board's layout are as before, apart from what the board itself saves with no agent and the board wfd/board-new made", async ( {
         page,
         requestUtils,
     } ) => {
@@ -644,6 +646,7 @@ test.describe( 'ABIL', () => {
         } );
         await run( 'wfd/board-refresh' );
         await run( 'wfd/batch' );
+        await run( 'wfd/board-new' );
 
         expect( [ ...called ].sort() ).toEqual( [ ...EVERY ].sort() );
 
@@ -651,6 +654,34 @@ test.describe( 'ABIL', () => {
         await page.waitForTimeout( 3500 );
         expect( await site() ).toEqual( before );
         expect( await layout() ).toEqual( layoutBefore );
+    } );
+
+    test( 'AC-ABIL-14 wfd/board-new with no input makes a board titled "Untitled board" and returns its entry and the guide; with title the board has that title. The new board is in wfd/boards-list, its address opens it in the page with no artboards, and the page shows G1 within 5 seconds of loading', async ( {
+        page,
+    } ) => {
+        const made = await mcp.run( 'wfd/board-new' );
+        expect( made ).toEqual( {
+            board: {
+                id: expect.any( Number ),
+                title: 'Untitled board',
+                address: expect.any( String ),
+                listening: false,
+            },
+            guide: GUIDE,
+        } );
+        const named = await mcp.run( 'wfd/board-new', { title: 'Launch' } );
+        expect( named.board.title ).toBe( 'Launch' );
+        expect( ( await mcp.run( 'wfd/boards-list' ) ).boards ).toEqual(
+            expect.arrayContaining( [ made.board, named.board ] )
+        );
+
+        await page.goto( made.board.address );
+        await showsBoard( page, made.board.id );
+        const chip = page.locator( '[data-wfd-agent]' );
+        await expect( chip ).toHaveAttribute( 'data-wfd-agent', 'connected', {
+            timeout: 5000,
+        } );
+        expect( ( await mcp.run( 'wfd/board-get' ) ).artboards ).toEqual( [] );
     } );
 
     test( 'AC-ABIL-11 On a site where no way in has been used, with the adapter active, wfd/boards-list leaves wfd_agent_seen absent and an open board sends no request to wfd/v1/agent in 30 seconds', async ( {

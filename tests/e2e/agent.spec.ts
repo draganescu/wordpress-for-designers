@@ -15,6 +15,7 @@ import {
     php,
     relayFromPhp,
     beginFromPhp,
+    boardNewFromPhp,
     boardsFromPhp,
     relayOptions,
     callRecords,
@@ -740,6 +741,41 @@ test.describe( 'AGENT', () => {
         await asked;
         expect( await boardsFromPhp( requestUtils ) ).toEqual(
             expected( [ fixture.boardId ] )
+        );
+    } );
+
+    test( 'AC-AGENT-15 wfd_agent_board_new makes a published board, titled Untitled board or as given, with no artboards, returns its entry, and marks no session', async ( {
+        page,
+        requestUtils,
+    } ) => {
+        await resetFixture( requestUtils );
+        const untitled = await boardNewFromPhp( requestUtils );
+        const named = await boardNewFromPhp( requestUtils, 'Launch' );
+        for ( const [ board, title ] of [
+            [ untitled, 'Untitled board' ],
+            [ named, 'Launch' ],
+        ] as const ) {
+            expect( board ).toEqual( {
+                id: expect.any( Number ),
+                title,
+                address: expect.any( String ),
+                listening: false,
+            } );
+            expect(
+                await requestUtils.rest( {
+                    path: `/wp/v2/wfd-boards/${ board.id }`,
+                    params: { context: 'edit' },
+                } )
+            ).toMatchObject( {
+                status: 'publish',
+                title: { raw: title },
+                layout: { artboards: [] },
+            } );
+            await page.goto( board.address );
+            await showsBoard( page, board.id );
+        }
+        expect( await relayOptions( requestUtils ) ).not.toHaveProperty(
+            'wfd_agent_seen'
         );
     } );
 } );
