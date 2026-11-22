@@ -16,3 +16,4 @@ The harness cannot do this. A person does it on a hosted site that an agent's pr
 
 | Date | Agent | MCP Adapter | Sign-in | Steps that failed | Notes |
 |---|---|---|---|---|---|
+| 23 November 2026 | Claude desktop app, Fable 5.2 | The latest released on that day; the number was not noted | OAuth, on the product owner's own site | None | Run by the product owner. A first run the same day had no ability for making a board, and the agent pressed "Add board" itself; that led to D103 and step 11. All steps were then run with `wfd/board-new` in place. |
