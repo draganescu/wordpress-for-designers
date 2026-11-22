@@ -42,7 +42,7 @@ Some effects take a moment that the tool does not control: an artboard that has 
 
 | Tool | Waits until |
 |---|---|
-| `artboard-edit`, `artboard-new` when it ends in edit, and every block tool, after putting an artboard in edit | That artboard's editor is mounted, and the page's `core` data store reports no selector still resolving, as every `@wordpress/data` store reports for itself. A block tool then reads the tree. A tool called on the artboard already in edit, with nothing resolving, does not wait. |
+| `artboard-edit`, `artboard-new` when it ends in edit, and every block tool, after putting an artboard in edit | That artboard's editor is mounted and has its settings; the page's `core` data store reports no selector still resolving, as every `@wordpress/data` store reports for itself; every block that takes its inner blocks from a record of the site (a template part, a synced pattern, a Navigation block that points at a menu, the Content of the page a page artboard shows) holds as many blocks as that record, and a Content block anywhere else holds none; and every block of the tree has its element in the canvas (D87). The tool looks again once a frame until all of these hold. A block tool then reads the tree. A tool called on the artboard already in edit, with nothing resolving, does not wait. |
 | `token-set`, `styles-set`, `styles-set-variation` | The `styles` part reports that the compile for this change has finished and its stylesheet has been given to the mounted artboards. The part reports this itself; the Styles panel being drawn is not the signal. |
 
 One safety limit covers both: 10 seconds. A tool that has waited that long fails with `not_ready`, and what it had already changed stays changed. `[N]` for the limit
