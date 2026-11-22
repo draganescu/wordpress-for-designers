@@ -57,9 +57,9 @@ function endSeconds() {
  * edit or in its chrome, while a second is running.
  */
 function watchDesigner() {
-    if ( stopWatching ) {
-        return;
-    }
+    // A watch started by an earlier call is on the editor that was in edit
+    // then, and ends when that call's second does: start again for this one.
+    stopWatching?.();
     const liveId = editor()?.liveId();
     const onPress = ( event ) => {
         // WordPress copies the canvas's events onto its iframe element;
