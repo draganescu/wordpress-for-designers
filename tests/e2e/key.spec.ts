@@ -308,7 +308,7 @@ test.describe( 'KEY', () => {
             } )
         ).toBeVisible();
         const rows = dialog.locator( '[data-wfd-shortcut-row]' );
-        await expect( rows ).toHaveCount( 20 );
+        await expect( rows ).toHaveCount( 24 );
         await expect(
             rows.filter( { hasText: 'Select artboards' } )
         ).toContainText( 'Drag on empty board' );
@@ -316,6 +316,33 @@ test.describe( 'KEY', () => {
         await expect(
             rows.filter( { hasText: 'Hide or show both side panels' } )
         ).toContainText( '\\' );
+        // The rows for rulers and guides (D109, D112), each where
+        // screens/ShortcutsDialog.md lists it.
+        await expect( rows.nth( 7 ) ).toContainText(
+            'Hide or show both side panels'
+        );
+        await expect( rows.nth( 8 ) ).toContainText( 'Show or hide rulers' );
+        await expect( rows.nth( 8 ) ).toContainText( 'Shift' );
+        await expect( rows.nth( 8 ) ).toContainText( 'R' );
+        await expect( rows.nth( 9 ) ).toContainText( 'Show or hide guides' );
+        await expect( rows.nth( 9 ) ).toContainText( ';' );
+        await expect( rows.nth( 15 ) ).toContainText(
+            'Move the selected artboards further'
+        );
+        await expect( rows.nth( 16 ) ).toContainText(
+            'Move the selected guide'
+        );
+        await expect( rows.nth( 16 ) ).not.toContainText( 'further' );
+        await expect( rows.nth( 16 ) ).not.toContainText( 'Shift' );
+        await expect( rows.nth( 16 ) ).toContainText( 'Arrow keys' );
+        await expect( rows.nth( 17 ) ).toContainText(
+            'Move the selected guide further'
+        );
+        await expect( rows.nth( 17 ) ).toContainText( 'Shift' );
+        await expect( rows.nth( 17 ) ).toContainText( 'Arrow keys' );
+        await expect( rows.nth( 18 ) ).toContainText(
+            'Remove the selected artboards'
+        );
         await expect( rows.last() ).toContainText( 'Back to the board' );
         await expect( dialog ).toContainText(
             "The block editor's shortcuts work as usual."
