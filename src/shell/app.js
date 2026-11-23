@@ -89,12 +89,11 @@ import { useEditing } from './use-editing';
 import { useEntityInfo } from './use-entity-info';
 import { NEW_ARTBOARD_HEIGHT, usePlacement } from './use-placement';
 import { useRename } from './use-rename';
+import { readStoredViewport, storeViewport } from './view-prefs';
 import { removalInfo, useRemoval } from './use-removal';
 
-const { boardId, boardsUrl, userId, theme, homeUrl } = window.wfdConfig;
+const { boardId, boardsUrl, theme, homeUrl } = window.wfdConfig;
 bootEditor();
-
-const VIEWPORT_KEY = `wfd/viewport/${ userId }/${ boardId }`;
 
 /**
  * Names of layout changes, for the Undo and Redo tooltips.
@@ -118,31 +117,6 @@ const LAYOUT_ACTIONS = {
     'remove-note': __( 'remove note', 'wordpress-for-designers' ),
 };
 
-function readStoredViewport() {
-    try {
-        const stored = JSON.parse(
-            window.localStorage.getItem( VIEWPORT_KEY )
-        );
-        if (
-            stored &&
-            [ stored.x, stored.y, stored.zoom ].every( Number.isFinite )
-        ) {
-            return stored;
-        }
-    } catch {
-        // Nothing stored, or storage is not available.
-    }
-    return null;
-}
-
-function storeViewport( state ) {
-    try {
-        window.localStorage.setItem( VIEWPORT_KEY, JSON.stringify( state ) );
-    } catch {
-        // Storage is not available; the board opens fitted next time.
-    }
-}
-
 function useBoard() {
     const { record } = useEntityRecord( 'postType', 'wfd_board', boardId );
     const { setBoard } = useDispatch( boardStore );
@@ -156,7 +130,8 @@ function useBoard() {
                 record.id,
                 record.title?.raw ?? '',
                 record.layout?.artboards ?? [],
-                record.layout?.notes ?? []
+                record.layout?.notes ?? [],
+                record.layout?.guides ?? []
             );
         }
     }, [ record, isLoaded, setBoard ] );

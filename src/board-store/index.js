@@ -14,6 +14,10 @@ const DEFAULT_STATE = {
     artboards: [],
     // Notes on the board (D46), with their measured `height` (not saved).
     notes: [],
+    // Guides on the board and on its artboards (D110, D113).
+    guides: [],
+    // The selected guide; it is selected alone (D112).
+    selectedGuideId: null,
     // The note whose text is being edited.
     editingNoteId: null,
     // Whether the next click on the board places a note.
@@ -87,6 +91,7 @@ function reducer( state = DEFAULT_STATE, action ) {
                 title: action.title,
                 artboards: action.artboards,
                 notes: action.notes,
+                guides: action.guides,
                 isLoaded: true,
             };
         case 'SELECT': {
@@ -252,12 +257,13 @@ function applyMoves( items, byId ) {
 export const NOTE_COLORS = [ 'yellow', 'green', 'blue', 'pink' ];
 
 const actions = {
-    setBoard: ( boardId, title, artboards, notes = [] ) => ( {
+    setBoard: ( boardId, title, artboards, notes = [], guides = [] ) => ( {
         type: 'SET_BOARD',
         boardId,
         title,
         artboards,
         notes,
+        guides,
     } ),
     selectArtboard: ( id ) => ( {
         type: 'SELECT',
@@ -568,6 +574,40 @@ const actions = {
                     ),
             } );
         },
+    /**
+     * Adds a guide, as one "add guide" step, and selects it unless told not
+     * to (D110, D114).
+     *
+     * @param {Object}  guide            The guide: id, axis, at, and for an
+     *                                   artboard's guide artboard and device.
+     * @param {Object}  [options]
+     * @param {boolean} [options.select] Whether to select it. Default true.
+     */
+    addGuide: () => () => {},
+    /**
+     * Moves a guide along its axis, as one "move guide" step.
+     *
+     * @param {string} id The guide.
+     * @param {number} at Its new position, a whole number.
+     */
+    moveGuide: () => () => {},
+    /**
+     * Takes a guide off the board, as one "remove guide" step.
+     *
+     * @param {string} id The guide.
+     */
+    removeGuide: () => () => {},
+    /**
+     * Selects a guide alone, or no guide with null (D112).
+     *
+     * @param {string|null} id The guide.
+     */
+    selectGuide: ( id ) => ( {
+        type: 'PATCH',
+        patch: id
+            ? { selectedGuideId: id, selectedIds: [], anchorId: null }
+            : { selectedGuideId: null },
+    } ),
     undoLayout: () => ( { type: 'UNDO' } ),
     redoLayout: () => ( { type: 'REDO' } ),
 };
@@ -582,6 +622,8 @@ const selectors = {
     getNotes: ( state ) => state.notes,
     getNote: ( state, id ) =>
         state.notes.find( ( note ) => note.id === id ) || null,
+    getGuides: ( state ) => state.guides,
+    getSelectedGuideId: ( state ) => state.selectedGuideId,
     getEditingNoteId: ( state ) => state.editingNoteId,
     getNoteEditStart: ( state ) => state.noteEditStart ?? null,
     isNoteToolArmed: ( state ) => state.isNoteToolArmed,
@@ -626,26 +668,32 @@ export const store = createReduxStore( STORE_NAME, {
 register( store );
 
 /**
- * The layout as it is stored on the board: saved artboards only, and notes,
- * with exactly the fields of spec/data-model.md.
+ * The layout as it is stored on the board: saved artboards only, notes, and
+ * guides, with exactly the fields of spec/data-model.md.
  *
  * @param {Array} artboards The artboards in the store.
  * @param {Array} notes     The notes in the store.
+ * @param {Array} guides    The guides in the store.
  * @return {Object} The layout.
  */
-export function toLayout( artboards, notes = [] ) {
+export function toLayout( artboards, notes = [], guides = [] ) {
+    const saved = artboards.filter( ( artboard ) => ! artboard.draft );
+    // The guides of an artboard that is not written yet wait for it.
+    const written = guides.filter(
+        ( guide ) =>
+            ! guide.artboard ||
+            saved.some( ( artboard ) => artboard.id === guide.artboard )
+    );
     return {
         version: 1,
-        artboards: artboards
-            .filter( ( artboard ) => ! artboard.draft )
-            .map( ( artboard ) =>
-                Object.fromEntries(
-                    KINDS[ artboard.kind ].layout.map( ( field ) => [
-                        field,
-                        artboard[ field ],
-                    ] )
-                )
-            ),
+        artboards: saved.map( ( artboard ) =>
+            Object.fromEntries(
+                KINDS[ artboard.kind ].layout.map( ( field ) => [
+                    field,
+                    artboard[ field ],
+                ] )
+            )
+        ),
         // A board with no notes keeps the layout it always had.
         ...( notes.length && {
             notes: notes.map( ( { id, x, y, text, color } ) => ( {
@@ -655,6 +703,12 @@ export function toLayout( artboards, notes = [] ) {
                 text,
                 color,
             } ) ),
+        } ),
+        // And so does a board with no guides (C37).
+        ...( written.length && {
+            guides: written.map( ( { id, axis, at, artboard, device } ) =>
+                artboard ? { id, axis, at, artboard, device } : { id, axis, at }
+            ),
         } ),
     };
 }
