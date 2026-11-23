@@ -64,11 +64,21 @@ function restore( snapshot, current ) {
     );
 }
 
-function keepSelection( state, artboards, notes = state.notes ) {
+function keepSelection(
+    state,
+    artboards,
+    notes = state.notes,
+    guides = state.guides
+) {
     const exists = ( id ) =>
         artboards.some( ( a ) => a.id === id ) ||
         notes.some( ( note ) => note.id === id );
     return {
+        selectedGuideId: guides.some(
+            ( guide ) => guide.id === state.selectedGuideId
+        )
+            ? state.selectedGuideId
+            : null,
         editingNoteId: notes.some( ( note ) => note.id === state.editingNoteId )
             ? state.editingNoteId
             : null,
@@ -82,7 +92,7 @@ function keepSelection( state, artboards, notes = state.notes ) {
     };
 }
 
-function reducer( state = DEFAULT_STATE, action ) {
+function reduce( state, action ) {
     switch ( action.type ) {
         case 'SET_BOARD':
             return {
@@ -100,11 +110,18 @@ function reducer( state = DEFAULT_STATE, action ) {
                 action.anchorId === undefined
                     ? state.anchorId
                     : action.anchorId;
+            // Whatever is selected here, a guide no longer is (D112).
             return anchorId === state.anchorId &&
+                state.selectedGuideId === null &&
                 ids.length === state.selectedIds.length &&
                 ids.every( ( id, index ) => id === state.selectedIds[ index ] )
                 ? state
-                : { ...state, selectedIds: ids, anchorId };
+                : {
+                      ...state,
+                      selectedIds: ids,
+                      anchorId,
+                      selectedGuideId: null,
+                  };
         }
         case 'SET_INSERTER_OPEN':
             return { ...state, isInserterOpen: action.isOpen };
@@ -120,17 +137,20 @@ function reducer( state = DEFAULT_STATE, action ) {
             // text, changed silently while it was typed).
             const artboards = action.artboards ?? state.artboards;
             const notes = action.notes ?? state.notes;
+            const guides = action.guides ?? state.guides;
             return {
                 ...state,
                 artboards,
                 notes,
-                ...keepSelection( state, artboards, notes ),
+                guides,
+                ...keepSelection( state, artboards, notes, guides ),
                 past: [
                     ...state.past,
                     {
                         name: action.name,
                         artboards: state.artboards,
                         notes: state.notes,
+                        guides: state.guides,
                         ...action.before,
                     },
                 ],
@@ -141,11 +161,13 @@ function reducer( state = DEFAULT_STATE, action ) {
             // A change that is not part of the history.
             const artboards = action.artboards ?? state.artboards;
             const notes = action.notes ?? state.notes;
+            const guides = action.guides ?? state.guides;
             return {
                 ...state,
                 artboards,
                 notes,
-                ...keepSelection( state, artboards, notes ),
+                guides,
+                ...keepSelection( state, artboards, notes, guides ),
             };
         }
         case 'UNDO':
@@ -158,17 +180,21 @@ function reducer( state = DEFAULT_STATE, action ) {
             }
             const artboards = restore( entry.artboards, state.artboards );
             const notes = restore( entry.notes, state.notes );
+            // A guide has nothing measured: it comes back as it was.
+            const { guides } = entry;
             const current = {
                 name: entry.name,
                 artboards: state.artboards,
                 notes: state.notes,
+                guides: state.guides,
             };
             const to = isUndo ? state.future : state.past;
             return {
                 ...state,
                 artboards,
                 notes,
-                ...keepSelection( state, artboards, notes ),
+                guides,
+                ...keepSelection( state, artboards, notes, guides ),
                 [ isUndo ? 'past' : 'future' ]: from.slice( 0, -1 ),
                 [ isUndo ? 'future' : 'past' ]: [ ...to, current ],
             };
@@ -199,7 +225,7 @@ function reducer( state = DEFAULT_STATE, action ) {
             }
             // Browsing ends edit; the editor that was Live stays warm.
             const next = action.id
-                ? reducer( state, { type: 'SET_LIVE', id: null } )
+                ? reduce( state, { type: 'SET_LIVE', id: null } )
                 : state;
             return {
                 ...next,
@@ -212,6 +238,17 @@ function reducer( state = DEFAULT_STATE, action ) {
             return { ...state, ...action.patch };
     }
     return state;
+}
+
+function reducer( state = DEFAULT_STATE, action ) {
+    const next = reduce( state, action );
+    // A guide is selected alone (D112): whatever selects an artboard or a
+    // note, by any action, deselects it.
+    return next.selectedGuideId &&
+        next.selectedIds.length &&
+        next.selectedIds !== state.selectedIds
+        ? { ...next, selectedGuideId: null }
+        : next;
 }
 
 const change = ( name, update ) =>
@@ -231,6 +268,29 @@ const changeNotes = ( name, update ) =>
             dispatch( { type: 'LAYOUT', name, notes: after } );
         }
     };
+
+const changeGuides = ( name, update ) =>
+    function ( { select, dispatch } ) {
+        const before = select.getGuides();
+        const after = update( before );
+        if ( after !== before ) {
+            dispatch( { type: 'LAYOUT', name, guides: after } );
+        }
+    };
+
+/**
+ * The guides left when artboards are taken off the board: an artboard's
+ * guides leave with it, in the same step (D113).
+ *
+ * @param {Array}    guides The guides.
+ * @param {string[]} ids    The artboards taken off the board.
+ * @return {Array} The same list when no guide leaves.
+ */
+function withoutGuidesOf( guides, ids ) {
+    return guides.some( ( guide ) => ids.includes( guide.artboard ) )
+        ? guides.filter( ( guide ) => ! ids.includes( guide.artboard ) )
+        : guides;
+}
 
 /**
  * Applies moves, as { id, x, y }, to a list of artboards or notes.
@@ -363,6 +423,7 @@ const actions = {
                 type: undoable ? 'LAYOUT' : 'LAYOUT_SILENT',
                 name: 'remove',
                 artboards,
+                guides: withoutGuidesOf( select.getGuides(), [ id ] ),
             } );
         },
     /**
@@ -411,6 +472,7 @@ const actions = {
                         : 'remove',
                 artboards,
                 notes,
+                guides: withoutGuidesOf( select.getGuides(), ids ),
             } );
         },
 
@@ -583,20 +645,41 @@ const actions = {
      * @param {Object}  [options]
      * @param {boolean} [options.select] Whether to select it. Default true.
      */
-    addGuide: () => () => {},
+    addGuide:
+        ( guide, { select = true } = {} ) =>
+        ( { dispatch } ) => {
+            dispatch(
+                changeGuides( 'add-guide', ( guides ) => [ ...guides, guide ] )
+            );
+            if ( select ) {
+                dispatch( actions.selectGuide( guide.id ) );
+            }
+        },
     /**
      * Moves a guide along its axis, as one "move guide" step.
      *
      * @param {string} id The guide.
      * @param {number} at Its new position, a whole number.
      */
-    moveGuide: () => () => {},
+    moveGuide: ( id, at ) =>
+        changeGuides( 'move-guide', ( guides ) =>
+            guides.some( ( guide ) => guide.id === id && guide.at !== at )
+                ? guides.map( ( guide ) =>
+                      guide.id === id ? { ...guide, at } : guide
+                  )
+                : guides
+        ),
     /**
      * Takes a guide off the board, as one "remove guide" step.
      *
      * @param {string} id The guide.
      */
-    removeGuide: () => () => {},
+    removeGuide: ( id ) =>
+        changeGuides( 'remove-guide', ( guides ) =>
+            guides.some( ( guide ) => guide.id === id )
+                ? guides.filter( ( guide ) => guide.id !== id )
+                : guides
+        ),
     /**
      * Selects a guide alone, or no guide with null (D112).
      *
@@ -612,6 +695,41 @@ const actions = {
     redoLayout: () => ( { type: 'REDO' } ),
 };
 
+// What getShownGuides last answered, and for which lists.
+let shown = { guides: null, artboards: null, result: [] };
+
+/**
+ * The guides to draw: board guides, and each artboard's guides for the device
+ * the artboard is on (D111). The answer is the same array for as long as it
+ * holds the same guides.
+ *
+ * @param {Array} guides    The guides.
+ * @param {Array} artboards The artboards.
+ * @return {Array} The guides shown.
+ */
+function shownGuides( guides, artboards ) {
+    if ( shown.guides !== guides || shown.artboards !== artboards ) {
+        const result = guides.filter(
+            ( guide ) =>
+                ! guide.artboard ||
+                artboards.some(
+                    ( artboard ) =>
+                        artboard.id === guide.artboard &&
+                        artboard.device === guide.device
+                )
+        );
+        const isSame =
+            result.length === shown.result.length &&
+            result.every( ( guide, index ) => guide === shown.result[ index ] );
+        shown = {
+            guides,
+            artboards,
+            result: isSame ? shown.result : result,
+        };
+    }
+    return shown.result;
+}
+
 const selectors = {
     getBoardId: ( state ) => state.boardId,
     getTitle: ( state ) => state.title,
@@ -623,6 +741,9 @@ const selectors = {
     getNote: ( state, id ) =>
         state.notes.find( ( note ) => note.id === id ) || null,
     getGuides: ( state ) => state.guides,
+    getGuide: ( state, id ) =>
+        state.guides.find( ( guide ) => guide.id === id ) || null,
+    getShownGuides: ( state ) => shownGuides( state.guides, state.artboards ),
     getSelectedGuideId: ( state ) => state.selectedGuideId,
     getEditingNoteId: ( state ) => state.editingNoteId,
     getNoteEditStart: ( state ) => state.noteEditStart ?? null,
