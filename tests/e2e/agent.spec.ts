@@ -636,7 +636,6 @@ test.describe( 'AGENT', () => {
         // What a change to an artboard's first text shows, made by one way
         // in: G1 and G2 while the board's answer is held back, and who the
         // change is recorded as having made.
-        const chip = page.locator( '[data-wfd-agent]' );
         const shows = async (
             artboard: Artboard,
             change: () => Promise< boolean >
@@ -645,12 +644,50 @@ test.describe( 'AGENT', () => {
                 `[data-wfd-artboard="${ artboard.id }"]`
             );
             const result = await holdBack( page, isResult );
+            // The marks of work go a second after the call ends, and a page
+            // busy drawing the change can take that long to answer. They are
+            // noted in the page, the two together, when the artboard is
+            // marked.
+            const watch = await page.evaluateHandle( ( id ) => {
+                const read = () => ( {
+                    chip:
+                        document
+                            .querySelector( '[data-wfd-agent]' )
+                            ?.getAttribute( 'data-wfd-agent' ) ?? null,
+                    working:
+                        document
+                            .querySelector( `[data-wfd-artboard="${ id }"]` )
+                            ?.getAttribute( 'data-wfd-agent-working' ) ?? null,
+                } );
+                const noted: {
+                    marked: any;
+                    read: typeof read;
+                    stop: () => void;
+                } = { marked: null, read, stop: () => {} };
+                const observer = new MutationObserver( () => {
+                    const marks = read();
+                    if ( ! noted.marked && marks.working ) {
+                        noted.marked = marks;
+                    }
+                } );
+                observer.observe( document.body, {
+                    subtree: true,
+                    childList: true,
+                    attributes: true,
+                    attributeFilter: [
+                        'data-wfd-agent',
+                        'data-wfd-agent-working',
+                    ],
+                } );
+                noted.stop = () => observer.disconnect();
+                return noted;
+            }, artboard.id );
             const made = change();
             await result.reached;
-            const during = {
-                chip: await chip.getAttribute( 'data-wfd-agent' ),
-                working: await frame.getAttribute( 'data-wfd-agent-working' ),
-            };
+            const during = await watch.evaluate( ( noted ) => {
+                noted.stop();
+                return noted.marked ?? noted.read();
+            } );
             result.release();
             expect( await made ).toBe( true );
             const { items } = ( await callTool( page, 'review-list' ) ).result;
