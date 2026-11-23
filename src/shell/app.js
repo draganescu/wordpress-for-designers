@@ -59,6 +59,8 @@ import { KINDS, hasDevice } from './constants';
 import { LockDialog, RemoveDialog } from './dialogs';
 import { ShortcutsButton, ShortcutsDialog } from './shortcuts-dialog';
 import { Note, NoteSettings } from './notes';
+import { Guide, GuideDrag, GuideSettings, guideRange } from './guides';
+import { Rulers, useRulerContext } from './rulers';
 import { Header } from './header';
 import {
     artboardLabel,
@@ -89,7 +91,12 @@ import { useEditing } from './use-editing';
 import { useEntityInfo } from './use-entity-info';
 import { NEW_ARTBOARD_HEIGHT, usePlacement } from './use-placement';
 import { useRename } from './use-rename';
-import { readStoredViewport, storeViewport } from './view-prefs';
+import {
+    readStoredViewport,
+    readViewChoices,
+    storeViewChoices,
+    storeViewport,
+} from './view-prefs';
 import { removalInfo, useRemoval } from './use-removal';
 
 const { boardId, boardsUrl, theme, homeUrl } = window.wfdConfig;
@@ -103,6 +110,8 @@ bootEditor();
  */
 const PLACEMENT_GAP = 80;
 
+const NO_GUIDES = [];
+
 const LAYOUT_ACTIONS = {
     move: __( 'move artboard', 'wordpress-for-designers' ),
     tidy: __( 'tidy up', 'wordpress-for-designers' ),
@@ -115,6 +124,9 @@ const LAYOUT_ACTIONS = {
     'edit-note': __( 'edit note', 'wordpress-for-designers' ),
     'note-color': __( 'change note color', 'wordpress-for-designers' ),
     'remove-note': __( 'remove note', 'wordpress-for-designers' ),
+    'add-guide': __( 'add guide', 'wordpress-for-designers' ),
+    'move-guide': __( 'move guide', 'wordpress-for-designers' ),
+    'remove-guide': __( 'remove guide', 'wordpress-for-designers' ),
 };
 
 function useBoard() {
@@ -224,6 +236,8 @@ export function App() {
         selectedNoteId,
         editingNoteId,
         isNoteToolArmed,
+        shownGuides,
+        selectedGuideId,
     } = useSelect( ( select ) => {
         const board = select( boardStore );
         return {
@@ -231,6 +245,8 @@ export function App() {
             selectedNoteId: board.getSelectedNoteId(),
             editingNoteId: board.getEditingNoteId(),
             isNoteToolArmed: board.isNoteToolArmed(),
+            shownGuides: board.getShownGuides(),
+            selectedGuideId: board.getSelectedGuideId(),
             title: board.getTitle(),
             selectedId: board.getSelectedId(),
             selectedIds: board.getSelectedIds(),
@@ -265,6 +281,9 @@ export function App() {
         setNoteHeight,
         startNoteEdit,
         endNoteEdit,
+        moveGuide,
+        removeGuide,
+        selectGuide,
         reloadBrowser,
     } = useDispatch( boardStore );
     // Hidden panels (D32): kept for the session only.
@@ -272,6 +291,24 @@ export function App() {
     const [ isRightHidden, setRightHidden ] = useState( false );
     const togglePanels = useRef( null );
     const [ isShortcutsOpen, setShortcutsOpen ] = useState( false );
+    // Whether rulers and guides are shown (D109): kept in the browser.
+    const [ view, setView ] = useState( readViewChoices );
+    const changeView = useCallback( ( change ) => {
+        setView( ( choices ) => {
+            const next = { ...choices, ...change( choices ) };
+            storeViewChoices( next );
+            return next;
+        } );
+    }, [] );
+    const toggleRulers = () =>
+        changeView( ( choices ) => ( { rulers: ! choices.rulers } ) );
+    const toggleGuides = () => {
+        // A hidden guide is not left selected.
+        selectGuide( null );
+        changeView( ( choices ) => ( { guides: ! choices.guides } ) );
+    };
+    const rulersRef = useRef();
+    const guides = view.guides ? shownGuides : NO_GUIDES;
     const [ inserterQuery, setInserterQuery ] = useState( '' );
     const [ inserterTab, setInserterTab ] = useState( 'blocks' );
     const [ selectedToken, setSelectedToken ] = useState( null );
@@ -317,7 +354,16 @@ export function App() {
         onTogglePanels: () => togglePanels.current?.(),
         onToggleShortcuts: () => setShortcutsOpen( ( isOpen ) => ! isOpen ),
         onRemoveMany: ( ids ) => removeMany( ids ),
+        rulersRef,
+        onToggleRulers: toggleRulers,
+        onToggleGuides: toggleGuides,
+        onShowGuides: () => changeView( () => ( { guides: true } ) ),
         isReady: isLoaded,
+    } );
+    const rulerContext = useRulerContext( {
+        isShown: view.rulers,
+        widthOf,
+        selectedBlockId,
     } );
     const rename = useRename( {
         artboards,
@@ -742,6 +788,9 @@ export function App() {
 
     const selected = artboards.find( ( a ) => a.id === selectedId );
     const live = artboards.find( ( a ) => a.id === liveId );
+    const selectedGuide = guides.find(
+        ( guide ) => guide.id === selectedGuideId
+    );
     // The artboard in edit: the Live editor, or the browser being browsed,
     // which has no blocks (D55).
     const inEdit =
@@ -900,6 +949,22 @@ export function App() {
                 }
             />
         );
+    } else if ( selectedGuide ) {
+        const owner = artboards.find(
+            ( artboard ) => artboard.id === selectedGuide.artboard
+        );
+        right = (
+            <GuideSettings
+                guide={ selectedGuide }
+                artboardName={ owner?.name }
+                range={ guideRange( selectedGuide.axis, owner, widthOf ) }
+                onMove={ ( at ) => moveGuide( selectedGuide.id, at ) }
+                onRemove={ () => {
+                    removeGuide( selectedGuide.id );
+                    focusBoard();
+                } }
+            />
+        );
     } else if ( selectedNoteId ) {
         right = (
             <NoteSettings
@@ -1026,6 +1091,10 @@ export function App() {
                             zoomPercent={ Math.round( zoom * 100 ) }
                             onZoom={ canvas.zoom }
                             canFitSelection={ selectedIds.length > 0 }
+                            isRulersShown={ view.rulers }
+                            isGuidesShown={ view.guides }
+                            onToggleRulers={ toggleRulers }
+                            onToggleGuides={ toggleGuides }
                             isNoteToolArmed={ isNoteToolArmed }
                             isNoteToolDisabled={ !! inEdit }
                             onToggleNoteTool={ () =>
@@ -1054,6 +1123,19 @@ export function App() {
                             resizeListener={ resizeListener }
                             { ...inserter.canvasDropProps }
                             banner={ banner }
+                            rulers={
+                                view.rulers ? (
+                                    <Rulers
+                                        ref={ rulersRef }
+                                        viewport={ viewport }
+                                        context={ rulerContext }
+                                        guides={ guides }
+                                        onPull={ ( axis, event ) =>
+                                            canvas.pullGuide( axis, event )
+                                        }
+                                    />
+                                ) : null
+                            }
                             overlay={
                                 inserter.dropTarget ? (
                                     <PlacementOutline
@@ -1169,6 +1251,9 @@ export function App() {
                                     ? widthOf( artboard.device )
                                     : artboard.width;
                                 const hasFailed = artboard.status === 'failed';
+                                const ownGuides = guides.filter(
+                                    ( guide ) => guide.artboard === artboard.id
+                                );
                                 const hasCopyNow = snapshots.has( artboard.id );
                                 // What the artboard showed before may stay
                                 // over what it now shows until that is
@@ -1390,6 +1475,24 @@ export function App() {
                                         isSelected={ selectedIds.includes(
                                             artboard.id
                                         ) }
+                                        guides={
+                                            ownGuides.length > 0 &&
+                                            ownGuides.map( ( guide ) => (
+                                                <Guide
+                                                    key={ guide.id }
+                                                    guide={ guide }
+                                                    isSelected={
+                                                        guide.id ===
+                                                        selectedGuideId
+                                                    }
+                                                    range={ guideRange(
+                                                        guide.axis,
+                                                        artboard,
+                                                        widthOf
+                                                    ) }
+                                                />
+                                            ) )
+                                        }
                                         uses={ located?.perArtboard.get(
                                             artboard.id
                                         ) }
@@ -1442,6 +1545,20 @@ export function App() {
                                     </ArtboardFrame>
                                 );
                             } ) }
+                            { guides
+                                .filter( ( guide ) => ! guide.artboard )
+                                .map( ( guide ) => (
+                                    <Guide
+                                        key={ guide.id }
+                                        guide={ guide }
+                                        isSelected={
+                                            guide.id === selectedGuideId
+                                        }
+                                    />
+                                ) ) }
+                            { ( view.rulers || guides.length > 0 ) && (
+                                <GuideDrag />
+                            ) }
                             { notes.map( ( note ) => (
                                 <Note
                                     key={ note.id }
