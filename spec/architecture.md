@@ -23,9 +23,9 @@ Part names in this file are fixed. Use them for the top-level folders under `src
 
 | Part | Responsibility | Source |
 |---|---|---|
-| `shell` | Header, left panel, canvas area, right panel. Owns which panel content shows (see State rules). | `[B2]` `[U]` |
-| `board-store` | A `@wordpress/data` store named `wfd/board`: artboard list, notes (D46), selection, which artboard is Live, which browser is browsed (D55), layout undo history. Autosaves layout 2 s after the last change. | `[B4]` `[U]` |
-| `viewport` | Pan and zoom state kept outside React. Writes one CSS transform on the canvas surface per animation frame and notifies React only when a gesture settles. | `[B4]` `[B6]` |
+| `shell` | Header, left panel, canvas area, right panel. Owns which panel content shows (see State rules). Also holds the rulers and the guides (D108, D110) in two files, `rulers.js` and `guides.js`: the rulers are mounted in the canvas area outside the transformed surface; a board guide is a child of the surface, and an artboard's guide is a child of its artboard's frame, so it moves with the artboard. | `[B2]` `[U]` |
+| `board-store` | A `@wordpress/data` store named `wfd/board`: artboard list, notes (D46), guides (D113), selection, which artboard is Live, which browser is browsed (D55), layout undo history. Autosaves layout 2 s after the last change. | `[B4]` `[U]` |
+| `viewport` | Pan and zoom state kept outside React. Writes one CSS transform on the canvas surface per animation frame and notifies React only when a gesture settles. It also calls its frame listeners, added with `onFrame`, once for each frame it writes, with the pan and zoom of that frame; only the rulers listen, and only while they are shown (C34, C37). | `[B4]` `[B6]` |
 | `tier-scheduler` | Decides each artboard's tier from visibility and zoom, and mounts through a `@wordpress/priority-queue` queue. | `[B4]` `[B5]` `[V]` |
 | `artboard-frame` | One per artboard: position, label, selection outline, tier content. Also draws a browser's page (D55), and holds the client side of the preview of unsaved changes (D57) in one file, `preview.js`, which the app uses in one line and a browser through two functions it is handed, so that it can be deleted with `includes/preview.php`. | `[B4]` |
 | `artboard-editor` | The Live editor: `BlockEditorProvider` on the entity via `useEntityBlockEditor`, `BlockCanvas`, `BlockTools`, keyboard shortcuts. Fills the chrome slots. Also holds the drag-from-anywhere layer (D40) in one file, `drag-anywhere.js`, used from two lines of the editor so that it can be deleted. | `[B4]` `[V]` |
@@ -71,6 +71,7 @@ Rules:
 | An artboard selected | Artboards by kind, its row highlighted | Artboard settings | Same | `[U]` `[D:Selected]` |
 | An artboard in edit | List view of its blocks when the list view toggle is on (on by default when entering edit); otherwise closed | Tabs: the entity (for example "Template part") and "Block" | Document bar shows the artboard's name and kind with a back arrow; while a block is selected the block toolbar is shown in place of the name, until it is hidden with H14, and the back arrow stays (D50) | `[U]` `[D:Main]` |
 | A browser browsing (D55) | Artboards by kind, its row highlighted | Its settings, without "Browse" | Document bar shows "{address} · Browser" with a back arrow | `[U]` |
+| A guide selected (D112) | Artboards by kind, no row highlighted | Guide card | Document bar shows the board name | `[U]` `[D:GuideSelected]` |
 | Inserter toggle on (any state) | Inserter, replacing whatever was there | Unchanged | Toggle shows a close icon | `[U]` `[D:Library]` |
 
 The list view toggle is disabled when no artboard is in edit. `[N]`
@@ -90,6 +91,7 @@ Hiding the panels (D32): `[U]`
 | Stream | Source | Through | Lands in | Rate control | Source tag |
 |---|---|---|---|---|---|
 | Viewport | Wheel, pointer, keys | `viewport`, one frame at a time | One CSS transform | React hears only on settle | `[B6]` |
+| Rulers | The viewport's frames; the selection, the artboard in edit and its block selection | `viewport`'s frame listeners, then `rulers.js` | Two `canvas` elements at the edges of the canvas area | Painted once per frame with no React render (C34); not at all while rulers are hidden | `[R6]` |
 | Tiers | Viewport settle, selection and edit changes | `tier-scheduler` and the queue | Mount or unmount per artboard | One mount per idle slice, capped | `[B6]` |
 | Content | Typing and block edits in Live | `useEntityBlockEditor` to the core-data edited record | Every artboard that references the entity | Previews re-render; Snapshots go stale | `[B6]` |
 | Styles | Styles panel, variation switch, History preview | `globalStyles` edit, merge, generate once | One style element in every mounted artboard iframe | Once per animation frame while a control is dragged | `[B6]` `[B7]` |
@@ -97,7 +99,7 @@ Hiding the panels (D32): `[U]`
 | Inserter | Block types, pages, patterns, templates, media | core-data and blocks selectors | Inserter lists | Loaded once, filtered locally | `[B6]` `[U]` |
 | Usage index | Entity records and global styles | Parse block markup, no render | Use counts and highlights in Styles | Rebuilt only for the entity that changed | `[B6]` `[U]` |
 | Save | Dirty entity records | `review` | REST, one request per entity | Explicit | `[B6]` |
-| Layout | Moves, adds, removals, device changes, notes (D46) | `board-store` | `wfd-boards` REST | 2 s debounce | `[B6]` `[U]` |
+| Layout | Moves, adds, removals, device changes, notes (D46), guides (D113) | `board-store` | `wfd-boards` REST | 2 s debounce | `[B6]` `[U]` |
 | Boot | Server preload | Editor settings, assets, base styles | Shared by every editor | Once per session | `[B6]` |
 | Agent calls | `wp wfd`, or a script calling `window.wfdAgent` | The relay's queue and the board's poll, then `agent` | The same stores and functions the UI's controls use, so every stream above carries the change on | One call at a time; the poll runs every second during a session and not at all on a site no agent has used | `[U]` `[A]` |
 | Agent marks | Calls and authorship in `agent` | The mark slots | Header chip, artboard labels and outlines, Review cards | Only while the surface is loaded | `[U]` `[A]` |
@@ -119,6 +121,8 @@ Outside an artboard in edit: `[U]`
 | Shift + 1 | Fit all artboards (always) |
 | Cmd/Ctrl + \ | Hide or show both side panels (always) |
 | Ctrl + Option + H on a Mac, Shift + Alt + H elsewhere | Open or close the keyboard shortcuts dialog (always) (D42) |
+| Shift + R | Show or hide the rulers (D109) |
+| Cmd/Ctrl + ; | Show or hide guides (D109) |
 | Shift + 2 | Fit the selected artboards |
 | Tab / Shift + Tab | Move selection to the next or previous artboard in left-panel order |
 | Enter | Edit the selected artboard; nothing with several selected |
@@ -139,6 +143,8 @@ Inside an artboard in edit, the block editor's own shortcuts apply unchanged. Es
 Delete and Backspace do the same with focus on a row of the left panel's artboard list. `[U]`
 
 A selected note counts as a selected artboard for Shift + 2, the arrow keys and Delete; Delete takes a note off the board with no confirmation. Enter on one selected note edits its text, and Esc while its text is edited ends that and keeps the note selected. Tab and Shift + Tab step through artboards only. While the note tool is armed, Esc switches it off (D46). `[U]`
+
+A selected guide (D112) takes these keys and no others of the map: the two arrow keys along its axis (Up and Down for a horizontal guide, Left and Right for a vertical one) move it by 1 unit, with Shift by 10, and an artboard's guide stops at its artboard's edges; Delete or Backspace takes it off the board with no confirmation; Esc clears the selection. Tab, Enter, F2 and Shift + 2 do nothing for it. Each nudge is a step of the layout history. `[U]`, `[N]` for the keys that do nothing
 
 A browser (D55) counts as an artboard for every key above; Enter starts browsing. While browsing, keys typed in the page go to the page, except Esc, which ends browsing and keeps the browser selected. Cmd/Ctrl + Z acts on the layout history while the focus is on the board. `[U]`
 
@@ -165,9 +171,9 @@ On the canvas area (D64): `[U]`
 ## Undo
 
 - Content history is core-data's undo stack. It is active while an artboard is Live. Discarding saved items' changes from Review, one item or all of them at once, is one step of it (D48). `[B8]` `[U]`
-- Layout history lives in `board-store`: moves, tidying up (D45), device changes, browser resizes (D56), adds and removals from the board, and every change to a note (D46). It lasts for the session. Removing an artboard with the "also delete" box checked is not undoable and clears nothing else. `[B8]` `[U]` `[N]`
+- Layout history lives in `board-store`: moves, tidying up (D45), device changes, browser resizes (D56), adds and removals from the board, every change to a note (D46), and adding, moving and removing a guide (D113). It lasts for the session. Removing an artboard with the "also delete" box checked is not undoable and clears nothing else. `[B8]` `[U]` `[N]`
 - The header's Undo and Redo act on the active history. Their tooltips name the action and scope, in the form "Undo {action}, in {artboard name}" and "Undo {action}, on the board" (the same with "Redo"). `[U]` `[D:Main]` `[D:Overview]`
-- Action names. On the board: "move artboard", "tidy up", "change device", "add artboard", "remove artboard"; for browsers "resize browser" (D56); for notes "add note", "move note", "edit note", "change note color", "remove note". Moving or removing artboards and notes together is named for artboards. Editing a note's text, from the moment it enters edit until it leaves, is one step. In an artboard the action is always "edit" ("Undo edit, in Header"); WordPress keeps no name for a content change, so the "block spacing" in `images/Main.png` is not built. `[U]`
+- Action names. On the board: "move artboard", "tidy up", "change device", "add artboard", "remove artboard"; for browsers "resize browser" (D56); for notes "add note", "move note", "edit note", "change note color", "remove note"; for guides "add guide", "move guide", "remove guide" (D113). Taking an artboard off the board together with its guides is named for the artboard. Moving or removing artboards and notes together is named for artboards. Editing a note's text, from the moment it enters edit until it leaves, is one step. In an artboard the action is always "edit" ("Undo edit, in Header"); WordPress keeps no name for a content change, so the "block spacing" in `images/Main.png` is not built. `[U]`
 
 ## Styles
 

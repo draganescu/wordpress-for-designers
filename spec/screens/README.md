@@ -1,12 +1,13 @@
 # Screens
 
-Twenty-nine screens. Each has an image in `images/` (except `LockDialog`, `ShortcutsDialog`, `NeedsSpace` and `InserterPages`, which have none) and a file here naming its state, the regions it uses and its own elements. Regions shared by many screens are defined once in this file.
+Thirty-four screens. Each has an image in `images/` (except `LockDialog`, `ShortcutsDialog`, `NeedsSpace` and `InserterPages`, which have none) and a file here naming its state, the regions it uses and its own elements. Regions shared by many screens are defined once in this file.
 
 Rules for reading the images (see also `CLAUDE.md`, rules 6 and 7):
 
 - They were rendered at 1440 × 900 from hand-styled markup. Layout, grouping, wording and states are binding. Exact pixel values are not; spacing, colour, type and radius come from the components and `--wpds-*` tokens.
 - Icons in the images are approximations. Use the named `@wordpress/icons` icon.
 - The site shown inside artboards (The Slow Margin) and the names, counts and dates in lists are fixture data.
+- The five screens of rulers and guides (`Rulers`, `RulersSelected`, `GuideDrag`, `GuideSelected`, `RulersEditing`) were rendered at 1440 × 900 from markup of their own, kept in `reference-markup/` like the others and bound by the same rules. Their board is not the fixture's. Guides are cyan in them; the colour that is built is the token GD1 names. `[N]`
 - The three agent screens (`AgentConnected`, `AgentWorking`, `AgentReview`) were cut, at 1279 × 962, from the design of a session in WordPress Studio. They show the demo site, Morrow Coffee Roasters, and each file lists what in its image is not built.
 - Three things visible in the images are **not** built: the "⌘K" hint in the document bar, the zoom control at the bottom left of the canvas on the two editing screens (zoom lives in the header, H8), and dimming that covers only the canvas behind dialogs (dialogs are modal over the whole window). `[N]`
 
@@ -29,7 +30,7 @@ Left to right:
 | H14 | Block tools toggle | `IconButton`, `previous` while the block toolbar is shown, `next` while it is hidden | Labels "Hide block tools" / "Show block tools" | Hides the block toolbar, which brings H7's title back, and shows it again (D50). Selecting another block shows the toolbar. Present only while the selected block has a toolbar. Sits at the end of H6. |
 | H7 | Document bar | Centred `Text` on a weak neutral surface; in edit, preceded by an `IconButton` with `arrowLeft` | Board name; in edit "{artboard name} · {Kind}", back button label "Back to the board" | Back button leaves edit. The bar itself is not clickable. `[N]` While H6 is shown the bar is only its back button, next to H14 (D50). `[U]` |
 | H12 | Tidy up | `IconButton`, `grid`, minimal neutral | Label "Tidy up" | Arranges everything on the board in one row per kind, in left-panel order (D45), and fits all. Disabled while an artboard is in edit and with fewer than two items on the board. Sits just before H8. |
-| H8 | Zoom menu | `Menu` whose trigger shows the zoom as a percentage with `chevronDown` | Trigger label "Zoom"; items "Zoom in", "Zoom out", "Zoom to 50%", "Zoom to 100%", "Fit all", "Fit selection" | Items act on the viewport. "Fit selection" is disabled with nothing selected. An item that takes the zoom below 30% while an artboard is in edit leaves edit (D37). `[N]` for the item list |
+| H8 | Zoom menu | `Menu` whose trigger shows the zoom as a percentage with `chevronDown` | Trigger label "Zoom"; items "Zoom in", "Zoom out", "Zoom to 50%", "Zoom to 100%", "Fit all", "Fit selection"; then a `Menu.Separator` and two `Menu.CheckboxItem`s, "Rulers" and "Guides" (D109) | Items act on the viewport. "Fit selection" is disabled with nothing selected. An item that takes the zoom below 30% while an artboard is in edit leaves edit (D37). "Rulers" is checked while the rulers are shown and "Guides" while guides are shown; choosing one shows or hides them and keeps the menu's other items as they are. Both work in every state of the board, an artboard in edit included. `[N]` for the item list, `[U]` `[D:Rulers]` for the two checkbox items |
 | H11 | Right panel toggle | `IconButton`, `drawerRight`, pressed state while the right panel is shown | Labels "Hide right panel" / "Show right panel" | Hides or shows the right panel (D32). Sits between H8 and H9. |
 | H9 | Review button | `Button`, solid brand | "Review {n} changes", "Review 1 change"; with none, "Review changes", disabled | Opens the Review drawer. |
 
@@ -108,11 +109,11 @@ Rows are ordered by name within a group, then Desktop, Tablet, Mobile. `[N]`
 | A2 | Live artboard label | `Text` in brand colour, "{Name} · {Kind}", followed by a `Menu` trigger showing the device | Menu items "Desktop", "Tablet", "Mobile"; trigger label "Artboard device" | Choosing a device changes this artboard's device. A double-click on the label of a page or pattern renames it (A7). |
 | A3 | Artboard | The tier content at the device width, scaled by the zoom | | Click selects; Cmd/Ctrl + click adds it to the selection or takes it out when no artboard is in edit (D41); drag moves it, and with several selected moves them all; double-click edits. |
 | A4 | Selection outline | 2 px brand stroke around each selected artboard and the Live artboard | | |
-| A5 | Keyboard shortcuts | `IconButton`, `keyboard`, on a neutral surface with a subtle shadow, floating over the board at the bottom left of the canvas area | Label "Keyboard shortcuts" | Opens the keyboard shortcuts dialog (D42, `ShortcutsDialog.md`). It stays in its corner while the board pans and zooms, and is there in every state of the board, an artboard in edit included. |
+| A5 | Keyboard shortcuts | `IconButton`, `keyboard`, on a neutral surface with a subtle shadow, floating over the board at the bottom left of the canvas area | Label "Keyboard shortcuts" | Opens the keyboard shortcuts dialog (D42, `ShortcutsDialog.md`). It stays in its corner while the board pans and zooms, and is there in every state of the board, an artboard in edit included. While the rulers are shown it sits clear of the left ruler (R2). |
 | A6 | Selection rectangle | A rectangle from where the drag started to the pointer, with a 1 px brand stroke and no fill (D47) | | Shown only while dragging from empty board (D43). Every artboard and media object it touches is selected, as it is dragged. Cmd/Ctrl + drag adds to the selection. Esc cancels the drag and puts the selection back as it was. |
 | A7 | Name field | `InputControl` in the label, in place of the name; its label "Name" is hidden from view | The name, selected | Shown after a double-click on the label of a page or pattern artboard, or F2 with that one artboard selected (D62). Enter or a click elsewhere keeps the new name; Esc leaves the name as it was; an empty name is not kept. The rest of the label stays as it is. The new name is an unsaved edit, saved from Review. |
 
-The canvas background is the weak neutral surface. Dragging an artboard moves it freely; there is no snapping or grid. `[N]` Dragging from empty board selects with a rectangle (A6, D43). `[U]`
+The canvas background is the weak neutral surface. Dragging an artboard moves it freely; there is no snapping or grid. `[N]`, confirmed for guides too by D110 `[U]` Dragging from empty board selects with a rectangle (A6, D43). `[U]`
 
 ## Region: Right panel, Styles `[D:Overview]` `[D:Styles]` `[U]`
 
@@ -139,3 +140,54 @@ The canvas background is the weak neutral surface. Dragging an artboard moves it
 | E6 | Kind tab: device | `wpc.ToggleGroupControl` | Label "Artboard device"; "Desktop", "Tablet", "Mobile" | Changes this artboard's device. |
 | E8 | Kind tab: page template | `wpc.SelectControl`, pages only, after E6 | Label "Template"; first option "Default template", then the site's custom templates by title | Changes the page's template (D35). The same control is in the artboard settings of a selected page, after the device control. |
 | E7 | Kind tab: live notice | `Notice`, caution tone, templates and parts only | "Templates have no draft. Saving this one puts it live on every archive of the site." for the Archive template; "Templates have no draft. Saving this one puts it live on the site." for every other template; "Template parts have no draft. Saving this one puts it live everywhere it is used." for parts | The parts wording is `[N]`. |
+
+## Rulers (D108, D109) `[U]` `[D:Rulers]` `[D:RulersSelected]` `[D:RulersEditing]` `[R1]`
+
+In the page only while the "Rulers" item of H8 is checked (C37).
+
+| ID | Element | Component | Text | Behaviour |
+|---|---|---|---|---|
+| R1 | Top ruler | A `canvas` element along the top edge of the canvas area, as wide as the area, on the strong neutral surface with a 1 px neutral stroke under it. Ticks in the neutral stroke; numbers in the weak neutral foreground at the smallest text size | The numbers of the ticks, in board units | Counts along x. Stays at the edge while the board pans and zooms, and is painted on each frame (C34). Pressing on it and dragging into the canvas area pulls out a horizontal guide (D110). |
+| R2 | Left ruler | The same along the left edge, its numbers turned to read upwards | The same | Counts along y. Pulls out a vertical guide. |
+| R3 | Corner | A square where R1 and R2 meet, same surface and stroke | None | Not interactive. |
+| R4 | Span | The part of a ruler between two values, on the brand surface with a 1 px brand stroke at each end; its two end numbers in the brand foreground, emphasis weight | The value at each end | What it covers is given below. A tick's number that would touch an end number is not drawn. |
+| R5 | Guide mark | A 1 px line across the ruler at a guide's position, in the guide's colour; for the guide that is selected or being dragged, in the brand colour with its position as a number beside it | The position, for that one guide | On each ruler, one mark for every guide read on it that is shown: board guides, and the guides of the artboard in context. Not drawn while "Guides" is unchecked. |
+
+The rulers are about 20 CSS px thick at every zoom. They take no focus and are hidden from assistive technology; their colours are the `--wpds-*` tokens named above, read from the page. `[N]`
+
+What zero is and what R4 covers: `[R1]`
+
+| When | Zero sits at | R4 covers |
+|---|---|---|
+| Nothing selected | The board's origin | Nothing: R4 is absent |
+| One artboard selected | Its top-left corner | The artboard: 0 to its device width on R1, 0 to its height on R2 |
+| A guide of an artboard dragged or selected | That artboard's top-left corner | That artboard |
+| An artboard in edit | Its top-left corner | The selected block: its left and right edges on R1, its top and bottom edges on R2, in the page's pixels |
+
+Cases the whiteboard does not draw: `[N]`
+
+- A media object or a browser selected alone counts as an artboard selected. Several things selected, or a note selected, count as nothing selected.
+- A board guide dragged or selected counts as nothing selected. A new guide dragged over empty board, a note, a media object or a browser is a board guide.
+- In edit with no block selected, R4 covers the artboard. With several blocks selected it covers them all, from the first edge to the last.
+- In edit the span is read again when the block selection changes and when the selected block changes size.
+
+Numbers and ticks: the step between numbers is the smallest of 1, 2 or 5 times a power of ten, in board units, that is at least 50 CSS px long at the present zoom (500 at 17%, 100 at 50%), with four smaller ticks between two numbers. Numbers on the far side of zero are negative and written with a minus sign. `[N]`
+
+While the rulers are shown, the notices at the top left of the canvas (the usage and preview banners, the saving notice) sit clear of them. `[N]`
+
+## Guides (D110 to D114) `[U]` `[D:GuideDrag]` `[D:GuideSelected]` `[D:RulersEditing]` `[R1]` `[R3]`
+
+Drawn only while the "Guides" item of H8 is checked.
+
+| ID | Element | Component | Text | Behaviour |
+|---|---|---|---|---|
+| GD1 | Guide | A line 1 px wide at every zoom, in `--wpds-color-stroke-surface-info-strong`. A board guide runs across the whole canvas area. An artboard's guide runs across its artboard only, from edge to edge, and is drawn in every tier | None | With no artboard in edit: the pointer over it is `row-resize` for a horizontal guide and `col-resize` for a vertical one, within 4 CSS px of the line on each side; a click selects it and clears any other selection; a drag moves it along its axis (D112). With an artboard in edit it takes no pointer input (D114). Drawn above artboards and their labels and below notes. |
+| GD2 | Position chip | `Badge` beside the pointer | The position as a whole number, for example "700" | Shown only while a guide is dragged, a new one or one being moved. Follows the pointer. |
+| GD3 | Selected guide | GD1 in `--wpds-color-stroke-interactive-brand`, 2 px wide at every zoom | None | One guide at most. |
+| GD4 | Guide card | In the right panel, in place of Styles: the entity card as E5 with the `lineSolid` icon, `Text` heading-md "Guide" and a `Text` weak description; `InputControl`, whole numbers, with the suffix "px"; a `Text` weak help under it; `Button` outline "Remove guide"; `Text` weak hint | Description "Horizontal. On {artboard name}." or "Vertical. On {artboard name}."; for a board guide "Horizontal. On the board." or "Vertical. On the board.". Field label "Position". Help "Measured from the top of {artboard name}." for a horizontal guide and "Measured from the left of {artboard name}." for a vertical one; for a board guide "Measured from the top of the board." and "Measured from the left of the board.". Hint "Drag moves it. Delete removes it." | The field shows the guide's position and follows it while it is dragged or nudged. A typed position is kept on Enter or when the field loses focus, as one "move guide" step; a value that is not a whole number, or that lies outside its artboard, is not kept and the field shows the position again. "Remove guide" takes the guide off the board. |
+
+The wording for a vertical guide and for a board guide, the icon, the width that takes the pointer and the chip's component are `[N]`.
+
+While a new guide is dragged over an artboard that can own it, that artboard has a 1 px brand stroke around it, and the guide is drawn across that artboard only; over anything else the guide runs from edge to edge of the canvas area. `[D:GuideDrag]`
+
+Guides are not listed in the left panel, an artboard's settings say nothing about them, and Review never lists them (D112, D113). `[U]`

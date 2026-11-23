@@ -1,6 +1,6 @@
 /**
  * Saves the layout 2 seconds after its last change (decision D25), notes and
- * their text included (D43). The layout
+ * their text included (D43), and guides (D113). The layout
  * is not site content: it goes straight to the board's REST route and never
  * appears in Review.
  */
@@ -12,15 +12,19 @@ import { store as boardStore, toLayout } from './index';
 const DELAY = 2000;
 
 export function useLayoutAutosave() {
-    const { boardId, artboards, notes, isLoaded } = useSelect( ( select ) => {
-        const board = select( boardStore );
-        return {
-            boardId: board.getBoardId(),
-            artboards: board.getArtboards(),
-            notes: board.getNotes(),
-            isLoaded: board.isLoaded(),
-        };
-    }, [] );
+    const { boardId, artboards, notes, guides, isLoaded } = useSelect(
+        ( select ) => {
+            const board = select( boardStore );
+            return {
+                boardId: board.getBoardId(),
+                artboards: board.getArtboards(),
+                notes: board.getNotes(),
+                guides: board.getGuides(),
+                isLoaded: board.isLoaded(),
+            };
+        },
+        []
+    );
     const saved = useRef( null );
     const pending = useRef( null );
     // When the pending save is due, and what it was started for.
@@ -31,12 +35,13 @@ export function useLayoutAutosave() {
         if ( ! isLoaded ) {
             return;
         }
-        const layout = toLayout( artboards, notes );
+        const layout = toLayout( artboards, notes, guides );
         const json = JSON.stringify( layout );
         // The layout without the measured heights.
         const placement = JSON.stringify( [
             layout.artboards.map( ( { height, ...rest } ) => rest ),
             layout.notes,
+            layout.guides,
         ] );
         const wasPlaced = placed.current;
         placed.current = placement;
@@ -72,7 +77,7 @@ export function useLayoutAutosave() {
         pending.current = save;
         const timer = setTimeout( save, delay );
         return () => clearTimeout( timer );
-    }, [ artboards, notes, boardId, isLoaded ] );
+    }, [ artboards, notes, guides, boardId, isLoaded ] );
 
     useEffect( () => {
         const flush = () => pending.current?.();

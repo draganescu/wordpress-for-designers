@@ -135,10 +135,10 @@ function wfd_layout_error( $layout ) {
     if ( ! is_array( $layout ) ) {
         return __( 'The layout must be an object.', 'wordpress-for-designers' );
     }
-    // The notes list is optional (D46).
+    // The notes list and the guides list are optional (D46, D113).
     $keys = array_keys( $layout );
-    if ( array_diff( array( 'version', 'artboards' ), $keys ) || array_diff( $keys, array( 'version', 'artboards', 'notes' ) ) ) {
-        return __( 'The layout must have exactly the fields version and artboards, and may have notes.', 'wordpress-for-designers' );
+    if ( array_diff( array( 'version', 'artboards' ), $keys ) || array_diff( $keys, array( 'version', 'artboards', 'notes', 'guides' ) ) ) {
+        return __( 'The layout must have exactly the fields version and artboards, and may have notes and guides.', 'wordpress-for-designers' );
     }
     if ( 1 !== $layout['version'] ) {
         return __( 'The layout version must be 1.', 'wordpress-for-designers' );
@@ -162,7 +162,7 @@ function wfd_layout_error( $layout ) {
         if ( ! is_string( $artboard['id'] ) || ! wp_is_uuid( $artboard['id'] ) || isset( $ids[ $artboard['id'] ] ) ) {
             return __( 'Each artboard id must be a unique UUID.', 'wordpress-for-designers' );
         }
-        $ids[ $artboard['id'] ] = true;
+        $ids[ $artboard['id'] ] = $kind;
         if ( ! in_array( $kind, array( 'page', 'template', 'template-part', 'pattern', 'media', 'browser' ), true ) ) {
             return __( 'The artboard kind is not valid.', 'wordpress-for-designers' );
         }
@@ -190,8 +190,15 @@ function wfd_layout_error( $layout ) {
             }
         }
     }
-    return array_key_exists( 'notes', $layout )
-        ? wfd_notes_error( $layout['notes'], $ids )
+    if ( array_key_exists( 'notes', $layout ) ) {
+        $error = wfd_notes_error( $layout['notes'], $ids );
+        if ( true !== $error ) {
+            return $error;
+        }
+        $ids += array_fill_keys( array_column( $layout['notes'], 'id' ), 'note' );
+    }
+    return array_key_exists( 'guides', $layout )
+        ? wfd_guides_error( $layout['guides'], $ids )
         : true;
 }
 
@@ -268,6 +275,49 @@ function wfd_notes_error( $notes, $ids ) {
         if ( ! in_array( $note['color'], array( 'yellow', 'green', 'blue', 'pink' ), true ) ) {
             return __( 'The note color is not valid.', 'wordpress-for-designers' );
         }
+    }
+    return true;
+}
+
+/**
+ * Checks the guides of a layout (spec/data-model.md, D113).
+ *
+ * @param mixed $guides The decoded guides.
+ * @param array $ids    What each id already used in the layout belongs to:
+ *                      an artboard's kind, or a note.
+ * @return true|string True when valid, otherwise the reason.
+ */
+function wfd_guides_error( $guides, $ids ) {
+    if ( ! is_array( $guides ) || ( $guides && ! wp_is_numeric_array( $guides ) ) ) {
+        return __( 'The layout guides must be a list.', 'wordpress-for-designers' );
+    }
+    $owners = array( 'page', 'template', 'template-part', 'pattern' );
+    foreach ( $guides as $guide ) {
+        // An artboard's guide has an artboard and a device; a board guide has neither.
+        $fields = is_array( $guide ) && ( array_key_exists( 'artboard', $guide ) || array_key_exists( 'device', $guide ) )
+            ? array( 'id', 'axis', 'at', 'artboard', 'device' )
+            : array( 'id', 'axis', 'at' );
+        if ( ! is_array( $guide ) || array_diff( array_keys( $guide ), $fields ) || count( $guide ) !== count( $fields ) ) {
+            return __( 'Each guide must have exactly the fields id, axis and at, or those with artboard and device.', 'wordpress-for-designers' );
+        }
+        if ( ! is_string( $guide['id'] ) || ! wp_is_uuid( $guide['id'] ) || isset( $ids[ $guide['id'] ] ) ) {
+            return __( 'Each guide id must be a unique UUID.', 'wordpress-for-designers' );
+        }
+        if ( ! in_array( $guide['axis'], array( 'x', 'y' ), true ) ) {
+            return __( 'The guide axis must be x or y.', 'wordpress-for-designers' );
+        }
+        if ( ! wfd_is_number( $guide['at'] ) || floor( $guide['at'] ) !== (float) $guide['at'] ) {
+            return __( 'The guide at must be a whole number.', 'wordpress-for-designers' );
+        }
+        if ( array_key_exists( 'artboard', $guide ) ) {
+            if ( ! is_string( $guide['artboard'] ) || ! in_array( $ids[ $guide['artboard'] ] ?? '', $owners, true ) ) {
+                return __( 'The guide artboard must be a page, template, template part or pattern of the layout.', 'wordpress-for-designers' );
+            }
+            if ( ! in_array( $guide['device'], array( 'desktop', 'tablet', 'mobile' ), true ) ) {
+                return __( 'The guide device is not valid.', 'wordpress-for-designers' );
+            }
+        }
+        $ids[ $guide['id'] ] = 'guide';
     }
     return true;
 }

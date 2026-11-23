@@ -25,18 +25,36 @@ import { WeakText } from './primitives';
  */
 export function EntityCard( { artboard, info } ) {
     return (
+        <EntityHeading
+            icon={ KINDS[ artboard.kind ].icon }
+            title={ artboard.name }
+            description={ entityDescription( artboard, info ) }
+        />
+    );
+}
+
+/**
+ * The card of E5 for anything: an icon, a heading and a weak description.
+ *
+ * @param {Object} props
+ * @param {Object} props.icon        The icon.
+ * @param {string} props.title       The heading.
+ * @param {string} props.description The description.
+ */
+export function EntityHeading( { icon, title, description } ) {
+    return (
         <Stack
             className="wfd-entity-card"
             direction="row"
             gap="md"
             align="flex-start"
         >
-            <Icon icon={ KINDS[ artboard.kind ].icon } />
+            <Icon icon={ icon } />
             <Stack direction="column">
                 <Text variant="heading-md" render={ <h2 /> }>
-                    { artboard.name }
+                    { title }
                 </Text>
-                <WeakText>{ entityDescription( artboard, info ) }</WeakText>
+                <WeakText>{ description }</WeakText>
             </Stack>
         </Stack>
     );
