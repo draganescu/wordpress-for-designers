@@ -93,23 +93,14 @@ class WFD_Agent_Command {
      * @param string $message The message.
      */
     private function fail( $code, $message ) {
-        $this->finish(
-            array(
-                'ok'    => false,
-                'error' => array(
-                    'code'    => $code,
-                    'message' => $message,
-                ),
-            ),
-            1
-        );
+        $this->finish( wfd_agent_failure( $code, $message ), 1 );
     }
 
     /**
      * Notes that a command ran, or fails when that cannot be written.
      */
     private function touch() {
-        if ( ! wfd_agent_touch() ) {
+        if ( ! wfd_agent_begin( 'cli' ) ) {
             $this->fail( 'unavailable', WFD_AGENT_WRITE_FAILED );
         }
     }
@@ -146,81 +137,27 @@ class WFD_Agent_Command {
     }
 
     /**
-     * Puts calls in the queue for a listening board, waits for the board's
-     * answer and gives the results.
+     * Hands calls to a listening board through the relay and gives the
+     * results, or prints the relay's failure.
      *
-     * @param array $calls      The entries, as objects with `tool` and `input`.
+     * @param array $calls      The entries, as arrays of `tool` and `input`.
      * @param array $assoc_args The flags.
      * @return array One envelope per entry.
      */
     private function relay( $calls, $assoc_args ) {
-        $timeout = $this->timeout( $assoc_args );
-        wfd_agent_cleanup();
-
-        $boards = wfd_agent_listening_boards();
-        $none   = 'No board is listening. Open a board in WordPress for Designers; if one is open, reload it once.';
-        if ( isset( $assoc_args['board'] ) ) {
-            $board = (int) $assoc_args['board'];
-            if ( ! in_array( $board, wp_list_pluck( $boards, 'id' ), true ) ) {
-                $this->fail( 'no_board', $none );
-            }
-        } elseif ( ! $boards ) {
-            $this->fail( 'no_board', $none );
-        } elseif ( count( $boards ) > 1 ) {
-            $named = array();
-            foreach ( $boards as $listening ) {
-                $named[] = sprintf( '%d "%s"', $listening['id'], $listening['title'] );
-            }
-            $this->fail( 'several_boards', sprintf( 'Several boards are open: %s. Pass --board=<id>.', implode( ', ', $named ) ) );
-        } else {
-            $board = $boards[0]['id'];
-        }
-
-        $encoded = wp_json_encode( $calls );
-        if ( false === $encoded || strlen( $encoded ) > WFD_AGENT_MAX_BYTES ) {
-            $this->fail( 'invalid_args', 'The input is larger than 1 MB.' );
-        }
-
-        $id    = wp_generate_uuid4();
-        $name  = WFD_AGENT_CALL . $id;
-        $now = time();
-        // When the command starts waiting, to the microsecond: the page is
-        // told the time left from it (D89).
-        $started = microtime( true );
-        $added   = add_option(
-            $name,
-            wp_json_encode(
-                array(
-                    'id'      => $id,
-                    'board'   => $board,
-                    'calls'   => $calls,
-                    'status'  => 'queued',
-                    'created' => $started,
-                    'expires' => $now + WFD_AGENT_CALL_LIFE,
-                    // The page starts no entry once this has passed (D89).
-                    'timeout' => $timeout,
-                )
-            ),
-            '',
-            false
+        $args = array(
+            'source'  => 'cli',
+            'timeout' => $this->timeout( $assoc_args ),
         );
-        if ( ! $added ) {
-            $this->fail( 'unavailable', WFD_AGENT_WRITE_FAILED );
+        if ( isset( $assoc_args['board'] ) ) {
+            $args['board'] = (int) $assoc_args['board'];
         }
-
-        $call = null;
-        while ( microtime( true ) - $started < $timeout ) {
-            usleep( 200000 );
-            $call = wfd_agent_read( $name, false );
-            if ( $call && isset( $call->status ) && 'done' === $call->status ) {
-                break;
-            }
+        // The relay cleans up before it enqueues.
+        $answer = wfd_agent_relay( $calls, $args );
+        if ( ! $answer['ok'] ) {
+            $this->finish( $answer, 1 );
         }
-        delete_option( $name );
-        if ( ! $call || ! isset( $call->status, $call->results ) || 'done' !== $call->status ) {
-            $this->fail( 'timeout', sprintf( 'The board did not answer within %d seconds.', $timeout ) );
-        }
-        return (array) $call->results;
+        return $answer['results'];
     }
 
     /**

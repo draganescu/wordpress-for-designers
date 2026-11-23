@@ -147,12 +147,16 @@ export const surface = {
     setAnnotating,
 };
 
+// The ways in that are in use. Kept, and nothing else is done with it (D93).
+const session = { sources: [] };
+
 /**
  * The relay client: takes what a poll answered, runs the call it handed
  * over, entry by entry, and sends the results (spec/agent/relay.md). No
  * entry is started once the command's time has run out (D89).
  *
- * @param {Object}   answer   The poll's answer: `active` and `call`.
+ * @param {Object}   answer   The poll's answer: `active`, `sources` and
+ *                            `call`.
  * @param {Function} send     Sends the results of the answer's call.
  * @param {number}   received When the answer came, in ms.
  */
@@ -160,6 +164,7 @@ export async function relay( answer, send, received = Date.now() ) {
     // The header chip shows from the poll that finds a session until the
     // poll that finds it ended.
     setSession( !! answer.active );
+    session.sources = answer.sources;
     if ( ! answer.call ) {
         return;
     }

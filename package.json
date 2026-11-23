@@ -8,7 +8,7 @@
         "build": "node tools/check-agent-tools.mjs && wp-scripts build",
         "start": "wp-scripts start",
         "lint": "npm run lint:js && npm run lint:css",
-        "lint:js": "wp-scripts lint-js src tests tools adapters/studio/plugin adapters/studio/tests eslint.config.cjs webpack.config.js",
+        "lint:js": "wp-scripts lint-js src tests tools adapters/studio/plugin adapters/studio/tests adapters/abilities/tests eslint.config.cjs webpack.config.js",
         "lint:css": "wp-scripts lint-style \"src/**/*.scss\"",
         "package": "sh tools/package.sh",
         "package:adapters": "sh tools/package-adapters.sh",

@@ -6,7 +6,7 @@ You are building a WordPress plugin, "WordPress for Designers", from the specifi
 
 A plugin that opens an infinite canvas (a board) inside WordPress. Each artboard on the board shows one page, template, template part or pattern of the site, rendered with real blocks. One artboard at a time can be edited with a block editor built from WordPress's public parts. Global styles are edited from the same screen and repaint every artboard.
 
-Since decision D65 the plugin also has an agent surface: a closed set of tools through which an AI agent works on an open board, a `wp wfd` command that carries an agent's calls to the board, and marks that show the designer what the agent does. It is specified in `spec/agent/` and built in Milestones 13 to 18 on top of the finished plugin. It continues this spec: nothing above D65 is replaced by it, and every earlier constraint binds it.
+Since decision D65 the plugin also has an agent surface: a closed set of tools through which an AI agent works on an open board, a `wp wfd` command that carries an agent's calls to the board, and marks that show the designer what the agent does. It is specified in `spec/agent/` and built in Milestones 13 to 19 on top of the finished plugin. It continues this spec: nothing above D65 is replaced by it, and every earlier constraint binds it.
 
 ## Binding rules
 
@@ -29,7 +29,7 @@ Since decision D65 the plugin also has an agent surface: a closed set of tools t
 - Every criterion in `spec/acceptance.md` has a passing end-to-end test with the name given there.
 - The lint rules named in `spec/constraints.md` pass with no disabled lines.
 - `spec/open-questions.md` lists everything you could not build, or is empty.
-- On a site where no `wp wfd` command has run, the plugin behaves exactly as it did before Milestone 13: every earlier criterion still passes, and the board sends nothing to the agent routes (C27).
+- On a site where no way in to the agent surface has been used (D94), the plugin behaves exactly as it did before Milestone 13: every earlier criterion still passes, and the board sends nothing to the agent routes (C27).
 - The plugin activates on a clean WordPress 7.2 with a block theme and no other plugins, with no PHP notices and no console errors.
 
 ## Reading order
@@ -44,7 +44,7 @@ Since decision D65 the plugin also has an agent surface: a closed set of tools t
 8. `spec/screens/README.md`, then each screen file
 9. `spec/acceptance.md`
 10. `spec/build-order.md`
-11. For Milestones 13 to 18: `spec/agent/surface.md`, `spec/agent/tools.md`, `spec/agent/relay.md`, `spec/agent/cli.md`, then `spec/screens/AgentConnected.md`, `AgentWorking.md` and `AgentReview.md`
+11. For Milestones 13 to 19: `spec/agent/surface.md`, `spec/agent/tools.md`, `spec/agent/relay.md`, `spec/agent/cli.md`, then `spec/screens/AgentConnected.md`, `AgentWorking.md` and `AgentReview.md`
 
 ## Environment
 

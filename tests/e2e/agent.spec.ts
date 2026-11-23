@@ -1,9 +1,28 @@
 import { test, expect } from '@wordpress/e2e-test-utils-playwright';
-import { resetFixture, openBoard, loginAs, restNonce } from './utils';
+import {
+    resetFixture,
+    openBoard,
+    loginAs,
+    restNonce,
+    boardAtRest,
+    artboardOf,
+    BOARDS_URL,
+} from './utils';
+import type { Artboard } from './utils';
 import {
     wp,
     wfd,
     php,
+    relayFromPhp,
+    beginFromPhp,
+    boardNewFromPhp,
+    boardsFromPhp,
+    relayOptions,
+    callRecords,
+    handedTo,
+    holdBack,
+    showsBoard,
+    callTool,
     agentOptions,
     isRelay,
     isPoll,
@@ -304,12 +323,13 @@ test.describe( 'AGENT', () => {
             'wfd_agent_call_fresh',
             'wfd_agent_listener_fresh',
             'wfd_agent_seen',
+            'wfd_agent_sources',
         ] );
 
         try {
             await wp( [ 'plugin', 'deactivate', PLUGIN ] );
             expect( await scheduled() ).toBe( false );
-            expect( ( await agentOptions() ).length ).toBe( 3 );
+            expect( ( await agentOptions() ).length ).toBe( 4 );
             // The uninstall procedure alone: the files stay.
             await wp( [ 'plugin', 'uninstall', PLUGIN, '--skip-delete' ] );
             expect( await agentOptions() ).toEqual( [] );
@@ -442,5 +462,369 @@ test.describe( 'AGENT', () => {
             await page.waitForTimeout( 1200 );
             expect( results.length - before ).toBe( 1 );
         }
+    } );
+
+    test( 'AC-AGENT-11 wfd_agent_relay, called in a web request, answers for the board and leaves no call option, fails with no_board at once, and writes no record for a tool that is not declared', async ( {
+        page,
+        requestUtils,
+    } ) => {
+        const fixture = await resetFixture( requestUtils );
+        const boardGet = [ { tool: 'board-get', input: {} } ];
+        const records = async () =>
+            callRecords( Object.keys( await relayOptions( requestUtils ) ) );
+
+        // No board open: no_board, at once.
+        const started = Date.now();
+        const none = await relayFromPhp( requestUtils, boardGet, {
+            source: 'test',
+        } );
+        expect( Date.now() - started ).toBeLessThan( 2000 );
+        expect( none ).toMatchObject( {
+            ok: false,
+            error: { code: 'no_board' },
+        } );
+
+        const handed = handedTo( page );
+        // That call was a use of a way in, so the board asks.
+        const asked = listening( page );
+        await openBoard( page, fixture.boardId );
+        await asked;
+
+        const answered = await relayFromPhp( requestUtils, boardGet, {
+            source: 'test',
+        } );
+        expect( answered ).toMatchObject( {
+            ok: true,
+            results: [ { ok: true } ],
+        } );
+        expect( answered.results ).toHaveLength( 1 );
+        expect(
+            answered.results[ 0 ].result.artboards
+                .map( ( a: any ) => a.id )
+                .sort()
+        ).toEqual( fixture.layout.artboards.map( ( a ) => a.id ).sort() );
+        expect( await records() ).toEqual( [] );
+        await expect.poll( () => handed.length ).toBe( 1 );
+
+        // A tool that is not declared: no record, so nothing for the board.
+        const unknown = await relayFromPhp(
+            requestUtils,
+            [ { tool: 'nothing-here', input: {} } ],
+            { source: 'test' }
+        );
+        expect( unknown ).toMatchObject( {
+            ok: false,
+            error: { code: 'unknown_tool' },
+        } );
+        expect( await records() ).toEqual( [] );
+        await page.waitForTimeout( 2500 );
+        expect( handed ).toHaveLength( 1 );
+    } );
+
+    test( 'AC-AGENT-12 After wfd_agent_begin a board that is then opened asks within 2 seconds, loads the chunk and shows G1, and the Boards screen and the dashboard send nothing to the relay', async ( {
+        page,
+        context,
+        requestUtils,
+    } ) => {
+        test.setTimeout( 120000 );
+        const fixture = await resetFixture( requestUtils );
+        // No way in has been used.
+        expect( await relayOptions( requestUtils ) ).toEqual( {} );
+        await beginFromPhp( requestUtils, 'test' );
+
+        let polledAt = 0;
+        page.on( 'request', ( request ) => {
+            if ( isPoll( request.url() ) && ! polledAt ) {
+                polledAt = Date.now();
+            }
+        } );
+        const chunk = page.waitForRequest(
+            ( request ) => isChunk( request.url() ),
+            { timeout: 15000 }
+        );
+        await openBoard( page, fixture.boardId );
+        const loadedAt = Date.now();
+        await expect
+            .poll( () => polledAt, { timeout: 10000 } )
+            .toBeGreaterThan( 0 );
+        expect( polledAt - loadedAt ).toBeLessThan( 2000 );
+        await chunk;
+        const chip = page.locator( '[data-wfd-agent]' );
+        await expect( chip ).toHaveAttribute( 'data-wfd-agent', 'connected' );
+        await expect( chip ).toHaveText( 'Agent connected' );
+
+        // The Boards screen and the dashboard, open for 30 seconds of a
+        // session.
+        await beginFromPhp( requestUtils, 'test' );
+        const sent: string[] = [];
+        for ( const url of [ BOARDS_URL, '/wp-admin/index.php' ] ) {
+            const other = await context.newPage();
+            other.on( 'request', ( request ) => {
+                if ( isRelay( request.url() ) ) {
+                    sent.push( `${ url }: ${ request.url() }` );
+                }
+            } );
+            await other.goto( url );
+        }
+        await page.waitForTimeout( 30000 );
+        expect( sent ).toEqual( [] );
+        // The session was active to the end: the board is still told so.
+        const still = await page.waitForResponse(
+            ( response ) => isPoll( response.url() ) && response.ok()
+        );
+        expect( ( await still.json() ).active ).toBe( true );
+    } );
+
+    test( 'AC-AGENT-13 A call record holds its source while queued, wfd_agent_sources and the poll list each way in used, and G1, G2 and authorship are the same for a call from either', async ( {
+        page,
+        requestUtils,
+    } ) => {
+        test.setTimeout( 180000 );
+        const fixture = await resetFixture( requestUtils );
+        const from = Math.floor( Date.now() / 1000 );
+        await beginFromPhp( requestUtils, 'test' );
+        const asked = listening( page );
+        await openBoard( page, fixture.boardId );
+        await asked;
+        await boardAtRest( page );
+
+        // The board's polls are held back, so that the call stays queued
+        // while its record is read.
+        const polls = await holdBack( page, isPoll );
+        await polls.reached;
+        // The function waits for the board, so it is not waited for here.
+        const answer = relayFromPhp(
+            requestUtils,
+            [ { tool: 'board-get', input: {} } ],
+            { source: 'test' }
+        );
+        let record: any;
+        await expect
+            .poll( async () => {
+                const options = await relayOptions( requestUtils );
+                record = options[ callRecords( Object.keys( options ) )[ 0 ] ];
+                return record?.status;
+            } )
+            .toBe( 'queued' );
+        polls.release();
+        expect( record.source ).toBe( 'test' );
+        expect( ( await answer ).ok ).toBe( true );
+
+        // Afterwards: a time for `test`, and after a command one for `cli`.
+        const first = ( await relayOptions( requestUtils ) ).wfd_agent_sources;
+        expect( Object.keys( first ) ).toEqual( [ 'test' ] );
+        expect( ( await wfd( [ 'status' ] ) ).code ).toBe( 0 );
+        const second = ( await relayOptions( requestUtils ) ).wfd_agent_sources;
+        // The site's clock and the test's are the same machine's.
+        const now = Math.floor( Date.now() / 1000 );
+        for ( const source of [ 'test', 'cli' ] ) {
+            expect( second[ source ] ).toBeGreaterThanOrEqual( from - 5 );
+            expect( second[ source ] ).toBeLessThanOrEqual( now + 5 );
+        }
+        const listed = await page.waitForResponse(
+            async ( response ) =>
+                isPoll( response.url() ) &&
+                response.ok() &&
+                !! ( await response.json() ).sources?.includes( 'cli' ),
+            { timeout: 15000 }
+        );
+        expect( [ ...( await listed.json() ).sources ].sort() ).toEqual( [
+            'cli',
+            'test',
+        ] );
+
+        // What a change to an artboard's first text shows, made by one way
+        // in: G1 and G2 while the board's answer is held back, and who the
+        // change is recorded as having made.
+        const chip = page.locator( '[data-wfd-agent]' );
+        const shows = async (
+            artboard: Artboard,
+            change: () => Promise< boolean >
+        ) => {
+            const frame = page.locator(
+                `[data-wfd-artboard="${ artboard.id }"]`
+            );
+            const result = await holdBack( page, isResult );
+            const made = change();
+            await result.reached;
+            const during = {
+                chip: await chip.getAttribute( 'data-wfd-agent' ),
+                working: await frame.getAttribute( 'data-wfd-agent-working' ),
+            };
+            result.release();
+            expect( await made ).toBe( true );
+            const { items } = ( await callTool( page, 'review-list' ) ).result;
+            return {
+                ...during,
+                changed: await frame.getAttribute( 'data-wfd-agent-changed' ),
+                author: items.find(
+                    ( item: any ) => item.type === artboard.kind
+                ).author,
+            };
+        };
+
+        const header = artboardOf( fixture, 'template-part' );
+        const hero = artboardOf( fixture, 'pattern' );
+        const fromTest = await shows( header, async () => {
+            const made = await relayFromPhp(
+                requestUtils,
+                [
+                    {
+                        tool: 'block-update',
+                        input: {
+                            artboard: header.id,
+                            block: [ 0, 0 ],
+                            attributes: { content: 'From PHP' },
+                        },
+                    },
+                ],
+                { source: 'test' }
+            );
+            return made.ok && made.results[ 0 ].ok;
+        } );
+        const fromCli = await shows( hero, async () => {
+            const made = await wfd( [
+                'call',
+                'block-update',
+                `--artboard=${ hero.id }`,
+                '--block=[0]',
+                '--attributes={"content":"From the command"}',
+            ] );
+            return made.code === 0 && JSON.parse( made.stdout ).ok;
+        } );
+        expect( fromTest ).toEqual( {
+            chip: 'working',
+            working: 'true',
+            changed: 'true',
+            author: 'agent',
+        } );
+        expect( fromCli ).toEqual( fromTest );
+    } );
+
+    test( 'AC-AGENT-14 wfd_agent_boards lists every published board with its id, title and address, listening only for a board open in a page, and marks no session', async ( {
+        page,
+        requestUtils,
+    } ) => {
+        const fixture = await resetFixture( requestUtils );
+        const other = await requestUtils.rest< { id: number } >( {
+            method: 'POST',
+            path: '/wp/v2/wfd-boards',
+            data: { title: 'Second board', status: 'publish' },
+        } );
+        const expected = ( open: number[] ) =>
+            [
+                { id: fixture.boardId, title: 'Fixture board' },
+                { id: other.id, title: 'Second board' },
+            ].map( ( board ) => ( {
+                ...board,
+                address: expect.any( String ),
+                listening: open.includes( board.id ),
+            } ) );
+
+        // On a site where no way in has been used, and it stays one.
+        const boards = await boardsFromPhp( requestUtils );
+        expect( boards ).toEqual( expected( [] ) );
+        expect( await relayOptions( requestUtils ) ).not.toHaveProperty(
+            'wfd_agent_seen'
+        );
+
+        // Each address opens its board.
+        for ( const board of boards ) {
+            await page.goto( board.address );
+            await showsBoard( page, board.id );
+        }
+
+        // Listening: only the board that is open in a page.
+        await beginFromPhp( requestUtils, 'test' );
+        const asked = listening( page );
+        await openBoard( page, fixture.boardId );
+        await asked;
+        expect( await boardsFromPhp( requestUtils ) ).toEqual(
+            expected( [ fixture.boardId ] )
+        );
+    } );
+
+    test( 'AC-AGENT-15 wfd_agent_board_new makes a published board, titled Untitled board or as given, with no artboards, returns its entry, and marks no session', async ( {
+        page,
+        requestUtils,
+    } ) => {
+        await resetFixture( requestUtils );
+        const untitled = await boardNewFromPhp( requestUtils );
+        const named = await boardNewFromPhp( requestUtils, 'Launch' );
+        for ( const [ board, title ] of [
+            [ untitled, 'Untitled board' ],
+            [ named, 'Launch' ],
+        ] as const ) {
+            expect( board ).toEqual( {
+                id: expect.any( Number ),
+                title,
+                address: expect.any( String ),
+                listening: false,
+            } );
+            expect(
+                await requestUtils.rest( {
+                    path: `/wp/v2/wfd-boards/${ board.id }`,
+                    params: { context: 'edit' },
+                } )
+            ).toMatchObject( {
+                status: 'publish',
+                title: { raw: title },
+                layout: { artboards: [] },
+            } );
+            await page.goto( board.address );
+            await showsBoard( page, board.id );
+        }
+        expect( await relayOptions( requestUtils ) ).not.toHaveProperty(
+            'wfd_agent_seen'
+        );
+    } );
+
+    test( "AC-AGENT-16 A call reaches only a page of its own user, a call with no user reaches any, and a listener holds the board's own title", async ( {
+        browser,
+        requestUtils,
+    } ) => {
+        const fixture = await resetFixture( requestUtils );
+        await beginFromPhp( requestUtils, 'test' );
+        const page = await loginAs( browser, 'wfd_admin2' );
+        const asked = listening( page );
+        await openBoard( page, fixture.boardId );
+        await asked;
+
+        // The first administrator has no page of their own.
+        expect(
+            await relayFromPhp(
+                requestUtils,
+                [ { tool: 'board-get', input: {} } ],
+                { source: 'test', timeout: 2 }
+            )
+        ).toMatchObject( { ok: false, error: { code: 'no_board' } } );
+        const boards = await boardsFromPhp( requestUtils );
+        expect(
+            boards.find( ( board ) => board.id === fixture.boardId )?.listening
+        ).toBe( false );
+
+        // The command has no user.
+        const any = await wfd( [ 'call', 'board-get' ] );
+        expect( any.code ).toBe( 0 );
+        expect( JSON.parse( any.stdout ).ok ).toBe( true );
+
+        const headers = { 'X-WP-Nonce': await restNonce( page ) };
+        const poll = ( board: number, client: string ) =>
+            page.request.post( '/?rest_route=/wfd/v1/agent/poll', {
+                headers,
+                data: { board, client, title: 'Injected' },
+            } );
+        const none = '11111111-2222-4333-8444-555555555555';
+        expect( ( await poll( 999999, none ) ).status() ).toBe( 200 );
+        const mine = '11111111-2222-4333-8444-666666666666';
+        expect( ( await poll( fixture.boardId, mine ) ).status() ).toBe( 200 );
+        const options = await relayOptions( requestUtils );
+        expect( options ).not.toHaveProperty( `wfd_agent_listener_${ none }` );
+        expect( options[ `wfd_agent_listener_${ mine }` ] ).toMatchObject( {
+            board: fixture.boardId,
+            title: 'Fixture board',
+            user: fixture.users.wfd_admin2,
+        } );
+        await page.context().close();
     } );
 } );

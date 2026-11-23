@@ -3255,4 +3255,50 @@ test.describe( 'TOOL', () => {
             ( await callTool( page, 'review-list' ) ).result.items[ 0 ]
         ).toMatchObject( { isNew: true, author: 'both' } );
     } );
+
+    test( 'AC-TOOL-30 artboard-add refuses an address of wp-admin, and Custom HTML and custom CSS are changes like any other', async ( {
+        page,
+        requestUtils,
+    } ) => {
+        const fixture = await resetFixture( requestUtils );
+        await openBoard( page, fixture.boardId );
+        await boardAtRest( page );
+        const header = artboardOf( fixture, 'template-part' );
+        for ( const address of [
+            '/wp-admin/',
+            '/WP-Admin/plugins.php',
+            '/%77p-admin/',
+            '/wp-login.php?action=logout',
+        ] ) {
+            expect(
+                await callTool( page, 'artboard-add', {
+                    kind: 'browser',
+                    address,
+                } )
+            ).toEqual( {
+                ok: false,
+                error: {
+                    code: 'invalid_args',
+                    message:
+                        'address must not be in wp-admin, wp-login.php or xmlrpc.php.',
+                },
+            } );
+        }
+        await expect( review( page ) ).toHaveText( 'Review changes' );
+
+        expect(
+            await callTool( page, 'blocks-insert', {
+                artboard: header.id,
+                markup: '<!-- wp:html --><b>Raw</b><!-- /wp:html -->',
+            } )
+        ).toMatchObject( { ok: true } );
+        expect(
+            await callTool( page, 'styles-set', {
+                kind: 'style',
+                property: 'css',
+                value: 'body { outline: 0; }',
+            } )
+        ).toEqual( { ok: true, result: { changed: true } } );
+        await expect( review( page ) ).toHaveText( 'Review 2 changes' );
+    } );
 } );

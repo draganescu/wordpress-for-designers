@@ -2,7 +2,7 @@
 
 The WP-CLI command an agent harness runs. It is registered with `WP_CLI::add_command( 'wfd', … )` only when WordPress runs under WP-CLI. It has four subcommands and no others. `[U]` for the command and for its two jobs, telling an agent what it can do and carrying its calls (D68); `[N]` for every name, flag and output below unless a line says otherwise.
 
-Every subcommand first sets `wfd_agent_seen` (`relay.md`, Session). Every subcommand prints one JSON document to standard output, except `tools` in its default format. Nothing else is printed to standard output. The exit code is 0 on success and 1 on failure.
+Every subcommand first sets `wfd_agent_seen` (`relay.md`, Session), with the source `cli` (D93). `call` and `batch` reach the board through `wfd_agent_relay` (`relay.md`, From PHP). Every subcommand prints one JSON document to standard output, except `tools` in its default format. Nothing else is printed to standard output. The exit code is 0 on success and 1 on failure.
 
 ## `wp wfd status`
 

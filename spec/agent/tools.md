@@ -34,6 +34,12 @@ A failed tool returns `{ "code": "...", "message": "..." }`. The codes are these
 | `unavailable` | The board cannot be used right now (see the rules above) | `The board cannot be used right now.` |
 | `not_ready` | The board did not settle within the safety limit (Settling) | `{Name} did not finish loading.` for an artboard; `The styles did not finish updating.` for a style tool |
 
+### What a tool refuses
+
+`artboard-add` refuses a browser `address` whose path, percent-decoded and in any case, has a `wp-admin` segment, `wp-login.php` or `xmlrpc.php` (D106). It fails with `invalid_args` and the message `address must not be in wp-admin, wp-login.php or xmlrpc.php.`, and changes nothing.
+
+A tool refuses no block, markup or style for what it holds: Custom HTML, script and custom CSS are the user's to add through an agent as they are in the editor, and WordPress filters them on saving by that user's rights (D105).
+
 The relay adds four codes of its own: `no_board`, `several_boards`, `timeout` and `skipped` (`relay.md`).
 
 ## Settling
