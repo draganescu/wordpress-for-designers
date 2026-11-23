@@ -1,7 +1,7 @@
 === WordPress for Designers: Studio adapter ===
 Requires at least: 7.2
 Requires PHP: 7.4
-Stable tag: 0.2.0
+Stable tag: 0.3.0
 
 Lets a designer point at things on a WordPress for Designers board with the Annotate tool of WordPress Studio.
 
