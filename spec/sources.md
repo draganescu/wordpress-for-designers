@@ -10,7 +10,11 @@ Every statement in this spec carries a tag saying where it came from. The harnes
 | `[V]` | Verified in code: Gutenberg commit `e77b5057a91`, WordPress core `7.2-beta5`, or the WordPress for Writers plugin. For the agent surface and its adapters, also WordPress Studio at commit `cad01762b`. |
 | `[A]` | Stated on the agent whiteboard of 21 November 2026 ("Agent on a board"), which the product owner reviewed and commented on. Used from D65 on. |
 | `[D:AgentConnected]`, `[D:AgentWorking]`, `[D:AgentReview]` | Shown on the design of a designer's session with an agent, from which the three agent screens were cut. |
+| `[R1]` to `[R6]` | Stated on the rulers and guides whiteboard of 23 November 2026 ("Rulers and guides: IA and architecture"), in the numbered section, which the product owner reviewed and commented on. Used from D108 on. |
+| `[D:Rulers]`, `[D:RulersSelected]`, `[D:GuideDrag]`, `[D:GuideSelected]`, `[D:RulersEditing]` | Shown on the design "Rulers and guides on the board", which the product owner accepted on 23 November 2026 as representing what was meant, and from which the five screens of those names were rendered. |
 | `[N]` | New in this spec. Written to close a gap, not yet seen by the product owner. Listed in "Needs approval" below. |
+
+Rulers and guides whiteboard sections: 1 What the designer meets, and where; 2 Component diagram; 3 Class diagram; 4 Sequence, a drag becomes a saved guide; 5 Deployment; 6 Sequence, a pan or zoom redraws the rulers.
 
 Whiteboard sections: 1 Information architecture, 2 Board screen wireframe, 3 Artboard kinds, 4 System parts, 5 Performance tiers, 6 Data streams, 7 Global styles, 8 Decisions.
 
@@ -70,6 +74,14 @@ The list below is generated from every `[N]` tag in the spec. From row 65 on, fo
 | 49 | `screens/README.md` | 76 | S2 / Variation menu / `Menu`, trigger shows the active variation / "Variation: {name}"; "Variation: Default" when none / See `architecture.md`, Styles. Hidden when the theme has no variations. `[N]` for both fallbacks |
 | 50 | `screens/README.md` | 78 | S4 / Tokens: Colors group / heading-sm "Colors" with "Uses" at the right; rows of `wpc.ColorIndicator`, name, hex in the mono font, use count; "Add color" `Button` minimal / / Clicking a row selects the token (usage highlight) and opens a `Popover` with `wp... |
 | 51 | `screens/README.md` | 79 | S5 / Tokens: Typography group / heading-sm "Typography" / "Uses"; rows with an "Aa" sample, name, "{family} · {size} / {line height}", use count / / Clicking selects the token for usage highlight. Editing typography presets is done in the Blocks tab's stock... |
+| 80 | `decisions.md` | D108, D109, D110, D112, D114 | The rejected alternatives of D108, D109 and D114, which nobody proposed and the decision rules out. With nothing stored, rulers are hidden and guides are shown; dragging a new guide shows guides; Shift + R and Cmd/Ctrl + ; do not act in edit. A release over a ruler or outside the canvas area adds nothing; positions are whole numbers; only the four artboard kinds own guides; guides are drawn above artboards and below notes. A guide is selected alone, stays within its artboard, moves by 1 and by 10, and its field keeps a position on Enter or on losing focus. A guide can be pulled out of a ruler in edit. `[N]` |
+| 81 | `decisions.md`, `data-model.md` | D113, Board | An artboard's guides leave the board with it, in the same step. The fields of a guide and what the server refuses. A guide of a new template or template part is not written before the artboard is. A guide past its artboard's present height is kept and not drawn. `[N]` |
+| 82 | `constraints.md` | C37 | A board with rulers hidden and no guide is as it was. `[N]` |
+| 83 | `screens/README.md` | Rulers | What the rulers measure with several things selected, with a note, a media object or a browser selected, with a board guide dragged or selected, and in edit with no block selected. The steps of the numbers and ticks. The rulers take no focus and are hidden from assistive technology. The keyboard shortcuts control and the canvas notices sit clear of the rulers. `[N]` |
+| 84 | `screens/README.md` | Guides | The guide's colour token (the images show cyan), the width of the area that takes the pointer, the icon of the Guide card, the wording of the card for a vertical guide and for a board guide, and the chip as a `Badge`. `[N]` |
+| 85 | `screens/Rulers.md` | all | The key hints beside the zoom menu's items in the image are not built. `[N]` |
+| 86 | `acceptance.md` | Rulers and guides | The `data-wfd-*` attributes the rulers and guides set for tests. `[N]` |
+| 87 | `architecture.md` | Keyboard map | Tab, Enter, F2 and Shift + 2 do nothing for a selected guide. `[N]` |
 | 52 | `screens/README.md` | 80 | S6 / Tokens: Spacing group / heading-sm "Spacing"; one square per spacing preset with its px value under it / / Display only. `[N]` |
 | 53 | `screens/README.md` | 92 | E7 / Kind tab: live notice / `Notice`, caution tone, templates and parts only / "Templates have no draft. Saving this one puts it live on every {purpose} of the site." for templates; "Template parts have no draft. Saving this one puts it live everywhere it ... |
 | 54 | `screens/ResetDialog.md` | 7 | **Source.** [U]; hiding the checkbox is [N] |

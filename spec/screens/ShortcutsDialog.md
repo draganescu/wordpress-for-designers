@@ -36,12 +36,16 @@ In the keys, "Cmd/Ctrl" below is shown as "⌘" on a Mac and "Ctrl" elsewhere, a
 | Fit all artboards | Shift + 1 |
 | Fit the selected artboards | Shift + 2 |
 | Hide or show both side panels | Cmd/Ctrl + \ |
+| Show or hide rulers | Shift + R |
+| Show or hide guides | Cmd/Ctrl + ; |
 | Select the next artboard | Tab |
 | Select the previous artboard | Shift + Tab |
 | Edit the selected artboard | Enter |
 | Rename the selected page or pattern | F2 |
 | Move the selected artboards | Arrow keys |
 | Move the selected artboards further | Shift + Arrow keys |
+| Move the selected guide | Arrow keys |
+| Move the selected guide further | Shift + Arrow keys |
 | Remove the selected artboards | Delete |
 | Undo | Cmd/Ctrl + Z |
 | Redo | Cmd/Ctrl + Shift + Z |
