@@ -28,6 +28,7 @@ import {
     VisuallyHidden,
 } from '@wordpress/ui';
 import { BlockToolbarSlot } from '../chrome-slots';
+import { ATTR } from './constants';
 
 const ZOOM_ITEMS = [
     [ 'in', __( 'Zoom in', 'wordpress-for-designers' ) ],
@@ -77,6 +78,10 @@ export function Header( {
     zoomPercent,
     onZoom,
     canFitSelection,
+    isRulersShown,
+    isGuidesShown,
+    onToggleRulers,
+    onToggleGuides,
     canTidy,
     onTidy,
     reviewCount,
@@ -269,6 +274,25 @@ export function Header( {
                                 <Menu.ItemLabel>{ label }</Menu.ItemLabel>
                             </Menu.Item>
                         ) ) }
+                        <Menu.Separator />
+                        <Menu.CheckboxItem
+                            checked={ isRulersShown }
+                            onCheckedChange={ () => onToggleRulers() }
+                            { ...{ [ ATTR.view ]: 'rulers' } }
+                        >
+                            <Menu.ItemLabel>
+                                { __( 'Rulers', 'wordpress-for-designers' ) }
+                            </Menu.ItemLabel>
+                        </Menu.CheckboxItem>
+                        <Menu.CheckboxItem
+                            checked={ isGuidesShown }
+                            onCheckedChange={ () => onToggleGuides() }
+                            { ...{ [ ATTR.view ]: 'guides' } }
+                        >
+                            <Menu.ItemLabel>
+                                { __( 'Guides', 'wordpress-for-designers' ) }
+                            </Menu.ItemLabel>
+                        </Menu.CheckboxItem>
                     </Menu.Popup>
                 </Menu.Root>
                 <IconButton

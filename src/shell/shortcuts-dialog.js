@@ -71,6 +71,14 @@ function groups() {
                     [ mod, '\\' ],
                 ],
                 [
+                    __( 'Show or hide rulers', 'wordpress-for-designers' ),
+                    [ shift, 'R' ],
+                ],
+                [
+                    __( 'Show or hide guides', 'wordpress-for-designers' ),
+                    [ mod, ';' ],
+                ],
+                [
                     __( 'Select the next artboard', 'wordpress-for-designers' ),
                     [ __( 'Tab', 'wordpress-for-designers' ) ],
                 ],
@@ -105,6 +113,17 @@ function groups() {
                 [
                     __(
                         'Move the selected artboards further',
+                        'wordpress-for-designers'
+                    ),
+                    [ shift, arrows ],
+                ],
+                [
+                    __( 'Move the selected guide', 'wordpress-for-designers' ),
+                    [ arrows ],
+                ],
+                [
+                    __(
+                        'Move the selected guide further',
                         'wordpress-for-designers'
                     ),
                     [ shift, arrows ],
