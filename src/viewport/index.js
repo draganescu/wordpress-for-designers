@@ -18,6 +18,7 @@ export function createViewport() {
     let isGesturing = false;
     const settleListeners = new Set();
     const gestureListeners = new Set();
+    const frameListeners = new Set();
     const counters = { updates: 0 };
 
     function write() {
@@ -33,6 +34,7 @@ export function createViewport() {
             '--wfd-zoom',
             String( state.zoom )
         );
+        frameListeners.forEach( ( listener ) => listener( state ) );
     }
 
     function schedule() {
@@ -126,6 +128,17 @@ export function createViewport() {
         onGesture( listener ) {
             gestureListeners.add( listener );
             return () => gestureListeners.delete( listener );
+        },
+        /**
+         * Adds a listener called once for each frame the viewport writes,
+         * with the pan and zoom of that frame (C34).
+         *
+         * @param {Function} listener The listener.
+         * @return {Function} Removes it.
+         */
+        onFrame( listener ) {
+            frameListeners.add( listener );
+            return () => frameListeners.delete( listener );
         },
     };
 }

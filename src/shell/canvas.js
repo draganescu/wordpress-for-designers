@@ -176,6 +176,7 @@ export const Canvas = forwardRef( function CanvasRegion(
         overlay,
         resizeListener,
         placer,
+        rulers,
         children,
         ...props
     },
@@ -184,7 +185,7 @@ export const Canvas = forwardRef( function CanvasRegion(
     countRender();
     return (
         <div
-            className="wfd-canvas"
+            className={ rulers ? 'wfd-canvas has-rulers' : 'wfd-canvas' }
             data-wfd-region="canvas"
             ref={ ref }
             tabIndex={ 0 }
@@ -198,6 +199,7 @@ export const Canvas = forwardRef( function CanvasRegion(
                 { overlay }
                 <div className="wfd-marquee" data-wfd-marquee hidden />
             </div>
+            { rulers }
             { banner && <div className="wfd-canvas__banner">{ banner }</div> }
             { placer }
             { emptyState }

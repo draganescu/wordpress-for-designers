@@ -8,6 +8,8 @@ A plugin that opens an infinite canvas (a board) inside WordPress. Each artboard
 
 Since decision D65 the plugin also has an agent surface: a closed set of tools through which an AI agent works on an open board, a `wp wfd` command that carries an agent's calls to the board, and marks that show the designer what the agent does. It is specified in `spec/agent/` and built in Milestones 13 to 19 on top of the finished plugin. It continues this spec: nothing above D65 is replaced by it, and every earlier constraint binds it.
 
+Since decision D108 the board also has rulers and guides: two rulers at the edges of the canvas area, and guide lines pulled out of them onto the board or onto one artboard. They are specified in decisions D108 to D115, constraints C34 to C37, `spec/data-model.md`, `spec/architecture.md`, the Rulers and Guides sections of `spec/screens/README.md` and five screens, and built in Milestone 20. They add nothing to the agent surface.
+
 ## Binding rules
 
 1. **Invent nothing.** Every screen, control, label, behaviour, data field and import is defined in `spec/`. If something you need is not there, apply rule 4.
@@ -30,6 +32,7 @@ Since decision D65 the plugin also has an agent surface: a closed set of tools t
 - The lint rules named in `spec/constraints.md` pass with no disabled lines.
 - `spec/open-questions.md` lists everything you could not build, or is empty.
 - On a site where no way in to the agent surface has been used (D94), the plugin behaves exactly as it did before Milestone 13: every earlier criterion still passes, and the board sends nothing to the agent routes (C27).
+- On a board with rulers hidden and no guide (C37), the board is exactly as it was before Milestone 20, and a saved layout has no `guides` field.
 - The plugin activates on a clean WordPress 7.2 with a block theme and no other plugins, with no PHP notices and no console errors.
 
 ## Reading order
@@ -45,6 +48,7 @@ Since decision D65 the plugin also has an agent surface: a closed set of tools t
 9. `spec/acceptance.md`
 10. `spec/build-order.md`
 11. For Milestones 13 to 19: `spec/agent/surface.md`, `spec/agent/tools.md`, `spec/agent/relay.md`, `spec/agent/cli.md`, then `spec/screens/AgentConnected.md`, `AgentWorking.md` and `AgentReview.md`
+12. For Milestone 20: the Rulers and Guides sections of `spec/screens/README.md`, then `spec/screens/Rulers.md`, `RulersSelected.md`, `GuideDrag.md`, `GuideSelected.md` and `RulersEditing.md`
 
 ## Environment
 

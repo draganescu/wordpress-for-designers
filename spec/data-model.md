@@ -80,9 +80,34 @@ The layout may also have a `notes` list (D46). A layout without it has no notes;
 
 A note's height is not stored: it is the height of its text. Its width is always 240 board units. `[U]` for the width, `[N]` for the field list
 
+The layout may also have a `guides` list (D113). A layout without it has no guides; a board with no guides is saved without it (C37). A guide of an artboard has exactly these fields: `[R3]` `[U]`
+
+```json
+{ "id": "a UUID made by the client", "axis": "x | y", "at": 900, "artboard": "the id of an artboard of this layout", "device": "desktop | tablet | mobile" }
+```
+
+A board guide has exactly `id`, `axis` and `at`:
+
+```json
+{ "id": "…", "axis": "y", "at": 2880 }
+```
+
+- `axis` says which ruler the guide is read on. `"x"` is a vertical line at `at` along the top ruler; `"y"` is a horizontal line at `at` along the left ruler.
+- `at` is a whole number. For an artboard's guide it counts from the artboard's top-left corner, in the page's pixels, so it does not change when the artboard moves. For a board guide it counts from the board's origin, in board units, and may be negative.
+- `artboard` and `device` come together or not at all. `artboard` is the `id` of an artboard of the same layout whose kind is page, template, template part or pattern. `device` is the device that artboard had when the guide was dropped, and never changes (D111).
+- A guide is shown when it is a board guide, or when its artboard is on its `device`.
+- An artboard's guide is kept within the artboard when it is dropped, dragged, nudged or typed: 0 to the device's width for `"x"`, 0 to the artboard's height at that moment for `"y"`. A guide left past the artboard's height because the content got shorter is kept and not drawn. `[N]`
+- Guide order in the list is the order of creation. `[N]`
+
+The server refuses, with a 400, a `guides` value that is not a list, a guide with a missing or an extra field, an `id` that is not a UUID or is used twice in the layout, an `axis` other than `x` or `y`, an `at` that is not a whole number, an `artboard` without a `device` or a `device` without an `artboard`, an `artboard` that is not the `id` of an artboard of that layout with one of the four kinds, and a `device` that is not one of the three. `[N]`
+
+Taking an artboard off the board, by any path of "Removing" below, a tool included, takes its guides out of the list in the same step (D113). An artboard removed on load because its entity is gone takes its guides with it. The guides of a new template or template part are not written to the layout before the artboard is (see "Creating entities"). `[N]`
+
 One board unit is one CSS pixel at 100% zoom. Artboard order in the array is the order of creation, and so is note order. `[N]`
 
 The viewport (pan and zoom) is not stored on the board, because boards are shared. It is kept per user and per board in `localStorage` and restored on open; with nothing stored, the board opens fitted to all artboards. `[N]`
+
+Whether rulers are shown and whether guides are shown (D109) are kept the same way, per user and per board in `localStorage`, and never on the board or the server (C36). With nothing stored, rulers are hidden and guides are shown. `[R3]` `[N]`
 
 The server validates the JSON against this shape on save and rejects anything else with a 400. `[N]`
 
