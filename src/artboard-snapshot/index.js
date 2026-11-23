@@ -8,10 +8,18 @@
  */
 import { useLayoutEffect, useRef } from '@wordpress/element';
 
+// A frozen copy does not move: an animation left running in it, a theme's
+// or a block's, would keep the board drawing for as long as the copy is
+// shown (OQ-54). Each animation is taken to its end at once, not paused
+// where it starts: the copy's document plays them from the beginning, and
+// content that fades in would be frozen invisible.
+const STILL =
+    '*, *::before, *::after { animation-duration: 0s !important; animation-delay: 0s !important; animation-iteration-count: 1 !important; }\n';
+
 /**
  * Copies a rendered Preview with plain DOM calls. Each iframe is replaced by
- * a static one that holds the serialised document and its CSS, and cannot
- * run scripts.
+ * a static one that holds the serialised document and its CSS, cannot run
+ * scripts and has no animation running.
  *
  * @param {Element} preview The Preview's root element.
  * @return {Element} The frozen copy, not attached to the document.
@@ -45,7 +53,7 @@ function freeze( preview ) {
             'script, style, link[rel="stylesheet"]'
         ).forEach( ( node ) => node.remove() );
         const style = doc.createElement( 'style' );
-        style.textContent = css;
+        style.textContent = css + STILL;
         html.querySelector( 'head' )?.appendChild( style );
         target.removeAttribute( 'src' );
         target.removeAttribute( 'name' );
