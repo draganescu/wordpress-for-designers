@@ -14,7 +14,6 @@ import {
 } from '@wordpress/element';
 import { useSelect } from '@wordpress/data';
 import { store as boardStore } from '../board-store';
-import { ATTR } from './constants';
 import { rectOf } from './use-canvas-interactions';
 
 /**
@@ -120,15 +119,15 @@ function paintRuler(
         current = known && ! known.artboard ? active.at - origin : active.at;
     }
 
-    canvas.setAttribute( ATTR.zero, Math.round( zero ) );
-    canvas.setAttribute( ATTR.step, step );
+    canvas.setAttribute( 'data-wfd-zero', Math.round( zero ) );
+    canvas.setAttribute( 'data-wfd-step', step );
     if ( ends ) {
-        canvas.setAttribute( ATTR.span, ends.join( ' ' ) );
+        canvas.setAttribute( 'data-wfd-span', ends.join( ' ' ) );
     } else {
-        canvas.removeAttribute( ATTR.span );
+        canvas.removeAttribute( 'data-wfd-span' );
     }
     canvas.setAttribute(
-        ATTR.marks,
+        'data-wfd-marks',
         ( current === null ? marks : [ ...marks, current ] )
             .sort( ( a, b ) => a - b )
             .join( ' ' )
@@ -329,14 +328,8 @@ export const Rulers = forwardRef( function RulersRegion(
 
     return (
         <div className="wfd-rulers" ref={ element } aria-hidden="true">
-            <canvas
-                className="wfd-ruler is-top"
-                { ...{ [ ATTR.ruler ]: 'top' } }
-            />
-            <canvas
-                className="wfd-ruler is-left"
-                { ...{ [ ATTR.ruler ]: 'left' } }
-            />
+            <canvas className="wfd-ruler is-top" data-wfd-ruler="top" />
+            <canvas className="wfd-ruler is-left" data-wfd-ruler="left" />
             <div className="wfd-ruler__corner" />
             <span className="wfd-ruler__ink" />
         </div>
@@ -359,10 +352,7 @@ export function useRulerContext( { isShown, widthOf, selectedBlockId } ) {
     const { artboard, guide, liveId } = useSelect( ( select ) => {
         const board = select( boardStore );
         const guideId = board.getSelectedGuideId();
-        const selected =
-            ( guideId &&
-                board.getGuides().find( ( item ) => item.id === guideId ) ) ||
-            null;
+        const selected = guideId ? board.getGuide( guideId ) : null;
         const id =
             board.getEditId() ??
             ( selected ? selected.artboard : board.getSelectedId() );

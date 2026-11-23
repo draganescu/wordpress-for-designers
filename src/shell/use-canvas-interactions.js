@@ -18,7 +18,7 @@ import { orderedArtboards } from './artboards-panel';
 import { isShortcutsDialogEvent } from './shortcuts-dialog';
 import { noteRect } from './notes';
 import { guideRange } from './guides';
-import { ATTR, KINDS, MIN_BROWSER_HEIGHT, hasDevice } from './constants';
+import { KINDS, MIN_BROWSER_HEIGHT, hasDevice } from './constants';
 import { createTouchGestures } from './touch-gestures';
 
 const DRAG_THRESHOLD = 3;
@@ -299,17 +299,9 @@ export function useCanvasInteractions( {
             if ( event.button !== 0 ) {
                 return;
             }
-            if ( event.target.closest?.( `[${ ATTR.ruler }]` ) ) {
-                // A press on a ruler is `pullGuide`'s.
-                return;
-            }
-            const line = event.target.closest?.( `[${ ATTR.guide }]` );
+            const line = event.target.closest?.( '[data-wfd-guide]' );
             if ( line ) {
-                const guide = board()
-                    .getGuides()
-                    .find(
-                        ( { id } ) => id === line.getAttribute( ATTR.guide )
-                    );
+                const guide = board().getGuide( line.dataset.wfdGuide );
                 // With an artboard in edit a guide takes no input (D114).
                 if ( ! guide || board().getEditId() ) {
                     return;
@@ -496,7 +488,7 @@ export function useCanvasInteractions( {
         // from here.
         const guideDrag = () => ( {
             draft: area.querySelector( '.wfd-guide.is-draft' ),
-            chip: area.querySelector( `[${ ATTR.guideChip }]` ),
+            chip: area.querySelector( '[data-wfd-guide-chip]' ),
         } );
 
         // Puts the line of a guide of the board at a position, and the
@@ -520,10 +512,10 @@ export function useCanvasInteractions( {
                 y < 0 ||
                 x > size.width ||
                 y > size.height ||
-                [ ...area.querySelectorAll( `[${ ATTR.ruler }]` ) ].some(
+                [ ...area.querySelectorAll( '[data-wfd-ruler]' ) ].some(
                     ( ruler ) => {
                         const box = ruler.getBoundingClientRect();
-                        return ruler.getAttribute( ATTR.ruler ) === 'top'
+                        return ruler.dataset.wfdRuler === 'top'
                             ? event.clientY < box.bottom
                             : event.clientX < box.right;
                     }
@@ -537,9 +529,7 @@ export function useCanvasInteractions( {
         function guideOwnerAt( event ) {
             const under = doc
                 .elementsFromPoint( event.clientX, event.clientY )
-                .find(
-                    ( element ) => ! element.closest( `[${ ATTR.guide }]` )
-                );
+                .find( ( element ) => ! element.closest( '[data-wfd-guide]' ) );
             const artboard =
                 under && isBody( under )
                     ? board().getArtboard(
@@ -967,9 +957,7 @@ export function useCanvasInteractions( {
                 latest.current.onToggleRulers?.();
                 return done();
             }
-            const guide = board()
-                .getGuides()
-                .find( ( { id } ) => id === board().getSelectedGuideId() );
+            const guide = board().getGuide( board().getSelectedGuideId() );
             if ( guide && event.key !== 'Escape' ) {
                 // A selected guide takes these keys and no others (D112).
                 const nudgeGuide = ( by ) => {

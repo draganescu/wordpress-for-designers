@@ -28,7 +28,6 @@ import {
     VisuallyHidden,
 } from '@wordpress/ui';
 import { BlockToolbarSlot } from '../chrome-slots';
-import { ATTR } from './constants';
 
 const ZOOM_ITEMS = [
     [ 'in', __( 'Zoom in', 'wordpress-for-designers' ) ],
@@ -278,7 +277,7 @@ export function Header( {
                         <Menu.CheckboxItem
                             checked={ isRulersShown }
                             onCheckedChange={ () => onToggleRulers() }
-                            { ...{ [ ATTR.view ]: 'rulers' } }
+                            data-wfd-view="rulers"
                         >
                             <Menu.ItemLabel>
                                 { __( 'Rulers', 'wordpress-for-designers' ) }
@@ -287,7 +286,7 @@ export function Header( {
                         <Menu.CheckboxItem
                             checked={ isGuidesShown }
                             onCheckedChange={ () => onToggleGuides() }
-                            { ...{ [ ATTR.view ]: 'guides' } }
+                            data-wfd-view="guides"
                         >
                             <Menu.ItemLabel>
                                 { __( 'Guides', 'wordpress-for-designers' ) }

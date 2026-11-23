@@ -6,9 +6,9 @@
 import { __, sprintf } from '@wordpress/i18n';
 import { useEffect, useState } from '@wordpress/element';
 import { lineSolid } from '@wordpress/icons';
-import { Badge, Button, Icon, InputControl, Stack, Text } from '@wordpress/ui';
-import { ATTR } from './constants';
+import { Badge, Button, InputControl, Stack } from '@wordpress/ui';
 import { WeakText } from './primitives';
+import { EntityHeading } from './right-panel';
 
 /**
  * The positions an artboard's guide may have: it is kept within its
@@ -109,12 +109,12 @@ export function Guide( { guide, isSelected, range } ) {
         classes.push( 'is-selected' );
     }
     const attributes = {
-        [ ATTR.guide ]: guide.id,
-        [ ATTR.axis ]: guide.axis,
-        [ ATTR.at ]: guide.at,
-        [ ATTR.owner ]: guide.artboard,
-        [ ATTR.device ]: guide.device,
-        [ ATTR.selected ]: isSelected ? 'true' : undefined,
+        'data-wfd-guide': guide.id,
+        'data-wfd-axis': guide.axis,
+        'data-wfd-at': guide.at,
+        'data-wfd-owner': guide.artboard,
+        'data-wfd-device': guide.device,
+        'data-wfd-selected': isSelected ? 'true' : undefined,
     };
     return (
         <div
@@ -134,11 +134,7 @@ export function GuideDrag() {
     return (
         <>
             <div className="wfd-guide is-draft" hidden />
-            <Badge
-                className="wfd-guide-chip"
-                hidden
-                { ...{ [ ATTR.guideChip ]: true } }
-            >
+            <Badge className="wfd-guide-chip" hidden data-wfd-guide-chip>
                 { '' }
             </Badge>
         </>
@@ -180,20 +176,11 @@ export function GuideSettings( {
     const [ description, help ] = guideWords( guide.axis, artboardName );
     return (
         <div className="wfd-artboard-settings" data-wfd-panel="guide">
-            <Stack
-                className="wfd-entity-card"
-                direction="row"
-                gap="md"
-                align="flex-start"
-            >
-                <Icon icon={ lineSolid } />
-                <Stack direction="column">
-                    <Text variant="heading-md" render={ <h2 /> }>
-                        { __( 'Guide', 'wordpress-for-designers' ) }
-                    </Text>
-                    <WeakText>{ description }</WeakText>
-                </Stack>
-            </Stack>
+            <EntityHeading
+                icon={ lineSolid }
+                title={ __( 'Guide', 'wordpress-for-designers' ) }
+                description={ description }
+            />
             <Stack className="wfd-guide-position" direction="column" gap="sm">
                 <InputControl
                     type="number"

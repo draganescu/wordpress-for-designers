@@ -293,19 +293,16 @@ export function App() {
     const [ isShortcutsOpen, setShortcutsOpen ] = useState( false );
     // Whether rulers and guides are shown (D109): kept in the browser.
     const [ view, setView ] = useState( readViewChoices );
-    const changeView = useCallback( ( change ) => {
-        setView( ( choices ) => {
-            const next = { ...choices, ...change( choices ) };
-            storeViewChoices( next );
-            return next;
-        } );
-    }, [] );
-    const toggleRulers = () =>
-        changeView( ( choices ) => ( { rulers: ! choices.rulers } ) );
+    const changeView = ( change ) => {
+        const next = { ...view, ...change };
+        setView( next );
+        storeViewChoices( next );
+    };
+    const toggleRulers = () => changeView( { rulers: ! view.rulers } );
     const toggleGuides = () => {
         // A hidden guide is not left selected.
         selectGuide( null );
-        changeView( ( choices ) => ( { guides: ! choices.guides } ) );
+        changeView( { guides: ! view.guides } );
     };
     const rulersRef = useRef();
     const guides = view.guides ? shownGuides : NO_GUIDES;
@@ -357,7 +354,7 @@ export function App() {
         rulersRef,
         onToggleRulers: toggleRulers,
         onToggleGuides: toggleGuides,
-        onShowGuides: () => changeView( () => ( { guides: true } ) ),
+        onShowGuides: () => view.guides || changeView( { guides: true } ),
         isReady: isLoaded,
     } );
     const rulerContext = useRulerContext( {

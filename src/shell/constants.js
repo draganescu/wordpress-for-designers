@@ -145,23 +145,3 @@ export const DEVICES = {
  * Render widths on a theme with default breakpoints.
  */
 export const DEFAULT_WIDTHS = { desktop: 1440, tablet: 780, mobile: 360 };
-
-/**
- * The attributes the end-to-end tests read on rulers and guides
- * (spec/acceptance.md, "Rulers and guides").
- */
-export const ATTR = {
-    ruler: 'data-wfd-ruler',
-    zero: 'data-wfd-zero',
-    step: 'data-wfd-step',
-    span: 'data-wfd-span',
-    marks: 'data-wfd-marks',
-    guide: 'data-wfd-guide',
-    axis: 'data-wfd-axis',
-    at: 'data-wfd-at',
-    owner: 'data-wfd-owner',
-    device: 'data-wfd-device',
-    selected: 'data-wfd-selected',
-    guideChip: 'data-wfd-guide-chip',
-    view: 'data-wfd-view',
-};

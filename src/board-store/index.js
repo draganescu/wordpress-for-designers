@@ -74,7 +74,8 @@ function keepSelection(
         artboards.some( ( a ) => a.id === id ) ||
         notes.some( ( note ) => note.id === id );
     return {
-        selectedGuideId: guides.some(
+        // A guide that is gone, or no longer shown (D111), is not selected.
+        selectedGuideId: shownGuides( guides, artboards ).some(
             ( guide ) => guide.id === state.selectedGuideId
         )
             ? state.selectedGuideId
@@ -243,7 +244,8 @@ function reduce( state, action ) {
 function reducer( state = DEFAULT_STATE, action ) {
     const next = reduce( state, action );
     // A guide is selected alone (D112): whatever selects an artboard or a
-    // note, by any action, deselects it.
+    // note, by any action, deselects it. SELECT deselects it by itself, also
+    // when it selects nothing.
     return next.selectedGuideId &&
         next.selectedIds.length &&
         next.selectedIds !== state.selectedIds
