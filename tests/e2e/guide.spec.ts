@@ -1051,13 +1051,14 @@ test.describe( 'GUIDE', () => {
     } ) => {
         test.setTimeout( 90000 );
         const hero = artboardOf( fixture, 'pattern' );
-        // A vertical guide down the middle of Hero.
+        // A vertical guide right of the middle of Hero, where the double
+        // click that enters edit lands.
         expect(
             await seed( requestUtils, [
                 {
                     id: GUIDE_A,
                     axis: 'x',
-                    at: 720,
+                    at: 1000,
                     artboard: hero.id,
                     device: 'desktop',
                 },
@@ -1079,14 +1080,14 @@ test.describe( 'GUIDE', () => {
         const frame = await frameBoxOf( page, hero.id );
         const seeded = await boxOf( page, GUIDE_A );
         expect(
-            Math.abs( seeded.x + seeded.width / 2 - ( frame.x + 360 ) )
+            Math.abs( seeded.x + seeded.width / 2 - ( frame.x + 500 ) )
         ).toBeLessThanOrEqual( 2 );
 
         // A guide pulled out of the top ruler, down to the paragraph.
         await heading.click();
         await expect( heading ).toHaveClass( /is-selected/ );
         const block = ( await paragraph.boundingBox() )!;
-        // Left of the middle, where the seeded guide runs.
+        // Left of the middle, clear of the seeded guide.
         const to = {
             x: block.x + block.width / 4,
             y: block.y + block.height / 2,
