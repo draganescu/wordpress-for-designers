@@ -150,3 +150,20 @@ When a page or pattern is about to become Live, the plugin checks the WordPress 
 ## Permissions
 
 The Designer menu, the board app and the `wfd-boards` REST routes require `edit_theme_options`. Without it the menu is absent and direct URLs return WordPress's standard permission error. `[U]`
+
+## Agent surface (D65)
+
+What the agent surface stores, and where. The full definitions are in `agent/`. `[U]` for options and their cleanup (D69); `[N]` for the names and fields
+
+| Data | Where | Lives |
+|---|---|---|
+| The tool declarations | `includes/agent-tools.json`, shipped with the plugin | With the plugin |
+| Whether an agent has ever used this site, and when it last did | Option `wfd_agent_seen` | Until uninstall |
+| When each way in was last used, by its label (D93) | Option `wfd_agent_sources` | Until uninstall |
+| One record per open board page that is listening | Options `wfd_agent_listener_{client}` | 60 seconds after the page last asked |
+| One record per call, with its results | Options `wfd_agent_call_{id}` (`agent/relay.md`, Records) | Until the command reads the result, 300 seconds at most |
+| Who made each unsaved change | In the board page only (`agent/surface.md`, Authorship) | As long as the unsaved change |
+
+Nothing of the agent surface is stored on a board: the layout of `wfd_board` keeps the shape above, with no new field. A reference (`agent/surface.md`, References) is a string worked out from an artboard's id, a block's path, a note's id or a token's slug, and is stored nowhere.
+
+The agent's changes are unsaved changes like the designer's: edited records in core-data, and layout changes in `board-store` that autosave as any layout change does (D25). They follow every rule of Saving above.

@@ -42,9 +42,19 @@ function wfd_print_board_page() {
                 'theme'          => get_stylesheet(),
                 'homeUrl'        => home_url( '/' ),
                 'preview'        => wfd_preview_config(),
+                'agent'          => wfd_agent_config(),
             )
         )
     );
+
+    /**
+     * Fires on the board app page after the board's own script is enqueued.
+     * A harness adapter enqueues its script here (spec/agent/surface.md, For
+     * adapters).
+     *
+     * @param int $board_id The board.
+     */
+    do_action( 'wfd_board_enqueue_assets', $board->ID );
 
     add_filter(
         'admin_body_class',

@@ -619,159 +619,146 @@ const RASTER_WATCH = 4000;
 const RASTER_PAUSE = 250;
 
 /**
- * Runs in the page before a gesture: notes every change of an artboard's
- * tier and every frame added to the canvas, with its time, for `stillMoving`.
- */
-function watchTiers() {
-    const log: string[] = [];
-    const from = performance.now();
-    ( window as any ).wfdPerfTiers = log;
-    const note = ( what: string ) =>
-        log.length < 200 &&
-        log.push( `${ Math.round( performance.now() - from ) } ${ what }` );
-    new MutationObserver( ( records ) => {
-        for ( const record of records ) {
-            if ( record.type === 'attributes' ) {
-                note(
-                    'tier ' +
-                        ( record.target as Element ).getAttribute(
-                            'data-wfd-tier'
-                        )
-                );
-                continue;
-            }
-            record.addedNodes.forEach( ( node ) => {
-                const element = node as Element;
-                if (
-                    element.tagName === 'IFRAME' ||
-                    element.querySelector?.( 'iframe' )
-                ) {
-                    note( 'frame added' );
-                }
-            } );
-        }
-    } ).observe( document.querySelector( '[data-wfd-region="canvas"]' )!, {
-        subtree: true,
-        childList: true,
-        attributes: true,
-        attributeFilter: [ 'data-wfd-tier' ],
-    } );
-}
-
-/**
- * Runs in the page when drawing has not stopped: the animations and
- * transitions still running in the page and in each artboard's document,
- * counted by kind, name and element, and what `watchTiers` noted.
- */
-function stillMoving() {
-    const animations: Record< string, number > = {};
-    const visit = ( doc: Document, where: string ) => {
-        doc.getAnimations().forEach( ( animation: any ) => {
-            const target = animation.effect?.target as Element | undefined;
-            // The blocks the animated element is in, innermost first, and
-            // the artboard its document belongs to.
-            const blocks: string[] = [];
-            for (
-                let block = target?.closest( '[data-type]' );
-                block && blocks.length < 4;
-                block = block.parentElement?.closest( '[data-type]' )
-            ) {
-                blocks.push(
-                    `${ block.getAttribute( 'data-type' ) }.${ (
-                        block.getAttribute( 'class' ) ?? ''
-                    ).slice( 0, 80 ) }`
-                );
-            }
-            const artboard = doc.defaultView?.frameElement?.closest(
-                '[data-wfd-artboard]'
-            );
-            const key = [
-                where,
-                animation.animationName ?? animation.transitionProperty ?? '',
-                animation.playState,
-                target?.tagName ?? '',
-                ( target?.getAttribute( 'class' ) ?? '' ).slice( 0, 60 ),
-                `in ${ blocks.join( ' < ' ) || 'no block' }`,
-                `artboard ${
-                    artboard?.getAttribute( 'data-wfd-artboard' ) ?? 'none'
-                } (${ artboard?.getAttribute( 'data-wfd-tier' ) ?? '' })`,
-            ].join( ' | ' );
-            animations[ key ] = ( animations[ key ] ?? 0 ) + 1;
-        } );
-        doc.querySelectorAll( 'iframe' ).forEach( ( frame ) => {
-            try {
-                if ( frame.contentDocument ) {
-                    visit( frame.contentDocument, where + ' > frame' );
-                }
-            } catch {
-                // A frame of another origin.
-            }
-        } );
-    };
-    visit( document, 'page' );
-    return {
-        animations,
-        tiers: ( ( window as any ).wfdPerfTiers ?? [] ) as string[],
-    };
-}
-
-/**
- * What a trace shows of a page that went on drawing: how many drawing tasks
- * began in each quarter second after the gesture, and what the main thread
- * did most in the last second that was watched.
+ * Starts noting what the board does, for the error of `rasterWork`: each
+ * change of an artboard's tier, each iframe added or removed, with its time,
+ * and what the app's counters and the page's animations say when asked.
+ * It watches attributes other than `style` and the list of children, so a
+ * pan or a zoom, which writes one transform, costs it nothing.
  *
- * @param events The trace's events.
- * @param end    When the gesture's last event was sent, as in the trace.
- * @param stop   When watching stopped.
+ * @param page The page.
  */
-function stillDrawing( events: any[], end: number, stop: number ): string {
-    const quarters: number[] = [];
-    for ( const event of events ) {
-        if (
-            event.name === 'RasterTask' &&
-            event.ph === 'X' &&
-            event.ts > end
-        ) {
-            const quarter = Math.floor( ( event.ts - end ) / 250_000 );
-            quarters[ quarter ] = ( quarters[ quarter ] ?? 0 ) + 1;
-        }
-    }
-    const work = new Map< string, number >();
-    for ( const event of events ) {
-        if (
-            event.ts < stop - 1_000_000 ||
-            event.ts > stop ||
-            ! String( event.cat ).includes( 'devtools.timeline' ) ||
-            event.ph === 'E'
-        ) {
-            continue;
-        }
-        const data = event.args?.data ?? event.args?.beginData ?? {};
-        const detail = [
-            data.type,
-            data.functionName,
-            data.url && String( data.url ).split( '/' ).slice( -2 ).join( '/' ),
-            data.nodeName,
-            data.clip &&
-                `${ data.clip[ 2 ] - data.clip[ 0 ] }x${ data.clip[ 5 ] - data.clip[ 1 ] }`,
-            data.frame && `frame ${ String( data.frame ).slice( 0, 6 ) }`,
-        ]
-            .filter( Boolean )
-            .join( ' ' );
-        const key = detail ? `${ event.name } (${ detail })` : event.name;
-        work.set( key, ( work.get( key ) ?? 0 ) + 1 );
-    }
-    const most = [ ...work ]
-        .sort( ( a, b ) => b[ 1 ] - a[ 1 ] )
-        .slice( 0, 20 )
-        .map( ( [ key, count ] ) => `${ count } × ${ key }` );
-    return (
-        `Drawing tasks begun in each quarter second after the gesture: ${ Array.from(
-            quarters,
-            ( count ) => count ?? 0
-        ).join( ' ' ) }\n` +
-        `The main thread in the last second watched:\n  ${ most.join( '\n  ' ) }`
-    );
+async function watchBoard( page: Page ) {
+    await page.evaluate( () => {
+        const hooks = ( window as any ).wfdTest;
+        const began = performance.now();
+        const counted = () => ( {
+            renders: hooks.counters.renders,
+            styleGenerations: hooks.counters.styleGenerations,
+            parses: hooks.counters.parses,
+            storeCallbacks: hooks.counters.storeCallbacks,
+        } );
+        const before: Record< string, number > = counted();
+        const events: string[] = [];
+        const note = ( text: string ) => {
+            if ( events.length < 80 ) {
+                events.push(
+                    `${ Math.round( performance.now() - began ) } ${ text }`
+                );
+            }
+        };
+        const nameOf = ( element: Element | null ) =>
+            (
+                element
+                    ?.closest( '[data-wfd-artboard]' )
+                    ?.getAttribute( 'data-wfd-artboard' ) ?? '?'
+            ).slice( 0, 8 );
+        const frames = ( nodes: NodeList ) =>
+            [ ...nodes ].flatMap( ( node ) =>
+                node instanceof HTMLElement
+                    ? [
+                          ...( node.matches( 'iframe' ) ? [ node ] : [] ),
+                          ...node.querySelectorAll( 'iframe' ),
+                      ]
+                    : []
+            );
+        ( window as any ).wfdPerfWatch?.observer.disconnect();
+        const observer = new MutationObserver( ( records ) => {
+            for ( const record of records ) {
+                if ( record.type === 'attributes' ) {
+                    const element = record.target as Element;
+                    note(
+                        `${ nameOf( element ) } ${ record.oldValue } > ${ element.getAttribute(
+                            'data-wfd-tier'
+                        ) }`
+                    );
+                    continue;
+                }
+                const added = frames( record.addedNodes ).length;
+                const removed = frames( record.removedNodes ).length;
+                if ( added || removed ) {
+                    note(
+                        `${ nameOf( record.target as Element ) } iframes +${ added } -${ removed }`
+                    );
+                }
+            }
+        } );
+        observer.observe(
+            document.querySelector( '[data-wfd-region="canvas"]' )!,
+            {
+                subtree: true,
+                childList: true,
+                attributeFilter: [ 'data-wfd-tier' ],
+                attributeOldValue: true,
+            }
+        );
+        ( window as any ).wfdPerfWatch = {
+            observer,
+            report() {
+                const now: Record< string, number > = counted();
+                const documents = [
+                    document,
+                    ...[ ...document.querySelectorAll( 'iframe' ) ].flatMap(
+                        ( frame ) =>
+                            frame.contentDocument
+                                ? [ frame.contentDocument ]
+                                : []
+                    ),
+                ];
+                return {
+                    ms: Math.round( performance.now() - began ),
+                    counters: Object.fromEntries(
+                        Object.keys( now ).map( ( key ) => [
+                            key,
+                            now[ key ] - before[ key ],
+                        ] )
+                    ),
+                    // Each with where it is: the artboard, its tier and
+                    // whether it is in a frozen copy, then the block or the
+                    // region of the board.
+                    animations: documents.flatMap( ( doc ) =>
+                        doc.getAnimations().map( ( animation ) => {
+                            const target = ( animation.effect as any )
+                                ?.target as Element | null;
+                            const holder = doc.defaultView
+                                ?.frameElement as Element | null;
+                            const artboard = holder?.closest(
+                                '[data-wfd-artboard]'
+                            );
+                            const where = holder
+                                ? `${ nameOf( holder ) } ${ artboard?.getAttribute(
+                                      'data-wfd-tier'
+                                  ) }${
+                                      holder.closest( '.wfd-snapshot__copy' )
+                                          ? ' copy'
+                                          : ''
+                                  }, ${
+                                      target
+                                          ?.closest( '[data-type]' )
+                                          ?.getAttribute( 'data-type' ) ??
+                                      'no block'
+                                  }`
+                                : `page, ${
+                                      target
+                                          ?.closest( '[data-wfd-region]' )
+                                          ?.getAttribute( 'data-wfd-region' ) ??
+                                      'no region'
+                                  }`;
+                            return `${
+                                ( animation as any ).animationName ??
+                                ( animation as any ).transitionProperty ??
+                                'animation'
+                            } on ${ target?.tagName.toLowerCase() }.${ String(
+                                target?.getAttribute( 'class' ) ?? ''
+                            ).slice( 0, 60 ) } (${
+                                animation.playState
+                            }) in ${ where }`;
+                        } )
+                    ),
+                    events,
+                };
+            },
+        };
+    } );
 }
 
 /**
@@ -794,12 +781,10 @@ export async function rasterWork(
         page.evaluate( ( n ) => {
             performance.mark( n );
         }, name );
-    // The timeline is traced as well, only so that a run where drawing does
-    // not stop can say what the page was doing: see `stillDrawing`.
     await metrics.startTracing( {
-        categories: [ 'cc', 'blink.user_timing', 'devtools.timeline' ],
+        categories: [ 'cc', 'blink.user_timing' ],
     } );
-    await page.evaluate( watchTiers );
+    await watchBoard( page );
     await mark( 'wfd-perf-raster-start' );
     await gesture( 'wfd-perf-raster-end' );
     await page.waitForTimeout( RASTER_WATCH );
@@ -839,24 +824,44 @@ export async function rasterWork(
         sharp = Math.max( sharp, event.ts + event.dur );
     }
     if ( stop - sharp < RASTER_PAUSE * 1000 ) {
-        // What the board held by then, for whoever reads the failure.
-        const { waiting, placeholders } = await page.evaluate(
+        // What the board held by then, and what it did while it was
+        // watched, for whoever reads the failure.
+        const { waiting, placeholders, watched } = await page.evaluate(
             inPage( () => ( {
                 waiting: artboardsShown().waiting,
                 placeholders: document.querySelectorAll(
                     '.wfd-artboard__skeleton'
                 ).length,
+                watched: ( window as any ).wfdPerfWatch.report(),
             } ) )
         );
-        const page_ = await page.evaluate( stillMoving );
+        // The drawing, as stretches with no pause of 100 ms in them:
+        // start to end in ms from the gesture's last event, and the
+        // number of raster tasks.
+        const stretches: number[][] = [];
+        for ( const event of rasters ) {
+            const from = ( event.ts - end ) / 1000;
+            const to = ( event.ts + event.dur - end ) / 1000;
+            const last = stretches[ stretches.length - 1 ];
+            if ( last && from - last[ 1 ] < 100 ) {
+                last[ 1 ] = Math.max( last[ 1 ], to );
+                last[ 2 ]++;
+            } else {
+                stretches.push( [ from, to, 1 ] );
+            }
+        }
+        const drawing = stretches
+            .map(
+                ( [ from, to, tasks ] ) =>
+                    `${ Math.round( from ) } to ${ Math.round(
+                        to
+                    ) } (${ tasks })`
+            )
+            .join( ', ' );
         throw new Error(
-            `Drawing had not stopped ${ RASTER_WATCH } ms after the gesture: ${ waiting } artboards were waiting for their content and ${ placeholders } showed a placeholder.\n` +
-                stillDrawing( events, end, stop ) +
-                `\nAnimations running: ${ JSON.stringify(
-                    page_.animations
-                ) }\nTier changes and new frames since the gesture began (ms): ${ JSON.stringify(
-                    page_.tiers
-                ) }`
+            `Drawing had not stopped ${ RASTER_WATCH } ms after the gesture: ${ waiting } artboards were waiting for their content and ${ placeholders } showed a placeholder.\nDrawing, in ms from the gesture's last event (raster tasks): ${ drawing }.\nThe board since the gesture began: ${ JSON.stringify(
+                watched
+            ) }`
         );
     }
     return {

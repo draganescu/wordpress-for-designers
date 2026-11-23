@@ -28,7 +28,7 @@ import { usePageTemplateId } from './use-page-template';
 
 const NO_CONTEXT = {};
 
-function Measured( { onHeight, onFreeze, children } ) {
+function Measured( { onHeight, onFreeze, isOver, children } ) {
     const [ listener, { height } ] = useResizeObserver();
     const element = useRef();
     const report = useRef( onHeight );
@@ -47,7 +47,10 @@ function Measured( { onHeight, onFreeze, children } ) {
         return () => freeze.current?.( node );
     }, [] );
     return (
-        <div className="wfd-preview" ref={ element }>
+        <div
+            className={ 'wfd-preview' + ( isOver ? ' is-over' : '' ) }
+            ref={ element }
+        >
             { listener }
             { children }
         </div>
@@ -61,6 +64,7 @@ function Preview( {
     context = NO_CONTEXT,
     onHeight,
     onFreeze,
+    isOver,
 } ) {
     // Viewport-height lengths are pinned, or content sized with them would
     // fill whatever height the iframe is given
@@ -77,7 +81,11 @@ function Preview( {
     return (
         <BlockEditorProvider value={ blocks } settings={ pinnedSettings }>
             <BlockContextProvider value={ context }>
-                <Measured onHeight={ onHeight } onFreeze={ onFreeze }>
+                <Measured
+                    onHeight={ onHeight }
+                    onFreeze={ onFreeze }
+                    isOver={ isOver }
+                >
                     <BlockPreview
                         blocks={ blocks }
                         viewportWidth={ width }
@@ -204,6 +212,7 @@ export function ArtboardPreviewOnce( { isBusy, onSettled, ...props } ) {
  * @param {Object}   props.settings Block editor settings.
  * @param {Function} props.onHeight Reports the measured content height.
  * @param {Function} props.onFreeze Receives the rendered Preview just before it is removed.
+ * @param {boolean}  props.isOver   Whether it lies over the content that replaces it.
  */
 export function ArtboardPreview( { artboard, ...props } ) {
     return (

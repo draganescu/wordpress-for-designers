@@ -12,6 +12,13 @@ import { EmptyState, Icon } from '@wordpress/ui';
 // The narrowest window a board is shown in: an iPad Air in landscape.
 const MIN_BOARD_WIDTH = 1180;
 const QUERY = `(min-width: ${ MIN_BOARD_WIDTH }px)`;
+
+/**
+ * Whether the window is wide enough for the board to be used right now.
+ *
+ * @return {boolean} False while the message is shown.
+ */
+export const windowHasRoom = () => window.matchMedia( QUERY ).matches;
 // WordPress binds shortcuts on the document to all three.
 const KEY_EVENTS = [ 'keydown', 'keypress', 'keyup' ];
 

@@ -344,6 +344,21 @@ html.wp-toolbar:has(.wfd-board-page) {
     color: var(--wpds-color-foreground-content-caution);
 }
 
+// G2 and G3: the agent's marks on an artboard (spec/agent/surface.md,
+// Marks). They are drawn outside the editing canvas and take no pointer
+// input.
+.wfd-artboard__label-agent {
+    color: var(--wpds-color-foreground-interactive-brand);
+}
+
+.wfd-artboard[data-wfd-agent-working]::after {
+    content: "";
+    position: absolute;
+    inset: calc(var(--wpds-dimension-gap-xs) / var(--wfd-zoom) * -1);
+    outline: calc(var(--wpds-border-width-sm) / var(--wfd-zoom)) dashed var(--wpds-color-stroke-interactive-brand);
+    pointer-events: none;
+}
+
 .wfd-artboard__frame {
     position: relative;
     overflow: hidden;
@@ -469,6 +484,14 @@ html.wp-toolbar:has(.wfd-board-page) {
     pointer-events: none;
 }
 
+// A Preview left over the content that replaces it until that is drawn.
+.wfd-preview.is-over {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    overflow: hidden;
+}
+
 // BlockPreview cuts its content at 2000 px with inline max-heights on its
 // wrapper and its iframe. An artboard shows all of its content, as it does in edit.
 // The frozen copy of a Preview keeps the class, so it is covered too.
@@ -570,7 +593,15 @@ html.wp-toolbar:has(.wfd-board-page) {
 .wfd-snapshot.is-over {
     position: absolute;
     inset: 0;
+    z-index: 1;
     overflow: hidden;
+}
+
+// A new frozen copy loads under the one on screen, which it then replaces.
+.wfd-snapshot__copy.is-loading {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
 }
 
 // Notes (D46): above every artboard, the Live one included.

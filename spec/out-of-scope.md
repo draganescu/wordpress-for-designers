@@ -25,4 +25,12 @@ Each item was considered and cut. Do not build any of them, in part or behind a 
 | Replacing the wp-admin dashboard | `[U]` |
 | Board sharing controls, per-user boards | `[U]` |
 | Mounting the post editor or site editor | `[U]` |
-| Agent or AI features from the gutenberg-canvas concept | `[U]` |
+| Changed by D65: an agent surface is specified in `agent/`, and the rows after this one say what of it stays cut. (Was:) Agent or AI features from the gutenberg-canvas concept | `[U]` |
+| Registering the tools with WebMCP, exposing them as abilities, and the MCP Adapter. The tools are shaped so that each can be added later as a way in (D74) | `[U]` |
+| A chat, an annotate mode, a message field, an inbox or an agent browser of the plugin's own (D75) | `[U]` |
+| Server-side versions of the tools, for when no board is open (D68) | `[U]` |
+| Changing blocks in an artboard that is not in edit (D70) | `[U]` |
+| Any change inside a harness, and any code or wording for one harness in the main plugin (D67, C32) | `[U]` |
+| A tool that saves, publishes, deletes, trashes or resets, takes over a lock or acts on Review's checkboxes (D78) | `[U]` |
+| Tools for notes, renaming, a page's template, a browser's settings, Tidy up, pan and zoom, undo and redo, and a template for a slug the inserter does not offer (D72, D77) | `[N]` |
+| Calling an AI model from the plugin, and any prompt in the plugin other than the runbook of `agent/cli.md` | `[N]` |

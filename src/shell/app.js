@@ -9,7 +9,7 @@ import {
     useState,
     useMemo,
 } from '@wordpress/element';
-import { useDispatch, useSelect } from '@wordpress/data';
+import { useDispatch, useRegistry, useSelect } from '@wordpress/data';
 import { store as coreStore, useEntityRecord } from '@wordpress/core-data';
 import { ShortcutProvider } from '@wordpress/keyboard-shortcuts';
 import { SlotFillProvider, Popover } from '@wordpress/components';
@@ -23,6 +23,7 @@ import {
     ArtboardError,
     ArtboardFrame,
     ArtboardMedia,
+    TierContent,
     BrowserArtboard,
     browserTier,
     usePreview,
@@ -42,6 +43,8 @@ import { useGlobalStyles } from '../styles/use-global-styles';
 import { useStylesPanel } from '../styles/use-styles-panel';
 import { ReviewDrawer } from '../review/review-drawer';
 import { useReview } from '../review/use-review';
+import { changedEntries } from '../review/entries';
+import { artboardsLine, moreLine } from '../review/format';
 import { brandColor, highlightCss, useUsageIndex } from '../usage-index';
 import {
     ArtboardsPanel,
@@ -61,13 +64,29 @@ import { LockDialog, RemoveDialog } from './dialogs';
 import { ShortcutsButton, ShortcutsDialog } from './shortcuts-dialog';
 import { Note, NoteSettings } from './notes';
 import { Header } from './header';
-import { artboardLabel, liveLabel } from './labels';
+import {
+    artboardLabel,
+    kindAndDevice,
+    liveLabel,
+    nameAndDevice,
+} from './labels';
 import { ArtboardSettings, EditingPanel } from './right-panel';
 import { Shell } from './shell';
 import { useDeviceWidths } from './device-widths';
 import { bootEditor, serverSettings } from './editor-settings';
 import { counters, countRender, expose } from './test-hooks';
-import { useArtboards } from './use-artboards';
+import {
+    selectArtboards as readArtboards,
+    useArtboards,
+} from './use-artboards';
+import {
+    actionsSeam,
+    editSeam,
+    historyStep,
+    isHistoryStep,
+    useMarks,
+} from './seams';
+import { windowHasRoom } from './space-gate';
 import { rectOf, useCanvasInteractions } from './use-canvas-interactions';
 import { tidyMoves } from './tidy';
 import { useEditing } from './use-editing';
@@ -148,6 +167,17 @@ function useBoard() {
     return isLoaded;
 }
 
+/**
+ * The key of the Review item an artboard shows, or null when it shows none.
+ *
+ * @param {Object} artboard The artboard.
+ * @return {string|null} The key.
+ */
+const itemKeyOf = ( artboard ) =>
+    KINDS[ artboard.kind ].postType
+        ? `postType/${ KINDS[ artboard.kind ].postType }/${ artboard.entityId }`
+        : null;
+
 function layoutTooltip( name, isUndo ) {
     if ( ! name ) {
         return isUndo
@@ -186,6 +216,7 @@ function contentTooltip( name, isUndo ) {
 export function App() {
     countRender();
     useEnableWpCompatOverlaySlot();
+    const registry = useRegistry();
     const isLoaded = useBoard();
     useLayoutAutosave();
     const preview = usePreview();
@@ -276,6 +307,8 @@ export function App() {
     const [ scope, setScope ] = useState( 'block' );
     const [ editingTab, setEditingTab ] = useState( 'entity' );
     const review = useReview();
+    // What the agent surface asks to have marked; nothing until it is loaded.
+    const marks = useMarks();
 
     const widths = useDeviceWidths();
     const widthOf = useCallback( ( device ) => widths[ device ], [ widths ] );
@@ -348,6 +381,43 @@ export function App() {
         };
     }, [ isLoaded, viewport, setViewport, widthOf ] );
 
+    // A clicked item lands in the middle of the board in view, moved right
+    // past anything it would cover, and is brought into view.
+    const findSpace = ( size ) => {
+        const box = areaRef.current.getBoundingClientRect();
+        const rect = {
+            width: widthOf( 'desktop' ),
+            height: NEW_ARTBOARD_HEIGHT,
+            ...size,
+        };
+        const middle = viewport.toBoard( {
+            x: box.width / 2,
+            y: box.height / 2,
+        } );
+        const start = Math.round( middle.x - rect.width / 2 );
+        rect.x = start;
+        rect.y = Math.round( middle.y - rect.height / 2 );
+        const others = readArtboards( registry.select ).map( ( artboard ) =>
+            rectOf( artboard, widthOf )
+        );
+        const covered = () =>
+            others.find(
+                ( other ) =>
+                    rect.x < other.x + other.width &&
+                    other.x < rect.x + rect.width &&
+                    rect.y < other.y + other.height &&
+                    other.y < rect.y + rect.height
+            );
+        for ( let other = covered(); other; other = covered() ) {
+            rect.x = other.x + other.width + PLACEMENT_GAP;
+        }
+        if ( rect.x !== start ) {
+            viewport.panBy( ( start - rect.x ) * viewport.get().zoom, 0 );
+        }
+        return { x: rect.x, y: rect.y };
+    };
+    const findSpaceRef = useRef( findSpace );
+    findSpaceRef.current = findSpace;
     const inserterData = useInserterData( editing.allowedBlocks );
     const inserter = useInserterActions( {
         lookup: inserterData.lookup,
@@ -359,42 +429,12 @@ export function App() {
                 y: event.clientY - box.top,
             } );
         },
-        // A clicked item lands in the middle of the board in view, moved
-        // right past anything it would cover, and is brought into view.
-        findSpace: ( size ) => {
-            const box = areaRef.current.getBoundingClientRect();
-            const rect = {
-                width: widthOf( 'desktop' ),
-                height: NEW_ARTBOARD_HEIGHT,
-                ...size,
-            };
-            const middle = viewport.toBoard( {
-                x: box.width / 2,
-                y: box.height / 2,
-            } );
-            const start = Math.round( middle.x - rect.width / 2 );
-            rect.x = start;
-            rect.y = Math.round( middle.y - rect.height / 2 );
-            const others = artboards.map( ( artboard ) =>
-                rectOf( artboard, widthOf )
-            );
-            const covered = () =>
-                others.find(
-                    ( other ) =>
-                        rect.x < other.x + other.width &&
-                        other.x < rect.x + rect.width &&
-                        rect.y < other.y + other.height &&
-                        other.y < rect.y + rect.height
-                );
-            for ( let other = covered(); other; other = covered() ) {
-                rect.x = other.x + other.width + PLACEMENT_GAP;
-            }
-            if ( rect.x !== start ) {
-                viewport.panBy( ( start - rect.x ) * viewport.get().zoom, 0 );
-            }
-            return { x: rect.x, y: rect.y };
-        },
+        findSpace: ( size ) => findSpaceRef.current( size ),
     } );
+    const inserterRef = useRef( inserter );
+    inserterRef.current = inserter;
+    const inserterDataRef = useRef( inserterData );
+    inserterDataRef.current = inserterData;
     const placing = usePlacement( { theme, enterEdit: onEdit } );
     const remove = useRemoval();
     const [ ghost, setGhost ] = useState( null );
@@ -410,7 +450,9 @@ export function App() {
     // change to the site. One never saved is dropped with its edits, as
     // when it is removed alone.
     const removeMany = ( ids ) => {
-        const leaving = artboards.filter( ( a ) => ids.includes( a.id ) );
+        const leaving = readArtboards( registry.select ).filter( ( a ) =>
+            ids.includes( a.id )
+        );
         leaving
             .filter( ( a ) => a.draft )
             .forEach( ( a ) => remove( a, false ) );
@@ -501,6 +543,27 @@ export function App() {
         onMount: ( id ) => counters.mountOrder.push( id ),
         hasCopy,
     } );
+    // The Board actions seam of the agent surface (spec/agent/surface.md,
+    // Seams): what the board shows, read from the stores as they are now.
+    const tiersRef = useRef( tiers );
+    tiersRef.current = tiers;
+    const readBoard = () => {
+        const board = registry.select( boardStore );
+        return {
+            id: board.getBoardId(),
+            title: board.getTitle(),
+            artboards: orderedArtboards( readArtboards( registry.select ) ),
+            notes: board.getNotes(),
+            selection: board.getSelectedIds(),
+            edit: board.getEditId(),
+            zoom: board.getViewport().zoom,
+            tierOf: ( id ) => tiersRef.current.get( id ) || 'ghost',
+            widthOf: ( artboard ) =>
+                hasDevice( artboard )
+                    ? widthOf( artboard.device )
+                    : artboard.width,
+        };
+    };
     const usage = useUsageIndex( artboards, styles.merged );
     const stylesPanel = useStylesPanel( {
         styles,
@@ -564,6 +627,143 @@ export function App() {
             leaveEdit();
         }
     }, [ browsingId, isBrowsingSelected, leaveEdit ] );
+
+    // The seams of the agent surface (spec/agent/surface.md, Seams): each
+    // function is the one a control calls, onto the hooks above. They are
+    // filled once the render is committed; the surface's own logic is in
+    // `src/agent/`. What a seam function reads after an await is read from a
+    // ref, since the board may have drawn in between. They stay empty until
+    // the board has loaded, and read what the render below defines.
+    useEffect( () => {
+        if ( ! isLoaded ) {
+            return;
+        }
+        editSeam.current = {
+            bridgeRef: editing.bridgeRef,
+            // A click on the row, then Enter (L4, D6). A held lock opens no
+            // dialog.
+            enter: async ( id ) => {
+                const result = await editing.enterEdit( id, { quiet: true } );
+                if ( result === 'entered' ) {
+                    canvas.reveal( id );
+                }
+                return result;
+            },
+            leave: editing.leaveEdit,
+            liveId: () => registry.select( boardStore ).getLiveId(),
+        };
+        actionsSeam.current = {
+            registry,
+            board: readBoard,
+            // What the targets say an artboard, and a block of it, is.
+            whereOf: kindAndDevice,
+            whereOfBlocks: nameAndDevice,
+            noteLabel: __( 'Note', 'wordpress-for-designers' ),
+            stylesLabel: __( 'Styles', 'wordpress-for-designers' ),
+            // The Styles panel: its rows, its colour picker, its stock
+            // screens and its variation menu.
+            stylesPanel: () => stylesPanel,
+            // The styles part says when a change is compiled and in the
+            // artboards.
+            whenStylesCompiled: () => styles.whenCompiled(),
+            // The Review key of the Styles item.
+            stylesKey: () =>
+                styles.id ? `root/globalStyles/${ styles.id }` : null,
+            // A click on a token's row (S4, S5), without the colour picker;
+            // with no kind, the selected token is cleared. Gives the banner's
+            // numbers.
+            showUses: ( kind, slug ) => {
+                if ( ! kind ) {
+                    setSelectedToken( null );
+                    return { places: 0, artboards: [] };
+                }
+                if ( kind === 'color' ) {
+                    setSelectedToken( { type: 'color', slug } );
+                } else {
+                    setSelectedToken( {
+                        type: 'typography',
+                        slug:
+                            kind === 'font-family' ? `family:${ slug }` : slug,
+                    } );
+                }
+                const found = usage.locate( kind, slug );
+                return {
+                    places: found.places,
+                    artboards: [ ...found.perArtboard.keys() ],
+                };
+            },
+            // The cards of the Review drawer.
+            reviewItems: () =>
+                review.readItems().map( ( item ) => ( {
+                    key: item.key,
+                    type: item.type,
+                    name: item.name,
+                    isNew: item.isNew,
+                    lines: [
+                        ...item.lines,
+                        ...( item.moreCount > 0
+                            ? [ moreLine( item.moreCount ) ]
+                            : [] ),
+                        ...( item.artboardCount !== undefined
+                            ? [ artboardsLine( item.artboardCount ) ]
+                            : [] ),
+                    ],
+                } ) ),
+            // "Discard" on a card, after its confirmation (D48).
+            discardItem: review.discardKey,
+            // For authorship: each unsaved item with its edits as they are now,
+            // the item an artboard shows, and whether history is being stepped.
+            changeMarks: () =>
+                changedEntries( registry.select ).map( ( entry ) => [
+                    entry.key,
+                    registry
+                        .select( coreStore )
+                        .getEntityRecordEdits(
+                            entry.kind,
+                            entry.name,
+                            entry.id
+                        ),
+                ] ),
+            itemKeyOf,
+            isHistoryStep,
+            // The inserter: its lists, and what a row does.
+            inserterData: () => inserterDataRef.current,
+            inserter: () => inserterRef.current,
+            // A New row and the click that places it (D63); by default in a
+            // free place in view.
+            place: ( choice, point ) =>
+                placing.create(
+                    placing.named( choice ),
+                    point ?? findSpaceRef.current( null )
+                ),
+            // While the designer cannot use the board either (D49, and an open
+            // dialog or drawer).
+            isBlocked: () =>
+                ! windowHasRoom() ||
+                review.isOpen ||
+                !! editing.lockDialog ||
+                !! removing ||
+                isShortcutsOpen,
+            // A click on a row (L4); several rows selected together, then "Fit
+            // selection" (D41, H8).
+            selectRows: ( ids ) => {
+                if ( ids.length === 1 ) {
+                    selectArtboard( ids[ 0 ] );
+                    canvas.reveal( ids[ 0 ] );
+                } else {
+                    selectArtboards( ids );
+                    canvas.zoom( 'fit-selection' );
+                }
+            },
+            // The device control (E6) and a drag of the artboard (A3).
+            setDevice: setArtboardDevice,
+            move: ( id, x, y ) => moveArtboards( [ { id, x, y } ] ),
+            // A browser's address field (D55).
+            setAddress: ( id, path ) => updateArtboard( id, { path } ),
+            // Delete with several artboards selected (D41).
+            remove: removeMany,
+        };
+    } );
 
     if ( ! isLoaded ) {
         return null;
@@ -799,7 +999,8 @@ export function App() {
                                                     'wordpress-for-designers'
                                                 ),
                                           disabled: ! hasContentUndo,
-                                          onClick: undoContent,
+                                          onClick: () =>
+                                              historyStep( undoContent ),
                                       }
                                     : {
                                           label: layoutTooltip(
@@ -823,7 +1024,8 @@ export function App() {
                                                     'wordpress-for-designers'
                                                 ),
                                           disabled: ! hasContentRedo,
-                                          onClick: redoContent,
+                                          onClick: () =>
+                                              historyStep( redoContent ),
                                       }
                                     : {
                                           label: layoutTooltip(
@@ -868,6 +1070,7 @@ export function App() {
                             } }
                             reviewCount={ review.count }
                             onReview={ review.open }
+                            agentChip={ marks.chip }
                         />
                     }
                     left={ isLeftHidden ? null : left }
@@ -994,92 +1197,73 @@ export function App() {
                                 const width = hasDevice( artboard )
                                     ? widthOf( artboard.device )
                                     : artboard.width;
-                                let content = null;
+                                const hasFailed = artboard.status === 'failed';
+                                const hasCopyNow = snapshots.has( artboard.id );
+                                // What the artboard showed before may stay
+                                // over what it now shows until that is
+                                // drawn (D100).
+                                const canHandOver =
+                                    ! isMedia &&
+                                    ! isBrowser &&
+                                    ! hasFailed &&
+                                    // A frozen copy is needed on either
+                                    // side of a Snapshot.
+                                    ( tier === 'live' ||
+                                        tier === 'warm' ||
+                                        hasCopyNow );
                                 const onHeight = ( height ) =>
                                     updateArtboard( artboard.id, { height } );
-                                // The one render of a Snapshot artboard
-                                // that has no frozen copy, or whose copy
-                                // was made with older styles (D51). It
-                                // takes the styles without the highlight
-                                // of the picked token, which a frozen
-                                // copy would keep after the token is
-                                // let go.
-                                const once = tier === 'snapshot' &&
-                                    source === artboard.id &&
-                                    ! hasCopy( artboard.id ) && (
-                                        <ArtboardPreviewOnce
-                                            key="once"
-                                            artboard={ artboard }
-                                            width={ width }
-                                            settings={ styles.editorSettings }
-                                            isBusy={ viewport.isGesturing }
-                                            onSettled={ ( element, height ) => {
-                                                if ( height ) {
-                                                    onHeight( height );
+                                const contentFor = ( outgoing ) => {
+                                    let content = null;
+                                    // The one render of a Snapshot artboard
+                                    // that has no frozen copy, or whose copy
+                                    // was made with older styles (D51). It
+                                    // takes the styles without the highlight
+                                    // of the picked token, which a frozen
+                                    // copy would keep after the token is
+                                    // let go.
+                                    const once = tier === 'snapshot' &&
+                                        source === artboard.id &&
+                                        ! hasCopy( artboard.id ) && (
+                                            <ArtboardPreviewOnce
+                                                key="once"
+                                                artboard={ artboard }
+                                                width={ width }
+                                                settings={
+                                                    styles.editorSettings
                                                 }
-                                                snapshots.capture(
-                                                    artboard.id,
+                                                isBusy={ viewport.isGesturing }
+                                                onSettled={ (
                                                     element,
-                                                    renderVersion
-                                                );
-                                                noteRendered(
-                                                    artboard.id,
-                                                    settledStyles
-                                                );
-                                            } }
-                                        />
-                                    );
-                                if ( isMedia ) {
-                                    content = (
-                                        <ArtboardMedia
-                                            record={ artboard.record }
-                                        />
-                                    );
-                                } else if ( isBrowser && tier !== 'ghost' ) {
-                                    content = (
-                                        <BrowserArtboard
-                                            artboard={ artboard }
-                                            isBrowsing={ tier === 'live' }
-                                            homeUrl={ homeUrl }
-                                            preview={ preview }
-                                            onEscape={ editing.leaveEdit }
-                                            onWheel={ canvas.forwardWheel }
-                                        />
-                                    );
-                                } else if (
-                                    tier === 'live' ||
-                                    tier === 'warm'
-                                ) {
-                                    content = (
-                                        <ArtboardEditor
-                                            artboard={ artboard }
-                                            settings={ previewSettings }
-                                            isActive={ tier === 'live' }
-                                            onHeight={ onHeight }
-                                            onWheel={ canvas.forwardWheel }
-                                            onDocument={ canvas.watchDocument }
-                                            onKeyDownCapture={
-                                                editing.noteKeyDown
-                                            }
-                                            bridgeRef={ editing.bridgeRef }
-                                            onSelection={
-                                                editing.setSelectedBlock
-                                            }
-                                            onAllowedBlocks={
-                                                editing.setAllowedBlocks
-                                            }
-                                        />
-                                    );
-                                } else if (
-                                    tier === 'preview' &&
-                                    mounted.has( artboard.id )
-                                ) {
-                                    content = (
+                                                    height
+                                                ) => {
+                                                    if ( height ) {
+                                                        onHeight( height );
+                                                    }
+                                                    snapshots.capture(
+                                                        artboard.id,
+                                                        element,
+                                                        renderVersion
+                                                    );
+                                                    noteRendered(
+                                                        artboard.id,
+                                                        settledStyles
+                                                    );
+                                                } }
+                                            />
+                                        );
+                                    // The Preview and the frozen copy keep
+                                    // their keys in every tier, so that one
+                                    // left over another is the same element
+                                    // and is not loaded again.
+                                    const previewOf = ( isOver ) => (
                                         <ArtboardPreview
+                                            key="preview"
                                             artboard={ artboard }
                                             width={ width }
                                             settings={ previewSettings }
                                             onHeight={ onHeight }
+                                            isOver={ isOver }
                                             onFreeze={ ( element ) => {
                                                 // A Preview that leaves
                                                 // while a block in it is
@@ -1102,61 +1286,136 @@ export function App() {
                                             } }
                                         />
                                     );
-                                } else if (
-                                    tier === 'snapshot' &&
-                                    snapshots.has( artboard.id )
-                                ) {
-                                    // The frozen copy of its last Preview.
-                                    // After a style change it lies over
-                                    // the render that will replace it.
-                                    content = [
-                                        once,
+                                    const copyOf = ( isOver ) => (
                                         <ArtboardSnapshot
                                             key="copy"
                                             id={ artboard.id }
                                             store={ snapshots }
-                                            isOver={ !! once }
-                                        />,
-                                    ];
-                                } else if ( once ) {
-                                    // Never rendered: rendered once here to
-                                    // make its frozen copy.
-                                    content = [
-                                        once,
-                                        <Skeleton
-                                            key="skeleton"
-                                            className="wfd-artboard__skeleton"
-                                        />,
-                                    ];
-                                } else if (
-                                    tier === 'preview' ||
-                                    ( tier === 'snapshot' &&
-                                        ! rendered.has( artboard.id ) )
-                                ) {
-                                    // Never rendered yet.
-                                    content = (
-                                        <Skeleton className="wfd-artboard__skeleton" />
-                                    );
-                                }
-                                const hasFailed = artboard.status === 'failed';
-                                if ( hasFailed ) {
-                                    content = (
-                                        <ArtboardError
-                                            kind={ artboard.kind }
-                                            onRetry={ () =>
-                                                invalidateResolution(
-                                                    'getEntityRecord',
-                                                    [
-                                                        'postType',
-                                                        KINDS[ artboard.kind ]
-                                                            .postType,
-                                                        artboard.entityId,
-                                                    ]
-                                                )
-                                            }
+                                            isOver={ isOver }
                                         />
                                     );
-                                }
+                                    let incoming = false;
+                                    if ( isMedia ) {
+                                        content = (
+                                            <ArtboardMedia
+                                                record={ artboard.record }
+                                            />
+                                        );
+                                    } else if (
+                                        isBrowser &&
+                                        tier !== 'ghost'
+                                    ) {
+                                        content = (
+                                            <BrowserArtboard
+                                                artboard={ artboard }
+                                                isBrowsing={ tier === 'live' }
+                                                homeUrl={ homeUrl }
+                                                preview={ preview }
+                                                onEscape={ editing.leaveEdit }
+                                                onWheel={ canvas.forwardWheel }
+                                            />
+                                        );
+                                    } else if (
+                                        tier === 'live' ||
+                                        tier === 'warm'
+                                    ) {
+                                        incoming = true;
+                                        content = [
+                                            <ArtboardEditor
+                                                key="editor"
+                                                artboard={ artboard }
+                                                settings={ previewSettings }
+                                                isActive={ tier === 'live' }
+                                                onHeight={ onHeight }
+                                                onWheel={ canvas.forwardWheel }
+                                                onDocument={
+                                                    canvas.watchDocument
+                                                }
+                                                onKeyDownCapture={
+                                                    editing.noteKeyDown
+                                                }
+                                                bridgeRef={ editing.bridgeRef }
+                                                onSelection={
+                                                    editing.setSelectedBlock
+                                                }
+                                                onAllowedBlocks={
+                                                    editing.setAllowedBlocks
+                                                }
+                                            />,
+                                            outgoing === 'preview' &&
+                                                previewOf( true ),
+                                        ];
+                                    } else if (
+                                        tier === 'preview' &&
+                                        mounted.has( artboard.id )
+                                    ) {
+                                        incoming = true;
+                                        content = [
+                                            previewOf( false ),
+                                            outgoing === 'snapshot' &&
+                                                copyOf( true ),
+                                        ];
+                                    } else if (
+                                        tier === 'preview' &&
+                                        outgoing === 'snapshot'
+                                    ) {
+                                        // Waiting for its turn in the queue.
+                                        content = [ copyOf( false ) ];
+                                    } else if (
+                                        tier === 'snapshot' &&
+                                        hasCopyNow
+                                    ) {
+                                        // The frozen copy of its last Preview.
+                                        // After a style change it lies over
+                                        // the render that will replace it.
+                                        incoming = true;
+                                        content = [
+                                            once,
+                                            copyOf( !! once ),
+                                            outgoing === 'preview' &&
+                                                previewOf( true ),
+                                        ];
+                                    } else if ( once ) {
+                                        // Never rendered: rendered once here to
+                                        // make its frozen copy.
+                                        content = [
+                                            once,
+                                            <Skeleton
+                                                key="skeleton"
+                                                className="wfd-artboard__skeleton"
+                                            />,
+                                        ];
+                                    } else if (
+                                        tier === 'preview' ||
+                                        ( tier === 'snapshot' &&
+                                            ! rendered.has( artboard.id ) )
+                                    ) {
+                                        // Never rendered yet.
+                                        content = (
+                                            <Skeleton className="wfd-artboard__skeleton" />
+                                        );
+                                    }
+                                    if ( hasFailed ) {
+                                        content = (
+                                            <ArtboardError
+                                                kind={ artboard.kind }
+                                                onRetry={ () =>
+                                                    invalidateResolution(
+                                                        'getEntityRecord',
+                                                        [
+                                                            'postType',
+                                                            KINDS[
+                                                                artboard.kind
+                                                            ].postType,
+                                                            artboard.entityId,
+                                                        ]
+                                                    )
+                                                }
+                                            />
+                                        );
+                                    }
+                                    return { content, incoming };
+                                };
                                 return (
                                     <ArtboardFrame
                                         key={ artboard.id }
@@ -1171,6 +1430,17 @@ export function App() {
                                         ) }
                                         isChanged={ review.changedArtboardIds?.has(
                                             artboard.id
+                                        ) }
+                                        isAgentWorking={ marks.working.includes(
+                                            artboard.id
+                                        ) }
+                                        isAgentChanged={ [
+                                            'agent',
+                                            'both',
+                                        ].includes(
+                                            marks.authors[
+                                                itemKeyOf( artboard )
+                                            ]
                                         ) }
                                         hasError={ hasFailed }
                                         isStale={
@@ -1199,7 +1469,11 @@ export function App() {
                                             reloadBrowser( artboard.id )
                                         }
                                     >
-                                        { content }
+                                        <TierContent
+                                            tier={ tier }
+                                            canHandOver={ canHandOver }
+                                            contentFor={ contentFor }
+                                        />
                                     </ArtboardFrame>
                                 );
                             } ) }
@@ -1243,7 +1517,10 @@ export function App() {
                                     onClose={ () => setShortcutsOpen( false ) }
                                 />
                             ) }
-                            <ReviewDrawer { ...review.drawerProps } />
+                            <ReviewDrawer
+                                { ...review.drawerProps }
+                                authors={ marks.authors }
+                            />
                             { editing.lockDialog && (
                                 <LockDialog
                                     state={ editing.lockDialog.state }

@@ -1,0 +1,22 @@
+{
+    "core": "https://wordpress.org/wordpress-7.2-RC2.zip",
+    "phpVersion": "8.2",
+    "testsEnvironment": false,
+    "themes": [
+        "../../tests/e2e/themes/wfd-viewport"
+    ],
+    "plugins": [
+        "../..",
+        "../../tests/e2e/plugin"
+    ],
+    "mappings": {
+        "wp-content/plugins/wfd-studio": "./plugin"
+    },
+    "port": 8889,
+    "config": {
+        "WP_DEBUG": true,
+        "WP_DEBUG_LOG": true,
+        "WP_DEBUG_DISPLAY": false,
+        "SCRIPT_DEBUG": true
+    }
+}

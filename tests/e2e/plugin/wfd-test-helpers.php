@@ -57,7 +57,37 @@ function wfd_test_wipe() {
     foreach ( $posts as $id ) {
         wp_delete_post( $id, true );
     }
+    // Posts a test made (wfd_test_seed_blocks).
+    $made = get_posts(
+        array(
+            'post_type'   => 'post',
+            'post_status' => 'any',
+            'numberposts' => -1,
+            'fields'      => 'ids',
+            'meta_key'    => '_wfd_test',
+        )
+    );
+    foreach ( $made as $id ) {
+        wp_delete_post( $id, true );
+    }
+    // The site becomes one no agent has used (constraint C27).
+    global $wpdb;
+    $options = $wpdb->get_col( $wpdb->prepare( "SELECT option_name FROM $wpdb->options WHERE option_name LIKE %s", $wpdb->esc_like( 'wfd_agent_' ) . '%' ) );
+    foreach ( $options as $option ) {
+        delete_option( $option );
+    }
+    wp_clear_scheduled_hook( 'wfd_agent_cleanup' );
+    delete_option( 'wfd_test_runbook' );
 }
+
+// Text a test adds to the runbook through the plugin's filter (AC-CLI-02).
+add_filter(
+    'wfd_agent_runbook',
+    function ( $text ) {
+        $more = get_option( 'wfd_test_runbook' );
+        return $more ? $text . "\n\n" . $more : $text;
+    }
+);
 
 /**
  * Block markup used by the fixture pages and patterns.
@@ -187,6 +217,134 @@ function wfd_test_seed( $extra = 0 ) {
     );
 }
 
+/**
+ * Adds to a board a template that holds a Query Loop showing three posts, a
+ * Comment Template, a synced pattern and a Navigation block that points at a
+ * menu, and makes the site have exactly three posts (AC-TOOL-24).
+ *
+ * @param int $board The board.
+ * @return array The board's layout and what was made.
+ */
+function wfd_test_seed_blocks( $board ) {
+    $theme  = get_stylesheet();
+    $synced = wp_insert_post(
+        array(
+            'post_type'    => 'wp_block',
+            'post_status'  => 'publish',
+            'post_title'   => 'Synced card',
+            'post_content' => '<!-- wp:group --><div class="wp-block-group"><!-- wp:heading --><h2 class="wp-block-heading">Synced heading</h2><!-- /wp:heading -->'
+                . '<!-- wp:paragraph --><p>Synced paragraph.</p><!-- /wp:paragraph --></div><!-- /wp:group -->',
+        )
+    );
+    $menu   = wp_insert_post(
+        array(
+            'post_type'    => 'wp_navigation',
+            'post_status'  => 'publish',
+            'post_title'   => 'Test menu',
+            'post_content' => '<!-- wp:navigation-link {"label":"Home","url":"/","kind":"custom"} /-->'
+                . '<!-- wp:navigation-submenu {"label":"More","url":"#","kind":"custom"} --><!-- wp:navigation-link {"label":"About","url":"/about","kind":"custom"} /--><!-- /wp:navigation-submenu -->'
+                . '<!-- wp:navigation-link {"label":"Contact","url":"/contact","kind":"custom"} /-->',
+        )
+    );
+    $have   = count(
+        get_posts(
+            array(
+                'post_type'   => 'post',
+                'post_status' => 'publish',
+                'numberposts' => -1,
+                'fields'      => 'ids',
+            )
+        )
+    );
+    for ( $i = $have; $i < 3; $i++ ) {
+        $content = '<!-- wp:paragraph --><p>Test post ' . $i . ' first paragraph.</p><!-- /wp:paragraph -->'
+            . '<!-- wp:group --><div class="wp-block-group"><!-- wp:heading --><h2 class="wp-block-heading">Inside post ' . $i . '</h2><!-- /wp:heading --></div><!-- /wp:group -->';
+        if ( 2 === $i ) {
+            $content .= '<!-- wp:block {"ref":' . (int) $synced . '} /-->';
+        }
+        $id = wp_insert_post(
+            array(
+                'post_type'    => 'post',
+                'post_status'  => 'publish',
+                'post_title'   => 'Test post ' . $i,
+                'post_content' => $content,
+            )
+        );
+        update_post_meta( $id, '_wfd_test', 1 );
+    }
+    $content  = '<!-- wp:template-part {"slug":"header","tagName":"header"} /-->'
+        . '<!-- wp:group {"tagName":"main","layout":{"type":"constrained"}} --><main class="wp-block-group">'
+        . '<!-- wp:navigation {"ref":' . (int) $menu . '} /-->'
+        . '<!-- wp:block {"ref":' . (int) $synced . '} /-->'
+        . '<!-- wp:query {"queryId":7,"query":{"perPage":3,"pages":0,"offset":0,"postType":"post","order":"desc","orderBy":"date","author":"","search":"","exclude":[],"sticky":"","inherit":false}} --><div class="wp-block-query">'
+        . '<!-- wp:post-template -->'
+        . '<!-- wp:post-title {"isLink":true} /-->'
+        . '<!-- wp:group --><div class="wp-block-group"><!-- wp:post-date /--><!-- wp:post-excerpt /--></div><!-- /wp:group -->'
+        . '<!-- wp:post-content /-->'
+        . '<!-- /wp:post-template -->'
+        . '<!-- wp:query-pagination --><!-- wp:query-pagination-previous /--><!-- wp:query-pagination-next /--><!-- /wp:query-pagination -->'
+        . '</div><!-- /wp:query -->'
+        . '<!-- wp:comments --><div class="wp-block-comments"><!-- wp:comment-template -->'
+        . '<!-- wp:group --><div class="wp-block-group"><!-- wp:comment-author-name /--><!-- wp:comment-date /--></div><!-- /wp:group -->'
+        . '<!-- wp:comment-content /-->'
+        . '<!-- /wp:comment-template --></div><!-- /wp:comments -->'
+        . '<!-- wp:paragraph --><p>After the loops.</p><!-- /wp:paragraph -->'
+        . '</main><!-- /wp:group -->';
+    $template = wp_insert_post(
+        array(
+            'post_type'    => 'wp_template',
+            'post_status'  => 'publish',
+            'post_name'    => 'wfd-test-blocks',
+            'post_title'   => 'Test blocks',
+            'post_content' => $content,
+        )
+    );
+    wp_set_post_terms( $template, $theme, 'wp_theme' );
+
+    $layout                = json_decode( get_post_field( 'post_content', $board, 'raw' ), true );
+    $layout['artboards'][] = array(
+        'id'       => wp_generate_uuid4(),
+        'kind'     => 'template',
+        'entityId' => $theme . '//wfd-test-blocks',
+        'device'   => 'desktop',
+        'x'        => 6400,
+        'y'        => 0,
+        'height'   => 2400,
+    );
+    wp_update_post(
+        array(
+            'ID'           => $board,
+            'post_content' => wp_slash( wp_json_encode( $layout ) ),
+        )
+    );
+    return array(
+        'layout' => $layout,
+        'synced' => (int) $synced,
+        'menu'   => (int) $menu,
+    );
+}
+
+// A block that sets one of its own attributes a moment after it is first
+// drawn, as some blocks do (AC-MARK-08). It is not offered in the inserter.
+add_action(
+    'enqueue_block_editor_assets',
+    function () {
+        wp_add_inline_script(
+            'wp-blocks',
+            "wp.blocks.registerBlockType( 'test/self-setting', { apiVersion: 3, title: 'Self setting', category: 'text', supports: { inserter: false }, attributes: { stamp: { type: 'string', default: '' } }, edit: function ( props ) { wp.element.useEffect( function () { if ( props.attributes.stamp ) { return; } var timer = setTimeout( function () { props.setAttributes( { stamp: 'set' } ); }, 400 ); return function () { clearTimeout( timer ); }; }, [] ); return wp.element.createElement( 'p', wp.blockEditor.useBlockProps(), 'Self setting ' + props.attributes.stamp ); }, save: function () { return null; } } );",
+            'after'
+        );
+        // A block that holds two inner blocks and mounts only one of them:
+        // its second child draws no element, so the artboard never meets
+        // the settling conditions (AC-TOOL-29).
+        wp_add_inline_script(
+            'wp-blocks',
+            "wp.blocks.registerBlockType( 'test/unmounted', { apiVersion: 3, title: 'Unmounted', category: 'text', parent: [ 'test/half-mounted' ], supports: { inserter: false }, edit: function () { return null; }, save: function () { return null; } } ); wp.blocks.registerBlockType( 'test/half-mounted', { apiVersion: 3, title: 'Half mounted', category: 'design', supports: { inserter: false }, edit: function () { return wp.element.createElement( 'div', wp.blockEditor.useInnerBlocksProps( wp.blockEditor.useBlockProps() ) ); }, save: function () { return wp.element.createElement( 'div', wp.blockEditor.useInnerBlocksProps.save( wp.blockEditor.useBlockProps.save() ) ); } } );",
+            'after'
+        );
+    }
+);
+
 // A style sheet WordPress loads into the canvas itself (AC-DEV-05).
 add_action(
     'enqueue_block_assets',
@@ -213,6 +371,20 @@ add_action(
                         $result = array_merge( $result, wfd_test_seed( (int) $request['extra'] ) );
                     }
                     return rest_ensure_response( $result );
+                },
+            )
+        );
+
+        register_rest_route(
+            'wfd-test/v1',
+            '/seed-blocks',
+            array(
+                'methods'             => 'POST',
+                'permission_callback' => function () {
+                    return current_user_can( 'manage_options' );
+                },
+                'callback'            => function ( $request ) {
+                    return rest_ensure_response( wfd_test_seed_blocks( (int) $request['board'] ) );
                 },
             )
         );
@@ -254,6 +426,36 @@ add_action(
                     return rest_ensure_response(
                         array( 'content' => get_post_field( 'post_content', (int) $request['id'], 'raw' ) )
                     );
+                },
+            )
+        );
+
+        // The agent surface's PHP functions, called in a web request, outside
+        // WP-CLI (AC-AGENT-11 to AC-AGENT-14). `run` says which: `relay`,
+        // `begin`, `boards`, or `options` for what the relay's options hold.
+        register_rest_route(
+            'wfd-test/v1',
+            '/agent',
+            array(
+                'methods'             => 'POST',
+                'permission_callback' => function () {
+                    return current_user_can( 'manage_options' );
+                },
+                'callback'            => function ( $request ) {
+                    switch ( $request['run'] ) {
+                        case 'relay':
+                            // The body as it was sent, so that an empty input stays an object.
+                            $body = json_decode( $request->get_body() );
+                            return rest_ensure_response( wfd_agent_relay( array_map( 'get_object_vars', $body->calls ), $request['args'] ) );
+                        case 'begin':
+                            return rest_ensure_response( wfd_agent_begin( $request['source'] ) );
+                        case 'boards':
+                            return rest_ensure_response( wfd_agent_boards() );
+                        case 'board-new':
+                            return rest_ensure_response( wfd_agent_board_new( (string) $request['title'] ) );
+                        case 'options':
+                            return rest_ensure_response( (object) array_map( 'json_decode', wfd_agent_records( 'wfd_agent_', null ) ) );
+                    }
                 },
             )
         );

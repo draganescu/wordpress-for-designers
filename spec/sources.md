@@ -7,14 +7,16 @@ Every statement in this spec carries a tag saying where it came from. The harnes
 | `[U]` | Decided by the product owner in conversation, a design comment, or the accepted "Locked defaults" list. |
 | `[B1]` to `[B8]` | Stated on the whiteboard, in the numbered section. |
 | `[D:Name]` | Shown on the design screen of that name (see `screens/`). |
-| `[V]` | Verified in code: Gutenberg commit `e77b5057a91`, WordPress core `7.2-beta5`, or the WordPress for Writers plugin. |
+| `[V]` | Verified in code: Gutenberg commit `e77b5057a91`, WordPress core `7.2-beta5`, or the WordPress for Writers plugin. For the agent surface and its adapters, also WordPress Studio at commit `cad01762b`. |
+| `[A]` | Stated on the agent whiteboard of 21 November 2026 ("Agent on a board"), which the product owner reviewed and commented on. Used from D65 on. |
+| `[D:AgentConnected]`, `[D:AgentWorking]`, `[D:AgentReview]` | Shown on the design of a designer's session with an agent, from which the three agent screens were cut. |
 | `[N]` | New in this spec. Written to close a gap, not yet seen by the product owner. Listed in "Needs approval" below. |
 
 Whiteboard sections: 1 Information architecture, 2 Board screen wireframe, 3 Artboard kinds, 4 System parts, 5 Performance tiers, 6 Data streams, 7 Global styles, 8 Decisions.
 
 ## Needs approval
 
-The list below is generated from every `[N]` tag in the spec. Until the product owner approves an item, the harness still builds it as written.
+The list below is generated from every `[N]` tag in the spec. From row 65 on, for the agent surface (D65), a row may stand for a whole file or a group of statements, with "all" or the item's ID in the Line column. Until the product owner approves an item, the harness still builds it as written.
 
 | # | File | Line | Statement |
 |---|---|---|---|
@@ -81,3 +83,18 @@ The list below is generated from every `[N]` tag in the spec. Until the product 
 | 62 | `acceptance.md` | 50 | AC-CANVAS-10 / dragging from empty board selects the artboards the rectangle touches / `[U]`; that the drag from empty board selects and does not pan is `[N]` |
 | 63 | `architecture.md` | 154 | A one-finger drag that the browser cancels (`pointercancel`) is undone in the same way; nothing of it is committed. `[N]` |
 | 64 | `acceptance.md` | 51 | AC-CANVAS-11 / A one-finger drag of an artboard that the browser cancels puts the artboard back in the same way, and nothing is left to undo. / `[U]`; the cancelled drag is `[N]` |
+| 65 | `decisions.md` | D76 | The two intervals of the session check (10 seconds, then 1 second) and the first `wp wfd` command being what switches polling on for a site. `[N]` |
+| 66 | `decisions.md` | D77 | A tool makes a template only for the purposes the inserter offers; a template for another slug is made with WordPress's own commands and is live at once. `[N]` |
+| 67 | `decisions.md` | D78 | The agent may discard an unsaved item that it alone changed. `[N]` |
+| 68 | `constraints.md` | C33 | The relay's records hold calls and results only and expire. `[N]` |
+| 69 | `out-of-scope.md` | all | No tools in this version for notes, renaming, a page's template, a browser's settings, Tidy up, pan and zoom, undo and redo. The plugin calls no AI model and holds no prompt other than the runbook. `[N]` |
+| 70 | `agent/tools.md` | all | The whole file unless tagged otherwise: the 21 tool names, their fields and results, the eight error codes and their messages, the `unavailable` rule, and that a block tool enters edit by itself. `[N]` |
+| 71 | `agent/surface.md` | all | The whole file unless tagged otherwise: `window.wfdAgent` and its members, the reference grammar, how targets are listed, the four seams, how authorship is recorded, the marks' wording and place ("Agent connected", "Agent working", "Annotating", "· Agent working", "· Changed by agent", "Agent", "Agent and you"), the one-second stay, and the two hooks for adapters. `[N]` |
+| 72 | `agent/relay.md` | all | The whole file unless tagged otherwise: the option names, the call record, a session lasting 120 seconds, a listener lasting 25 seconds, the 30-second default timeout, records expiring after 300 seconds, the hourly cleanup, and the codes `no_board`, `several_boards`, `timeout` and `skipped`. `[N]` |
+| 73 | `agent/cli.md` | all | The whole file unless tagged otherwise: the four subcommands, their flags and outputs, and the runbook's wording. `[N]` |
+| 74 | `acceptance.md` | all | The conventions of the agent groups, and the criteria tagged `[N]` in AGENT, CLI, TOOL and MARK. `[N]` |
+| 75 | `api-allowlist.md` | all | The block-editor store members listed for the agent surface, the PHP functions listed for it, and running `wp wfd` in the test environment's WP-CLI container. `[N]` |
+| 76 | `screens/AgentConnected.md, AgentWorking.md, AgentReview.md` | all | The wording, components and place of G1 to G4. `[N]` |
+| 77 | `decisions.md` | D79 | A preview copy drawn by a Post Template, a Comment Template or a read-only Content is not a block for paths, references and targets; pointing at one points at the nearest real block around it. `[N]` |
+| 78 | `decisions.md`, `agent/tools.md` | D81, D82 | The one second of D81; the 10-second safety limit and the error `not_ready` with its two messages. `[N]` |
+| 79 | `agent/relay.md`, `agent/tools.md` | D89, D90 | The `remaining` field of the poll's answer and the message "The call ran out of time."; other waits ending with `unavailable` at the 10-second limit. `[N]` |

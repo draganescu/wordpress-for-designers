@@ -245,7 +245,9 @@ function attach( doc, registry ) {
     let hovered = null;
     let timer;
     const clearHover = () => {
-        doc.defaultView.clearTimeout( timer );
+        // The document has no window once its iframe has left the page,
+        // as when an artboard in edit is taken off the board.
+        doc.defaultView?.clearTimeout( timer );
         hovered?.classList.remove( HOVER_CLASS );
         hovered = null;
     };

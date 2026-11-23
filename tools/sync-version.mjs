@@ -1,40 +1,103 @@
 /**
- * Keeps the plugin's version in step with package.json.
+ * Keeps the versions of the plugin and its adapters in step with
+ * package.json.
  *
  * Usage:
  *   node tools/sync-version.mjs                 Writes the version of
  *                                               package.json into the plugin
- *                                               header and WFD_VERSION.
- *   node tools/sync-version.mjs --check [tag]   Exits 1 unless all three
+ *                                               header, WFD_VERSION and each
+ *                                               adapter's header and readme.
+ *   node tools/sync-version.mjs --stage         The same, then stages the
+ *                                               files it wrote (npm version).
+ *   node tools/sync-version.mjs --check [tag]   Exits 1 unless all of them
  *                                               match, and match the tag
  *                                               (v1.2.3) when one is given.
+ *
+ * An adapter is a folder under adapters/ with a plugin/ folder. Its version is
+ * the main plugin's version it was built with, so each release ships them
+ * together.
  */
-import { readFileSync, writeFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
+import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
 
 const PLUGIN_FILE = 'wordpress-for-designers.php';
-const HEADER = /^( \* Version:\s+)(\S+)$/m;
+const ADAPTERS_DIR = 'adapters';
+const HEADER = /^( \* Version:\s+)(\S+)()$/m;
 const CONSTANT = /(define\( 'WFD_VERSION', ')([^']+)(' \);)/;
+const PLUGIN_NAME = /^ \* Plugin Name:/m;
+const STABLE_TAG = /^(Stable tag:\s*)(\S+)()$/m;
+
+/**
+ * Every place a version is written, as { file, label, pattern }. Each pattern
+ * has three groups: what comes before the version, the version, and what
+ * comes after it.
+ */
+function versionFields() {
+    const fields = [
+        {
+            file: PLUGIN_FILE,
+            label: 'Version header',
+            pattern: HEADER,
+        },
+        { file: PLUGIN_FILE, label: 'WFD_VERSION', pattern: CONSTANT },
+    ];
+
+    if ( ! existsSync( ADAPTERS_DIR ) ) {
+        return fields;
+    }
+
+    for ( const adapter of readdirSync( ADAPTERS_DIR ).sort() ) {
+        const pluginDir = join( ADAPTERS_DIR, adapter, 'plugin' );
+        if ( ! existsSync( pluginDir ) ) {
+            continue;
+        }
+        for ( const name of readdirSync( pluginDir ).sort() ) {
+            const file = join( pluginDir, name );
+            if ( name.endsWith( '.php' ) ) {
+                if ( PLUGIN_NAME.test( readFileSync( file, 'utf8' ) ) ) {
+                    fields.push( {
+                        file,
+                        label: `${ file } Version header`,
+                        pattern: HEADER,
+                    } );
+                }
+            } else if ( name === 'readme.txt' ) {
+                fields.push( {
+                    file,
+                    label: `${ file } Stable tag`,
+                    pattern: STABLE_TAG,
+                } );
+            }
+        }
+    }
+
+    return fields;
+}
 
 const { version } = JSON.parse( readFileSync( 'package.json', 'utf8' ) );
-const php = readFileSync( PLUGIN_FILE, 'utf8' );
-const header = php.match( HEADER );
-const constant = php.match( CONSTANT );
+const fields = versionFields();
+const contents = new Map();
 
-if ( ! header || ! constant ) {
-    process.stderr.write(
-        `${ PLUGIN_FILE }: the Version header or WFD_VERSION was not found.\n`
-    );
-    process.exit( 1 );
+for ( const field of fields ) {
+    if ( ! contents.has( field.file ) ) {
+        contents.set( field.file, readFileSync( field.file, 'utf8' ) );
+    }
+    const match = contents.get( field.file ).match( field.pattern );
+    if ( ! match ) {
+        process.stderr.write( `${ field.label }: not found.\n` );
+        process.exit( 1 );
+    }
+    field.value = match[ 2 ];
 }
 
 const [ , , mode, tag ] = process.argv;
 
 if ( mode === '--check' ) {
-    const found = {
-        'package.json': version,
-        'Version header': header[ 2 ],
-        WFD_VERSION: constant[ 2 ],
-    };
+    const found = { 'package.json': version };
+    for ( const field of fields ) {
+        found[ field.label ] = field.value;
+    }
     if ( tag ) {
         found.tag = tag.replace( /^v/, '' );
     }
@@ -49,11 +112,21 @@ if ( mode === '--check' ) {
     }
     process.stdout.write( `Version ${ version }\n` );
 } else {
-    writeFileSync(
-        PLUGIN_FILE,
-        php
-            .replace( HEADER, `$1${ version }` )
-            .replace( CONSTANT, `$1${ version }$3` )
-    );
-    process.stdout.write( `${ PLUGIN_FILE } set to ${ version }\n` );
+    for ( const field of fields ) {
+        contents.set(
+            field.file,
+            contents
+                .get( field.file )
+                .replace( field.pattern, `$1${ version }$3` )
+        );
+    }
+    for ( const [ file, text ] of contents ) {
+        writeFileSync( file, text );
+        process.stdout.write( `${ file } set to ${ version }\n` );
+    }
+    if ( mode === '--stage' ) {
+        execFileSync( 'git', [ 'add', '--', ...contents.keys() ], {
+            stdio: 'inherit',
+        } );
+    }
 }

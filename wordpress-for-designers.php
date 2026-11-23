@@ -2,7 +2,7 @@
 /**
  * Plugin Name:       WordPress for Designers
  * Description:       An infinite canvas of this site's pages, templates, template parts and patterns, rendered with real blocks.
- * Version:           0.2.0
+ * Version:           0.3.0
  * Requires at least: 7.2
  * Requires PHP:      7.4
  * License:           GPL-2.0-or-later
@@ -13,7 +13,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'WFD_VERSION', '0.2.0' );
+define( 'WFD_VERSION', '0.3.0' );
 define( 'WFD_FILE', __FILE__ );
 define( 'WFD_DIR', plugin_dir_path( __FILE__ ) );
 define( 'WFD_CAPABILITY', 'edit_theme_options' );
@@ -29,3 +29,4 @@ require_once WFD_DIR . 'includes/menu.php';
 require_once WFD_DIR . 'includes/board-app.php';
 require_once WFD_DIR . 'includes/lock.php';
 require_once WFD_DIR . 'includes/preview.php';
+require_once WFD_DIR . 'includes/agent.php';
