@@ -331,9 +331,15 @@ test.describe( 'FLOW', () => {
         await openListening( page, fixture.boardId );
         const hero = artboardOf( fixture, 'pattern' );
         await setViewport( page, { x: -300, y: -120, zoom: 0.25 } );
+        // The frozen copy lies over the Preview until that has settled.
+        await expect(
+            page.locator(
+                `[data-wfd-artboard="${ hero.id }"] iframe:not([sandbox])`
+            )
+        ).toBeAttached();
         await expect(
             page.locator( `[data-wfd-artboard="${ hero.id }"] iframe` )
-        ).toBeAttached();
+        ).toHaveCount( 1 );
         const background = () =>
             page
                 .locator( `[data-wfd-artboard="${ hero.id }"] iframe` )

@@ -15,6 +15,10 @@ const CHECK_EVERY = 50;
 // How long to wait for content that never comes, from the moment its iframe
 // is there.
 const GIVE_UP = 3000;
+// How long incoming content has to keep its height. Styles that reach a
+// Preview after its blocks (artboard-frame/viewport-units.js) move it once
+// more.
+const QUIET = 200;
 
 /**
  * Whether an iframe's document has its blocks laid out and its style sheets
@@ -43,15 +47,53 @@ function isDrawn( iframe ) {
 }
 
 /**
+ * Whether a drawn iframe's document has its fonts and its images. A document
+ * that is complete can still be loading both: a Preview's blocks are put in
+ * after its iframe has loaded. An image the browser loads only when it comes
+ * into view is not waited for.
+ *
+ * @param {HTMLIFrameElement} iframe The iframe.
+ * @return {boolean} Whether it has them.
+ */
+function hasLoaded( iframe ) {
+    const doc = iframe.contentDocument;
+    return (
+        doc.fonts?.status !== 'loading' &&
+        [ ...doc.images ].every(
+            ( image ) => image.complete || image.loading === 'lazy'
+        )
+    );
+}
+
+/**
+ * Whether a drawn Preview's iframe has the height of its content; true of
+ * anything else. The iframe starts short and is fitted to its content after
+ * that is laid out, and a Preview shown before then is cut off.
+ *
+ * @param {HTMLIFrameElement} iframe The iframe.
+ * @return {boolean} Whether it fits.
+ */
+function isFitted( iframe ) {
+    // A frozen copy keeps the Preview's class, and the size it was copied at.
+    return (
+        ! iframe.closest( '.wfd-preview:not(.wfd-snapshot__copy)' ) ||
+        iframe.contentDocument.documentElement.scrollHeight <=
+            iframe.clientHeight + 1
+    );
+}
+
+/**
  * Calls `onPainted` once every iframe matching `selector` in the artboard's
  * frame is drawn, and two animation frames have passed so that the drawing
- * is on screen.
+ * is on screen. With `isSettling` the iframes also have to hold their fonts
+ * and images, fit their content, and have kept their height for `QUIET`.
  *
  * @param {Object}   props
- * @param {string}   props.selector  The iframes of the incoming content.
- * @param {Function} props.onPainted Called once.
+ * @param {string}   props.selector   The iframes of the incoming content.
+ * @param {boolean}  props.isSettling Whether the content has to settle.
+ * @param {Function} props.onPainted  Called once.
  */
-function PaintWatch( { selector, onPainted } ) {
+function PaintWatch( { selector, isSettling, onPainted } ) {
     const frame = useContext( FrameElementContext );
     const latest = useRef( onPainted );
     latest.current = onPainted;
@@ -62,6 +104,29 @@ function PaintWatch( { selector, onPainted } ) {
         let since = 0;
         let raf = 0;
         let isDone = false;
+        let heights = '';
+        let quietSince = 0;
+        const isSettled = ( iframes ) => {
+            if ( ! iframes.every( isDrawn ) ) {
+                return false;
+            }
+            if ( ! isSettling ) {
+                return true;
+            }
+            const now = iframes
+                .map( ( iframe ) => iframe.contentDocument.body.offsetHeight )
+                .join();
+            if ( now !== heights ) {
+                heights = now;
+                quietSince = Date.now();
+            }
+            return (
+                Date.now() - quietSince >= QUIET &&
+                iframes.every(
+                    ( iframe ) => hasLoaded( iframe ) && isFitted( iframe )
+                )
+            );
+        };
         const done = () => {
             isDone = true;
             window.clearInterval( timer );
@@ -78,7 +143,7 @@ function PaintWatch( { selector, onPainted } ) {
                 return;
             }
             since = since || Date.now();
-            if ( iframes.every( isDrawn ) || Date.now() - since > GIVE_UP ) {
+            if ( isSettled( iframes ) || Date.now() - since > GIVE_UP ) {
                 done();
             }
         };
@@ -88,7 +153,7 @@ function PaintWatch( { selector, onPainted } ) {
             window.clearInterval( timer );
             window.cancelAnimationFrame( raf );
         };
-    }, [ frame, selector ] );
+    }, [ frame, selector, isSettling ] );
     return null;
 }
 
@@ -143,6 +208,7 @@ export function TierContent( { tier, canHandOver, contentFor } ) {
         <PaintWatch
             key={ 'watch-' + tier }
             selector={ PAINTED[ tier ] }
+            isSettling={ tier === 'preview' || tier === 'snapshot' }
             onPainted={ () => handedOver( tier ) }
         />,
     ];

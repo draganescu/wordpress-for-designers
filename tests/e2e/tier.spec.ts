@@ -570,6 +570,8 @@ test.describe( 'TIER', () => {
         // It is marked stale, and shows the change once it is a Preview again.
         await expect( frame ).toHaveAttribute( 'data-wfd-stale', 'true' );
         await setZoom( page, 0.25 );
+        // The frozen copy lies over the Preview until that has settled.
+        await expect( frame.locator( 'iframe' ) ).toHaveCount( 1 );
         await expect(
             frame
                 .frameLocator( 'iframe' )

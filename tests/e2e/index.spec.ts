@@ -110,9 +110,15 @@ test.describe( 'INDEX', () => {
         const member = artboardOf( fixture, 'page', 'desktop', 1 );
         const header = artboardOf( fixture, 'template-part' );
         await setViewport( page, { x: -300, y: -120, zoom: 0.25 } );
+        // The frozen copy lies over the Preview until that has settled.
+        await expect(
+            page.locator(
+                `[data-wfd-artboard="${ hero.id }"] iframe:not([sandbox])`
+            )
+        ).toBeAttached();
         await expect(
             page.locator( `[data-wfd-artboard="${ hero.id }"] iframe` )
-        ).toBeAttached();
+        ).toHaveCount( 1 );
 
         await row( page, 'Accent 1' ).click();
         await page.keyboard.press( 'Escape' );

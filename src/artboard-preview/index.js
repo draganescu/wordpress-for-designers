@@ -28,18 +28,19 @@ import { usePageTemplateId } from './use-page-template';
 
 const NO_CONTEXT = {};
 
-function Measured( { onHeight, onFreeze, isOver, children } ) {
+function Measured( { onHeight, onFreeze, isOver, isHeld, children } ) {
     const [ listener, { height } ] = useResizeObserver();
     const element = useRef();
     const report = useRef( onHeight );
     report.current = onHeight;
     const freeze = useRef( onFreeze );
     freeze.current = onFreeze;
+    // A held height is reported when it is let go.
     useEffect( () => {
-        if ( height ) {
+        if ( height && ! isHeld ) {
             report.current( Math.ceil( height ) );
         }
-    }, [ height ] );
+    }, [ height, isHeld ] );
     // Layout effects are cleaned up before React removes the elements, so
     // the rendered Preview can still be copied here.
     useLayoutEffect( () => {
@@ -65,6 +66,7 @@ function Preview( {
     onHeight,
     onFreeze,
     isOver,
+    isHeld,
 } ) {
     // Viewport-height lengths are pinned, or content sized with them would
     // fill whatever height the iframe is given
@@ -85,6 +87,7 @@ function Preview( {
                     onHeight={ onHeight }
                     onFreeze={ onFreeze }
                     isOver={ isOver }
+                    isHeld={ isHeld }
                 >
                     <BlockPreview
                         blocks={ blocks }
@@ -213,6 +216,7 @@ export function ArtboardPreviewOnce( { isBusy, onSettled, ...props } ) {
  * @param {Function} props.onHeight Reports the measured content height.
  * @param {Function} props.onFreeze Receives the rendered Preview just before it is removed.
  * @param {boolean}  props.isOver   Whether it lies over the content that replaces it.
+ * @param {boolean}  props.isHeld   Whether its height is kept back: it is under the frozen copy it replaces, and the artboard keeps the copy's height until the Preview has settled.
  */
 export function ArtboardPreview( { artboard, ...props } ) {
     return (
