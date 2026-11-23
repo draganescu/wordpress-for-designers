@@ -172,15 +172,57 @@ function wfd_agent_is_active() {
  * @return bool Whether the times were written.
  */
 function wfd_agent_begin( string $source ) {
-    $now                = time();
-    $sources            = (array) wfd_agent_read( WFD_AGENT_SOURCES );
-    $sources[ $source ] = $now;
-    $written            = wfd_agent_update( WFD_AGENT_SEEN, (string) $now );
-    $written            = wfd_agent_write( WFD_AGENT_SOURCES, $sources ) && $written;
+    $now     = time();
+    $written = wfd_agent_update( WFD_AGENT_SEEN, (string) $now );
+    $written = wfd_agent_note_source( $source, $now ) && $written;
     if ( ! wp_next_scheduled( WFD_AGENT_CLEANUP ) ) {
         wp_schedule_event( $now, 'hourly', WFD_AGENT_CLEANUP );
     }
     return $written;
+}
+
+/**
+ * Writes the time a way in was used under its label, keeping the times of
+ * the others. The row changes only while it still holds what was read, so
+ * two ways in used at once never lose each other's time.
+ *
+ * @param string $source The label of the way in.
+ * @param int    $now    The time.
+ * @return bool Whether the row holds the time afterwards.
+ */
+function wfd_agent_note_source( $source, $now ) {
+    global $wpdb;
+    for ( $attempt = 0; $attempt < 5; $attempt++ ) {
+        wp_cache_delete( WFD_AGENT_SOURCES, 'options' );
+        $stored = $wpdb->get_var( $wpdb->prepare( "SELECT option_value FROM $wpdb->options WHERE option_name = %s", WFD_AGENT_SOURCES ) ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+        if ( null === $stored ) {
+            // No row yet. Another way in may add it first: then read again.
+            if ( add_option( WFD_AGENT_SOURCES, wp_json_encode( array( $source => $now ) ), '', false ) ) {
+                return true;
+            }
+            continue;
+        }
+        $sources            = json_decode( $stored, true );
+        $sources            = is_array( $sources ) ? $sources : array();
+        $sources[ $source ] = $now;
+        $next               = wp_json_encode( $sources );
+        if ( $next === $stored ) {
+            return true;
+        }
+        $changed = $wpdb->query( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+            $wpdb->prepare(
+                "UPDATE $wpdb->options SET option_value = %s WHERE option_name = %s AND option_value = %s",
+                $next,
+                WFD_AGENT_SOURCES,
+                $stored
+            )
+        );
+        wp_cache_delete( WFD_AGENT_SOURCES, 'options' );
+        if ( 1 === $changed ) {
+            return true;
+        }
+    }
+    return false;
 }
 
 /**
@@ -291,19 +333,41 @@ function wfd_agent_board_new( string $title = '' ) {
  *               envelope for a failure of the relay itself.
  */
 function wfd_agent_relay( array $calls, array $args ) {
-    if ( ! wfd_agent_begin( $args['source'] ) ) {
+    $source = isset( $args['source'] ) ? $args['source'] : null;
+    if ( ! is_string( $source ) || ! preg_match( '/^[a-z0-9-]{1,20}$/', $source ) ) {
+        return wfd_agent_failure( 'invalid_args', 'source must be 1 to 20 lowercase letters, digits and dashes.' );
+    }
+    if ( ! wfd_agent_begin( $source ) ) {
         return wfd_agent_failure( 'unavailable', WFD_AGENT_WRITE_FAILED );
     }
-    $timeout = isset( $args['timeout'] ) ? (int) $args['timeout'] : 30;
+    // A timeout outside 1 to 120 is brought to the nearest of the two.
+    $timeout = isset( $args['timeout'] ) ? max( 1, min( 120, (int) $args['timeout'] ) ) : 30;
+    // What a caller that broke part way left behind.
+    wfd_agent_cleanup();
 
-    $names = wp_list_pluck( wfd_agent_tools(), 'name' );
+    if ( count( $calls ) < 1 || count( $calls ) > 50 ) {
+        return wfd_agent_failure( 'invalid_args', 'calls must be a JSON array of 1 to 50 calls.' );
+    }
+    $calls   = array_values( $calls );
+    $schemas = wp_list_pluck( wfd_agent_tools(), 'input', 'name' );
     foreach ( $calls as $index => $call ) {
-        if ( ! in_array( $call['tool'], $names, true ) ) {
+        if ( ! is_array( $call ) || ! isset( $call['tool'] ) || ! is_string( $call['tool'] ) ) {
+            return wfd_agent_failure( 'invalid_args', sprintf( 'calls[%d] must be an object with a tool.', $index ) );
+        }
+        $input = isset( $call['input'] ) ? $call['input'] : array();
+        if ( ! is_array( $input ) && ! is_object( $input ) ) {
+            return wfd_agent_failure( 'invalid_args', sprintf( 'calls[%d].input must be an object.', $index ) );
+        }
+        if ( ! isset( $schemas[ $call['tool'] ] ) ) {
             return wfd_agent_failure( 'unknown_tool', sprintf( 'There is no tool named %s.', $call['tool'] ) );
         }
-        // An input given as an array is stored as an object, so that an
-        // empty one does not reach the page as an empty list.
-        $calls[ $index ]['input'] = (object) $call['input'];
+        // An input given as an array is stored as an object, and so is
+        // every field the tool declares as one, so that an empty one does
+        // not reach the page as an empty list.
+        $calls[ $index ] = array(
+            'tool'  => $call['tool'],
+            'input' => (object) wfd_agent_shape( $input, $schemas[ $call['tool'] ] ),
+        );
     }
 
     $boards = wfd_agent_listening_boards();
@@ -344,7 +408,7 @@ function wfd_agent_relay( array $calls, array $args ) {
                 'board'   => $board,
                 'calls'   => $calls,
                 'status'  => 'queued',
-                'source'  => $args['source'],
+                'source'  => $source,
                 'created' => $started,
                 'expires' => $now + WFD_AGENT_CALL_LIFE,
                 // The page starts no entry once this has passed (D89).
@@ -358,6 +422,17 @@ function wfd_agent_relay( array $calls, array $args ) {
         return wfd_agent_failure( 'unavailable', WFD_AGENT_WRITE_FAILED );
     }
 
+    // A request that ends while it waits (a time limit, a fatal error)
+    // leaves no call for the board to run after its caller has gone.
+    $waiting = true;
+    register_shutdown_function(
+        function () use ( $name, &$waiting ) {
+            if ( $waiting ) {
+                delete_option( $name );
+            }
+        }
+    );
+
     $call = null;
     while ( microtime( true ) - $started < $timeout ) {
         usleep( 200000 );
@@ -367,13 +442,62 @@ function wfd_agent_relay( array $calls, array $args ) {
         }
     }
     delete_option( $name );
+    $waiting = false;
+
+    $failed = wfd_agent_failure( 'timeout', sprintf( 'The board did not answer within %d seconds.', $timeout ) );
     if ( ! $call || ! isset( $call->status, $call->results ) || 'done' !== $call->status ) {
-        return wfd_agent_failure( 'timeout', sprintf( 'The board did not answer within %d seconds.', $timeout ) );
+        return $failed;
+    }
+    // An answer that is not one envelope per entry is no answer.
+    $results = (array) $call->results;
+    if ( count( $results ) !== count( $calls ) ) {
+        return $failed;
+    }
+    foreach ( $results as $envelope ) {
+        if ( ! is_object( $envelope ) || ! isset( $envelope->ok ) ) {
+            return $failed;
+        }
+        if ( ! $envelope->ok && ( ! isset( $envelope->error ) || ! is_object( $envelope->error ) || ! isset( $envelope->error->code, $envelope->error->message ) ) ) {
+            return $failed;
+        }
     }
     return array(
         'ok'      => true,
-        'results' => (array) $call->results,
+        'results' => array_values( $results ),
     );
+}
+
+/**
+ * Makes an object of every part of a value that a schema declares as one.
+ * A value a PHP caller holds as arrays cannot tell an empty object from an
+ * empty list; the tool's declaration can. A part the declaration leaves
+ * open, or allows to be either, is left as it is.
+ *
+ * @param mixed $value  The value.
+ * @param mixed $schema Its schema, as the declarations hold it.
+ * @return mixed The value.
+ */
+function wfd_agent_shape( $value, $schema ) {
+    if ( ! is_array( $value ) || ! is_array( $schema ) || ! isset( $schema['type'] ) ) {
+        return $value;
+    }
+    $types = (array) $schema['type'];
+    if ( in_array( 'object', $types, true ) && ! in_array( 'array', $types, true ) ) {
+        if ( isset( $schema['properties'] ) && is_array( $schema['properties'] ) ) {
+            foreach ( $schema['properties'] as $key => $property ) {
+                if ( array_key_exists( $key, $value ) ) {
+                    $value[ $key ] = wfd_agent_shape( $value[ $key ], $property );
+                }
+            }
+        }
+        return (object) $value;
+    }
+    if ( in_array( 'array', $types, true ) && ! in_array( 'object', $types, true ) && isset( $schema['items'] ) ) {
+        foreach ( $value as $index => $item ) {
+            $value[ $index ] = wfd_agent_shape( $item, $schema['items'] );
+        }
+    }
+    return $value;
 }
 
 /**

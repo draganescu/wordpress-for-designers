@@ -152,8 +152,7 @@ class WFD_Agent_Command {
         if ( isset( $assoc_args['board'] ) ) {
             $args['board'] = (int) $assoc_args['board'];
         }
-        wfd_agent_cleanup();
-
+        // The relay cleans up before it enqueues.
         $answer = wfd_agent_relay( $calls, $args );
         if ( ! $answer['ok'] ) {
             $this->finish( $answer, 1 );

@@ -168,9 +168,10 @@ function wfd_abilities_register() {
                     if ( is_wp_error( $results ) ) {
                         return $results;
                     }
+                    // The relay answers with one whole envelope for the entry.
                     $envelope = (array) $results[0];
                     if ( ! empty( $envelope['ok'] ) ) {
-                        return $envelope['result'];
+                        return isset( $envelope['result'] ) ? $envelope['result'] : null;
                     }
                     $error = (array) $envelope['error'];
                     return wfd_abilities_error( $error['code'], $error['message'] );
