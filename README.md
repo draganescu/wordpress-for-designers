@@ -52,6 +52,13 @@ The screenshots show the demo site, Morrow Coffee Roasters. [demo/README.md](dem
 
 The **Try it in WordPress Playground** button starts a WordPress site in your browser with the latest build of `master` installed, seeds it with the demo site, Morrow Coffee Roasters, and opens the Boards screen with seven boards to explore. Nothing is installed on your computer, and the site is discarded when you close the tab.
 
+## Design with an AI agent
+
+An AI agent can work on a board with you: you ask for a change in plain words, watch it happen on the board, and save only what you like. Two guides, written for designers, set it up step by step:
+
+- [On your computer, with WordPress Studio](docs/guides/studio.md): a local site, Studio's own agent, and the Annotate tool for pointing at things on the board.
+- [On a hosted site, over MCP](docs/guides/remote-mcp.md): a site on the internet, and an agent that connects to it and opens the board in a browser.
+
 ## Requirements
 
 - WordPress 7.2 or later
@@ -86,6 +93,8 @@ git push --follow-tags
 
 ## Documentation
 
+- [docs/guides/studio.md](docs/guides/studio.md): set up WordPress Studio to work on boards with an agent
+- [docs/guides/remote-mcp.md](docs/guides/remote-mcp.md): set up a hosted site so an agent can reach its boards over MCP
 - [docs/state.md](docs/state.md): what exists now and how to run it
 - [docs/working-notes.md](docs/working-notes.md): how the work was done
 - [spec/](spec/): the specification the plugin is built from
