@@ -577,6 +577,26 @@ test.describe( 'TIER', () => {
                 .frameLocator( 'iframe' )
                 .locator( 'p', { hasText: 'Changed while frozen' } )
         ).toBeAttached();
+        // Frozen again, the Preview lies over the old copy until the new one
+        // is drawn (D100). The copy made from it fills the frame.
+        await setZoom( page, 0.15 );
+        await expect( frame ).toHaveAttribute( 'data-wfd-tier', 'snapshot' );
+        await expect
+            .poll( () =>
+                frame.locator( '.wfd-snapshot' ).evaluate( ( host ) => {
+                    const copies = host.querySelectorAll(
+                        '.wfd-snapshot__copy:not(.is-loading)'
+                    );
+                    const inner = copies[ 0 ]?.querySelector( 'iframe' );
+                    return copies.length === 1 &&
+                        inner?.contentDocument?.body.textContent?.includes(
+                            'Changed while frozen'
+                        )
+                        ? copies[ 0 ].getBoundingClientRect().height
+                        : -1;
+                } )
+            )
+            .toBeGreaterThan( 0 );
     } );
 
     test( 'AC-TIER-11 After a global style change, an artboard that is a snapshot shows the new style without becoming a preview', async ( {

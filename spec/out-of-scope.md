@@ -34,3 +34,8 @@ Each item was considered and cut. Do not build any of them, in part or behind a 
 | A tool that saves, publishes, deletes, trashes or resets, takes over a lock or acts on Review's checkboxes (D78) | `[U]` |
 | Tools for notes, renaming, a page's template, a browser's settings, Tidy up, pan and zoom, undo and redo, and a template for a slug the inserter does not offer (D72, D77) | `[N]` |
 | Calling an AI model from the plugin, and any prompt in the plugin other than the runbook of `agent/cli.md` | `[N]` |
+| Snapping, of a guide to anything or of an artboard to a guide (D110) | `[U]` |
+| Adding a guide without a pointer (D110) | `[U]` |
+| A "Guides" group in the left panel, and a list of guides in an artboard's settings (D112) | `[U]` |
+| A tool that reads or changes guides or rulers, and guides in the result of `board-get` (D115) | `[U]` |
+| A label, a name or a colour of a guide's own | `[N]` |

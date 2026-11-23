@@ -34,9 +34,16 @@ jobs:
             - run: npm run build
 
     e2e:
-        name: End-to-end
+        name: End-to-end (${{ matrix.shard }}/4)
         runs-on: ubuntu-latest
-        timeout-minutes: 45
+        timeout-minutes: 30
+        # The suite runs on one worker against one site, so it is split by
+        # spec file over four runners, each with its own WordPress. A shard
+        # that fails does not stop the others.
+        strategy:
+            fail-fast: false
+            matrix:
+                shard: [1, 2, 3, 4]
         steps:
             # AC-PERF-03 expects the plugin folder to be named
             # wordpress-for-designers; wp-env names it after the checkout
@@ -54,13 +61,13 @@ jobs:
             # Retries are on in CI (wp-scripts sets two). A test that passes on
             # a retry is reported as flaky in the summary, not as a failure.
             - name: Run the suite
-              run: npm run test:e2e
+              run: npm run test:e2e -- --shard=${{ matrix.shard }}/4
 
             - name: Upload failure artifacts
               if: failure()
               uses: actions/upload-artifact@v4
               with:
-                  name: e2e-artifacts
+                  name: e2e-artifacts-${{ matrix.shard }}
                   path: artifacts/test-results
                   retention-days: 7
                   if-no-files-found: ignore

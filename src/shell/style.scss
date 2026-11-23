@@ -3,6 +3,8 @@
 @use "@wordpress/base-styles/variables" as wp-variables;
 @import "primitives";
 @import "space-gate";
+@import "rulers";
+@import "guides";
 @import "../styles/style";
 @import "../inserter/style";
 @import "../review/style";

@@ -1,0 +1,119 @@
+// Guides (D110 to D114).
+
+// How far a board guide reaches on each side of the board's origin, in board
+// units: past the edges of the canvas area at any pan and zoom.
+$wfd-guide-reach: 1000000px;
+
+// An artboard's guides are placed from its top-left corner.
+.wfd-artboard__guides {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+}
+
+// GD1: a line 1 px wide at every zoom. Above artboards and their labels,
+// below notes.
+.wfd-guide {
+    position: absolute;
+    z-index: 2;
+    pointer-events: auto;
+    background: var(--wfd-guide-color);
+
+    --wfd-guide-color: var(--wpds-color-stroke-surface-info-strong);
+    --wfd-guide-width: calc(var(--wpds-border-width-xs) / var(--wfd-zoom));
+    // What takes the pointer on each side of the line: 4 CSS px.
+    --wfd-guide-grip: calc(var(--wpds-dimension-padding-xs) / var(--wfd-zoom) * -1);
+
+    &::before {
+        content: "";
+        position: absolute;
+    }
+
+    &.is-x {
+        top: 0;
+        width: var(--wfd-guide-width);
+        height: 100%;
+        cursor: col-resize;
+
+        &::before {
+            inset: 0 var(--wfd-guide-grip);
+        }
+    }
+
+    &.is-y {
+        left: 0;
+        width: 100%;
+        height: var(--wfd-guide-width);
+        cursor: row-resize;
+
+        &::before {
+            inset: var(--wfd-guide-grip) 0;
+        }
+    }
+
+    &.is-board.is-x {
+        height: $wfd-guide-reach * 2;
+        transform: translateY(-50%);
+    }
+
+    &.is-board.is-y {
+        width: $wfd-guide-reach * 2;
+        transform: translateX(-50%);
+    }
+
+    // GD3.
+    &.is-selected {
+
+        --wfd-guide-color: var(--wpds-color-stroke-interactive-brand);
+        --wfd-guide-width: calc(var(--wpds-border-width-sm) / var(--wfd-zoom));
+    }
+
+    // The line of a guide being pulled out of a ruler.
+    &.is-draft {
+        pointer-events: none;
+    }
+}
+
+// With an artboard in edit, guides take no pointer input (D114): a click on
+// a line reaches the block under it.
+.wfd-canvas__surface:has([data-wfd-tier="live"]) .wfd-guide {
+    pointer-events: none;
+}
+
+// GD2: beside the pointer, at screen size, above notes.
+.wfd-guide-chip {
+    position: absolute;
+    z-index: 4;
+    white-space: nowrap;
+    pointer-events: none;
+    transform: scale(calc(1 / var(--wfd-zoom))) translate(var(--wpds-dimension-gap-md), var(--wpds-dimension-gap-md));
+    transform-origin: 0 0;
+
+    &[hidden] {
+        display: none;
+    }
+}
+
+// The artboard a guide being pulled out would belong to.
+.wfd-artboard.is-guide-target .wfd-artboard__frame {
+    outline: calc(var(--wpds-border-width-xs) / var(--wfd-zoom)) solid var(--wpds-color-stroke-interactive-brand);
+}
+
+// The pointer of a guide being dragged, wherever it is on the canvas.
+.wfd-canvas.is-guiding-x {
+    cursor: col-resize;
+}
+
+.wfd-canvas.is-guiding-y {
+    cursor: row-resize;
+}
+
+// GD4.
+.wfd-guide-position {
+    margin: var(--wpds-dimension-padding-lg);
+}
+
+.wfd-guide-position__suffix {
+    align-self: center;
+    padding-inline-end: var(--wpds-dimension-padding-md);
+}

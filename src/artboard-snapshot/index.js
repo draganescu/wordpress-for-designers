@@ -61,6 +61,10 @@ function freeze( preview ) {
         target.setAttribute( 'tabindex', '-1' );
         target.srcdoc = '<!DOCTYPE html>' + html.outerHTML;
     } );
+    // A Preview left over the content that replaces it (D100) is frozen as
+    // it leaves. Its copy is the content itself, not something over it: with
+    // the class it would be cut to the height of its host, which is none.
+    copy.classList.remove( 'is-over' );
     copy.classList.add( 'wfd-snapshot__copy' );
     return copy;
 }
