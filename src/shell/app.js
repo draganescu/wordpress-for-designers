@@ -1256,7 +1256,7 @@ export function App() {
                                     // their keys in every tier, so that one
                                     // left over another is the same element
                                     // and is not loaded again.
-                                    const previewOf = ( isOver ) => (
+                                    const previewOf = ( isOver, isHeld ) => (
                                         <ArtboardPreview
                                             key="preview"
                                             artboard={ artboard }
@@ -1264,6 +1264,7 @@ export function App() {
                                             settings={ previewSettings }
                                             onHeight={ onHeight }
                                             isOver={ isOver }
+                                            isHeld={ isHeld }
                                             onFreeze={ ( element ) => {
                                                 // A Preview that leaves
                                                 // while a block in it is
@@ -1351,7 +1352,14 @@ export function App() {
                                     ) {
                                         incoming = true;
                                         content = [
-                                            previewOf( false ),
+                                            // Under the copy it replaces, its
+                                            // height waits: it changes several
+                                            // times before it has settled, and
+                                            // the artboard would follow.
+                                            previewOf(
+                                                false,
+                                                outgoing === 'snapshot'
+                                            ),
                                             outgoing === 'snapshot' &&
                                                 copyOf( true ),
                                         ];
