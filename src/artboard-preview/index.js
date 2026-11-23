@@ -140,10 +140,25 @@ const QUIET = 500;
 const GIVE_UP = 8000;
 
 /**
+ * Whether a rendered Preview still shows a block that is loading: WordPress's
+ * `Spinner` is in its canvas. A block such as Site Logo keeps its height
+ * while it loads, and a copy frozen then would show the spinner, turning,
+ * for as long as the copy is kept.
+ *
+ * @param {?Element} preview The Preview's root element.
+ * @return {boolean} True while something in it is loading.
+ */
+export const isLoading = ( preview ) =>
+    !! preview
+        ?.querySelector( 'iframe' )
+        ?.contentDocument?.querySelector( '.components-spinner' );
+
+/**
  * A Preview rendered once, out of the Preview tier, for an artboard that
  * needs a frozen copy and was never rendered. It reports once, when its
- * height has stopped changing or when nothing was rendered at all, and never
- * while the board is busy.
+ * height has stopped changing and nothing in it is loading, or when nothing
+ * was rendered at all, and never while the board is busy. A block that is
+ * still loading after `GIVE_UP` is not waited for.
  *
  * @param {Object}   props
  * @param {Function} props.isBusy    Whether reporting has to wait.
@@ -154,10 +169,15 @@ export function ArtboardPreviewOnce( { isBusy, onSettled, ...props } ) {
     const timer = useRef();
     const latest = useRef( { isBusy, onSettled } );
     latest.current = { isBusy, onSettled };
+    const start = useRef( 0 );
     const wait = useCallback( ( delay, height ) => {
         clearTimeout( timer.current );
         timer.current = setTimeout( () => {
-            if ( latest.current.isBusy?.() ) {
+            if (
+                latest.current.isBusy?.() ||
+                ( Date.now() - start.current < GIVE_UP &&
+                    isLoading( element.current ) )
+            ) {
                 wait( QUIET, height );
                 return;
             }
@@ -170,6 +190,7 @@ export function ArtboardPreviewOnce( { isBusy, onSettled, ...props } ) {
         }, delay );
     }, [] );
     useEffect( () => {
+        start.current = Date.now();
         wait( GIVE_UP, 0 );
         return () => clearTimeout( timer.current );
     }, [ wait ] );

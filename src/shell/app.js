@@ -28,7 +28,11 @@ import {
     browserTier,
     usePreview,
 } from '../artboard-frame';
-import { ArtboardPreview, ArtboardPreviewOnce } from '../artboard-preview';
+import {
+    ArtboardPreview,
+    ArtboardPreviewOnce,
+    isLoading,
+} from '../artboard-preview';
 import { ArtboardSnapshot, createSnapshotStore } from '../artboard-snapshot';
 import { useTiers } from '../tier-scheduler';
 import { InserterPanel } from '../inserter/inserter-panel';
@@ -1261,7 +1265,13 @@ export function App() {
                                             onHeight={ onHeight }
                                             isOver={ isOver }
                                             onFreeze={ ( element ) => {
+                                                // A Preview that leaves
+                                                // while a block in it is
+                                                // loading is not copied:
+                                                // the artboard is rendered
+                                                // once for its copy.
                                                 if (
+                                                    ! isLoading( element ) &&
                                                     snapshots.capture(
                                                         artboard.id,
                                                         element,
