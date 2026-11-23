@@ -1,7 +1,7 @@
 === WordPress for Designers: Abilities ===
 Requires at least: 7.2
 Requires PHP: 7.4
-Stable tag: 0.3.0
+Stable tag: 0.4.0
 
 Lets an agent that reaches the site through abilities work on a WordPress for Designers board that is open in the browser it controls.
 
