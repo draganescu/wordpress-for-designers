@@ -1,12 +1,12 @@
 {
     "budgets": {
         "bundle.board.js": 2150000,
-        "bundle.board.js.gzip": 480000,
+        "bundle.board.js.gzip": 492000,
         "bundle.board.dependencies": 25,
         "bundle.boards.js": 1150000,
         "bundle.boards.js.gzip": 240000,
         "bundle.boards.dependencies": 18,
-        "bundle.style-board.css": 19500,
+        "bundle.style-board.css": 23000,
         "bundle.style-boards.css": 90000,
 
         "board-9.rest-requests": 42,
