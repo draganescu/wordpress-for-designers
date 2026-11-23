@@ -668,12 +668,33 @@ function stillMoving() {
     const visit = ( doc: Document, where: string ) => {
         doc.getAnimations().forEach( ( animation: any ) => {
             const target = animation.effect?.target as Element | undefined;
+            // The blocks the animated element is in, innermost first, and
+            // the artboard its document belongs to.
+            const blocks: string[] = [];
+            for (
+                let block = target?.closest( '[data-type]' );
+                block && blocks.length < 4;
+                block = block.parentElement?.closest( '[data-type]' )
+            ) {
+                blocks.push(
+                    `${ block.getAttribute( 'data-type' ) }.${ (
+                        block.getAttribute( 'class' ) ?? ''
+                    ).slice( 0, 80 ) }`
+                );
+            }
+            const artboard = doc.defaultView?.frameElement?.closest(
+                '[data-wfd-artboard]'
+            );
             const key = [
                 where,
                 animation.animationName ?? animation.transitionProperty ?? '',
                 animation.playState,
                 target?.tagName ?? '',
                 ( target?.getAttribute( 'class' ) ?? '' ).slice( 0, 60 ),
+                `in ${ blocks.join( ' < ' ) || 'no block' }`,
+                `artboard ${
+                    artboard?.getAttribute( 'data-wfd-artboard' ) ?? 'none'
+                } (${ artboard?.getAttribute( 'data-wfd-tier' ) ?? '' })`,
             ].join( ' | ' );
             animations[ key ] = ( animations[ key ] ?? 0 ) + 1;
         } );
