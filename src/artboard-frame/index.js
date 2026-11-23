@@ -302,6 +302,7 @@ function Label( {
  * @param {boolean}  props.isStale        Whether its Snapshot is out of date.
  * @param {Function} props.onAddress      A browser's typed address (D55).
  * @param {Function} props.onReload       Reloads a browser's page.
+ * @param {Element}  props.guides         Its guides (D110), drawn over it in every tier; none when it has none.
  * @param {Element}  props.children       The tier content.
  */
 export function ArtboardFrame( {
@@ -321,6 +322,7 @@ export function ArtboardFrame( {
     isStale,
     onAddress,
     onReload,
+    guides,
     children,
 } ) {
     countRender();
@@ -379,6 +381,11 @@ export function ArtboardFrame( {
             { KINDS[ artboard.kind ].isResized && ! isLive && (
                 // The window's bottom edge resizes it (D56).
                 <div className="wfd-artboard__resize" data-wfd-resize />
+            ) }
+            { guides && (
+                // Over the content and the label, from the artboard's
+                // top-left corner in the page's pixels.
+                <div className="wfd-artboard__guides">{ guides }</div>
             ) }
         </div>
     );

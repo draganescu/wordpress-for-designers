@@ -5,6 +5,7 @@
  * Pan, zoom and artboard drags change the DOM directly; the store hears about
  * them when they end (constraint C22). The selection rectangle (D43) is drawn
  * the same way; the store hears when the set of selected artboards changes.
+ * So is a guide being dragged (C35): the store hears of it on release.
  *
  * Pointer events reach this file through ./touch-gestures.js, which turns
  * fingers into presses, drags and double-clicks and pans and pinches the
@@ -16,7 +17,8 @@ import { store as boardStore } from '../board-store';
 import { orderedArtboards } from './artboards-panel';
 import { isShortcutsDialogEvent } from './shortcuts-dialog';
 import { noteRect } from './notes';
-import { MIN_BROWSER_HEIGHT, hasDevice } from './constants';
+import { guideRange } from './guides';
+import { ATTR, KINDS, MIN_BROWSER_HEIGHT, hasDevice } from './constants';
 import { createTouchGestures } from './touch-gestures';
 
 const DRAG_THRESHOLD = 3;
@@ -31,6 +33,16 @@ function isEditable( target ) {
         )
     );
 }
+
+/**
+ * A guide's position kept within what `guideRange` gives for it.
+ *
+ * @param {number}   at    The position.
+ * @param {number[]} range The lowest and the highest; none for a board guide.
+ * @return {number} The position.
+ */
+const within = ( at, range ) =>
+    range ? Math.min( range[ 1 ], Math.max( range[ 0 ], at ) ) : at;
 
 /**
  * The rectangle of an artboard in board units.
@@ -65,8 +77,15 @@ export function rectOf( artboard, widthOf ) {
  *                                             shortcuts dialog.
  * @param {Function} options.onRemoveMany      Takes several artboards off the
  *                                             board.
+ * @param {Object}   options.rulersRef         Ref of the rulers, which measure
+ *                                             a guide while it is dragged.
+ * @param {Function} options.onToggleRulers    Shows or hides the rulers.
+ * @param {Function} options.onToggleGuides    Shows or hides guides.
+ * @param {Function} options.onShowGuides      Shows guides: one is pulled out
+ *                                             of a ruler (D109).
  * @param {boolean}  options.isReady           Whether the board has loaded.
- * @return {Object} Functions for the header's zoom menu.
+ * @return {Object} Functions for the header's zoom menu, and `pullGuide` for
+ *                  the rulers.
  */
 export function useCanvasInteractions( {
     areaRef,
@@ -79,6 +98,10 @@ export function useCanvasInteractions( {
     onTogglePanels,
     onToggleShortcuts,
     onRemoveMany,
+    rulersRef,
+    onToggleRulers,
+    onToggleGuides,
+    onShowGuides,
     isReady,
 } ) {
     const registry = useRegistry();
@@ -92,6 +115,10 @@ export function useCanvasInteractions( {
         onTogglePanels,
         onToggleShortcuts,
         onRemoveMany,
+        rulersRef,
+        onToggleRulers,
+        onToggleGuides,
+        onShowGuides,
     };
 
     const api = useRef( null );
@@ -272,6 +299,36 @@ export function useCanvasInteractions( {
             if ( event.button !== 0 ) {
                 return;
             }
+            if ( event.target.closest?.( `[${ ATTR.ruler }]` ) ) {
+                // A press on a ruler is `pullGuide`'s.
+                return;
+            }
+            const line = event.target.closest?.( `[${ ATTR.guide }]` );
+            if ( line ) {
+                const guide = board()
+                    .getGuides()
+                    .find(
+                        ( { id } ) => id === line.getAttribute( ATTR.guide )
+                    );
+                // With an artboard in edit a guide takes no input (D114).
+                if ( ! guide || board().getEditId() ) {
+                    return;
+                }
+                gesture = {
+                    type: 'guide',
+                    guide,
+                    element: line,
+                    artboard: board().getArtboard( guide.artboard ),
+                    at: guide.at,
+                    startX: event.clientX,
+                    startY: event.clientY,
+                    selectionBefore: board().getSelectedIds(),
+                };
+                actions().selectGuide( guide.id );
+                area.focus( { preventScroll: true } );
+                capture( event.pointerId );
+                return;
+            }
             const element = frameOf( event.target );
             if ( ! element ) {
                 gesture = {
@@ -383,6 +440,16 @@ export function useCanvasInteractions( {
             capture( event.pointerId );
         }
 
+        // A press, which also keeps the guide that was selected (D112) for
+        // the gesture to put back if it is cancelled.
+        function onPress( event ) {
+            const guideBefore = board().getSelectedGuideId();
+            onPointerDown( event );
+            if ( gesture ) {
+                gesture.guideBefore = guideBefore;
+            }
+        }
+
         const toBoard = ( { x, y } ) => {
             const view = viewport.get();
             return {
@@ -410,11 +477,180 @@ export function useCanvasInteractions( {
                 }
             } else if ( cancelled?.type === 'resize' ) {
                 cancelled.frame.style.height = cancelled.originHeight + 'px';
+            } else if ( cancelled?.type === 'guide' ) {
+                endGuideDrag( cancelled );
+                if ( ! cancelled.guide.id ) {
+                    // A guide being pulled out selected nothing.
+                    return;
+                }
+                placeGuide( cancelled, cancelled.guide.at );
             } else {
                 return;
             }
             actions().selectArtboards( cancelled.selectionBefore );
+            actions().selectGuide( cancelled.guideBefore );
         }
+
+        // Guides (D110 to D114). The line of a guide pulled out of a ruler
+        // and the position chip are drawn once (./guides.js) and driven
+        // from here.
+        const guideDrag = () => ( {
+            draft: area.querySelector( '.wfd-guide.is-draft' ),
+            chip: area.querySelector( `[${ ATTR.guideChip }]` ),
+        } );
+
+        // Puts the line of a guide of the board at a position, and the
+        // "Position" field of its card (GD4) with it.
+        function placeGuide( { guide, element }, at ) {
+            element.style[ guide.axis === 'x' ? 'left' : 'top' ] = at + 'px';
+            const field = doc.querySelector( '[data-wfd-panel="guide"] input' );
+            if ( field ) {
+                field.value = at;
+            }
+        }
+
+        // Whether a pointer is where a guide pulled out of a ruler is not
+        // added: over a ruler or the corner between them, or outside the
+        // canvas area (D110).
+        function isOffBoard( event ) {
+            const { x, y } = point( event );
+            const size = viewport.size();
+            return (
+                x < 0 ||
+                y < 0 ||
+                x > size.width ||
+                y > size.height ||
+                [ ...area.querySelectorAll( `[${ ATTR.ruler }]` ) ].some(
+                    ( ruler ) => {
+                        const box = ruler.getBoundingClientRect();
+                        return ruler.getAttribute( ATTR.ruler ) === 'top'
+                            ? event.clientY < box.bottom
+                            : event.clientX < box.right;
+                    }
+                )
+            );
+        }
+
+        // The artboard under a pointer that a guide can belong to: a page,
+        // template, template part or pattern. Guides themselves are looked
+        // through.
+        function guideOwnerAt( event ) {
+            const under = doc
+                .elementsFromPoint( event.clientX, event.clientY )
+                .find(
+                    ( element ) => ! element.closest( `[${ ATTR.guide }]` )
+                );
+            const artboard =
+                under && isBody( under )
+                    ? board().getArtboard(
+                          frameOf( under ).dataset.wfdArtboard
+                      )
+                    : null;
+            return artboard && KINDS[ artboard.kind ].edit === 'editor'
+                ? artboard
+                : null;
+        }
+
+        function dragGuide( event ) {
+            const { guide } = gesture;
+            const { axis } = guide;
+            const isNew = ! guide.id;
+            const { draft, chip } = guideDrag();
+            if ( isNew ) {
+                gesture.at = null;
+                if ( isOffBoard( event ) ) {
+                    endGuideDrag( gesture );
+                    return;
+                }
+                gesture.artboard = guideOwnerAt( event );
+            } else if (
+                ! gesture.isMoving &&
+                Math.hypot(
+                    event.clientX - gesture.startX,
+                    event.clientY - gesture.startY
+                ) < DRAG_THRESHOLD
+            ) {
+                return;
+            }
+            gesture.isMoving = true;
+            area.classList.add( `is-guiding-${ axis }` );
+            const { artboard } = gesture;
+            const rect = artboard && rectOf( artboard, latest.current.widthOf );
+            const pointer = toBoard( point( event ) );
+            // Nothing snaps: the guide is where the pointer is, as a whole
+            // number, counted from its artboard's corner when it has one.
+            const at = within(
+                Math.round( pointer[ axis ] - ( rect ? rect[ axis ] : 0 ) ),
+                guideRange( axis, artboard, latest.current.widthOf )
+            );
+            gesture.at = at;
+            if ( ! isNew ) {
+                placeGuide( gesture, at );
+            } else if ( draft ) {
+                // Across its artboard only, or from edge to edge.
+                const start = { x: rect?.x ?? 0, y: rect?.y ?? 0 };
+                start[ axis ] += at;
+                draft.classList.toggle( 'is-x', axis === 'x' );
+                draft.classList.toggle( 'is-y', axis === 'y' );
+                draft.classList.toggle( 'is-board', ! rect );
+                draft.style.left = start.x + 'px';
+                draft.style.top = start.y + 'px';
+                draft.style.width =
+                    rect && axis === 'y' ? rect.width + 'px' : '';
+                draft.style.height =
+                    rect && axis === 'x' ? rect.height + 'px' : '';
+                draft.hidden = false;
+            }
+            // The artboard the new guide would belong to.
+            const target =
+                isNew && artboard
+                    ? area.querySelector(
+                          `[data-wfd-artboard="${ artboard.id }"]`
+                      )
+                    : null;
+            if ( target !== gesture.target ) {
+                gesture.target?.classList.remove( 'is-guide-target' );
+                gesture.target = target;
+            }
+            target?.classList.add( 'is-guide-target' );
+            if ( chip ) {
+                chip.textContent = String( at );
+                chip.style.left = pointer.x + 'px';
+                chip.style.top = pointer.y + 'px';
+                chip.hidden = false;
+            }
+            latest.current.rulersRef?.current?.measure( {
+                owner: rect ? { id: artboard.id, ...rect } : null,
+                active: { id: guide.id, axis, at },
+            } );
+        }
+
+        // Takes away what the drag of a guide drew besides its line.
+        function endGuideDrag( ended ) {
+            const { draft, chip } = guideDrag();
+            area.classList.remove( 'is-guiding-x', 'is-guiding-y' );
+            ended.target?.classList.remove( 'is-guide-target' );
+            ended.target = null;
+            if ( draft ) {
+                draft.hidden = true;
+            }
+            if ( chip ) {
+                chip.hidden = true;
+            }
+            latest.current.rulersRef?.current?.measure( null );
+        }
+
+        // Starts the drag of a new guide from a press on a ruler (D110):
+        // the top ruler pulls out a horizontal guide ('y'), the left ruler
+        // a vertical one ('x').
+        api.current.pullGuide = ( axis, event ) => {
+            if ( event.button !== 0 || gesture ) {
+                return;
+            }
+            latest.current.onShowGuides?.();
+            gesture = { type: 'guide', guide: { axis }, at: null };
+            capture( event.pointerId );
+        };
 
         // The selection rectangle (D43). It is kept in board units, so it
         // stays put on the board if the board is scrolled during the drag.
@@ -433,6 +669,8 @@ export function useCanvasInteractions( {
                 y: gesture.startY - box.top,
             } );
             gesture.selectionBefore = selectionBefore;
+            // A guide is selected alone (D112).
+            actions().selectGuide( null );
             gesture.kept =
                 gesture.add && ! isEditing ? board().getSelectedIds() : [];
             area.focus( { preventScroll: true } );
@@ -495,6 +733,10 @@ export function useCanvasInteractions( {
                 gesture.frame.style.height = gesture.height + 'px';
                 return;
             }
+            if ( gesture.type === 'guide' ) {
+                dragGuide( event );
+                return;
+            }
             const dx = event.clientX - gesture.startX;
             const dy = event.clientY - gesture.startY;
             if ( gesture.type === 'empty' || gesture.type === 'marquee' ) {
@@ -551,6 +793,35 @@ export function useCanvasInteractions( {
             if ( ended.type === 'resize' ) {
                 if ( ended.height !== null ) {
                     actions().resizeBrowser( ended.id, ended.height );
+                }
+                return;
+            }
+            if ( ended.type === 'guide' ) {
+                const { guide, artboard, at } = ended;
+                endGuideDrag( ended );
+                if ( guide.id ) {
+                    if ( ended.isMoving && at !== guide.at ) {
+                        actions().moveGuide( guide.id, at );
+                    }
+                } else if ( at !== null ) {
+                    // With an artboard in edit the new guide is not
+                    // selected and edit is kept (D114).
+                    const isEditing = !! board().getEditId();
+                    actions().addGuide(
+                        {
+                            id: window.crypto.randomUUID(),
+                            axis: guide.axis,
+                            at,
+                            ...( artboard && {
+                                artboard: artboard.id,
+                                device: artboard.device,
+                            } ),
+                        },
+                        { select: ! isEditing }
+                    );
+                    if ( ! isEditing ) {
+                        area.focus( { preventScroll: true } );
+                    }
                 }
                 return;
             }
@@ -633,9 +904,13 @@ export function useCanvasInteractions( {
         }
 
         function onKeyDown( event ) {
-            if ( gesture?.type === 'marquee' && event.key === 'Escape' ) {
-                // Esc cancels the selection rectangle: the selection goes
-                // back to what it was and the rest of the drag does nothing.
+            if (
+                [ 'marquee', 'guide' ].includes( gesture?.type ) &&
+                event.key === 'Escape'
+            ) {
+                // Esc cancels the selection rectangle and the drag of a
+                // guide: the selection goes back to what it was, the guide
+                // to where it was, and the rest of the drag does nothing.
                 cancelGesture();
                 gesture = { type: 'cancelled' };
                 event.preventDefault();
@@ -676,7 +951,52 @@ export function useCanvasInteractions( {
                 // Esc is the shell's (see use-editing.js).
                 return;
             }
+            if (
+                mod &&
+                event.code === 'Semicolon' &&
+                ! event.shiftKey &&
+                ! event.altKey
+            ) {
+                latest.current.onToggleGuides?.();
+                return done();
+            }
             if ( mod || event.altKey ) {
+                return;
+            }
+            if ( event.code === 'KeyR' && event.shiftKey ) {
+                latest.current.onToggleRulers?.();
+                return done();
+            }
+            const guide = board()
+                .getGuides()
+                .find( ( { id } ) => id === board().getSelectedGuideId() );
+            if ( guide && event.key !== 'Escape' ) {
+                // A selected guide takes these keys and no others (D112).
+                const nudgeGuide = ( by ) => {
+                    const at = within(
+                        guide.at + by,
+                        guideRange(
+                            guide.axis,
+                            board().getArtboard( guide.artboard ),
+                            latest.current.widthOf
+                        )
+                    );
+                    if ( at !== guide.at ) {
+                        actions().moveGuide( guide.id, at );
+                    }
+                    return done();
+                };
+                const by = event.shiftKey ? 10 : 1;
+                switch ( event.key ) {
+                    case 'Delete':
+                    case 'Backspace':
+                        actions().removeGuide( guide.id );
+                        return done();
+                    case guide.axis === 'x' ? 'ArrowLeft' : 'ArrowUp':
+                        return nudgeGuide( -by );
+                    case guide.axis === 'x' ? 'ArrowRight' : 'ArrowDown':
+                        return nudgeGuide( by );
+                }
                 return;
             }
             switch ( event.key ) {
@@ -794,7 +1114,7 @@ export function useCanvasInteractions( {
             area,
             viewport,
             pointOf: point,
-            onPress: onPointerDown,
+            onPress,
             onMove: onPointerMove,
             onRelease: onPointerUp,
             onCancel: cancelGesture,
