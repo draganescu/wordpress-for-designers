@@ -12,7 +12,6 @@ import {
     settled,
 } from '../blocks';
 import { invalidArgs, notAllowed } from '../errors';
-import { isCustomHtml, runsScript } from '../unsafe';
 
 export default async function blockUpdate( input ) {
     const found = findArtboard( input.artboard );
@@ -24,16 +23,8 @@ export default async function blockUpdate( input ) {
     if ( ! Object.keys( input.attributes ).length ) {
         throw invalidArgs( 'attributes must have at least one key.' );
     }
-    if ( runsScript( input.attributes ) ) {
-        throw invalidArgs(
-            'attributes must not hold a script or an event handler.'
-        );
-    }
     const { select, dispatch } = await editorOf( artboard );
     const clientId = clientIdAt( select, path );
-    if ( isCustomHtml( select.getBlockName( clientId ) ) ) {
-        throw invalidArgs( 'block must not name a Custom HTML block.' );
-    }
     const mode = select.getBlockEditingMode( clientId );
     if ( mode === 'disabled' ) {
         throw notAllowed();

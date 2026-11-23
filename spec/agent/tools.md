@@ -36,15 +36,9 @@ A failed tool returns `{ "code": "...", "message": "..." }`. The codes are these
 
 ### What a tool refuses
 
-A tool puts no Custom HTML block, no markup that runs script and no custom CSS on the site, because Review names a changed block and does not show its markup (D105). Each of these fails with `invalid_args` and changes nothing:
+`artboard-add` refuses a browser `address` whose path, percent-decoded and in any case, has a `wp-admin` segment, `wp-login.php` or `xmlrpc.php` (D106). It fails with `invalid_args` and the message `address must not be in wp-admin, wp-login.php or xmlrpc.php.`, and changes nothing.
 
-| Tool | Refused | Message |
-|---|---|---|
-| `blocks-insert` | `markup` in which any block, at any depth, is `core/html`, or holds in any attribute a `script`, `iframe`, `object` or `embed` element, an `on…=` event handler inside a tag, or a `javascript:` or `data:text/html` address. A `pattern` is not checked | `markup must not hold a Custom HTML block, a script or an event handler.` |
-| `block-update` | `attributes` that hold any of the same | `attributes must not hold a script or an event handler.` |
-| `block-update` | A `block` that is `core/html` | `block must not name a Custom HTML block.` |
-| `styles-set` | `kind` `style` with a `property` whose last key is `css` | `property must not be css.` |
-| `artboard-add` | A browser `address` whose path, percent-decoded and in any case, has a `wp-admin` segment, `wp-login.php` or `xmlrpc.php` (D106) | `address must not be in wp-admin, wp-login.php or xmlrpc.php.` |
+A tool refuses no block, markup or style for what it holds: Custom HTML, script and custom CSS are the user's to add through an agent as they are in the editor, and WordPress filters them on saving by that user's rights (D105).
 
 The relay adds four codes of its own: `no_board`, `several_boards`, `timeout` and `skipped` (`relay.md`).
 

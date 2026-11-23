@@ -7,7 +7,6 @@ import { actions, findArtboard } from '../board';
 import { clientIdAt, editorOf, settled } from '../blocks';
 import { invalidArgs, notAllowed, notFound } from '../errors';
 import { withinLimit } from '../limit';
-import { isRefused } from '../unsafe';
 
 export default async function blocksInsert( input ) {
     const { markup, pattern } = input;
@@ -33,11 +32,6 @@ export default async function blocksInsert( input ) {
                 block.name !== 'core/freeform' ||
                 String( block.attributes?.content ?? '' ).trim()
         );
-        if ( blocks.some( isRefused ) ) {
-            throw invalidArgs(
-                'markup must not hold a Custom HTML block, a script or an event handler.'
-            );
-        }
     }
     if ( ! blocks.length ) {
         throw invalidArgs(
