@@ -1912,6 +1912,15 @@ test.describe( 'TOOL', () => {
             'data-wfd-tier',
             'preview'
         );
+        // The frozen copy lies over the Preview until that has settled.
+        await expect(
+            page.locator(
+                `[data-wfd-artboard="${ header.id }"] iframe:not([sandbox])`
+            )
+        ).toBeAttached();
+        await expect(
+            page.locator( `[data-wfd-artboard="${ header.id }"] iframe` )
+        ).toHaveCount( 1 );
         await page
             .frameLocator( `[data-wfd-artboard="${ header.id }"] iframe` )
             .locator( 'p' )
@@ -2525,9 +2534,15 @@ test.describe( 'TOOL', () => {
         const member = artboardOf( fixture, 'page', 'desktop', 1 );
         const header = artboardOf( fixture, 'template-part' );
         await setViewport( page, { x: -300, y: -120, zoom: 0.25 } );
+        // The frozen copy lies over the Preview until that has settled.
+        await expect(
+            page.locator(
+                `[data-wfd-artboard="${ hero.id }"] iframe:not([sandbox])`
+            )
+        ).toBeAttached();
         await expect(
             page.locator( `[data-wfd-artboard="${ hero.id }"] iframe` )
-        ).toBeAttached();
+        ).toHaveCount( 1 );
         const label = ( id: string ) =>
             frame( page, id ).locator( '.wfd-artboard__label' );
         const banner = page.locator( '[data-wfd-banner="usage"]' );
