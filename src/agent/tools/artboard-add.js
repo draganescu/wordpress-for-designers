@@ -5,6 +5,7 @@
 import { actions, describeArtboard } from '../board';
 import { editor } from '../edit';
 import { invalidArgs, notFound } from '../errors';
+import { isAdminAddress } from '../unsafe';
 import { withinLimit } from '../limit';
 
 const THINGS = {
@@ -31,6 +32,11 @@ export default async function artboardAdd(
     if ( isBrowser && address.length > MAX_ADDRESS ) {
         throw invalidArgs(
             `address must be ${ MAX_ADDRESS } characters or less.`
+        );
+    }
+    if ( isBrowser && isAdminAddress( address ) ) {
+        throw invalidArgs(
+            'address must not be in wp-admin, wp-login.php or xmlrpc.php.'
         );
     }
     if ( ! isBrowser && address !== undefined ) {

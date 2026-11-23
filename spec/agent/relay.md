@@ -12,7 +12,7 @@ All of the relay's state is in WordPress options, none of them autoloaded. `[U]`
 |---|---|---|
 | `wfd_agent_seen` | The time a way in was last used on this site, as a Unix timestamp | From the first use on. Removed on uninstall |
 | `wfd_agent_sources` | `{ "cli": 1795280000, "abilities": 1795280100 }`: the time each way in was last used, by its label (D93) | From the first use on. Removed on uninstall |
-| `wfd_agent_listener_{client}` | `{ "board": 12, "title": "Site map", "seen": 1795280000 }` for one open board page | Written by that page's requests. Removed by cleanup once `seen` is more than 60 seconds old |
+| `wfd_agent_listener_{client}` | `{ "board": 12, "title": "Site map", "user": 1, "seen": 1795280000 }` for one open board page. `title` is the board's title as the site holds it and `user` the id of the page's user (D104) | Written by that page's requests. Removed by cleanup once `seen` is more than 60 seconds old |
 | `wfd_agent_call_{id}` | One call, below | From `wp wfd` enqueueing it until the command has read its result, or cleanup |
 
 `{client}` is a UUID the board page makes when it loads. `{id}` is a UUID made by the command.
@@ -28,12 +28,15 @@ A call:
   "client": "the page that took it; absent while queued",
   "results": [ { "ok": true, "result": {} } ],
   "source": "cli",
+  "user": 1,
   "created": 1795280000,
   "expires": 1795280300
 }
 ```
 
-`calls` has one entry for `wp wfd call` and one per call for `wp wfd batch`. `results` has an envelope per entry once the status is `done`. `expires` is `created` plus 300 seconds. The record also holds `timeout`, the caller's timeout in seconds. `source` is the label of the way in the call came by (D93).
+`calls` has one entry for `wp wfd call` and one per call for `wp wfd batch`. `results` has an envelope per entry once the status is `done`. `expires` is `created` plus 300 seconds. The record also holds `timeout`, the caller's timeout in seconds. `source` is the label of the way in the call came by (D93). `user` is the id of the user who made the call, or 0 when it was made with none, as `wp wfd` without `--user` makes it.
+
+A call belongs to its user (D104). A call whose `user` is not 0 is handed only to a page of that user, and only that user's result is stored for it; the listening boards its caller is told of are those with a page of that user. A call whose `user` is 0 reaches any listening page.
 
 The queue holds calls and their results and nothing else. It never holds a copy of site content beyond what a call's input and result carry.
 
@@ -59,7 +62,7 @@ Both are under the REST namespace `wfd/v1`, require `edit_theme_options` (C19) a
 
 Body: `{ "board": 12, "client": "uuid", "title": "Site map" }`.
 
-The server writes the page's listener record, then looks for the oldest call that has `status` `queued`, names this board and has not expired. If there is one it sets its `status` to `running` and its `client` to this page, and returns it. A call is handed to one page only: two pages that show the same board never both run it. The claim is one conditional write that changes the row only while it still holds the queued call that was read (D85).
+The server writes the page's listener record, with the board's own title and the request's user, then looks for the oldest call that has `status` `queued`, names this board, is this user's (D104) and has not expired. `title` in the body is not used. For a `board` that is not a published board of the site it writes no record and returns `"call": null`. If there is one it sets its `status` to `running` and its `client` to this page, and returns it. A call is handed to one page only: two pages that show the same board never both run it. The claim is one conditional write that changes the row only while it still holds the queued call that was read (D85).
 
 Response: `{ "active": true, "sources": [ "cli" ], "call": { "id": "uuid", "calls": [ … ] } }`, with `"call": null` when there is none and `"active": false` when no session is active. `sources` lists the labels whose time in `wfd_agent_sources` is less than 120 seconds old. The board keeps the list and does nothing else with it: nothing it checks, records or shows depends on the way in (D93, C31).
 
@@ -67,7 +70,7 @@ Response: `{ "active": true, "sources": [ "cli" ], "call": { "id": "uuid", "call
 
 Body: `{ "id": "uuid", "client": "uuid", "results": [ … ] }`.
 
-The server stores the results and sets `status` to `done`, if the call exists, is `running` and was taken by this client. Otherwise it changes nothing. Response: `{ "stored": true }` or `{ "stored": false }`.
+The server stores the results and sets `status` to `done`, if the call exists, is `running`, was taken by this client and is this user's (D104). Otherwise it changes nothing. Response: `{ "stored": true }` or `{ "stored": false }`.
 
 ## From PHP
 
@@ -77,7 +80,7 @@ A way in that runs in PHP reaches the board through these functions, and through
 |---|---|
 | `wfd_agent_relay( array $calls, array $args )` | Hands `$calls`, 1 to 50 entries of `tool` and `input`, to a listening board and waits. `$args` holds `source` (required: 1 to 20 lowercase letters, digits and dashes), `board` (optional board id) and `timeout` (optional whole seconds from 1 to 120, default 30). Returns `{ "ok": true, "results": [ envelope, … ] }` once the board has answered, whatever the envelopes hold, or `{ "ok": false, "error": { "code", "message" } }` for a failure of the relay itself. A tool name that is not in the declarations is the failure `unknown_tool`, and no record is written. |
 | `wfd_agent_begin( string $source )` | Marks the session as a command does, with no call. A board opened afterwards finds the session on its first poll. |
-| `wfd_agent_boards()` | Every published board, as `{ "id", "title", "address", "listening" }`, by id. `address` is the URL of the board's page in wp-admin. It marks no session. |
+| `wfd_agent_boards()` | Every published board, as `{ "id", "title", "address", "listening" }`, by id. `listening` is true for a board with a listening page of the current user, or of any user when there is none (D104). `address` is the URL of the board's page in wp-admin. It marks no session. |
 | `wfd_agent_tools()` | The declarations, as an array. |
 | `wfd_agent_board_new( string $title = '' )` | Makes a board as "Add board" does (`screens/Boards.md`): published, with the empty layout, titled `$title`, or "Untitled board" when it is empty. Returns the board as `wfd_agent_boards()` lists it, or `{ "ok": false, "error": { "code": "unavailable", "message": "The board could not be made." } }` when WordPress could not make it. It marks no session (D103). |
 
@@ -85,7 +88,7 @@ The caller checks that its user may use the plugin (C19); the functions do not.
 
 `wfd_agent_relay` does this:
 
-1. Find the listening boards. With none, fail at once with `no_board`. With several and no `board`, fail at once with `several_boards`. With `board`, that board must be listening, else `no_board`.
+1. Find the listening boards of the current user, or of every user when there is none (D104). With none, fail at once with `no_board`. With several and no `board`, fail at once with `several_boards`. With `board`, that board must be listening, else `no_board`.
 2. Write the call record with `status` `queued`.
 3. Read the record again every 200 milliseconds, from the database and not from a cache, until its `status` is `done` or the timeout has passed.
 4. Delete the record, and return the results or fail with `timeout`.

@@ -10,6 +10,10 @@ export default async function stylesSet( { kind, property, value, block } ) {
     if ( block !== undefined && ! getBlockType( block ) ) {
         throw invalidArgs( 'block must be a registered block name.' );
     }
+    // Custom CSS is the designer's to write (D105).
+    if ( kind === 'style' && property.split( '.' ).pop() === 'css' ) {
+        throw invalidArgs( 'property must not be css.' );
+    }
     const done = await actions().setStyleValue( kind, property, value, block );
     if ( done === 'not-ready' ) {
         throw notReady( STYLES_NOT_READY );

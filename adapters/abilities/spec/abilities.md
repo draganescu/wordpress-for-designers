@@ -104,7 +104,7 @@ The board is made at once and stays: this is the one thing an ability saves (D10
 |---|---|
 | `label` | Run several calls |
 | `description` | Run several board abilities in order on one board, in one round trip. After the first failure the rest are skipped. |
-| Annotations | `readonly` false, `destructive` false |
+| Annotations | `readonly` false, `destructive` true: it can hold the two tools that are (D107) |
 
 | Field | Type | Required | Meaning |
 |---|---|---|---|

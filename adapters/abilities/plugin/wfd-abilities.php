@@ -277,7 +277,8 @@ function wfd_abilities_register() {
                 'required'             => array( 'calls' ),
                 'additionalProperties' => false,
             ),
-            'meta'             => $meta( false, false ),
+            // It can hold the two tools that are (D107).
+            'meta'             => $meta( false, true ),
             'execute_callback' => function ( $input ) {
                 $calls = array();
                 foreach ( $input['calls'] as $call ) {

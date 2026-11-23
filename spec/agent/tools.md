@@ -34,6 +34,18 @@ A failed tool returns `{ "code": "...", "message": "..." }`. The codes are these
 | `unavailable` | The board cannot be used right now (see the rules above) | `The board cannot be used right now.` |
 | `not_ready` | The board did not settle within the safety limit (Settling) | `{Name} did not finish loading.` for an artboard; `The styles did not finish updating.` for a style tool |
 
+### What a tool refuses
+
+A tool puts no Custom HTML block, no markup that runs script and no custom CSS on the site, because Review names a changed block and does not show its markup (D105). Each of these fails with `invalid_args` and changes nothing:
+
+| Tool | Refused | Message |
+|---|---|---|
+| `blocks-insert` | `markup` in which any block, at any depth, is `core/html`, or holds in any attribute a `script`, `iframe`, `object` or `embed` element, an `on…=` event handler inside a tag, or a `javascript:` or `data:text/html` address. A `pattern` is not checked | `markup must not hold a Custom HTML block, a script or an event handler.` |
+| `block-update` | `attributes` that hold any of the same | `attributes must not hold a script or an event handler.` |
+| `block-update` | A `block` that is `core/html` | `block must not name a Custom HTML block.` |
+| `styles-set` | `kind` `style` with a `property` whose last key is `css` | `property must not be css.` |
+| `artboard-add` | A browser `address` whose path, percent-decoded and in any case, has a `wp-admin` segment, `wp-login.php` or `xmlrpc.php` (D106) | `address must not be in wp-admin, wp-login.php or xmlrpc.php.` |
+
 The relay adds four codes of its own: `no_board`, `several_boards`, `timeout` and `skipped` (`relay.md`).
 
 ## Settling

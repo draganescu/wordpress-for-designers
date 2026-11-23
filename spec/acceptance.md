@@ -250,6 +250,7 @@ The five groups below cover `agent/`. Unless a criterion says otherwise: the fix
 - AC-AGENT-13 A call made with the source `test` has `"source": "test"` in its record while it is queued. Afterwards `wfd_agent_sources` holds a time for `test`, and after a `wp wfd status` one for `cli` too; the poll's answer lists both in `sources`. G1, G2 and the authorship of the change are the same for a call from either. `[U]`
 - AC-AGENT-14 `wfd_agent_boards()` returns every published board with its id, title and address and with `listening` true only for a board open in a page; each address opens that board for an administrator. Calling it on a site where no way in has been used leaves `wfd_agent_seen` absent. `[N]`
 - AC-AGENT-15 `wfd_agent_board_new()` makes a published board titled "Untitled board" with no artboards, and `wfd_agent_board_new( 'Launch' )` one titled "Launch". Each returns the board's id, title and address with `listening` false, the address opens that board for an administrator, and `wfd_agent_seen` stays absent on a site where no way in has been used. `[U]`
+- AC-AGENT-16 With the fixture board open only in a second administrator's page, `wfd_agent_relay` called by the first fails with `no_board` and `wfd_agent_boards()` gives the board `listening` false, while `wp wfd call board-get`, which has no user, is answered. A poll for an id that is no board writes no listener record, and a poll that sends another title leaves the record with the board's own title and the page's user (D104). `[U]`
 
 ## CLI
 
@@ -293,6 +294,7 @@ The five groups below cover `agent/`. Unless a criterion says otherwise: the fix
 - AC-TOOL-28 `artboard-remove` takes a never-saved new template part off the board when only the agent changed it. After the designer has typed in it, the tool fails with `not_agents` and the artboard and its content stay (D83). `[U]`
 - AC-TOOL-29 An artboard holding a block that never meets the settling conditions (the test registers a block that mounts one of its two inner blocks, and a pattern that holds itself) is read by `blocks-get` once the safety limit has passed, with the blocks that are there. An artboard whose editor cannot mount fails with `not_ready`. A `board-refresh` whose request never answers fails with `unavailable` at the limit, and the next call is run (D90). `[U]`
 - AC-TOOL-26 A reference given by `board-get`, `blocks-get` or `styles-get` is accepted by the tools in place of an artboard, a path or a slug, with or without a leading `#`. A string that does not parse fails with `invalid_args`; one that names nothing fails with `not_found`. `[U]`
+- AC-TOOL-30 `blocks-insert` with a Custom HTML block, with a `script` element or with an `onerror` handler in its markup, `block-update` with a `javascript:` address, `styles-set` with the style `css`, and `artboard-add` of a browser at `/wp-admin/`, `/WP-Admin/plugins.php`, `/%77p-admin/` and `/wp-login.php` each fail with `invalid_args` and the message of `agent/tools.md`, and Review still reads no change (D105, D106). `[U]`
 
 ## MARK
 

@@ -11,6 +11,9 @@
  * - `wfd_agent_listener_{client}`: one open board page that is asking.
  * - `wfd_agent_call_{id}`: one call, with its results once it is done.
  *
+ * A call and a listener each hold the user they belong to, and a call made
+ * by a user reaches that user's own pages only (D104).
+ *
  * @package WordPressForDesigners
  */
 
@@ -226,13 +229,29 @@ function wfd_agent_note_source( $source, $now ) {
 }
 
 /**
+ * Whether a record made by one user may be used by another (D104). A record
+ * with no user, as a command run without one makes, is anyone's.
+ *
+ * @param mixed $owner The user id the record holds, if any.
+ * @param int   $user  The user asking.
+ * @return bool
+ */
+function wfd_agent_is_users( $owner, $user ) {
+    return ! (int) $owner || ! $user || (int) $owner === $user;
+}
+
+/**
  * The boards that have a page listening, each once, by id.
  *
+ * @param int $user The user whose pages count; 0 for every page (D104).
  * @return array Arrays of `id` and `title`.
  */
-function wfd_agent_listening_boards() {
+function wfd_agent_listening_boards( $user = 0 ) {
     $boards = array();
     foreach ( wfd_agent_records( WFD_AGENT_LISTENER ) as $listener ) {
+        if ( $user && ( ! isset( $listener['user'] ) || (int) $listener['user'] !== $user ) ) {
+            continue;
+        }
         if ( isset( $listener['board'], $listener['seen'] ) && time() - (int) $listener['seen'] < WFD_AGENT_LISTENING ) {
             $boards[ (int) $listener['board'] ] = array(
                 'id'    => (int) $listener['board'],
@@ -251,7 +270,7 @@ function wfd_agent_listening_boards() {
  * @return array Arrays of `id`, `title`, `address` and `listening`.
  */
 function wfd_agent_boards() {
-    $listening = wp_list_pluck( wfd_agent_listening_boards(), 'id' );
+    $listening = wp_list_pluck( wfd_agent_listening_boards( get_current_user_id() ), 'id' );
     $boards    = array();
     $posts     = get_posts(
         array(
@@ -370,7 +389,9 @@ function wfd_agent_relay( array $calls, array $args ) {
         );
     }
 
-    $boards = wfd_agent_listening_boards();
+    // The pages of the caller's own user, when it has one (D104).
+    $user   = get_current_user_id();
+    $boards = wfd_agent_listening_boards( $user );
     $none   = 'No board is listening. Open a board in WordPress for Designers; if one is open, reload it once.';
     if ( isset( $args['board'] ) ) {
         $board = (int) $args['board'];
@@ -409,6 +430,7 @@ function wfd_agent_relay( array $calls, array $args ) {
                 'calls'   => $calls,
                 'status'  => 'queued',
                 'source'  => $source,
+                'user'    => $user,
                 'created' => $started,
                 'expires' => $now + WFD_AGENT_CALL_LIFE,
                 // The page starts no entry once this has passed (D89).
@@ -564,6 +586,7 @@ function wfd_agent_take_call( $board, $client ) {
             ! isset( $call->id, $call->calls, $call->status, $call->board, $call->expires ) ||
             'queued' !== $call->status ||
             (int) $call->board !== $board ||
+            ! wfd_agent_is_users( isset( $call->user ) ? $call->user : 0, get_current_user_id() ) ||
             time() > (int) $call->expires
         ) {
             continue;
@@ -604,18 +627,25 @@ function wfd_agent_take_call( $board, $client ) {
  * @return WP_REST_Response|WP_Error
  */
 function wfd_agent_poll( $request ) {
-    $board   = (int) $request['board'];
-    $client  = (string) $request['client'];
-    $written = wfd_agent_write(
-        WFD_AGENT_LISTENER . $client,
-        array(
-            'board' => $board,
-            'title' => (string) $request['title'],
-            'seen'  => time(),
-        )
-    );
-    if ( ! $written ) {
-        return wfd_agent_write_error();
+    $board  = (int) $request['board'];
+    $client = (string) $request['client'];
+    // Only a board of the site has a listener, under the title the site
+    // holds for it and the user whose page it is (D104).
+    $post     = get_post( $board );
+    $is_board = $post && WFD_POST_TYPE === $post->post_type && 'publish' === $post->post_status;
+    if ( $is_board ) {
+        $written = wfd_agent_write(
+            WFD_AGENT_LISTENER . $client,
+            array(
+                'board' => $board,
+                'title' => $post->post_title,
+                'user'  => get_current_user_id(),
+                'seen'  => time(),
+            )
+        );
+        if ( ! $written ) {
+            return wfd_agent_write_error();
+        }
     }
     // The ways in that are in use, by their labels (D93).
     $sources = array();
@@ -628,7 +658,7 @@ function wfd_agent_poll( $request ) {
         array(
             'active'  => wfd_agent_is_active(),
             'sources' => $sources,
-            'call'    => wfd_agent_take_call( $board, $client ),
+            'call'    => $is_board ? wfd_agent_take_call( $board, $client ) : null,
         )
     );
 }
@@ -667,7 +697,8 @@ function wfd_agent_result( $request ) {
         ! isset( $call->status, $call->client, $body->results ) ||
         ! is_array( $body->results ) ||
         'running' !== $call->status ||
-        (string) $request['client'] !== $call->client
+        (string) $request['client'] !== $call->client ||
+        ! wfd_agent_is_users( isset( $call->user ) ? $call->user : 0, get_current_user_id() )
     ) {
         return rest_ensure_response( array( 'stored' => false ) );
     }

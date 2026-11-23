@@ -778,4 +778,53 @@ test.describe( 'AGENT', () => {
             'wfd_agent_seen'
         );
     } );
+
+    test( "AC-AGENT-16 A call reaches only a page of its own user, a call with no user reaches any, and a listener holds the board's own title", async ( {
+        browser,
+        requestUtils,
+    } ) => {
+        const fixture = await resetFixture( requestUtils );
+        await beginFromPhp( requestUtils, 'test' );
+        const page = await loginAs( browser, 'wfd_admin2' );
+        const asked = listening( page );
+        await openBoard( page, fixture.boardId );
+        await asked;
+
+        // The first administrator has no page of their own.
+        expect(
+            await relayFromPhp(
+                requestUtils,
+                [ { tool: 'board-get', input: {} } ],
+                { source: 'test', timeout: 2 }
+            )
+        ).toMatchObject( { ok: false, error: { code: 'no_board' } } );
+        const boards = await boardsFromPhp( requestUtils );
+        expect(
+            boards.find( ( board ) => board.id === fixture.boardId )?.listening
+        ).toBe( false );
+
+        // The command has no user.
+        const any = await wfd( [ 'call', 'board-get' ] );
+        expect( any.code ).toBe( 0 );
+        expect( JSON.parse( any.stdout ).ok ).toBe( true );
+
+        const headers = { 'X-WP-Nonce': await restNonce( page ) };
+        const poll = ( board: number, client: string ) =>
+            page.request.post( '/?rest_route=/wfd/v1/agent/poll', {
+                headers,
+                data: { board, client, title: 'Injected' },
+            } );
+        const none = '11111111-2222-4333-8444-555555555555';
+        expect( ( await poll( 999999, none ) ).status() ).toBe( 200 );
+        const mine = '11111111-2222-4333-8444-666666666666';
+        expect( ( await poll( fixture.boardId, mine ) ).status() ).toBe( 200 );
+        const options = await relayOptions( requestUtils );
+        expect( options ).not.toHaveProperty( `wfd_agent_listener_${ none }` );
+        expect( options[ `wfd_agent_listener_${ mine }` ] ).toMatchObject( {
+            board: fixture.boardId,
+            title: 'Fixture board',
+            user: fixture.users.wfd_admin2,
+        } );
+        await page.context().close();
+    } );
 } );

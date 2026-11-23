@@ -3255,4 +3255,72 @@ test.describe( 'TOOL', () => {
             ( await callTool( page, 'review-list' ) ).result.items[ 0 ]
         ).toMatchObject( { isNew: true, author: 'both' } );
     } );
+
+    test( 'AC-TOOL-30 A tool refuses a Custom HTML block, markup that runs script, custom CSS and an address of wp-admin', async ( {
+        page,
+        requestUtils,
+    } ) => {
+        const fixture = await resetFixture( requestUtils );
+        await openBoard( page, fixture.boardId );
+        await boardAtRest( page );
+        const header = artboardOf( fixture, 'template-part' );
+        const refused = ( message: string ) => ( {
+            ok: false,
+            error: { code: 'invalid_args', message },
+        } );
+        const markup =
+            'markup must not hold a Custom HTML block, a script or an event handler.';
+        for ( const blocks of [
+            '<!-- wp:html --><b>Raw</b><!-- /wp:html -->',
+            '<!-- wp:group --><div class="wp-block-group"><!-- wp:html --><b>Raw</b><!-- /wp:html --></div><!-- /wp:group -->',
+            '<!-- wp:paragraph --><p>Hi<script>alert(1)</script></p><!-- /wp:paragraph -->',
+            '<!-- wp:paragraph --><p>Hi <img src="x" onerror="alert(1)"></p><!-- /wp:paragraph -->',
+        ] ) {
+            expect(
+                await callTool( page, 'blocks-insert', {
+                    artboard: header.id,
+                    markup: blocks,
+                } )
+            ).toEqual( refused( markup ) );
+        }
+
+        expect(
+            await callTool( page, 'block-update', {
+                artboard: header.id,
+                block: [ 0, 0 ],
+                attributes: {
+                    content: '<a href="javascript:alert(1)">Go</a>',
+                },
+            } )
+        ).toEqual(
+            refused( 'attributes must not hold a script or an event handler.' )
+        );
+
+        expect(
+            await callTool( page, 'styles-set', {
+                kind: 'style',
+                property: 'css',
+                value: 'body { display: none; }',
+            } )
+        ).toEqual( refused( 'property must not be css.' ) );
+
+        for ( const address of [
+            '/wp-admin/',
+            '/WP-Admin/plugins.php',
+            '/%77p-admin/',
+            '/wp-login.php?action=logout',
+        ] ) {
+            expect(
+                await callTool( page, 'artboard-add', {
+                    kind: 'browser',
+                    address,
+                } )
+            ).toEqual(
+                refused(
+                    'address must not be in wp-admin, wp-login.php or xmlrpc.php.'
+                )
+            );
+        }
+        await expect( review( page ) ).toHaveText( 'Review changes' );
+    } );
 } );
