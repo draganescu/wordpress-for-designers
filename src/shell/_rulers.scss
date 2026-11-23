@@ -1,0 +1,64 @@
+// Rulers (D108): two canvases over the top and left edges of the canvas
+// area, and the corner square where they meet.
+$wfd-ruler-size: var(--wpds-dimension-size-xs);
+
+.wfd-ruler,
+.wfd-ruler__corner {
+    position: absolute;
+    top: 0;
+    left: 0;
+    box-sizing: border-box;
+    border: 0 solid var(--wpds-color-stroke-surface-neutral);
+    background: var(--wpds-color-background-surface-neutral-strong);
+}
+
+// The numbers are painted with this colour and font, and the ticks with the
+// border's colour (rulers.js).
+.wfd-ruler {
+    color: var(--wpds-color-foreground-content-neutral-weak);
+    font-family: var(--wpds-typography-font-family-body);
+    font-size: var(--wpds-typography-font-size-xs);
+    font-weight: var(--wpds-typography-font-weight-default);
+}
+
+.wfd-ruler.is-top {
+    width: 100%;
+    height: $wfd-ruler-size;
+    border-bottom-width: var(--wpds-border-width-xs);
+}
+
+.wfd-ruler.is-left {
+    width: $wfd-ruler-size;
+    height: 100%;
+    border-right-width: var(--wpds-border-width-xs);
+}
+
+.wfd-ruler__corner {
+    width: $wfd-ruler-size;
+    height: $wfd-ruler-size;
+    border-right-width: var(--wpds-border-width-xs);
+    border-bottom-width: var(--wpds-border-width-xs);
+}
+
+// Never drawn: it holds the colours of the span (R4) and of the guide marks
+// (R5) for the painting to read. The outline's colour is a guide's.
+.wfd-ruler__ink {
+    position: absolute;
+    visibility: hidden;
+    border: 0 solid var(--wpds-color-stroke-interactive-brand);
+    outline: 0 none var(--wpds-color-stroke-surface-info-strong);
+    background: var(--wpds-color-background-surface-brand);
+    color: var(--wpds-color-foreground-interactive-brand);
+    font-weight: var(--wpds-typography-font-weight-emphasis);
+}
+
+// The notices and the keyboard shortcuts control (A5) sit clear of the rulers.
+.wfd-canvas.has-rulers .wfd-canvas__banner {
+    top: calc(#{$wfd-ruler-size} + var(--wpds-dimension-padding-lg));
+    left: calc(#{$wfd-ruler-size} + var(--wpds-dimension-padding-lg));
+    max-width: calc(100% - #{$wfd-ruler-size} - 2 * var(--wpds-dimension-padding-lg));
+}
+
+.wfd-canvas.has-rulers ~ .wfd-shortcuts-button {
+    inset-inline-start: calc(#{$wfd-ruler-size} + var(--wpds-dimension-padding-lg));
+}
