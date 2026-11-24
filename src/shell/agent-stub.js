@@ -7,6 +7,7 @@
 import apiFetch from '@wordpress/api-fetch';
 import { select } from '@wordpress/data';
 import { store as boardStore } from '../board-store';
+import { uuid } from './uuid';
 
 // How often the relay is asked, in ms: with no session, and during one.
 const IDLE = 10000;
@@ -87,7 +88,7 @@ async function sendResults( config, data, deadline ) {
  * @param {Object} config The relay's routes, from the page's config.
  */
 function listen( config ) {
-    const client = window.crypto.randomUUID();
+    const client = uuid();
     let isActive = false;
     let isAsking = false;
     let timer = null;

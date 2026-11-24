@@ -14,6 +14,7 @@
 import { useEffect, useRef } from '@wordpress/element';
 import { useRegistry } from '@wordpress/data';
 import { store as boardStore } from '../board-store';
+import { uuid } from './uuid';
 import { orderedArtboards } from './artboards-panel';
 import { isShortcutsDialogEvent } from './shortcuts-dialog';
 import { noteRect } from './notes';
@@ -799,7 +800,7 @@ export function useCanvasInteractions( {
                     const isEditing = !! board().getEditId();
                     actions().addGuide(
                         {
-                            id: window.crypto.randomUUID(),
+                            id: uuid(),
                             axis: guide.axis,
                             at,
                             ...( artboard && {
