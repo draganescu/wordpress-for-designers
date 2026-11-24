@@ -91,6 +91,7 @@ import {
 import { windowHasRoom } from './space-gate';
 import { rectOf, useCanvasInteractions } from './use-canvas-interactions';
 import { tidyMoves } from './tidy';
+import { uuid } from './uuid';
 import { useEditing } from './use-editing';
 import { useEntityInfo } from './use-entity-info';
 import { NEW_ARTBOARD_HEIGHT, usePlacement } from './use-placement';
@@ -1192,7 +1193,7 @@ export function App() {
                                             if ( event.button === 0 ) {
                                                 const at = pointOf( event );
                                                 addNote( {
-                                                    id: window.crypto.randomUUID(),
+                                                    id: uuid(),
                                                     x: Math.round( at.x ),
                                                     y: Math.round( at.y ),
                                                 } );
