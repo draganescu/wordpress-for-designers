@@ -8,6 +8,7 @@ import { useCallback, useEffect, useMemo, useState } from '@wordpress/element';
 import { useDispatch, useRegistry, useSelect } from '@wordpress/data';
 import { store as coreStore } from '@wordpress/core-data';
 import { store as boardStore } from '../board-store';
+import { uuid } from './uuid';
 
 /**
  * Height of an artboard before its content has been measured.
@@ -213,7 +214,7 @@ export function usePlacement( { theme, enterEdit } ) {
             if ( chosen.kind === 'browser' ) {
                 // Selected, not browsing (D55).
                 const browser = {
-                    id: window.crypto.randomUUID(),
+                    id: uuid(),
                     kind: 'browser',
                     path: '/',
                     device: 'desktop',
@@ -227,7 +228,7 @@ export function usePlacement( { theme, enterEdit } ) {
                 return;
             }
             const artboard = {
-                id: window.crypto.randomUUID(),
+                id: uuid(),
                 kind: chosen.kind,
                 device: 'desktop',
                 x: Math.round( point.x ),

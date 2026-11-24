@@ -16,6 +16,7 @@ import { MediaUpload } from '@wordpress/block-editor';
 import { store as boardStore } from '../board-store';
 import { NEW_ARTBOARD_HEIGHT } from '../shell/use-placement';
 import { KINDS, mediaSize } from '../shell/constants';
+import { uuid } from '../shell/uuid';
 import { DRAG_DATA_TYPE } from './inserter-panel';
 import { MEDIA_QUERY } from './use-inserter-data';
 
@@ -118,7 +119,7 @@ export function useInserterActions( {
     const openOnBoard = useCallback(
         async ( item, { x, y } ) => {
             const object = {
-                id: window.crypto.randomUUID(),
+                id: uuid(),
                 kind: item.type,
                 entityId: item.id,
                 x: Math.round( x ),
