@@ -966,27 +966,35 @@ test.describe( 'STYLE', () => {
         page.on( 'pageerror', ( error ) => errors.push( error.message ) );
         const before = ( await counters( page ) ).styleGenerations;
         // What the stock Border panel's reset leaves for the Table block.
-        await page.evaluate( ( id ) => {
-            const { select, dispatch } = ( window as any ).wp.data;
-            const { styles } = select( 'core' ).getEditedEntityRecord(
-                'root',
-                'globalStyles',
-                id
-            );
-            dispatch( 'core' ).editEntityRecord( 'root', 'globalStyles', id, {
-                styles: {
-                    ...styles,
-                    blocks: {
-                        ...styles?.blocks,
-                        'core/table': {
-                            ...styles?.blocks?.[ 'core/table' ],
-                            border: undefined,
-                            color: { text: '#123456' },
+        await page.evaluate(
+            ( id ) => {
+                const { select, dispatch } = ( window as any ).wp.data;
+                const { styles } = select( 'core' ).getEditedEntityRecord(
+                    'root',
+                    'globalStyles',
+                    id
+                );
+                dispatch( 'core' ).editEntityRecord(
+                    'root',
+                    'globalStyles',
+                    id,
+                    {
+                        styles: {
+                            ...styles,
+                            blocks: {
+                                ...styles?.blocks,
+                                'core/table': {
+                                    ...styles?.blocks?.[ 'core/table' ],
+                                    border: undefined,
+                                    color: { text: '#123456' },
+                                },
+                            },
                         },
-                    },
-                },
-            } );
-        }, await stylesId( page ) );
+                    }
+                );
+            },
+            await stylesId( page )
+        );
         await expect
             .poll( async () => ( await counters( page ) ).styleGenerations )
             .toBeGreaterThan( before );
