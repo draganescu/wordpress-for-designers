@@ -136,6 +136,11 @@ export function useGlobalStyles( serverSettings ) {
                 hasBlockGapSupport,
                 hasFallbackGapSupport: ! hasBlockGapSupport,
                 disableLayoutStyles: !! serverSettings.disableLayoutStyles,
+                // The styles the theme and the user give a block's style
+                // variations are in the one stylesheet too. WordPress's
+                // editor makes them for each block as it is drawn, from
+                // styles the plugin's editors are not given.
+                styleOptions: { variationStyles: true },
             } );
             const css = JSON.stringify( styles );
             report.compiledFrom = raw.current;
