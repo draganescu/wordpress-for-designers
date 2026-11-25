@@ -9,6 +9,7 @@ Unless a criterion says otherwise, the fixture in `architecture.md` is loaded an
 - AC-PERM-01 An administrator sees "Designer" in the wp-admin menu with "Boards" and "Add board". `[U]`
 - AC-PERM-02 An editor (no `edit_theme_options`) does not see the menu; the board app URL and `wfd-boards` REST routes return a permission error. `[U]`
 - AC-PERM-03 A board made by one administrator is listed and editable for another. `[U]`
+- AC-PERM-04 A request to read the `wfd-boards` REST routes (the list or one board, in any context) from nobody logged in, a subscriber or an editor returns a permission error and no layout; an administrator reads the same boards and layouts as before. `[U]` for the rule (C19), `[N]` for the criterion
 
 ## BOARD
 

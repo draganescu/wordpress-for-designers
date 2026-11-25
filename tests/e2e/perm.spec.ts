@@ -90,4 +90,72 @@ test.describe( 'PERM', () => {
         await expect( page.locator( '#wfd-board-root' ) ).toBeAttached();
         await page.context().close();
     } );
+
+    test( 'AC-PERM-04 Only a user with edit_theme_options reads a board over REST', async ( {
+        browser,
+        page,
+        requestUtils,
+    } ) => {
+        const fixture = await resetFixture( requestUtils );
+        const base = '/?rest_route=/wp/v2/wfd-boards';
+        const one = `${ base }/${ fixture.boardId }`;
+        const reads = [
+            base,
+            `${ base }&context=edit`,
+            `${ base }&_fields=id,layout`,
+            `${ base }&search=Fixture`,
+            one,
+            `${ one }&context=edit`,
+            `${ one }&_fields=layout`,
+        ];
+
+        // Nobody logged in.
+        const anonymous = await browser.newContext( {
+            storageState: undefined,
+            baseURL: process.env.WP_BASE_URL,
+        } );
+        for ( const url of reads ) {
+            const response = await anonymous.request.get( url );
+            expect( [ url, response.status() ] ).toEqual( [ url, 401 ] );
+            expect( await response.text() ).not.toContain( 'artboards' );
+        }
+        await anonymous.close();
+
+        // Logged in without the capability.
+        for ( const login of [ 'wfd_subscriber', 'wfd_editor' ] ) {
+            const other = await loginAs( browser, login );
+            const headers = { 'X-WP-Nonce': await restNonce( other ) };
+            for ( const url of reads ) {
+                const response = await other.request.get( url, { headers } );
+                expect( [ login, url, response.status() ] ).toEqual( [
+                    login,
+                    url,
+                    403,
+                ] );
+                expect( await response.text() ).not.toContain( 'artboards' );
+            }
+            await other.context().close();
+        }
+
+        // An administrator reads what was read before.
+        const headers = { 'X-WP-Nonce': await restNonce( page ) };
+        for ( const context of [ 'view', 'edit' ] ) {
+            const list = await page.request.get(
+                `${ base }&context=${ context }`,
+                { headers }
+            );
+            expect( list.status() ).toBe( 200 );
+            const boards = await list.json();
+            expect(
+                boards.map( ( board: { id: number } ) => board.id )
+            ).toEqual( [ fixture.boardId ] );
+            expect( boards[ 0 ].layout ).toEqual( fixture.layout );
+            const single = await page.request.get(
+                `${ one }&context=${ context }`,
+                { headers }
+            );
+            expect( single.status() ).toBe( 200 );
+            expect( ( await single.json() ).layout ).toEqual( fixture.layout );
+        }
+    } );
 } );
