@@ -56,7 +56,8 @@ add_action( 'init', 'wfd_register_post_type' );
  * Keeps the wfd-boards REST routes to users who can open the plugin (C19,
  * spec/data-model.md, Permissions). A board is always published, and
  * WordPress lets anyone read a published post of a type shown in REST, so
- * the capabilities of the post type alone do not stop a read.
+ * the capabilities of the post type alone do not stop a read. WordPress
+ * matches a route whatever the case of its letters, so this does too.
  *
  * @param mixed           $response The response so far.
  * @param array           $handler  The route's handler.
@@ -64,7 +65,7 @@ add_action( 'init', 'wfd_register_post_type' );
  * @return mixed
  */
 function wfd_boards_rest_permission( $response, $handler, $request ) {
-    if ( is_wp_error( $response ) || ! preg_match( '#^/wp/v2/wfd-boards(/|$)#', $request->get_route() ) ) {
+    if ( is_wp_error( $response ) || ! preg_match( '#^/wp/v2/wfd-boards(/|$)#i', $request->get_route() ) ) {
         return $response;
     }
     if ( current_user_can( WFD_CAPABILITY ) ) {

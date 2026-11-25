@@ -107,6 +107,9 @@ test.describe( 'PERM', () => {
             one,
             `${ one }&context=edit`,
             `${ one }&_fields=layout`,
+            // WordPress matches a route whatever the case of its letters.
+            '/?rest_route=/wp/v2/WFD-Boards',
+            `/?rest_route=/WP/V2/wfd-boards/${ fixture.boardId }`,
         ];
 
         // Nobody logged in.
