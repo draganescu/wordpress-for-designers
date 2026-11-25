@@ -959,4 +959,46 @@ test.describe( 'STYLE', () => {
         await expect( title ).toHaveCount( 1 );
         await expect( back ).toHaveCount( 1 );
     } );
+    test( 'A stock control that is reset leaves a key with no value in the styles of a block: the styles are compiled again and nothing throws', async ( {
+        page,
+    } ) => {
+        const errors: string[] = [];
+        page.on( 'pageerror', ( error ) => errors.push( error.message ) );
+        const before = ( await counters( page ) ).styleGenerations;
+        // What the stock Border panel's reset leaves for the Table block.
+        await page.evaluate( ( id ) => {
+            const { select, dispatch } = ( window as any ).wp.data;
+            const { styles } = select( 'core' ).getEditedEntityRecord(
+                'root',
+                'globalStyles',
+                id
+            );
+            dispatch( 'core' ).editEntityRecord( 'root', 'globalStyles', id, {
+                styles: {
+                    ...styles,
+                    blocks: {
+                        ...styles?.blocks,
+                        'core/table': {
+                            ...styles?.blocks?.[ 'core/table' ],
+                            border: undefined,
+                            color: { text: '#123456' },
+                        },
+                    },
+                },
+            } );
+        }, await stylesId( page ) );
+        await expect
+            .poll( async () => ( await counters( page ) ).styleGenerations )
+            .toBeGreaterThan( before );
+        // The block's screen draws from the same styles.
+        await right( page ).getByRole( 'tab', { name: 'Blocks' } ).click();
+        await right( page )
+            .getByRole( 'button', { name: /^Table/ } )
+            .first()
+            .click();
+        await expect(
+            right( page ).getByText( 'Something went wrong' )
+        ).toHaveCount( 0 );
+        expect( errors ).toEqual( [] );
+    } );
 } );

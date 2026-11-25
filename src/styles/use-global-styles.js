@@ -37,6 +37,28 @@ const SETTLE = 300;
 const COMPILE_LIMIT = 10000;
 
 /**
+ * A copy of a styles tree without the keys whose value is undefined. A
+ * stock control that is reset leaves such a key, and the styles engine
+ * throws on one when it compiles.
+ *
+ * @param {*} value A styles tree, or a value in one.
+ * @return {*} The same, with those keys left out.
+ */
+function withoutUndefined( value ) {
+    if ( Array.isArray( value ) ) {
+        return value.map( withoutUndefined );
+    }
+    if ( value === null || typeof value !== 'object' ) {
+        return value;
+    }
+    return Object.fromEntries(
+        Object.entries( value )
+            .filter( ( [ , item ] ) => item !== undefined )
+            .map( ( [ key, item ] ) => [ key, withoutUndefined( item ) ] )
+    );
+}
+
+/**
  * @param {Object} serverSettings Block editor settings from the server.
  * @return {Object} Styles state and actions.
  */
@@ -68,7 +90,7 @@ export function useGlobalStyles( serverSettings ) {
     const user = useMemo(
         () => ( {
             settings: recordSettings ?? {},
-            styles: recordStyles ?? {},
+            styles: withoutUndefined( recordStyles ?? {} ),
         } ),
         [ recordSettings, recordStyles ]
     );
