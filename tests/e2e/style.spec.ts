@@ -959,7 +959,7 @@ test.describe( 'STYLE', () => {
         await expect( title ).toHaveCount( 1 );
         await expect( back ).toHaveCount( 1 );
     } );
-    test( 'AC-STYLE-12 A stock control that is reset leaves a key with no value in the styles of a block: the styles are compiled again and nothing throws', async ( {
+    test( 'AC-STYLE-14 A stock control that is reset leaves a key with no value in the styles of a block: the styles are compiled again and nothing throws', async ( {
         page,
     } ) => {
         const errors: string[] = [];
@@ -1009,7 +1009,7 @@ test.describe( 'STYLE', () => {
         ).toHaveCount( 0 );
         expect( errors ).toEqual( [] );
     } );
-    test( 'AC-STYLE-11 A block with a style variation is drawn on its artboard with the styles the user gives the variation', async ( {
+    test( 'AC-STYLE-13 A block with a style variation is drawn on its artboard with the styles the user gives the variation', async ( {
         page,
         requestUtils,
     } ) => {
