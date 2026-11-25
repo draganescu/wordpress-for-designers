@@ -152,6 +152,18 @@ function wfd_is_number( $value ) {
 }
 
 /**
+ * Whether a value is a JSON list: an array whose keys are 0, 1, 2 and so on
+ * in order. An object with number keys, such as {"5": {}}, decodes to an
+ * array too, and would be stored and read back as an object.
+ *
+ * @param mixed $value The value.
+ * @return bool
+ */
+function wfd_is_list( $value ) {
+    return is_array( $value ) && array_values( $value ) === $value;
+}
+
+/**
  * Checks a layout against the shape in spec/data-model.md.
  *
  * @param mixed $layout The decoded layout.
@@ -169,7 +181,7 @@ function wfd_layout_error( $layout ) {
     if ( 1 !== $layout['version'] ) {
         return __( 'The layout version must be 1.', 'wordpress-for-designers' );
     }
-    if ( ! is_array( $layout['artboards'] ) || ( $layout['artboards'] && ! wp_is_numeric_array( $layout['artboards'] ) ) ) {
+    if ( ! wfd_is_list( $layout['artboards'] ) ) {
         return __( 'The layout artboards must be a list.', 'wordpress-for-designers' );
     }
 
@@ -280,7 +292,7 @@ function wfd_browser_error( $browser ) {
  * @return true|string True when valid, otherwise the reason.
  */
 function wfd_notes_error( $notes, $ids ) {
-    if ( ! is_array( $notes ) || ( $notes && ! wp_is_numeric_array( $notes ) ) ) {
+    if ( ! wfd_is_list( $notes ) ) {
         return __( 'The layout notes must be a list.', 'wordpress-for-designers' );
     }
     $fields = array( 'id', 'x', 'y', 'text', 'color' );
@@ -314,7 +326,7 @@ function wfd_notes_error( $notes, $ids ) {
  * @return true|string True when valid, otherwise the reason.
  */
 function wfd_guides_error( $guides, $ids ) {
-    if ( ! is_array( $guides ) || ( $guides && ! wp_is_numeric_array( $guides ) ) ) {
+    if ( ! wfd_is_list( $guides ) ) {
         return __( 'The layout guides must be a list.', 'wordpress-for-designers' );
     }
     $owners = array( 'page', 'template', 'template-part', 'pattern' );

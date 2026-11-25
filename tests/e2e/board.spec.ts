@@ -93,6 +93,33 @@ test.describe( 'BOARD', () => {
                     { ...artboard, content: '<!-- wp:paragraph -->' },
                 ],
             },
+            // An object with number keys is not a list.
+            { version: 1, artboards: { 5: artboard } },
+            { version: 1, artboards: { 0: artboard, 2: artboard } },
+            {
+                version: 1,
+                artboards: [],
+                notes: {
+                    5: {
+                        id: '22222222-2222-4222-8222-222222222222',
+                        x: 1,
+                        y: 2,
+                        text: '',
+                        color: 'yellow',
+                    },
+                },
+            },
+            {
+                version: 1,
+                artboards: [],
+                guides: {
+                    5: {
+                        id: '33333333-3333-4333-8333-333333333333',
+                        axis: 'x',
+                        at: 10,
+                    },
+                },
+            },
         ];
         for ( const layout of bad ) {
             expect( await save( layout ) ).toBe( 400 );
