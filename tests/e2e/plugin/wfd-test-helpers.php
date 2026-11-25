@@ -17,8 +17,14 @@ if ( ! defined( 'WFD_TEST_BUILD' ) ) {
  */
 function wfd_test_users() {
     $users = array(
-        'wfd_editor' => 'editor',
-        'wfd_admin2' => 'administrator',
+        'wfd_editor'     => 'editor',
+        'wfd_admin2'     => 'administrator',
+        'wfd_subscriber' => 'subscriber',
+    );
+    $names = array(
+        'wfd_editor'     => 'An Editor',
+        'wfd_admin2'     => 'Second Admin',
+        'wfd_subscriber' => 'A Subscriber',
     );
     $ids   = array();
     foreach ( $users as $login => $role ) {
@@ -30,7 +36,7 @@ function wfd_test_users() {
                     'user_pass'    => 'password',
                     'user_email'   => $login . '@example.test',
                     'role'         => $role,
-                    'display_name' => 'wfd_admin2' === $login ? 'Second Admin' : 'An Editor',
+                    'display_name' => $names[ $login ],
                 )
             );
         } else {

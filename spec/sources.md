@@ -25,9 +25,9 @@ The list below is generated from every `[N]` tag in the spec. From row 65 on, fo
 | # | File | Line | Statement |
 |---|---|---|---|
 | 1 | `acceptance.md` | 3 | Each criterion is one end-to-end test. The test's title starts with its ID. Tests live in `tests/e2e/{group}.spec.ts`, where the group is the middle part of the ID in lower case (`AC-TIER-01` is in `tier.spec.ts`). Structural checks read `data-wfd-*` attrib... |
-| 2 | `acceptance.md` | 17 | AC-BOARD-03 Saving a layout with an unknown field or a wrong type is rejected with status 400. `[N]` |
-| 3 | `acceptance.md` | 18 | AC-BOARD-04 Rename and Move to trash on a board card work; a trashed board leaves the list. `[N]` |
-| 4 | `acceptance.md` | 20 | AC-BOARD-06 Reopening a board restores the user's last pan and zoom; a board never opened by this browser opens fitted to all artboards. `[N]` |
+| 2 | `acceptance.md` | 18 | AC-BOARD-03 Saving a layout with an unknown field or a wrong type is rejected with status 400. `[N]` |
+| 3 | `acceptance.md` | 19 | AC-BOARD-04 Rename and Move to trash on a board card work; a trashed board leaves the list. `[N]` |
+| 4 | `acceptance.md` | 21 | AC-BOARD-06 Reopening a board restores the user's last pan and zoom; a board never opened by this browser opens fitted to all artboards. `[N]` |
 | 5 | `acceptance.md` | 34 | AC-CANVAS-04 The H8 menu items change zoom as named; "Fit all" shows every artboard. `[N]` |
 | 6 | `acceptance.md` | 112 | AC-INS-03 With no artboard in edit, clicking a block row inserts nothing and the hint reads "Edit an artboard to insert blocks." `[N]` |
 | 7 | `acceptance.md` | 144 | AC-SAVE-06 Discard all, after confirmation, reverts every edited record as one step that Undo and Redo act on, and removes unsaved new templates and parts from the board. `[N]` `[U]` |
@@ -82,6 +82,7 @@ The list below is generated from every `[N]` tag in the spec. From row 65 on, fo
 | 85 | `screens/Rulers.md` | all | The key hints beside the zoom menu's items in the image are not built. `[N]` |
 | 86 | `acceptance.md` | Rulers and guides | The `data-wfd-*` attributes the rulers and guides set for tests. `[N]` |
 | 87 | `architecture.md` | Keyboard map | Tab, Enter, F2 and Shift + 2 do nothing for a selected guide. `[N]` |
+| 88 | `acceptance.md` | 12 | AC-PERM-04 / the `wfd-boards` REST routes refuse every read from a visitor or a user without `edit_theme_options`, in any context. / `[U]` for the rule (C19, `data-model.md` Permissions); the criterion is `[N]`, written after a security review found that a published board was readable by anyone |
 | 52 | `screens/README.md` | 80 | S6 / Tokens: Spacing group / heading-sm "Spacing"; one square per spacing preset with its px value under it / / Display only. `[N]` |
 | 53 | `screens/README.md` | 92 | E7 / Kind tab: live notice / `Notice`, caution tone, templates and parts only / "Templates have no draft. Saving this one puts it live on every {purpose} of the site." for templates; "Template parts have no draft. Saving this one puts it live everywhere it ... |
 | 54 | `screens/ResetDialog.md` | 7 | **Source.** [U]; hiding the checkbox is [N] |
@@ -92,9 +93,9 @@ The list below is generated from every `[N]` tag in the spec. From row 65 on, fo
 | 59 | `screens/NeedsSpace.md` | 7 | **Source.** [U]; the text under the title and the `dialog` surface are [N] |
 | 60 | `decisions.md` | 68 | D64 / a drag that starts on empty board draws the selection rectangle (D43) / `[U]`; that a one-finger drag from empty board draws the selection rectangle and does not pan is `[N]` |
 | 61 | `architecture.md` | 152 | What one finger pressed is acted on when it moves or lifts, not when it lands, so the first finger of two selects nothing and leaves edit on nothing. `[N]` |
-| 62 | `acceptance.md` | 50 | AC-CANVAS-10 / dragging from empty board selects the artboards the rectangle touches / `[U]`; that the drag from empty board selects and does not pan is `[N]` |
+| 62 | `acceptance.md` | 51 | AC-CANVAS-10 / dragging from empty board selects the artboards the rectangle touches / `[U]`; that the drag from empty board selects and does not pan is `[N]` |
 | 63 | `architecture.md` | 154 | A one-finger drag that the browser cancels (`pointercancel`) is undone in the same way; nothing of it is committed. `[N]` |
-| 64 | `acceptance.md` | 51 | AC-CANVAS-11 / A one-finger drag of an artboard that the browser cancels puts the artboard back in the same way, and nothing is left to undo. / `[U]`; the cancelled drag is `[N]` |
+| 64 | `acceptance.md` | 52 | AC-CANVAS-11 / A one-finger drag of an artboard that the browser cancels puts the artboard back in the same way, and nothing is left to undo. / `[U]`; the cancelled drag is `[N]` |
 | 65 | `decisions.md` | D76 | The two intervals of the session check (10 seconds, then 1 second) and the first `wp wfd` command being what switches polling on for a site. `[N]` |
 | 66 | `decisions.md` | D77 | A tool makes a template only for the purposes the inserter offers; a template for another slug is made with WordPress's own commands and is live at once. `[N]` |
 | 67 | `decisions.md` | D78 | The agent may discard an unsaved item that it alone changed. `[N]` |

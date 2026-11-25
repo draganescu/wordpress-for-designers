@@ -12,7 +12,7 @@ export type Artboard = {
 };
 
 export type Fixture = {
-    users: { wfd_editor: number; wfd_admin2: number };
+    users: { wfd_editor: number; wfd_admin2: number; wfd_subscriber: number };
     boardId: number;
     layout: { version: 1; artboards: Artboard[] };
     pages: { about: number; member: number };

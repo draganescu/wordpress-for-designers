@@ -53,6 +53,33 @@ function wfd_register_post_type() {
 add_action( 'init', 'wfd_register_post_type' );
 
 /**
+ * Keeps the wfd-boards REST routes to users who can open the plugin (C19,
+ * spec/data-model.md, Permissions). A board is always published, and
+ * WordPress lets anyone read a published post of a type shown in REST, so
+ * the capabilities of the post type alone do not stop a read. WordPress
+ * matches a route whatever the case of its letters, so this does too.
+ *
+ * @param mixed           $response The response so far.
+ * @param array           $handler  The route's handler.
+ * @param WP_REST_Request $request  The request.
+ * @return mixed
+ */
+function wfd_boards_rest_permission( $response, $handler, $request ) {
+    if ( is_wp_error( $response ) || ! preg_match( '#^/wp/v2/wfd-boards(/|$)#i', $request->get_route() ) ) {
+        return $response;
+    }
+    if ( current_user_can( WFD_CAPABILITY ) ) {
+        return $response;
+    }
+    return new WP_Error(
+        'rest_forbidden',
+        __( 'Sorry, you are not allowed to do that.', 'wordpress-for-designers' ),
+        array( 'status' => rest_authorization_required_code() )
+    );
+}
+add_filter( 'rest_request_before_callbacks', 'wfd_boards_rest_permission', 10, 3 );
+
+/**
  * The layout of an empty board.
  *
  * @return array
@@ -126,6 +153,18 @@ function wfd_is_number( $value ) {
 }
 
 /**
+ * Whether a value is a JSON list: an array whose keys are 0, 1, 2 and so on
+ * in order. An object with number keys, such as {"5": {}}, decodes to an
+ * array too, and would be stored and read back as an object.
+ *
+ * @param mixed $value The value.
+ * @return bool
+ */
+function wfd_is_list( $value ) {
+    return is_array( $value ) && array_values( $value ) === $value;
+}
+
+/**
  * Checks a layout against the shape in spec/data-model.md.
  *
  * @param mixed $layout The decoded layout.
@@ -143,7 +182,7 @@ function wfd_layout_error( $layout ) {
     if ( 1 !== $layout['version'] ) {
         return __( 'The layout version must be 1.', 'wordpress-for-designers' );
     }
-    if ( ! is_array( $layout['artboards'] ) || ( $layout['artboards'] && ! wp_is_numeric_array( $layout['artboards'] ) ) ) {
+    if ( ! wfd_is_list( $layout['artboards'] ) ) {
         return __( 'The layout artboards must be a list.', 'wordpress-for-designers' );
     }
 
@@ -254,7 +293,7 @@ function wfd_browser_error( $browser ) {
  * @return true|string True when valid, otherwise the reason.
  */
 function wfd_notes_error( $notes, $ids ) {
-    if ( ! is_array( $notes ) || ( $notes && ! wp_is_numeric_array( $notes ) ) ) {
+    if ( ! wfd_is_list( $notes ) ) {
         return __( 'The layout notes must be a list.', 'wordpress-for-designers' );
     }
     $fields = array( 'id', 'x', 'y', 'text', 'color' );
@@ -288,7 +327,7 @@ function wfd_notes_error( $notes, $ids ) {
  * @return true|string True when valid, otherwise the reason.
  */
 function wfd_guides_error( $guides, $ids ) {
-    if ( ! is_array( $guides ) || ( $guides && ! wp_is_numeric_array( $guides ) ) ) {
+    if ( ! wfd_is_list( $guides ) ) {
         return __( 'The layout guides must be a list.', 'wordpress-for-designers' );
     }
     $owners = array( 'page', 'template', 'template-part', 'pattern' );
