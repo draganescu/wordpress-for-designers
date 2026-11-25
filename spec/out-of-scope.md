@@ -39,3 +39,4 @@ Each item was considered and cut. Do not build any of them, in part or behind a 
 | A "Guides" group in the left panel, and a list of guides in an artboard's settings (D112) | `[U]` |
 | A tool that reads or changes guides or rulers, and guides in the result of `board-get` (D115) | `[U]` |
 | A label, a name or a colour of a guide's own | `[N]` |
+| A design system view: a second view of a board, with one page of the site's tokens and a card for each block and pattern a designer adds to it. Built and tried in November 2026, and cut: "it's much better to style blocks and patterns in the context of the content and layout - with assets visible and all - and tokens have their place in the styles sidebar. This view adds not much". Blocks and patterns are styled on their artboards, and tokens in the Styles panel. | `[U]` |

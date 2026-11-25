@@ -959,7 +959,7 @@ test.describe( 'STYLE', () => {
         await expect( title ).toHaveCount( 1 );
         await expect( back ).toHaveCount( 1 );
     } );
-    test( 'A stock control that is reset leaves a key with no value in the styles of a block: the styles are compiled again and nothing throws', async ( {
+    test( 'AC-STYLE-12 A stock control that is reset leaves a key with no value in the styles of a block: the styles are compiled again and nothing throws', async ( {
         page,
     } ) => {
         const errors: string[] = [];
@@ -1008,5 +1008,60 @@ test.describe( 'STYLE', () => {
             right( page ).getByText( 'Something went wrong' )
         ).toHaveCount( 0 );
         expect( errors ).toEqual( [] );
+    } );
+    test( 'AC-STYLE-11 A block with a style variation is drawn on its artboard with the styles the user gives the variation', async ( {
+        page,
+        requestUtils,
+    } ) => {
+        const about = artboardOf( fixture, 'page' );
+        await requestUtils.rest( {
+            method: 'POST',
+            path: `/wp/v2/pages/${ fixture.pages.about }`,
+            data: {
+                content:
+                    '<!-- wp:buttons --><div class="wp-block-buttons"><!-- wp:button {"className":"is-style-outline"} --><div class="wp-block-button is-style-outline"><a class="wp-block-button__link wp-element-button">Go</a></div><!-- /wp:button --></div><!-- /wp:buttons -->',
+            },
+        } );
+        await page.reload();
+        await setViewport( page, { x: -300, y: -120, zoom: 0.25 } );
+        const link = '.is-style-outline .wp-block-button__link';
+        await expect
+            .poll( () => styleIn( page, about.id, link, 'color' ) )
+            .not.toBeNull();
+        await page.evaluate(
+            ( id ) => {
+                const { select, dispatch } = ( window as any ).wp.data;
+                const { styles } = select( 'core' ).getEditedEntityRecord(
+                    'root',
+                    'globalStyles',
+                    id
+                );
+                const button = styles?.blocks?.[ 'core/button' ];
+                dispatch( 'core' ).editEntityRecord(
+                    'root',
+                    'globalStyles',
+                    id,
+                    {
+                        styles: {
+                            ...styles,
+                            blocks: {
+                                ...styles?.blocks,
+                                'core/button': {
+                                    ...button,
+                                    variations: {
+                                        ...button?.variations,
+                                        outline: { color: { text: '#010203' } },
+                                    },
+                                },
+                            },
+                        },
+                    }
+                );
+            },
+            await stylesId( page )
+        );
+        await expect
+            .poll( () => styleIn( page, about.id, link, 'color' ) )
+            .toBe( 'rgb(1, 2, 3)' );
     } );
 } );
