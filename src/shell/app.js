@@ -55,6 +55,7 @@ import {
 import { KINDS, hasDevice } from './constants';
 import { LockDialog, RemoveDialog } from './dialogs';
 import { ShortcutsButton, ShortcutsDialog } from './shortcuts-dialog';
+import { Snackbars } from './snackbars';
 import { Note, NoteSettings } from './notes';
 import { Header } from './header';
 import { artboardLabel, liveLabel } from './labels';
@@ -1220,9 +1221,12 @@ export function App() {
                     }
                     right={ isRightHidden ? null : right }
                     corner={
-                        <ShortcutsButton
-                            onClick={ () => setShortcutsOpen( true ) }
-                        />
+                        <div className="wfd-corner">
+                            <Snackbars />
+                            <ShortcutsButton
+                                onClick={ () => setShortcutsOpen( true ) }
+                            />
+                        </div>
                     }
                     overlays={
                         <>

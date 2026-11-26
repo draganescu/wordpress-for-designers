@@ -60,6 +60,7 @@ function wfd_base_config() {
         'boardsUrl'   => add_query_arg( 'page', WFD_BOARDS_PAGE, admin_url( 'admin.php' ) ),
         'boardUrl'    => wfd_board_url(),
         'userId'      => get_current_user_id(),
+        'canUpload'   => current_user_can( 'upload_files' ),
         'isTestBuild' => defined( 'WFD_TEST_BUILD' ) && WFD_TEST_BUILD,
     );
 }

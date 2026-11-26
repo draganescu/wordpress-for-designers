@@ -81,3 +81,4 @@ The list below is generated from every `[N]` tag in the spec. Until the product 
 | 62 | `acceptance.md` | 50 | AC-CANVAS-10 / dragging from empty board selects the artboards the rectangle touches / `[U]`; that the drag from empty board selects and does not pan is `[N]` |
 | 63 | `architecture.md` | 154 | A one-finger drag that the browser cancels (`pointercancel`) is undone in the same way; nothing of it is committed. `[N]` |
 | 64 | `acceptance.md` | 51 | AC-CANVAS-11 / A one-finger drag of an artboard that the browser cancels puts the artboard back in the same way, and nothing is left to undo. / `[U]`; the cancelled drag is `[N]` |
+| 65 | `decisions.md`, `acceptance.md` | D82, AC-EDIT-15 | The place of the snackbar notices: the bottom left of the canvas area, above the keyboard shortcuts control. That a file is uploaded once however many artboards show its block. `[N]` |
