@@ -1,0 +1,32 @@
+<?php return array(
+	'dependencies' => array(
+		'react',
+		'react-dom',
+		'react-jsx-runtime',
+		'wp-a11y',
+		'wp-api-fetch',
+		'wp-block-editor',
+		'wp-block-library',
+		'wp-blocks',
+		'wp-components',
+		'wp-compose',
+		'wp-core-data',
+		'wp-data',
+		'wp-date',
+		'wp-editor',
+		'wp-element',
+		'wp-i18n',
+		'wp-keyboard-shortcuts',
+		'wp-keycodes',
+		'wp-media-utils',
+		'wp-notices',
+		'wp-primitives',
+		'wp-priority-queue',
+		'wp-private-apis',
+		'wp-style-engine',
+		'wp-theme',
+		'wp-url',
+		'wp-warning'
+	),
+	'version' => '473f5eabde0137bcffb0'
+);
