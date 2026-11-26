@@ -27,7 +27,11 @@ import {
     browserTier,
     usePreview,
 } from '../artboard-frame';
-import { ArtboardPreview, ArtboardPreviewOnce } from '../artboard-preview';
+import {
+    ArtboardPreview,
+    ArtboardPreviewOnce,
+    isLoading,
+} from '../artboard-preview';
 import { ArtboardSnapshot, createSnapshotStore } from '../artboard-snapshot';
 import { useTiers } from '../tier-scheduler';
 import { InserterPanel } from '../inserter/inserter-panel';
@@ -55,6 +59,7 @@ import {
 import { KINDS, hasDevice } from './constants';
 import { LockDialog, RemoveDialog } from './dialogs';
 import { ShortcutsButton, ShortcutsDialog } from './shortcuts-dialog';
+import { Snackbars } from './snackbars';
 import { Note, NoteSettings } from './notes';
 import { Header } from './header';
 import { artboardLabel, liveLabel } from './labels';
@@ -1078,7 +1083,13 @@ export function App() {
                                             settings={ previewSettings }
                                             onHeight={ onHeight }
                                             onFreeze={ ( element ) => {
+                                                // A Preview that leaves
+                                                // while a block in it is
+                                                // loading is not copied:
+                                                // the artboard is rendered
+                                                // once for its copy.
                                                 if (
+                                                    ! isLoading( element ) &&
                                                     snapshots.capture(
                                                         artboard.id,
                                                         element,
@@ -1220,9 +1231,12 @@ export function App() {
                     }
                     right={ isRightHidden ? null : right }
                     corner={
-                        <ShortcutsButton
-                            onClick={ () => setShortcutsOpen( true ) }
-                        />
+                        <div className="wfd-corner">
+                            <Snackbars />
+                            <ShortcutsButton
+                                onClick={ () => setShortcutsOpen( true ) }
+                            />
+                        </div>
                     }
                     overlays={
                         <>

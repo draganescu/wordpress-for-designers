@@ -215,18 +215,40 @@ html.wp-toolbar:has(.wfd-board-page) {
     padding: 0 var(--wpds-dimension-padding-lg);
 }
 
-// The keyboard shortcuts control (A5) floats over the board.
-.wfd-shortcuts-button {
+// What floats over the board at the bottom left of the canvas area: the
+// snackbar notices (D82) above the keyboard shortcuts control (A5). The
+// corner itself takes no pointer, so the board under it does.
+.wfd-corner {
     position: absolute;
     bottom: var(--wpds-dimension-padding-lg);
     inset-inline-start: var(--wpds-dimension-padding-lg);
     z-index: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    row-gap: var(--wpds-dimension-gap-sm);
+    pointer-events: none;
+
+    > * {
+        pointer-events: auto;
+    }
+}
+
+.wfd-shortcuts-button {
     display: flex;
     border-radius: var(--wpds-border-radius-md);
     background: var(--wpds-color-background-surface-neutral);
     // The design system has no elevation token; this is the shadow its own
     // components use (OQ-28).
     box-shadow: wp-variables.$elevation-x-small;
+}
+
+// WordPress places its snackbar list itself; here the corner does. Two
+// classes, so this holds whichever stylesheet is loaded last.
+.wfd-corner .wfd-snackbars {
+    position: static;
+    z-index: auto;
+    width: auto;
 }
 
 .wfd-shortcuts__group + .wfd-shortcuts__group {
