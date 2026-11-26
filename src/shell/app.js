@@ -62,6 +62,7 @@ import {
 import { KINDS, hasDevice } from './constants';
 import { LockDialog, RemoveDialog } from './dialogs';
 import { ShortcutsButton, ShortcutsDialog } from './shortcuts-dialog';
+import { Snackbars } from './snackbars';
 import { Note, NoteSettings } from './notes';
 import { Guide, GuideDrag, GuideSettings, guideRange } from './guides';
 import { Rulers, useRulerContext } from './rulers';
@@ -1601,9 +1602,12 @@ export function App() {
                     }
                     right={ isRightHidden ? null : right }
                     corner={
-                        <ShortcutsButton
-                            onClick={ () => setShortcutsOpen( true ) }
-                        />
+                        <>
+                            <Snackbars />
+                            <ShortcutsButton
+                                onClick={ () => setShortcutsOpen( true ) }
+                            />
+                        </>
                     }
                     overlays={
                         <>

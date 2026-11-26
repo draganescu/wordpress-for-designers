@@ -59,6 +59,7 @@ $wfd-ruler-size: var(--wpds-dimension-size-xs);
     max-width: calc(100% - #{$wfd-ruler-size} - 2 * var(--wpds-dimension-padding-lg));
 }
 
+.wfd-canvas.has-rulers ~ .wfd-snackbars,
 .wfd-canvas.has-rulers ~ .wfd-shortcuts-button {
     inset-inline-start: calc(#{$wfd-ruler-size} + var(--wpds-dimension-padding-lg));
 }

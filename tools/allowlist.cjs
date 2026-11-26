@@ -50,6 +50,7 @@ const allowed = {
         'store',
     ],
     '@wordpress/block-library': [ 'registerCoreBlocks' ],
+    '@wordpress/media-utils': [ 'uploadMedia' ],
     '@wordpress/core-data': [
         'store',
         'EntityProvider',
