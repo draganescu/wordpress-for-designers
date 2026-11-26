@@ -1602,12 +1602,12 @@ export function App() {
                     }
                     right={ isRightHidden ? null : right }
                     corner={
-                        <>
+                        <div className="wfd-corner">
                             <Snackbars />
                             <ShortcutsButton
                                 onClick={ () => setShortcutsOpen( true ) }
                             />
-                        </>
+                        </div>
                     }
                     overlays={
                         <>

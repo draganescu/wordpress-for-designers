@@ -29,6 +29,7 @@ const fromServer = window.wfdConfig?.editorSettings ?? {};
  * @param {Function} options.onError      Called with the error's message.
  * @param {Function} options.onFileChange Called as each file is uploaded.
  */
+// Only the Live editor is given this: see `liveMediaUpload`.
 function mediaUpload( { onError, onFileChange, ...options } ) {
     uploadMedia( {
         wpAllowedMimeTypes: fromServer.allowedMimeTypes,
@@ -48,6 +49,14 @@ function mediaUpload( { onError, onFileChange, ...options } ) {
     } );
 }
 
-export const serverSettings = window.wfdConfig?.canUpload
-    ? { ...fromServer, mediaUpload }
-    : fromServer;
+export const serverSettings = fromServer;
+
+/**
+ * The `mediaUpload` setting, for the Live editor alone and for a user who may
+ * upload. A block that holds a file not yet uploaded starts its upload where
+ * it is drawn, so a Preview or a warm editor given this setting would upload
+ * the same file again.
+ */
+export const liveMediaUpload = window.wfdConfig?.canUpload
+    ? mediaUpload
+    : undefined;

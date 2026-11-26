@@ -108,8 +108,10 @@ Unless a criterion says otherwise, the fixture in `architecture.md` is loaded an
 - AC-EDIT-10 Deselecting ends edit: a click on empty board leaves edit and clears the selection; a click on another artboard leaves edit and selects that one. `[U]`
 - AC-EDIT-11 A block that is not being edited moves when it is pressed on its text and dragged: hovering its text shows the block's outline and the grab cursor, the stock drop indicator shows while dragging, and the block lands there. A press without a drag puts the caret where the press was; after that, dragging over the block's text selects text and does not move the block. A double-click on a block that is not being edited selects a word. A template block around a page does not move. `[U]`
 - AC-EDIT-12 An Image block added to an artboard in edit has "Upload", "Media Library" and "Insert from URL" in its placeholder (D117). `[U]`
-- AC-EDIT-13 An image uploaded from an Image block's placeholder is listed in the inserter's Media tab without a reload (D117). `[U]`
+- AC-EDIT-13 An image uploaded from an Image block's placeholder, with "Upload" or in the dialog of "Media Library", is listed in the inserter's Media tab without a reload (D117). `[U]`
 - AC-EDIT-14 A file that cannot be uploaded from a block's placeholder shows its error in a snackbar at the bottom left of the canvas area (D118). `[U]`
+- AC-EDIT-15 A file held by a block of a template part that several artboards show is uploaded once (D117). `[N]`
+- AC-EDIT-16 For a user who may not upload files, an Image block's placeholder has "Insert from URL" and neither "Upload" nor "Media Library" (D117). `[U]`
 - AC-EDIT-08 A page's "Template" select, in the artboard settings and in the Page tab, lists "Default template" and the site's custom templates; choosing one redraws the artboard with that template, lists the page in Review with "Template: changed", and saving stores it on the page. `[U]`
 
 ## UNDO
