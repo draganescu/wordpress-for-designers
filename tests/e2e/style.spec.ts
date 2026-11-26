@@ -959,4 +959,134 @@ test.describe( 'STYLE', () => {
         await expect( title ).toHaveCount( 1 );
         await expect( back ).toHaveCount( 1 );
     } );
+    test( 'AC-STYLE-14 A stock control that is reset leaves a key with no value in the styles of a block: the styles are compiled again and nothing throws', async ( {
+        page,
+    } ) => {
+        await setViewport( page, { x: 40, y: 40, zoom: 0.25 } );
+        const index = artboardOf( fixture, 'template' );
+        // Whether the stylesheet the artboard has been given holds a text.
+        const compiledWith = ( text: string ) =>
+            page
+                .locator( `[data-wfd-artboard="${ index.id }"] iframe` )
+                .first()
+                .evaluate(
+                    ( frame: HTMLIFrameElement, needle ) =>
+                        Array.from(
+                            frame.contentDocument?.querySelectorAll(
+                                'style'
+                            ) ?? []
+                        ).some( ( style ) =>
+                            style.textContent?.includes( needle )
+                        ),
+                    text
+                );
+        await expect
+            .poll( () => styleIn( page, index.id, 'body', 'backgroundColor' ) )
+            .not.toBeNull();
+        expect( await compiledWith( '#123456' ) ).toBe( false );
+        const errors: string[] = [];
+        page.on( 'pageerror', ( error ) => errors.push( error.message ) );
+        // What the stock Border panel's reset leaves for the Table block.
+        await page.evaluate(
+            ( id ) => {
+                const { select, dispatch } = ( window as any ).wp.data;
+                const { styles } = select( 'core' ).getEditedEntityRecord(
+                    'root',
+                    'globalStyles',
+                    id
+                );
+                dispatch( 'core' ).editEntityRecord(
+                    'root',
+                    'globalStyles',
+                    id,
+                    {
+                        styles: {
+                            ...styles,
+                            blocks: {
+                                ...styles?.blocks,
+                                'core/table': {
+                                    ...styles?.blocks?.[ 'core/table' ],
+                                    border: undefined,
+                                    color: { text: '#123456' },
+                                },
+                            },
+                        },
+                    }
+                );
+            },
+            await stylesId( page )
+        );
+        // The stylesheet compiled from those styles reaches the artboard.
+        await expect.poll( () => compiledWith( '#123456' ) ).toBe( true );
+        // The block's screen draws from the same styles.
+        const panel = right( page );
+        await panel.getByRole( 'tab', { name: 'Blocks' } ).click();
+        await panel.getByRole( 'searchbox' ).fill( 'Table' );
+        await panel.locator( '.wfd-row__name', { hasText: /^Table$/ } ).click();
+        const stock = panel.locator( '.wfd-styles__block-styles' );
+        await expect(
+            panel.getByRole( 'heading', { name: 'Table', exact: true } )
+        ).toHaveCount( 1 );
+        await expect( stock.getByText( 'Color' ).first() ).toBeVisible();
+        await expect( stock.locator( '.editor-error-boundary' ) ).toHaveCount(
+            0
+        );
+        await expect( stock ).not.toContainText( 'The editor has crashed' );
+        expect( errors ).toEqual( [] );
+    } );
+    test( 'AC-STYLE-13 A block with a style variation is drawn on its artboard with the styles the user gives the variation', async ( {
+        page,
+        requestUtils,
+    } ) => {
+        const about = artboardOf( fixture, 'page' );
+        await requestUtils.rest( {
+            method: 'POST',
+            path: `/wp/v2/pages/${ fixture.pages.about }`,
+            data: {
+                content:
+                    '<!-- wp:buttons --><div class="wp-block-buttons"><!-- wp:button {"className":"is-style-outline"} --><div class="wp-block-button is-style-outline"><a class="wp-block-button__link wp-element-button">Go</a></div><!-- /wp:button --></div><!-- /wp:buttons -->',
+            },
+        } );
+        await page.reload();
+        await setViewport( page, { x: -300, y: -120, zoom: 0.25 } );
+        const link = '.is-style-outline .wp-block-button__link';
+        await expect
+            .poll( () => styleIn( page, about.id, link, 'color' ) )
+            .not.toBeNull();
+        await page.evaluate(
+            ( id ) => {
+                const { select, dispatch } = ( window as any ).wp.data;
+                const { styles } = select( 'core' ).getEditedEntityRecord(
+                    'root',
+                    'globalStyles',
+                    id
+                );
+                const button = styles?.blocks?.[ 'core/button' ];
+                dispatch( 'core' ).editEntityRecord(
+                    'root',
+                    'globalStyles',
+                    id,
+                    {
+                        styles: {
+                            ...styles,
+                            blocks: {
+                                ...styles?.blocks,
+                                'core/button': {
+                                    ...button,
+                                    variations: {
+                                        ...button?.variations,
+                                        outline: { color: { text: '#010203' } },
+                                    },
+                                },
+                            },
+                        },
+                    }
+                );
+            },
+            await stylesId( page )
+        );
+        await expect
+            .poll( () => styleIn( page, about.id, link, 'color' ) )
+            .toBe( 'rgb(1, 2, 3)' );
+    } );
 } );

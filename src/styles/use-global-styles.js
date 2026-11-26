@@ -37,6 +37,29 @@ const SETTLE = 300;
 const COMPILE_LIMIT = 10000;
 
 /**
+ * A copy of a tree of styles or of settings without the keys whose value
+ * is undefined. A stock control that is reset leaves such a key. Merged
+ * with the theme's, the key would take the theme's value away, and the
+ * styles engine throws on one in the styles when it compiles.
+ *
+ * @param {*} value A tree of styles or of settings, or a value in one.
+ * @return {*} The same, with those keys left out.
+ */
+function withoutUndefined( value ) {
+    if ( Array.isArray( value ) ) {
+        return value.map( withoutUndefined );
+    }
+    if ( value === null || typeof value !== 'object' ) {
+        return value;
+    }
+    return Object.fromEntries(
+        Object.entries( value )
+            .filter( ( [ , item ] ) => item !== undefined )
+            .map( ( [ key, item ] ) => [ key, withoutUndefined( item ) ] )
+    );
+}
+
+/**
  * @param {Object} serverSettings Block editor settings from the server.
  * @return {Object} Styles state and actions.
  */
@@ -67,8 +90,8 @@ export function useGlobalStyles( serverSettings ) {
     const recordStyles = record?.styles;
     const user = useMemo(
         () => ( {
-            settings: recordSettings ?? {},
-            styles: recordStyles ?? {},
+            settings: withoutUndefined( recordSettings ?? {} ),
+            styles: withoutUndefined( recordStyles ?? {} ),
         } ),
         [ recordSettings, recordStyles ]
     );
@@ -114,6 +137,11 @@ export function useGlobalStyles( serverSettings ) {
                 hasBlockGapSupport,
                 hasFallbackGapSupport: ! hasBlockGapSupport,
                 disableLayoutStyles: !! serverSettings.disableLayoutStyles,
+                // The styles the theme and the user give a block's style
+                // variations are in the one stylesheet too. WordPress's
+                // editor makes them for each block as it is drawn, from
+                // styles the plugin's editors are not given.
+                styleOptions: { variationStyles: true },
             } );
             const css = JSON.stringify( styles );
             report.compiledFrom = raw.current;
@@ -196,20 +224,19 @@ export function useGlobalStyles( serverSettings ) {
                   .getEditedEntityRecord( 'root', 'globalStyles', id )
             : null;
 
+    // The same without the keys that have no value, as `user` is.
+    const readUser = () => ( {
+        settings: withoutUndefined( readRecord()?.settings ?? {} ),
+        styles: withoutUndefined( readRecord()?.styles ?? {} ),
+    } );
+
     return {
         id,
         isReady,
-        readUser: () => ( {
-            settings: readRecord()?.settings ?? {},
-            styles: readRecord()?.styles ?? {},
-        } ),
+        readUser,
         // The theme's and the user's styles together, as the store holds
         // them now.
-        readMerged: () =>
-            mergeGlobalStyles( base ?? EMPTY, {
-                settings: readRecord()?.settings ?? {},
-                styles: readRecord()?.styles ?? {},
-            } ),
+        readMerged: () => mergeGlobalStyles( base ?? EMPTY, readUser() ),
         // Resolves once the stylesheet compiled from the styles the store
         // holds now has been given to the mounted artboards; rejects when
         // that takes longer than the safety limit.

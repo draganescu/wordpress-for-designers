@@ -195,6 +195,8 @@ Unless a criterion says otherwise, the fixture in `architecture.md` is loaded an
 - AC-STYLE-10 The variation menu reads "Variation: Default" for the theme's own styles, "Variation: {name}" when the styles are exactly a variation and "Variation: Custom" after any further change; its first item, "Default", returns the styles to the theme's (D54). `[U]`
 - AC-STYLE-11 With "Style applies to" on "All {block}", the stock styles screen's Back control sets it back to "This block" (D58). `[U]`
 - AC-STYLE-12 A stock styles screen that throws shows WordPress's stock error notice in its place; the board, the other tabs and the other stock screens keep working; switching to another tab closes the screen that threw, so its tab shows its list again, and leaves open a screen that did not (D60). `[U]`
+- AC-STYLE-13 A block with a style variation is drawn on its artboard with the styles the user gives the variation (D116). `[U]`
+- AC-STYLE-14 A stock control that is reset leaves a key with no value in the styles of a block: the styles are compiled again and nothing throws. `[N]`
 
 ## INDEX
 

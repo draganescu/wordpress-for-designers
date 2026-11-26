@@ -30,8 +30,8 @@
         "style-change.renders": 60,
         "style-change.style-generations": 1,
 
-        "snapshot.long-page": 950000,
-        "snapshot.all-nine": 8500000
+        "snapshot.long-page": 990000,
+        "snapshot.all-nine": 8870000
     },
     "tolerances": {
         "board-9.requests": 0.08,
