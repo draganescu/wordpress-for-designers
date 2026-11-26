@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name:       WordPress for Designers: Abilities
- * Version:           0.4.1
+ * Version:           0.5.0
  * Requires at least: 7.2
  * Requires PHP:      7.4
  * Text Domain:       wfd-abilities
