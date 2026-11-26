@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name:       WordPress for Designers: Studio adapter
- * Version:           0.5.0
+ * Version:           0.5.1
  * Requires at least: 7.2
  * Requires PHP:      7.4
  * Text Domain:       wfd-studio
