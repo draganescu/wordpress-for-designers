@@ -173,7 +173,7 @@ Cases the whiteboard does not draw: `[N]`
 
 Numbers and ticks: the step between numbers is the smallest of 1, 2 or 5 times a power of ten, in board units, that is at least 50 CSS px long at the present zoom (500 at 17%, 100 at 50%), with four smaller ticks between two numbers. Numbers on the far side of zero are negative and written with a minus sign. `[N]`
 
-While the rulers are shown, the notices at the top left of the canvas (the usage and preview banners, the saving notice) sit clear of them. `[N]`
+While the rulers are shown, the notices at the top left of the canvas (the usage and preview banners, the saving notice) sit clear of them, and so do the keyboard shortcuts control (A5) and the snackbar notices above it (D118) at the bottom left. `[N]`
 
 ## Guides (D110 to D114) `[U]` `[D:GuideDrag]` `[D:GuideSelected]` `[D:RulersEditing]` `[R1]` `[R3]`
 

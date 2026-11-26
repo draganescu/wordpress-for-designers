@@ -35,6 +35,7 @@ import { KINDS } from '../shell/constants';
 import { coalesceTyping } from './coalesce';
 import { DragAnywhere, DRAG_ANYWHERE_STYLES } from './drag-anywhere';
 import { GuardedRegistry } from '../shell/guarded-registry';
+import { liveMediaUpload } from '../shell/editor-settings';
 
 const NO_CONTEXT = {};
 const CONTENT_BLOCKS = [
@@ -287,8 +288,13 @@ function Editor( {
     } );
     const [ height, setHeight ] = useState( 0 );
     const editorSettings = useMemo(
-        () => ( { ...settings, hasFixedToolbar: true } ),
-        [ settings ]
+        () => ( {
+            ...settings,
+            hasFixedToolbar: true,
+            // Only the Live editor uploads (D117).
+            mediaUpload: isActive ? liveMediaUpload : undefined,
+        } ),
+        [ settings, isActive ]
     );
     // Viewport-height lengths are pinned, or content sized with them would
     // grow with every measurement (artboard-frame/viewport-units.js).

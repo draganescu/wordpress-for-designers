@@ -83,6 +83,7 @@ The list below is generated from every `[N]` tag in the spec. From row 65 on, fo
 | 86 | `acceptance.md` | Rulers and guides | The `data-wfd-*` attributes the rulers and guides set for tests. `[N]` |
 | 87 | `architecture.md` | Keyboard map | Tab, Enter, F2 and Shift + 2 do nothing for a selected guide. `[N]` |
 | 88 | `acceptance.md` | 12 | AC-PERM-04 / the `wfd-boards` REST routes refuse every read from a visitor or a user without `edit_theme_options`, in any context. / `[U]` for the rule (C19, `data-model.md` Permissions); the criterion is `[N]`, written after a security review found that a published board was readable by anyone |
+| 89 | `decisions.md`, `acceptance.md` | D118, AC-EDIT-15 | The place of the snackbar notices: the bottom left of the canvas area, above the keyboard shortcuts control. That a file is uploaded once however many artboards show its block. `[N]` |
 | 52 | `screens/README.md` | 80 | S6 / Tokens: Spacing group / heading-sm "Spacing"; one square per spacing preset with its px value under it / / Display only. `[N]` |
 | 53 | `screens/README.md` | 92 | E7 / Kind tab: live notice / `Notice`, caution tone, templates and parts only / "Templates have no draft. Saving this one puts it live on every {purpose} of the site." for templates; "Template parts have no draft. Saving this one puts it live everywhere it ... |
 | 54 | `screens/ResetDialog.md` | 7 | **Source.** [U]; hiding the checkbox is [N] |

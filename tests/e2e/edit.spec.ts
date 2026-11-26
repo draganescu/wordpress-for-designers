@@ -1,3 +1,5 @@
+import fs from 'fs';
+import path from 'path';
 import { test, expect } from '@wordpress/e2e-test-utils-playwright';
 import {
     resetFixture,
@@ -10,6 +12,7 @@ import {
     postLock,
     tiersOf,
     armNew,
+    openInserter,
     type Fixture,
 } from './utils';
 
@@ -721,6 +724,230 @@ test.describe( 'EDIT', () => {
             bar.y + bar.height / 2
         );
         await expect( artboard ).toHaveAttribute( 'data-wfd-tier', 'live' );
+    } );
+
+    test( 'AC-EDIT-12 An Image block added to an artboard in edit has "Upload", "Media Library" and "Insert from URL" in its placeholder', async ( {
+        page,
+    } ) => {
+        const about = artboardOf( fixture, 'page' );
+        await enterEdit( page, about.id );
+        const frame = editorFrame( page, about.id );
+        await frame.locator( 'p', { hasText: 'About paragraph.' } ).click();
+        const panel = await openInserter( page, 'Blocks' );
+        await panel
+            .getByRole( 'button', { name: 'Image', exact: true } )
+            .click();
+        const placeholder = frame.locator( '.wp-block-image' );
+        for ( const name of [ 'Upload', 'Media Library', 'Insert from URL' ] ) {
+            await expect(
+                placeholder.getByRole( 'button', { name, exact: true } )
+            ).toBeVisible();
+        }
+        // The button opens WordPress's media dialog in the board's page.
+        await placeholder
+            .getByRole( 'button', { name: 'Media Library', exact: true } )
+            .click();
+        await expect( page.locator( '.media-modal' ) ).toBeVisible();
+    } );
+
+    test( 'AC-EDIT-13 An image uploaded from an Image block\'s placeholder, with "Upload" or in the dialog of "Media Library", is listed in the inserter\'s Media tab without a reload', async ( {
+        page,
+    } ) => {
+        const about = artboardOf( fixture, 'page' );
+        await enterEdit( page, about.id );
+        const frame = editorFrame( page, about.id );
+        await frame.locator( 'p', { hasText: 'About paragraph.' } ).click();
+        const panel = await openInserter( page, 'Blocks' );
+        await panel
+            .getByRole( 'button', { name: 'Image', exact: true } )
+            .click();
+        await panel.getByRole( 'tab', { name: 'Media' } ).click();
+        const list = panel.getByRole( 'tabpanel' );
+        const uploaded = list.locator( '.wfd-row', { hasText: 'wfd-upload' } );
+        await expect(
+            list.getByRole( 'button', { name: 'Upload' } )
+        ).toBeVisible();
+        await expect( uploaded ).toHaveCount( 0 );
+        await frame
+            .locator( '.wp-block-image input[type="file"]' )
+            .setInputFiles(
+                path.join( __dirname, 'assets', 'wfd-upload.png' )
+            );
+        await expect( frame.locator( '.wp-block-image img' ) ).toHaveAttribute(
+            'src',
+            /^http.*wfd-upload/,
+            { timeout: 20000 }
+        );
+        await expect( uploaded ).toHaveCount( 1 );
+
+        // The same from the dialog of "Media Library".
+        await frame.locator( 'p', { hasText: 'About paragraph.' } ).click();
+        await panel.getByRole( 'tab', { name: 'Blocks' } ).click();
+        await panel
+            .getByRole( 'button', { name: 'Image', exact: true } )
+            .click();
+        await panel.getByRole( 'tab', { name: 'Media' } ).click();
+        const sample = list.locator( '.wfd-row', { hasText: 'wfd-sample' } );
+        await expect( sample ).toHaveCount( 0 );
+        await frame
+            .locator( '.wp-block-image' )
+            .getByRole( 'button', { name: 'Media Library', exact: true } )
+            .click();
+        const modal = page.locator( '.media-modal' );
+        await modal.getByRole( 'tab', { name: 'Upload files' } ).click();
+        await modal
+            .locator( 'input[type="file"]' )
+            .setInputFiles(
+                path.join( __dirname, 'assets', 'wfd-sample.png' )
+            );
+        const select = modal.getByRole( 'button', {
+            name: 'Select',
+            exact: true,
+        } );
+        await expect( select ).toBeEnabled( { timeout: 20000 } );
+        await select.click();
+        await expect( modal ).toBeHidden();
+        await expect( sample ).toHaveCount( 1 );
+    } );
+
+    test( "AC-EDIT-14 A file that cannot be uploaded from a block's placeholder shows its error in a snackbar at the bottom left of the canvas area", async ( {
+        page,
+    } ) => {
+        const about = artboardOf( fixture, 'page' );
+        await enterEdit( page, about.id );
+        const frame = editorFrame( page, about.id );
+        await frame.locator( 'p', { hasText: 'About paragraph.' } ).click();
+        const panel = await openInserter( page, 'Blocks' );
+        await panel
+            .getByRole( 'button', { name: 'Image', exact: true } )
+            .click();
+        await expect( page.locator( '.wfd-snackbars' ) ).toHaveCount( 0 );
+        await frame
+            .locator( '.wp-block-image input[type="file"]' )
+            .setInputFiles( {
+                name: 'notes.txt',
+                mimeType: 'text/plain',
+                buffer: Buffer.from( 'Not an image.' ),
+            } );
+        const snackbar = page.locator( '.wfd-snackbars .components-snackbar' );
+        await expect( snackbar ).toBeVisible();
+        await expect( snackbar ).toContainText( 'not supported' );
+        // Above the keyboard shortcuts control, at the same left edge.
+        const box = ( await snackbar.boundingBox() )!;
+        const control = ( await page
+            .locator( '.wfd-shortcuts-button' )
+            .boundingBox() )!;
+        expect( Math.abs( box.x - control.x ) ).toBeLessThan( 2 );
+        expect( box.y + box.height ).toBeLessThanOrEqual( control.y );
+    } );
+
+    test( 'AC-EDIT-15 A file held by a block of a template part that several artboards show is uploaded once', async ( {
+        page,
+    } ) => {
+        const header = artboardOf( fixture, 'template-part' );
+        let uploads = 0;
+        page.on( 'request', ( request ) => {
+            if (
+                request.method() === 'POST' &&
+                /wp\/v2\/media/.test( decodeURIComponent( request.url() ) )
+            ) {
+                uploads++;
+            }
+        } );
+        await enterEdit( page, header.id );
+        // The templates and pages that show the header are drawn as well.
+        await expect
+            .poll(
+                async () =>
+                    Object.values( await tiersOf( page ) ).filter(
+                        ( tier ) => tier === 'preview'
+                    ).length
+            )
+            .toBeGreaterThan( 2 );
+        // What dropping a file leaves in the part: an Image block that holds
+        // the file as a blob, not yet uploaded.
+        const data = fs
+            .readFileSync( path.join( __dirname, 'assets', 'wfd-upload.png' ) )
+            .toString( 'base64' );
+        await page.evaluate(
+            ( [ base64, id ] ) => {
+                const wp = ( window as any ).wp;
+                const bytes = Uint8Array.from( atob( base64 ), ( char ) =>
+                    char.charCodeAt( 0 )
+                );
+                const file = new File( [ bytes ], 'wfd-upload.png', {
+                    type: 'image/png',
+                } );
+                const record = wp.data
+                    .select( 'core' )
+                    .getEditedEntityRecord(
+                        'postType',
+                        'wp_template_part',
+                        id
+                    );
+                const blocks =
+                    record.blocks ||
+                    wp.blocks.parse(
+                        typeof record.content === 'string'
+                            ? record.content
+                            : record.content.raw
+                    );
+                wp.data
+                    .dispatch( 'core' )
+                    .editEntityRecord( 'postType', 'wp_template_part', id, {
+                        blocks: [
+                            ...blocks,
+                            wp.blocks.createBlock( 'core/image', {
+                                blob: wp.blob.createBlobURL( file ),
+                            } ),
+                        ],
+                    } );
+            },
+            [ data, header.entityId ] as const
+        );
+        await expect(
+            editorFrame( page, header.id ).locator( '.wp-block-image img' )
+        ).toHaveAttribute( 'src', /^http.*wfd-upload/, { timeout: 20000 } );
+        // Time for any other artboard to have started an upload of its own.
+        await page.waitForTimeout( 2000 );
+        expect( uploads ).toBe( 1 );
+    } );
+
+    test( 'AC-EDIT-16 For a user who may not upload files, an Image block\'s placeholder has "Insert from URL" and neither "Upload" nor "Media Library"', async ( {
+        page,
+    } ) => {
+        // The board's page as the server gives it to such a user.
+        await page.addInitScript( () => {
+            let config: any;
+            Object.defineProperty( window, 'wfdConfig', {
+                configurable: true,
+                get: () => config,
+                set: ( value ) => {
+                    config = { ...value, canUpload: false };
+                },
+            } );
+        } );
+        await openBoard( page, fixture.boardId );
+        const about = artboardOf( fixture, 'page' );
+        await enterEdit( page, about.id );
+        const frame = editorFrame( page, about.id );
+        await frame.locator( 'p', { hasText: 'About paragraph.' } ).click();
+        const panel = await openInserter( page, 'Blocks' );
+        await panel
+            .getByRole( 'button', { name: 'Image', exact: true } )
+            .click();
+        const placeholder = frame.locator( '.wp-block-image' );
+        await expect(
+            placeholder.getByRole( 'button', {
+                name: 'Insert from URL',
+                exact: true,
+            } )
+        ).toBeVisible();
+        for ( const name of [ 'Upload', 'Media Library' ] ) {
+            await expect(
+                placeholder.getByRole( 'button', { name, exact: true } )
+            ).toHaveCount( 0 );
+        }
     } );
 
     test( 'AC-EDIT-11 A block that is not being edited moves when pressed on its text and dragged; a press without a drag puts the caret there, after which dragging selects text and a double-click selects a word; a template block around a page does not move', async ( {
