@@ -962,9 +962,30 @@ test.describe( 'STYLE', () => {
     test( 'AC-STYLE-14 A stock control that is reset leaves a key with no value in the styles of a block: the styles are compiled again and nothing throws', async ( {
         page,
     } ) => {
+        await setViewport( page, { x: 40, y: 40, zoom: 0.25 } );
+        const index = artboardOf( fixture, 'template' );
+        // Whether the stylesheet the artboard has been given holds a text.
+        const compiledWith = ( text: string ) =>
+            page
+                .locator( `[data-wfd-artboard="${ index.id }"] iframe` )
+                .first()
+                .evaluate(
+                    ( frame: HTMLIFrameElement, needle ) =>
+                        Array.from(
+                            frame.contentDocument?.querySelectorAll(
+                                'style'
+                            ) ?? []
+                        ).some( ( style ) =>
+                            style.textContent?.includes( needle )
+                        ),
+                    text
+                );
+        await expect
+            .poll( () => styleIn( page, index.id, 'body', 'backgroundColor' ) )
+            .not.toBeNull();
+        expect( await compiledWith( '#123456' ) ).toBe( false );
         const errors: string[] = [];
         page.on( 'pageerror', ( error ) => errors.push( error.message ) );
-        const before = ( await counters( page ) ).styleGenerations;
         // What the stock Border panel's reset leaves for the Table block.
         await page.evaluate(
             ( id ) => {
@@ -995,18 +1016,22 @@ test.describe( 'STYLE', () => {
             },
             await stylesId( page )
         );
-        await expect
-            .poll( async () => ( await counters( page ) ).styleGenerations )
-            .toBeGreaterThan( before );
+        // The stylesheet compiled from those styles reaches the artboard.
+        await expect.poll( () => compiledWith( '#123456' ) ).toBe( true );
         // The block's screen draws from the same styles.
-        await right( page ).getByRole( 'tab', { name: 'Blocks' } ).click();
-        await right( page )
-            .getByRole( 'button', { name: /^Table/ } )
-            .first()
-            .click();
+        const panel = right( page );
+        await panel.getByRole( 'tab', { name: 'Blocks' } ).click();
+        await panel.getByRole( 'searchbox' ).fill( 'Table' );
+        await panel.locator( '.wfd-row__name', { hasText: /^Table$/ } ).click();
+        const stock = panel.locator( '.wfd-styles__block-styles' );
         await expect(
-            right( page ).getByText( 'Something went wrong' )
-        ).toHaveCount( 0 );
+            panel.getByRole( 'heading', { name: 'Table', exact: true } )
+        ).toHaveCount( 1 );
+        await expect( stock.getByText( 'Color' ).first() ).toBeVisible();
+        await expect( stock.locator( '.editor-error-boundary' ) ).toHaveCount(
+            0
+        );
+        await expect( stock ).not.toContainText( 'The editor has crashed' );
         expect( errors ).toEqual( [] );
     } );
     test( 'AC-STYLE-13 A block with a style variation is drawn on its artboard with the styles the user gives the variation', async ( {

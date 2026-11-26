@@ -37,11 +37,12 @@ const SETTLE = 300;
 const COMPILE_LIMIT = 10000;
 
 /**
- * A copy of a styles tree without the keys whose value is undefined. A
- * stock control that is reset leaves such a key, and the styles engine
- * throws on one when it compiles.
+ * A copy of a tree of styles or of settings without the keys whose value
+ * is undefined. A stock control that is reset leaves such a key. Merged
+ * with the theme's, the key would take the theme's value away, and the
+ * styles engine throws on one in the styles when it compiles.
  *
- * @param {*} value A styles tree, or a value in one.
+ * @param {*} value A tree of styles or of settings, or a value in one.
  * @return {*} The same, with those keys left out.
  */
 function withoutUndefined( value ) {
@@ -89,7 +90,7 @@ export function useGlobalStyles( serverSettings ) {
     const recordStyles = record?.styles;
     const user = useMemo(
         () => ( {
-            settings: recordSettings ?? {},
+            settings: withoutUndefined( recordSettings ?? {} ),
             styles: withoutUndefined( recordStyles ?? {} ),
         } ),
         [ recordSettings, recordStyles ]
@@ -223,20 +224,19 @@ export function useGlobalStyles( serverSettings ) {
                   .getEditedEntityRecord( 'root', 'globalStyles', id )
             : null;
 
+    // The same without the keys that have no value, as `user` is.
+    const readUser = () => ( {
+        settings: withoutUndefined( readRecord()?.settings ?? {} ),
+        styles: withoutUndefined( readRecord()?.styles ?? {} ),
+    } );
+
     return {
         id,
         isReady,
-        readUser: () => ( {
-            settings: readRecord()?.settings ?? {},
-            styles: readRecord()?.styles ?? {},
-        } ),
+        readUser,
         // The theme's and the user's styles together, as the store holds
         // them now.
-        readMerged: () =>
-            mergeGlobalStyles( base ?? EMPTY, {
-                settings: readRecord()?.settings ?? {},
-                styles: readRecord()?.styles ?? {},
-            } ),
+        readMerged: () => mergeGlobalStyles( base ?? EMPTY, readUser() ),
         // Resolves once the stylesheet compiled from the styles the store
         // holds now has been given to the mounted artboards; rejects when
         // that takes longer than the safety limit.
